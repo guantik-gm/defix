@@ -10,6 +10,10 @@ export default function App({ Component, pageProps }: AppProps) {
   return (
     <>
       <Head>
+        {/* Favicon */}
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="icon" href="/favicon.ico" />
+        
         {/* Google Analytics */}
         <GoogleAnalytics />
         
