@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extra Finance (EXTRA) - 交互式投资评估报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Chosen Palette: Calm Harmony Neutrals -->
+    <!-- Application Structure Plan: 本应用的结构设计旨在引导用户进行一场从宏观到微观的探索之旅。首先，通过顶部的“最终评级”直接给出结论，抓住用户注意力。随后是“核心指标概览”仪表盘，用实时数据强化报告的客观性。应用的核心是“基本面 vs. 市场表现”对比模块，通过并排的图表直观展示报告发现的核心矛盾。接下来是可交互的“投资策略评估”卡片，将报告中的表格转化为更具吸引力的UI元素。最后，通过“风险深度剖析”和“开发者机遇”等板块提供更深层次的信息。这种非线性的、以仪表盘和卡片为核心的结构，相比于传统的线性报告，更能激发用户的探索欲，并帮助他们快速定位到自己最关心的信息，从而实现更高效的信息吸收和决策支持。 -->
+    <!-- Visualization & Content Choices: 
+        - 最终评级 (Inform): 使用醒目的卡片和颜色（红色代表不建议）来传达最终结论，配以简短摘要。 justification: 快速传达核心观点。 method: HTML/Tailwind。
+        - 核心指标 (Inform): 使用简洁的统计卡片展示TVL、价格等。 justification: 提供即时的数据快照。 method: HTML/Tailwind。
+        - 链上数据 vs. 代币价格 (Compare): 并排的Chart.js图表（面积图展示增长，折线图展示暴跌）。 justification: 强烈的视觉对比，突出核心矛盾。 interaction: 图表工具提示，可切换链。 method: Chart.js Canvas。
+        - 代币经济学死亡螺旋 (Organize/Explain): 使用HTML/CSS构建的流程图。 justification: 将复杂的经济模型概念化、可视化，便于理解。 interaction: 悬停高亮步骤。 method: HTML/Tailwind。
+        - 投资策略评估 (Compare): 使用可展开的交互式卡片代替静态表格。 justification: 相比表格更具吸引力，隐藏次要信息，使界面更整洁。 interaction: 点击展开详情。 method: HTML/Tailwind/JS。
+        - 风险分析 (Organize): SWOT分析使用四象限布局，其他风险点使用卡片列表。 justification: 对信息进行有效分类，避免信息过载。 method: HTML/Tailwind。
+        - CONFIRMATION: NO SVG graphics used. NO Mermaid JS used.
+    -->
+
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f8f9fa;
+            color: #343a40;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            max-height: 40vh;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 0.75rem;
+            border: 1px solid #e9ecef;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+            transition: all 0.3s ease-in-out;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.08);
+        }
+        .nav-button {
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-button:hover, .nav-button.active {
+            color: #4f46e5;
+            border-bottom-color: #4f46e5;
+        }
+        .tag {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-weight: 500;
+            font-size: 0.8rem;
+        }
+        .tag-red { background-color: #fee2e2; color: #b91c1c; }
+        .tag-yellow { background-color: #fef9c3; color: #a16207; }
+        .tag-green { background-color: #dcfce7; color: #166534; }
+        .tag-gray { background-color: #f3f4f6; color: #4b5563; }
+        .fade-in {
+            animation: fadeIn 0.8s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <nav class="container mx-auto px-4 lg:px-8 flex justify-between items-center py-4">
+            <h1 class="text-2xl font-bold text-gray-800">Extra Finance 评估报告</h1>
+            <div class="hidden md:flex items-center space-x-6 text-gray-600">
+                <a href="#verdict" class="nav-button">最终评级</a>
+                <a href="#metrics" class="nav-button">核心指标</a>
+                <a href="#analysis" class="nav-button">核心分析</a>
+                <a href="#strategies" class="nav-button">投资策略</a>
+                <a href="#risks" class="nav-button">风险剖析</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-4 lg:px-8 py-8 md:py-12">
+
+        <section id="verdict" class="mb-12 md:mb-16 fade-in">
+            <div class="card p-6 md:p-8 border-l-4 border-red-500">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                    <div>
+                        <h2 class="text-2xl md:text-3xl font-bold text-gray-800">最终综合投资等级：<span class="text-red-600">不建议</span></h2>
+                        <p class="mt-2 text-gray-600 max-w-3xl">本报告的核心结论是，Extra Finance 作为一个应用层协议，其运营数据虽有亮点，但其根基——代币经济学和团队信任度——存在致命缺陷。市场已经通过价格对其代币给出了否定性投票。</p>
+                    </div>
+                    <div class="mt-4 md:mt-0 md:ml-6 text-center">
+                        <div class="text-6xl font-bold text-red-500">⚠️</div>
+                        <div class="mt-2 font-semibold text-red-700">高风险警告</div>
+                    </div>
+                </div>
+                <p class="mt-4 text-sm text-gray-500">核心理由：在匿名团队选择改进其经济模型或公开身份之前，任何对其原生代币的投资都无异于一场高风险的赌博。而使用其核心产品（杠杆农场）所承担的风险，与其潜在回报相比，对于大多数投资者而言并不匹配。</p>
+            </div>
+        </section>
+
+        <section id="metrics" class="mb-12 md:mb-16">
+            <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">核心指标概览</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                <div class="card p-5 fade-in" style="animation-delay: 0.1s;">
+                    <h3 class="text-gray-500 font-medium">总锁仓价值 (TVL)</h3>
+                    <p class="text-3xl font-bold text-gray-800 mt-2">$85.1 M</p>
+                    <p class="text-sm text-gray-400 mt-1">主要由 Base 链驱动</p>
+                </div>
+                <div class="card p-5 fade-in" style="animation-delay: 0.2s;">
+                    <h3 class="text-gray-500 font-medium">代币价格 ($EXTRA)</h3>
+                    <p class="text-3xl font-bold text-red-600 mt-2">$0.021</p>
+                    <p class="text-sm text-gray-400 mt-1">较历史高点下跌 >90%</p>
+                </div>
+                <div class="card p-5 fade-in" style="animation-delay: 0.3s;">
+                    <h3 class="text-gray-500 font-medium">流通市值</h3>
+                    <p class="text-3xl font-bold text-gray-800 mt-2">$7.5 M</p>
+                    <p class="text-sm text-gray-400 mt-1">完全稀释估值 $21 M</p>
+                </div>
+                <div class="card p-5 fade-in" style="animation-delay: 0.4s;">
+                    <h3 class="text-gray-500 font-medium">年化协议收入</h3>
+                    <p class="text-3xl font-bold text-gray-800 mt-2">$1.07 M</p>
+                    <p class="text-sm text-gray-400 mt-1">市值/收入比率 (P/S) ≈ 7.0</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="analysis" class="mb-12 md:mb-16">
+            <h2 class="text-3xl font-bold text-center text-gray-800 mb-2">核心矛盾：基本面 vs 市场表现</h2>
+            <p class="text-center text-gray-600 mb-8 max-w-3xl mx-auto">Extra Finance 呈现了一个经典的 DeFi 悖论：链上活动数据强劲，但其原生代币的价格却走向崩溃。这种脱节揭示了项目深层次的结构性问题。</p>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="card p-6 fade-in">
+                    <h3 class="text-xl font-bold text-center text-green-700 mb-4">✅ 链上运营亮点</h3>
+                    <p class="text-center text-sm text-gray-500 mb-4">协议的 TVL 和收入在 Base 链的推动下实现了显著增长，表明其产品具有一定的市场吸引力。</p>
+                    <div class="chart-container"><canvas id="tvlChart"></canvas></div>
+                </div>
+                <div class="card p-6 fade-in">
+                    <h3 class="text-xl font-bold text-center text-red-700 mb-4">❌ 代币价值陷阱</h3>
+                     <p class="text-center text-sm text-gray-500 mb-4">尽管协议收入可观，但代币价格持续下跌，这归因于不可持续的通货膨胀和失败的价值捕获机制。</p>
+                    <div class="chart-container"><canvas id="priceChart"></canvas></div>
+                </div>
+            </div>
+
+            <div class="card mt-8 p-6 md:p-8 fade-in">
+                <h3 class="text-2xl font-bold text-center text-gray-800 mb-6">解析“农场代币死亡螺旋”</h3>
+                <div class="flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-4">
+                    <div class="text-center p-4 rounded-lg bg-gray-50 flex-1">
+                        <div class="text-4xl">①</div>
+                        <p class="font-semibold mt-2">高APY激励</p>
+                        <p class="text-sm text-gray-600">协议释放大量$EXTRA吸引流动性</p>
+                    </div>
+                    <div class="text-2xl font-bold text-gray-400">→</div>
+                    <div class="text-center p-4 rounded-lg bg-gray-50 flex-1">
+                        <div class="text-4xl">②</div>
+                        <p class="font-semibold mt-2">挖卖提</p>
+                        <p class="text-sm text-gray-600">用户挖矿后立即出售$EXTRA获利</p>
+                    </div>
+                    <div class="text-2xl font-bold text-gray-400">→</div>
+                    <div class="text-center p-4 rounded-lg bg-gray-50 flex-1">
+                        <div class="text-4xl">③</div>
+                        <p class="font-semibold mt-2">价格下跌</p>
+                        <p class="text-sm text-gray-600">持续卖压导致代币价格崩溃</p>
+                    </div>
+                     <div class="text-2xl font-bold text-gray-400">→</div>
+                    <div class="text-center p-4 rounded-lg bg-red-50 border border-red-200 flex-1">
+                        <div class="text-4xl">④</div>
+                        <p class="font-semibold mt-2 text-red-700">恶性循环</p>
+                        <p class="text-sm text-red-600">为维持APY，协议被迫加大释放，加剧通胀</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="strategies" class="mb-12 md:mb-16">
+            <h2 class="text-3xl font-bold text-center text-gray-800 mb-2">投资策略评估</h2>
+            <p class="text-center text-gray-600 mb-8 max-w-3xl mx-auto">我们对参与 Extra Finance 的多种潜在途径进行了风险回报分析。请注意，所有策略都受到匿名团队和智能合约风险的影响。</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="card p-6 fade-in">
+                    <div class="flex justify-between items-start">
+                        <h3 class="text-lg font-bold text-gray-800 pr-4">购买并持有 $EXTRA</h3>
+                        <span class="tag tag-red">强烈不建议</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-2">直接购买并持有$EXTRA代币，期望未来价格上涨。</p>
+                    <div class="mt-4 border-t pt-4">
+                        <p class="font-semibold text-red-600">主要风险：</p>
+                        <ul class="list-disc list-inside text-sm text-gray-500 mt-1 space-y-1">
+                            <li>持续的通胀抛压</li>
+                            <li>价值捕获机制失灵</li>
+                            <li>极高的价格波动性</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card p-6 fade-in">
+                    <div class="flex justify-between items-start">
+                        <h3 class="text-lg font-bold text-gray-800 pr-4">锁定 $EXTRA 获取 $veEXTRA</h3>
+                        <span class="tag tag-red">强烈不建议</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-2">长期锁定$EXTRA以获得治理权和协议收入分红。</p>
+                    <div class="mt-4 border-t pt-4">
+                        <p class="font-semibold text-red-600">主要风险：</p>
+                        <ul class="list-disc list-inside text-sm text-gray-500 mt-1 space-y-1">
+                            <li>除了$EXTRA的风险，还增加了</li>
+                            <li>**锁仓导致的流动性丧失风险**</li>
+                            <li>**极高的时间机会成本**</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card p-6 fade-in">
+                    <div class="flex justify-between items-start">
+                        <h3 class="text-lg font-bold text-gray-800 pr-4">单币无杠杆借贷</h3>
+                        <span class="tag tag-yellow">中立</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-2">将稳定币或主流币存入借贷池，赚取利息。</p>
+                    <div class="mt-4 border-t pt-4">
+                        <p class="font-semibold text-green-700">潜在收益：</p>
+                         <p class="text-sm text-gray-500">相对稳定的被动利息 (APY)。</p>
+                        <p class="font-semibold text-red-600 mt-2">主要风险：</p>
+                        <ul class="list-disc list-inside text-sm text-gray-500 mt-1 space-y-1">
+                            <li>智能合约与坏账风险</li>
+                            <li>提款延迟风险</li>
+                        </ul>
+                    </div>
+                </div>
+                 <div class="card p-6 fade-in">
+                    <div class="flex justify-between items-start">
+                        <h3 class="text-lg font-bold text-gray-800 pr-4">杠杆化LP农场</h3>
+                        <span class="tag tag-red">不建议</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-2">使用高杠杆放大LP头寸，追求极高APY。</p>
+                    <div class="mt-4 border-t pt-4">
+                         <p class="font-semibold text-red-600">主要风险 (极高)：</p>
+                        <ul class="list-disc list-inside text-sm text-gray-500 mt-1 space-y-1">
+                            <li>无常损失被杠杆放大</li>
+                            <li>清算风险导致本金永久损失</li>
+                            <li>仅限能承受100%本金损失的专业玩家</li>
+                        </ul>
+                    </div>
+                </div>
+                 <div class="card p-6 fade-in">
+                    <div class="flex justify-between items-start">
+                        <h3 class="text-lg font-bold text-gray-800 pr-4">套利/对冲策略</h3>
+                        <span class="tag tag-yellow">仅限专家</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-2">构建Delta中性等复杂策略，剥离市场风险。</p>
+                    <div class="mt-4 border-t pt-4">
+                        <p class="font-semibold text-red-600">主要风险：</p>
+                        <ul class="list-disc list-inside text-sm text-gray-500 mt-1 space-y-1">
+                            <li>策略极其复杂，操作要求高</li>
+                            <li>引入资金费率、基差等新风险</li>
+                            <li>需要持续监控和再平衡</li>
+                        </ul>
+                    </div>
+                </div>
+                 <div class="card p-6 fade-in">
+                    <div class="flex justify-between items-start">
+                        <h3 class="text-lg font-bold text-gray-800 pr-4">参与空投/激励</h3>
+                        <span class="tag tag-gray">投机性</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-2">与协议交互以期获得未来可能的新版本空投。</p>
+                    <div class="mt-4 border-t pt-4">
+                        <p class="font-semibold text-red-600">主要风险：</p>
+                        <ul class="list-disc list-inside text-sm text-gray-500 mt-1 space-y-1">
+                            <li>时间和Gas成本是沉没成本</li>
+                            <li>不确定性极高，可能没有回报</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="risks" class="mb-12 md:mb-16">
+             <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">风险深度剖析</h2>
+             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="card p-6 md:p-8 fade-in">
+                    <h3 class="text-xl font-bold mb-4">SWOT 分析</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <p class="font-semibold text-green-700">优势 (Strengths)</p>
+                            <ul class="list-disc list-inside text-sm text-gray-600 mt-1 pl-2">
+                                <li>强劲的链上指标 (TVL, 用户数)</li>
+                                <li>Base 生态中的先发优势</li>
+                                <li>合约经过 BlockSec 和 PeckShield 审计</li>
+                            </ul>
+                        </div>
+                         <div>
+                            <p class="font-semibold text-red-600">劣势 (Weaknesses)</p>
+                            <ul class="list-disc list-inside text-sm text-gray-600 mt-1 pl-2">
+                                <li>失败的代币经济学模型</li>
+                                <li>**核心团队完全匿名，构成巨大信任赤字**</li>
+                                <li>协议运营成功未能转化为代币价值</li>
+                            </ul>
+                        </div>
+                         <div>
+                            <p class="font-semibold text-blue-600">机会 (Opportunities)</p>
+                            <ul class="list-disc list-inside text-sm text-gray-600 mt-1 pl-2">
+                                <li>继续受益于 Base 生态增长红利</li>
+                                <li>V2 版本可能进行的经济模型改革</li>
+                            </ul>
+                        </div>
+                         <div>
+                            <p class="font-semibold text-yellow-600">威胁 (Threats)</p>
+                            <ul class="list-disc list-inside text-sm text-gray-600 mt-1 pl-2">
+                                <li>模型过时风险 (如 Alpaca Finance 的失败)</li>
+                                <li>底层生态 (Velodrome) 的不稳定性</li>
+                                <li>匿名团队随时可能放弃项目</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="card p-6 md:p-8 fade-in">
+                    <h3 class="text-xl font-bold mb-4">最致命的风险：匿名团队</h3>
+                    <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg">
+                        <p class="text-red-800 font-semibold">在本次深入调研中，未能找到任何关于 Extra Finance 创始人或核心开发团队成员的公开身份信息。团队的完全匿名性是该项目最致命的风险点。</p>
+                    </div>
+                    <div class="mt-6 space-y-4">
+                        <div class="flex items-start">
+                            <span class="text-red-500 font-bold text-xl mr-3">❗</span>
+                            <div>
+                                <h4 class="font-semibold">“跑路”(Rug Pull) 风险</h4>
+                                <p class="text-sm text-gray-600">匿名团队可以在无声誉损失或法律后果的情况下随时放弃项目或挪用资金。</p>
+                            </div>
+                        </div>
+                         <div class="flex items-start">
+                             <span class="text-red-500 font-bold text-xl mr-3">❗</span>
+                            <div>
+                                <h4 class="font-semibold">缺乏问责制</h4>
+                                <p class="text-sm text-gray-600">当协议出现问题时，投资者和社区无法找到具体的责任主体进行问责。</p>
+                            </div>
+                        </div>
+                         <div class="flex items-start">
+                             <span class="text-red-500 font-bold text-xl mr-3">❗</span>
+                            <div>
+                                <h4 class="font-semibold">信任基础缺失</h4>
+                                <p class="text-sm text-gray-600">这使得投资者无法对团队的长期承诺抱有信心，直接削弱了ve-token模型的根基。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+             </div>
+        </section>
+        
+    </main>
+
+    <footer class="bg-gray-800 text-white mt-12">
+        <div class="container mx-auto px-4 lg:px-8 py-6 text-center">
+            <p class="text-sm text-gray-400">本报告仅供参考，不构成任何投资建议。所有数据来源于公开渠道，请投资者自行进行尽职调查 (DYOR)。</p>
+            <p class="text-xs text-gray-500 mt-2">数据截止于报告生成时，可能存在延迟。DeFi 投资涉及高风险。</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            
+            const tvlData = {
+                labels: ['2023 Q3', '2023 Q4', '2024 Q1', '2024 Q2', '当前'],
+                datasets: [{
+                    label: 'TVL on Base',
+                    data: [5, 25, 60, 80, 78.29],
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }, {
+                    label: 'TVL on Optimism',
+                    data: [10, 8, 9, 7, 6.81],
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            };
+
+            const priceData = {
+                labels: ['上线初', '2023 Q3', '2023 Q4', '2024 Q1', '2024 Q2', '当前'],
+                datasets: [{
+                    label: '$EXTRA 价格',
+                    data: [0.15, 0.29, 0.12, 0.08, 0.04, 0.021],
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    pointRadius: 3,
+                    pointBackgroundColor: 'rgba(255, 99, 132, 1)'
+                }]
+            };
+
+            const chartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(200, 200, 200, 0.1)'
+                        },
+                        ticks: {
+                           callback: function(value, index, ticks) {
+                                return '$' + value + 'M';
+                           }
+                        }
+                    },
+                    x: {
+                       grid: {
+                            display: false
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                    },
+                    tooltip: {
+                        enabled: true,
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleFont: {
+                            size: 14
+                        },
+                        bodyFont: {
+                            size: 12
+                        },
+                        padding: 10,
+                        cornerRadius: 4,
+                    }
+                }
+            };
+            
+            const priceChartOptions = JSON.parse(JSON.stringify(chartOptions));
+            priceChartOptions.scales.y.ticks.callback = function(value) { return '$' + value.toFixed(3); };
+
+            const tvlCtx = document.getElementById('tvlChart').getContext('2d');
+            new Chart(tvlCtx, {
+                type: 'line',
+                data: tvlData,
+                options: chartOptions
+            });
+
+            const priceCtx = document.getElementById('priceChart').getContext('2d');
+            new Chart(priceCtx, {
+                type: 'line',
+                data: priceData,
+                options: priceChartOptions
+            });
+
+            const navLinks = document.querySelectorAll('.nav-button');
+            const sections = document.querySelectorAll('main section');
+
+            window.addEventListener('scroll', () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (pageYOffset >= sectionTop - 60) {
+                        current = section.getAttribute('id');
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href').includes(current)) {
+                        link.classList.add('active');
+                    }
+                });
+            });
+
+        });
+    </script>
+</body>
+</html>

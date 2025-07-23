@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Euler Finance: 交互式投资分析报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Harmony -->
+    <!-- Application Structure Plan: The application is designed as a single-page, top-down narrative dashboard. It begins with a high-level executive summary, providing the core thesis and final investment rating instantly. This is followed by key performance indicators (KPIs) for a quick quantitative overview. The structure is then divided into thematic sections: 'The Story' (V1 hack vs V2 rebirth), 'The Tech' (innovation and competitive landscape), 'The Numbers' (financials and tokenomics), 'The Risks' (a clear breakdown of potential downsides), and 'The Opportunities' (an interactive investment strategy playbook). This task-oriented, non-linear structure allows users to explore based on their interests (e.g., a technical user can jump to 'The Tech', while a pure investor might focus on 'The Opportunities'), which is more user-friendly than a rigid report format. A sticky navigation bar facilitates easy movement between these logical sections. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Final Investment Recommendation -> Goal: Inform -> Viz/Method: Prominent summary card -> Interaction: None -> Justification: Delivers the most crucial conclusion immediately.
+        - Report Info: Key Metrics (TVL, Revenue) -> Goal: Inform -> Viz/Method: Stat cards and a `line chart` for TVL trend -> Interaction: Hover tooltips on chart -> Justification: Provides a quick, digestible view of protocol health and growth. Library: Chart.js.
+        - Report Info: EUL Token Distribution (Investor overhang) -> Goal: Inform/Warn -> Viz/Method: `Doughnut chart` -> Interaction: Hover tooltips -> Justification: Visually highlights the significant portion of unlocked investor tokens, which is a key risk. Library: Chart.js.
+        - Report Info: V1 Hack vs. V2 Security -> Goal: Compare/Build Trust -> Viz/Method: Two-column layout with a timeline-like flow and a grid of auditor logos -> Interaction: None -> Justification: Creates a strong narrative of "fall and rise" and visually demonstrates the massive security investment.
+        - Report Info: Competitive Analysis (vs. Aave/Compound) -> Goal: Compare -> Viz/Method: A structured HTML table -> Interaction: Hover on rows for clarity -> Justification: Allows for direct, feature-by-feature comparison in a clear format.
+        - Report Info: Investment Strategies -> Goal: Explore/Action -> Viz/Method: Interactive grid of cards -> Interaction: Click-to-expand/collapse -> Justification: Transforms a static table into an engaging playbook, allowing users to focus on strategies matching their risk profile and technical skill.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f8f9fa; /* Warm Neutral Light Gray */
+            color: #212529; /* Dark Charcoal */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .nav-link {
+            transition: color 0.3s, border-bottom-color 0.3s;
+        }
+        .nav-link:hover {
+            color: #0d6efd; /* Accent Blue */
+        }
+        .nav-link-active {
+            color: #0d6efd;
+            border-bottom: 2px solid #0d6efd;
+        }
+        .strategy-card {
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .strategy-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Header & Navigation -->
+    <header class="bg-white/80 backdrop-blur-sm sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0">
+                    <h1 class="text-xl font-bold text-gray-800">Euler Finance 投研导航</h1>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#summary" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700">核心摘要</a>
+                        <a href="#tech" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700">技术革新</a>
+                        <a href="#market" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700">市场数据</a>
+                        <a href="#risk" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700">风险评估</a>
+                        <a href="#opportunity" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700">投资机会</a>
+                    </div>
+                </div>
+                <div class="md:hidden">
+                    <select id="mobile-nav" class="bg-gray-200 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                        <option value="#summary">核心摘要</option>
+                        <option value="#tech">技术革新</option>
+                        <option value="#market">市场数据</option>
+                        <option value="#risk">风险评估</option>
+                        <option value="#opportunity">投资机会</option>
+                    </select>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+
+        <!-- Section 1: Executive Summary -->
+        <section id="summary" class="mb-16 scroll-mt-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900">Euler Finance: 凤凰涅槃还是达摩克利斯之剑？</h2>
+                <p class="mt-4 max-w-3xl mx-auto text-lg text-gray-600">一个从毁灭性攻击中浴火重生，凭借卓越技术创新重塑借贷市场的项目，同时也被巨大的历史包袱和市场风险所笼罩。</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200 md:col-span-2 lg:col-span-1">
+                    <h3 class="font-semibold text-lg text-gray-800">最终投资评级</h3>
+                    <div class="mt-4 text-center">
+                        <p class="text-5xl font-bold text-amber-500">中立</p>
+                        <p class="mt-2 text-sm text-gray-500">对高风险承受能力的投资者持积极展望</p>
+                    </div>
+                    <p class="mt-4 text-sm text-gray-600">此评级旨在平衡其卓越的技术潜力与严峻的市场及历史风险。投资价值高度依赖于投资者的风险偏好和技术背景。</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200 lg:col-span-2">
+                    <h3 class="font-semibold text-lg text-gray-800">核心发现</h3>
+                     <ul class="mt-4 space-y-3">
+                        <li class="flex items-start">
+                            <span class="flex-shrink-0 h-5 w-5 text-green-500">✓</span>
+                            <p class="ml-3 text-base text-gray-600"><strong class="font-semibold text-gray-800">技术范式转移：</strong> V2模块化架构（EVK & EVC）实现了风险隔离，根本上优于Aave等采用的集中风险池模型。</p>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="flex-shrink-0 h-5 w-5 text-green-500">✓</span>
+                            <p class="ml-3 text-base text-gray-600"><strong class="font-semibold text-gray-800">安全承诺：</strong> 投入超400万美元，由12家顶级公司进行29次以上审计，展示了重建信任的决心。</p>
+                        </li>
+                         <li class="flex items-start">
+                            <span class="flex-shrink-0 h-5 w-5 text-red-500">✗</span>
+                            <p class="ml-3 text-base text-gray-600"><strong class="font-semibold text-gray-800">巨大抛压风险：</strong> 早期投资者持有的39.5%代币已完全解锁，构成持续的潜在卖压。</p>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="flex-shrink-0 h-5 w-5 text-green-500">✓</span>
+                            <p class="ml-3 text-base text-gray-600"><strong class="font-semibold text-gray-800">捕获长尾市场：</strong> 为服务不足的长尾加密资产提供借贷市场，并支持高资本效率的收益策略。</p>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: The Story & Tech -->
+        <section id="tech" class="mb-16 scroll-mt-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900">技术革新：从废墟到灯塔</h2>
+                <p class="mt-4 max-w-3xl mx-auto text-lg text-gray-600">Euler V2不仅是修复，更是对DeFi借贷风险模型的彻底重构。其模块化、无需许可的设计，为构建者和高阶用户打开了新世界的大门。</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                    <h3 class="font-semibold text-xl text-gray-800 mb-4">V1的崩溃 vs V2的重生</h3>
+                    <div class="relative border-l-2 border-gray-200 pl-6">
+                        <div class="mb-8">
+                            <div class="absolute w-4 h-4 bg-red-500 rounded-full -left-2 mt-1.5 border-2 border-white"></div>
+                            <p class="text-sm font-medium text-red-600">2023年3月：毁灭性打击</p>
+                            <h4 class="font-semibold text-lg text-gray-800 mt-1">V1漏洞被利用</h4>
+                            <p class="text-gray-600 mt-1">因集中风险池设计缺陷，遭受1.97亿美元攻击，协议几近崩溃。一个漏洞威胁整个系统。</p>
+                        </div>
+                        <div>
+                            <div class="absolute w-4 h-4 bg-green-500 rounded-full -left-2 mt-1.5 border-2 border-white"></div>
+                            <p class="text-sm font-medium text-green-600">2024年：雄心重启</p>
+                            <h4 class="font-semibold text-lg text-gray-800 mt-1">V2模块化架构</h4>
+                            <p class="text-gray-600 mt-1">引入EVK与EVC，实现风险隔离。单个借贷池的风险不会蔓延，从根本上解决了系统性风险问题。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                    <h3 class="font-semibold text-xl text-gray-800 mb-4">竞争格局：为何Euler与众不同？</h3>
+                    <p class="text-gray-600 mb-4">与Aave和Compound的“围墙花园”模式不同，Euler V2是一个开放、无需许可的创新平台。</p>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-gray-500">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+                                <tr>
+                                    <th scope="col" class="px-4 py-3">特性</th>
+                                    <th scope="col" class="px-4 py-3 bg-blue-50 text-blue-800">Euler V2</th>
+                                    <th scope="col" class="px-4 py-3">Aave V3</th>
+                                    <th scope="col" class="px-4 py-3">Compound V3</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="bg-white border-b">
+                                    <td class="px-4 py-3 font-medium">风险模型</td>
+                                    <td class="px-4 py-3 bg-blue-50 text-blue-800 font-semibold">隔离风险</td>
+                                    <td class="px-4 py-3">集中风险</td>
+                                    <td class="px-4 py-3">混合风险</td>
+                                </tr>
+                                <tr class="bg-white border-b">
+                                    <td class="px-4 py-3 font-medium">市场上线</td>
+                                    <td class="px-4 py-3 bg-blue-50 text-blue-800 font-semibold">无需许可</td>
+                                    <td class="px-4 py-3">需许可</td>
+                                    <td class="px-4 py-3">需许可</td>
+                                </tr>
+                                 <tr class="bg-white">
+                                    <td class="px-4 py-3 font-medium">目标用户</td>
+                                    <td class="px-4 py-3 bg-blue-50 text-blue-800 font-semibold">构建者/高阶用户</td>
+                                    <td class="px-4 py-3">普通用户/机构</td>
+                                    <td class="px-4 py-3">普通用户/机构</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- Section 3: Market Data -->
+        <section id="market" class="mb-16 scroll-mt-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900">市场深度解析</h2>
+                <p class="mt-4 max-w-3xl mx-auto text-lg text-gray-600">链上数据揭示了V2强劲的产品市场契合度，但也暴露了EUL代币经济学中悬而未决的风险。</p>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- TVL Chart -->
+                <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                    <h3 class="font-semibold text-xl text-gray-800 mb-1">总锁仓价值 (TVL) 增长</h3>
+                    <p class="text-sm text-gray-500 mb-4">V2重启后TVL爆炸性增长，验证了市场需求。</p>
+                    <div class="chart-container">
+                        <canvas id="tvlChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Token Distribution Chart -->
+                <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                    <h3 class="font-semibold text-xl text-gray-800 mb-1">EUL代币分配：机遇与隐患</h3>
+                    <p class="text-sm text-gray-500 mb-4">注意：约39.5%的战略合作伙伴份额已完全解锁，构成潜在抛压。</p>
+                     <div class="chart-container">
+                        <canvas id="tokenomicsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Section 4: Risk Assessment -->
+        <section id="risk" class="mb-16 scroll-mt-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900">综合风险评估</h2>
+                <p class="mt-4 max-w-3xl mx-auto text-lg text-gray-600">投资者必须清醒地认识到，高回报潜力背后伴随着同样显著的风险。本节将为您梳理主要风险点。</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-xl shadow-lg border border-red-200">
+                    <div class="flex items-center">
+                         <div class="flex-shrink-0 bg-red-100 text-red-600 rounded-full h-10 w-10 flex items-center justify-center">
+                            <span class="text-xl">⚠️</span>
+                        </div>
+                        <h3 class="font-semibold text-lg text-red-800 ml-4">市场风险：代币抛压</h3>
+                    </div>
+                    <p class="mt-4 text-gray-600">最大的风险点。早期投资者持有的39.5% EUL代币已完全解锁，任何价格上涨都可能面临其获利了结的抛售，形成价格天花板。</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-lg border border-amber-200">
+                     <div class="flex items-center">
+                         <div class="flex-shrink-0 bg-amber-100 text-amber-600 rounded-full h-10 w-10 flex items-center justify-center">
+                            <span class="text-xl">🛡️</span>
+                        </div>
+                        <h3 class="font-semibold text-lg text-amber-800 ml-4">技术风险：无需许可的创新</h3>
+                    </div>
+                    <p class="mt-4 text-gray-600">用户可自由创建借贷池，这也意味着可能存在恶意或有缺陷的池。用户需自行甄别，与由DAO策划或经过审计的池互动，不能盲目信任。</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-lg border border-green-200">
+                     <div class="flex items-center">
+                         <div class="flex-shrink-0 bg-green-100 text-green-600 rounded-full h-10 w-10 flex items-center justify-center">
+                            <span class="text-xl">✅</span>
+                        </div>
+                        <h3 class="font-semibold text-lg text-green-800 ml-4">历史风险：V1的阴影</h3>
+                    </div>
+                    <p class="mt-4 text-gray-600">尽管V2在安全上投入巨大，V1的攻击历史仍可能影响部分投资者的信心。但成功追回全部资金也证明了团队卓越的危机处理能力。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: Investment Opportunities -->
+        <section id="opportunity" class="scroll-mt-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900">投资机会与战略手册</h2>
+                <p class="mt-4 max-w-3xl mx-auto text-lg text-gray-600">Euler为不同风险偏好和技术背景的投资者提供了丰富的参与途径。点击下方卡片，探索为您量身定制的投资策略。</p>
+            </div>
+            
+            <div id="strategies-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Strategy cards will be injected here by JavaScript -->
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-gray-800 text-white mt-16">
+        <div class="container mx-auto py-6 px-4 sm:px-6 lg:px-8 text-center text-sm">
+            <p>本报告仅供参考，不构成任何投资建议。加密货币投资具有高风险，请在做出决策前进行自己的研究（DYOR）。</p>
+            <p class="mt-2 text-gray-400">&copy; 2025 交互式投研报告. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // --- Data ---
+            const investmentStrategies = [
+                {
+                    title: "EUL 代币购买",
+                    description: "长期持有 EUL 代币，押注 V2 生态系统的长期成功。",
+                    apr: "资本增值",
+                    pros: "操作简单；直接分享协议成功带来的价值。",
+                    cons: "面临巨大的投资者代币抛压风险；价格波动剧烈。",
+                    techLevel: "低",
+                    risk: "市场风险；代币经济学风险。",
+                    color: "blue"
+                },
+                {
+                    title: "简单出借",
+                    description: "将蓝筹资产（如 ETH, USDC）存入由 DAO 策划的借贷池（如 Euler Prime）以获取被动收益。",
+                    apr: "2% - 10% (浮动)",
+                    pros: "风险较低；操作简单；本金相对安全。",
+                    cons: "收益率相对温和；智能合约风险。",
+                    techLevel: "低",
+                    risk: "智能合约风险；DAO 治理风险。",
+                    color: "green"
+                },
+                {
+                    title: "杠杆收益农场",
+                    description: "存入 LST/LRT（如 stETH），循环借出 ETH 并换回 LST/LRT，以放大收益敞口。",
+                    apr: "20% - 50%+",
+                    pros: "潜在收益率极高；资本效率高。",
+                    cons: "风险极高；清算风险大；操作复杂。",
+                    techLevel: "高",
+                    risk: "清算风险；智能合约风险；LST 脱锚风险。",
+                    color: "orange"
+                },
+                {
+                    title: "EulerSwap LP",
+                    description: "在 EulerSwap 上提供流动性（如 WETH/USDC），赚取交易费和借贷利息的双重收益。",
+                    apr: "5% - 25%",
+                    pros: "双重收益来源；资本效率高；LP 头寸可抵押。",
+                    cons: "无常损失风险；智能合约风险。",
+                    techLevel: "中",
+                    risk: "无常损失；智能合约风险。",
+                    color: "purple"
+                },
+                {
+                    title: "Delta 中性 LP",
+                    description: "为波动性资产对提供流动性，同时在借贷市场做空其中一种资产以对冲价格风险。",
+                    apr: "5% - 15%",
+                    pros: "最小化无常损失；从市场波动中获利。",
+                    cons: "操作极其复杂；需要持续管理；负资金费率风险。",
+                    techLevel: "极高",
+                    risk: "执行风险；智能合约风险；资金费率风险。",
+                    color: "red"
+                },
+                 {
+                    title: "开发者：构建生态",
+                    description: "利用 EVK/EVC 构建自定义借贷池或应用，或参与漏洞赏金计划，将技术能力直接变现。",
+                    apr: "可观",
+                    pros: "直接从技术贡献中获利；创造新价值。",
+                    cons: "需要深厚的技术背景和时间投入。",
+                    techLevel: "开发者",
+                    risk: "开发风险；市场接受度风险。",
+                    color: "gray"
+                }
+            ];
+
+            // --- Chart.js Configuration ---
+            const CHART_DEFAULTS = {
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#4b5563',
+                            font: { family: "'Noto Sans SC', sans-serif" }
+                        }
+                    },
+                    tooltip: {
+                        titleFont: { family: "'Noto Sans SC', sans-serif" },
+                        bodyFont: { family: "'Noto Sans SC', sans-serif" }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#4b5563', font: { family: "'Noto Sans SC', sans-serif" } },
+                        grid: { display: false }
+                    },
+                    y: {
+                        ticks: { color: '#4b5563', font: { family: "'Noto Sans SC', sans-serif" } },
+                        grid: { color: '#e5e7eb' }
+                    }
+                },
+                responsive: true,
+                maintainAspectRatio: false
+            };
+
+            // --- TVL Chart ---
+            const tvlCtx = document.getElementById('tvlChart').getContext('2d');
+            new Chart(tvlCtx, {
+                type: 'line',
+                data: {
+                    labels: ['V2重启', '第1月', '第2月', '第3月', '第4月', '现在'],
+                    datasets: [{
+                        label: 'TVL (百万美元)',
+                        data: [99, 250, 480, 750, 980, 1150],
+                        borderColor: '#0d6efd',
+                        backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: CHART_DEFAULTS
+            });
+            
+            // --- Tokenomics Chart ---
+            const tokenomicsCtx = document.getElementById('tokenomicsChart').getContext('2d');
+            new Chart(tokenomicsCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['战略合作伙伴 (已解锁)', 'Euler Labs (团队)', 'DAO/生态系统', '基金会'],
+                    datasets: [{
+                        data: [39.5, 26.5, 34, 3.7],
+                        backgroundColor: ['#ef4444', '#3b82f6', '#22c55e', '#a855f7'],
+                        borderColor: '#f8f9fa',
+                        hoverOffset: 4
+                    }]
+                },
+                options: { ...CHART_DEFAULTS, scales: {} }
+            });
+            
+            // --- Investment Strategies Population ---
+            const strategiesContainer = document.getElementById('strategies-container');
+            strategiesContainer.innerHTML = investmentStrategies.map(s => `
+                <div class="strategy-card bg-white rounded-xl shadow-lg border border-gray-200 cursor-pointer overflow-hidden" data-strategy-title="${s.title}">
+                    <div class="p-6">
+                        <h4 class="font-bold text-xl text-gray-800">${s.title}</h4>
+                        <p class="text-gray-600 mt-2 h-12">${s.description}</p>
+                        <div class="mt-4 flex justify-between items-center text-sm">
+                            <span class="font-semibold text-${s.color}-600 bg-${s.color}-100 px-2 py-1 rounded">APR: ${s.apr}</span>
+                            <span class="font-semibold text-gray-700 bg-gray-100 px-2 py-1 rounded">技术要求: ${s.techLevel}</span>
+                        </div>
+                    </div>
+                    <div class="details bg-gray-50 px-6 py-4 border-t border-gray-200 hidden">
+                        <dl>
+                            <dt class="font-semibold text-green-700">✓ 优点:</dt>
+                            <dd class="text-gray-600 mb-2">${s.pros}</dd>
+                            <dt class="font-semibold text-red-700">✗ 缺点:</dt>
+                            <dd class="text-gray-600 mb-2">${s.cons}</dd>
+                            <dt class="font-semibold text-amber-700">⚠️ 关键风险:</dt>
+                            <dd class="text-gray-600">${s.risk}</dd>
+                        </dl>
+                    </div>
+                     <div class="bg-gray-100 text-center py-2 text-xs font-semibold text-gray-500">
+                        点击查看详情
+                    </div>
+                </div>
+            `).join('');
+
+            // --- Interactivity ---
+            strategiesContainer.addEventListener('click', function(e) {
+                const card = e.target.closest('.strategy-card');
+                if (card) {
+                    const details = card.querySelector('.details');
+                    details.classList.toggle('hidden');
+                }
+            });
+
+            // --- Navigation Logic ---
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('main section');
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        navLinks.forEach(link => {
+                            link.classList.toggle('nav-link-active', link.getAttribute('href').substring(1) === entry.target.id);
+                        });
+                    }
+                });
+            }, { rootMargin: "-50% 0px -50% 0px" });
+
+            sections.forEach(section => observer.observe(section));
+            
+            document.getElementById('mobile-nav').addEventListener('change', function(e) {
+                window.location.hash = e.target.value;
+            });
+        });
+    </script>
+</body>
+</html>

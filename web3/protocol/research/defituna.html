@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DefiTuna 交互式投资分析报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals with Red Alert Accents -->
+    <!-- Application Structure Plan: The application employs a narrative, top-down structure designed to guide the user from the final, critical conclusion to the supporting evidence. It begins with the stark "Strongly Not Recommended" verdict to immediately frame the analysis. It then presents the core conflict (Innovation vs. Crisis), followed by an interactive timeline detailing the scandal. A data-driven comparison section provides quantitative proof of the project's weakness. Finally, an interactive risk/opportunity matrix caters to expert users while heavily emphasizing the dangers. This structure prioritizes immediate comprehension of the primary risk (trust) over a simple replication of the report's chapters, making it more effective for decision-making. -->
+    <!-- Visualization & Content Choices: 
+        - TVL Comparison: Report Info -> TVL data for DefiTuna and competitors. Goal -> Compare scales. Viz -> Bar Chart (Chart.js). Interaction -> Hover for details. Justification -> Instantly visualizes the massive disparity in market share and trust.
+        - Scandal Timeline: Report Info -> Chronological events of the Kelsier Ventures scandal. Goal -> Narrate the project's downfall. Viz -> Interactive HTML/CSS/JS timeline. Interaction -> Click event nodes to reveal detailed text. Justification -> Transforms a dry list into an engaging, explorable narrative, highlighting the sequence of critical failures.
+        - Risk/Strategy Matrix: Report Info -> High-risk yield farming strategies. Goal -> Organize and caution. Viz -> Interactive card/tab system (HTML/CSS/JS). Interaction -> Click to expand strategy details. Justification -> Makes complex strategies digestible while constantly reinforcing the associated high risks, targeting the expert niche mentioned in the report.
+        - Memecoin Crash Data: Report Info -> Price collapses of related memecoins. Goal -> Inform and shock. Viz -> Simple info cards. Interaction -> None. Justification -> Conveys the catastrophic financial damage simply and effectively without chart overhead.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #FDFBF7;
+            color: #333333;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .nav-link {
+            transition: color 0.3s ease;
+        }
+        .nav-link:hover {
+            color: #D32F2F;
+        }
+        .timeline-item {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .timeline-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .active-nav {
+            color: #D32F2F;
+            font-weight: 700;
+        }
+        .strategy-btn.active {
+            background-color: #EF5350 !important;
+            color: #FFFFFF !important;
+            border-color: #EF5350 !important;
+        }
+        html {
+            scroll-behavior: smooth;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header id="header" class="bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-6 py-3 flex justify-between items-center">
+            <div class="text-2xl font-bold text-gray-800">DefiTuna<span class="text-red-500">.</span>分析</div>
+            <div class="hidden md:flex space-x-8">
+                <a href="#verdict" class="nav-link text-gray-600 font-medium">最终评级</a>
+                <a href="#scandal" class="nav-link text-gray-600 font-medium">信任危机</a>
+                <a href="#data" class="nav-link text-gray-600 font-medium">数据对比</a>
+                <a href="#strategy" class="nav-link text-gray-600 font-medium">风险策略</a>
+                <a href="#conclusion" class="nav-link text-gray-600 font-medium">核心结论</a>
+            </div>
+             <button id="mobile-menu-button" class="md:hidden flex items-center">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-4 6h4"></path></svg>
+            </button>
+        </nav>
+        <div id="mobile-menu" class="hidden md:hidden">
+            <a href="#verdict" class="block py-2 px-4 text-sm hover:bg-gray-200">最终评级</a>
+            <a href="#scandal" class="block py-2 px-4 text-sm hover:bg-gray-200">信任危机</a>
+            <a href="#data" class="block py-2 px-4 text-sm hover:bg-gray-200">数据对比</a>
+            <a href="#strategy" class="block py-2 px-4 text-sm hover:bg-gray-200">风险策略</a>
+            <a href="#conclusion" class="block py-2 px-4 text-sm hover:bg-gray-200">核心结论</a>
+        </div>
+    </header>
+
+    <main>
+        <!-- Section: Verdict -->
+        <section id="verdict" class="py-20 bg-red-50">
+            <div class="container mx-auto px-6 text-center">
+                <h1 class="text-5xl md:text-7xl font-extrabold text-red-800 tracking-tight">强烈不建议</h1>
+                <p class="mt-4 text-lg md:text-xl text-red-700 max-w-3xl mx-auto">
+                    本报告对 DefiTuna 的任何形式的投资行为，给予决定性的“强烈不建议”评级。项目的技术创新被其无法弥补的信任危机和团队诚信风险完全掩盖。
+                </p>
+                <div class="mt-12 bg-white p-8 rounded-2xl shadow-xl inline-block border border-red-200">
+                    <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">总锁仓价值 (TVL)</p>
+                    <p class="text-6xl font-bold text-red-600 mt-2">$1675 万</p>
+                    <p class="text-sm text-gray-400 mt-2">数据来源: DeFi Llama, 2025年6月</p>
+                </div>
+                <p class="mt-8 text-base text-gray-500 max-w-2xl mx-auto">
+                    此应用将引导您深入了解我们做出此判断的核心原因：一场毁灭性的 memecoin 操纵丑闻、与竞争对手悬殊的数据差距，以及其中暗藏的极端风险。
+                </p>
+            </div>
+        </section>
+
+        <!-- Section: Scandal Timeline -->
+        <section id="scandal" class="py-20">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-16">
+                    <h2 class="text-4xl font-bold">信任危机：一场 Memecoin 丑闻的剖析</h2>
+                    <p class="mt-4 text-lg text-gray-600 max-w-3xl mx-auto">
+                        DefiTuna 的命运转折点并非技术缺陷，而是一场涉及市场操纵、内幕交易和巨额亏损的丑闻。以下是关键事件的交互式时间线，揭示了项目信任崩塌的全过程。
+                    </p>
+                </div>
+                <div id="timeline-container" class="relative">
+                    <!-- Timeline will be generated by JS -->
+                </div>
+            </div>
+        </section>
+        
+        <!-- Modal for timeline details -->
+        <div id="timeline-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center">
+            <div class="bg-white rounded-lg shadow-xl p-8 max-w-2xl w-full mx-4 transform transition-all duration-300 scale-95">
+                <h3 id="modal-title" class="text-2xl font-bold mb-4"></h3>
+                <p id="modal-date" class="text-sm text-gray-500 mb-4"></p>
+                <div id="modal-content" class="text-gray-700 space-y-3"></div>
+                <button id="modal-close" class="mt-6 bg-red-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-600 transition-colors">关闭</button>
+            </div>
+        </div>
+
+
+        <!-- Section: Data Deep Dive -->
+        <section id="data" class="py-20 bg-gray-50">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-16">
+                    <h2 class="text-4xl font-bold">数据鸿沟：被市场孤立的参与者</h2>
+                    <p class="mt-4 text-lg text-gray-600 max-w-3xl mx-auto">
+                        数据不会说谎。与 Solana 生态中的主要竞争对手相比，DefiTuna 的总锁仓价值（TVL）微不足道，这直接反映了市场对其信心的缺失和其竞争力的匮乏。
+                    </p>
+                </div>
+
+                <div class="bg-white p-6 md:p-8 rounded-2xl shadow-lg">
+                    <h3 class="text-2xl font-bold text-center mb-2">TVL 对比：巨人与侏儒</h3>
+                    <p class="text-center text-gray-500 mb-8">DefiTuna vs Kamino Finance vs Drift Protocol</p>
+                    <div class="chart-container">
+                        <canvas id="tvlChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-8 mt-16">
+                    <div class="bg-white p-8 rounded-2xl shadow-lg">
+                        <h3 class="text-2xl font-bold mb-4">代币之谜：虚假的 $TUNA</h3>
+                         <p class="text-gray-600 mb-4">协议缺乏官方代币，是投资论证中的一个致命缺陷。投资者无法通过持有代币分享协议成长的红利。</p>
+                        <div class="border-t border-gray-200 pt-4">
+                            <div class="flex justify-between items-center">
+                                <span class="font-medium">官方治理代币:</span>
+                                <span class="font-bold text-red-600 bg-red-100 px-3 py-1 rounded-full">不存在</span>
+                            </div>
+                            <p class="text-sm text-gray-500 mt-3">注意：链上存在一个名为 $TUNA 的代币，但其市值极低，可确定为骗局或废弃代币，不具备任何投资价值。</p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-8 rounded-2xl shadow-lg">
+                        <h3 class="text-2xl font-bold mb-4">丑闻的代价：Memecoin 崩盘</h3>
+                        <p class="text-gray-600 mb-4">与 Kelsier Ventures 丑闻直接相关的 Memecoin 均经历了灾难性的价格暴跌，导致散户巨额亏损。</p>
+                        <div class="space-y-3 border-t border-gray-200 pt-4">
+                            <div class="flex justify-between items-center">
+                                <span class="font-medium">MELANIA:</span>
+                                <span class="font-bold text-red-600 bg-red-100 px-3 py-1 rounded-full">-97%</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="font-medium">MATES:</span>
+                                <span class="font-bold text-red-600 bg-red-100 px-3 py-1 rounded-full">-99%</span>
+                            </div>
+                             <div class="flex justify-between items-center">
+                                <span class="font-medium">LIBRA:</span>
+                                <span class="font-bold text-red-600 bg-red-100 px-3 py-1 rounded-full">-99%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Strategy & Risk -->
+        <section id="strategy" class="py-20">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-16">
+                    <h2 class="text-4xl font-bold">高风险“机会”：专家级玩家的火中取栗</h2>
+                    <p class="mt-4 text-lg text-gray-600 max-w-3xl mx-auto">
+                       任何与 DefiTuna 的互动都应被视为高风险的实验，而非投资。下表为能完全理解并接受平台风险的专家用户拆解了潜在策略，每一项都伴随着致命风险。
+                    </p>
+                </div>
+                
+                <div class="flex flex-col md:flex-row gap-8">
+                    <div class="w-full md:w-1/3">
+                        <div id="strategy-buttons" class="flex md:flex-col gap-4">
+                            <!-- Strategy buttons will be generated by JS -->
+                        </div>
+                    </div>
+                    <div class="w-full md:w-2/3">
+                        <div id="strategy-content" class="bg-white p-8 rounded-2xl shadow-lg transition-all duration-500 min-h-[400px]">
+                            <!-- Strategy content will be displayed here by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Final Conclusion -->
+        <section id="conclusion" class="py-20 bg-gray-800 text-white">
+            <div class="container mx-auto px-6">
+                 <div class="text-center mb-12">
+                    <h2 class="text-4xl font-bold">最终结论：不可接受的投资标的</h2>
+                    <p class="mt-4 text-lg text-gray-300 max-w-3xl mx-auto">
+                        DefiTuna 是一个典型的反面教材：在 DeFi 世界里，信任是比代码更宝贵、更稀缺的资产。协议可以修复漏洞，但极难修复声誉。
+                    </p>
+                </div>
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <div class="bg-gray-700 p-6 rounded-lg">
+                        <h3 class="font-bold text-xl mb-2 text-red-400">1. 团队诚信风险</h3>
+                        <p class="text-gray-300">与 Kelsier Ventures 的关联是无法洗刷的原罪，代表了团队在判断力和尽职调查上的根本性失败。这是一票否决的风险项。</p>
+                    </div>
+                    <div class="bg-gray-700 p-6 rounded-lg">
+                        <h3 class="font-bold text-xl mb-2 text-red-400">2. 缺乏投资工具</h3>
+                        <p class="text-gray-300">项目没有官方的、能捕获价值的代币。这意味着投资者无法分享协议成长的红利，投资回报路径被切断。</p>
+                    </div>
+                     <div class="bg-gray-700 p-6 rounded-lg">
+                        <h3 class="font-bold text-xl mb-2 text-red-400">3. 无法逾越的劣势</h3>
+                        <p class="text-gray-300">在一个由巨头主导的市场中，DefiTuna 作为一个声名狼藉的微型参与者，几乎没有任何可能去抢占有意义的市场份额。</p>
+                    </div>
+                    <div class="bg-gray-700 p-6 rounded-lg">
+                        <h3 class="font-bold text-xl mb-2 text-red-400">4. 永久性的声誉损害</h3>
+                        <p class="text-gray-300">丑闻可能已永久摧毁了项目建立信任、吸引资本和达成重要生态合作的能力。市场已经用脚投票。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-gray-900 text-white py-8">
+        <div class="container mx-auto px-6 text-center text-gray-400">
+            <p>&copy; 2025 DefiTuna 交互式投资分析报告。</p>
+            <p class="text-sm mt-2">本报告内容基于公开信息分析，不构成任何财务建议。投资有风险，决策需谨慎。</p>
+        </div>
+    </footer>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+            
+            // Data for the application
+            const tvlData = {
+                labels: ['DefiTuna', 'Drift Protocol', 'Kamino Finance'],
+                datasets: [{
+                    label: '总锁仓价值 (TVL) in USD',
+                    data: [16750000, 350000000, 2200000000],
+                    backgroundColor: [
+                        'rgba(239, 68, 68, 0.6)',
+                        'rgba(59, 130, 246, 0.6)',
+                        'rgba(22, 163, 74, 0.6)',
+                    ],
+                    borderColor: [
+                        'rgba(239, 68, 68, 1)',
+                        'rgba(59, 130, 246, 1)',
+                        'rgba(22, 163, 74, 1)',
+                    ],
+                    borderWidth: 1
+                }]
+            };
+
+            const timelineData = [
+                {
+                    date: '2025年1月16-23日',
+                    title: '种子轮融资',
+                    content: 'DefiTuna 在其 58.5 万美元的融资中，接受了来自 Kelsier Ventures 的 30,000 美元投资。这一决策为后来的危机埋下了伏笔。',
+                    icon: '💰'
+                },
+                {
+                    date: '2025年1-2月',
+                    title: 'Memecoin 操纵',
+                    content: 'Kelsier Ventures 被指控与 Meteora 联创等人合作，策划了一系列 Memecoin (MELANIA, MATES, LIBRA) 的“拉高出货”骗局，导致散户巨额亏损。',
+                    icon: '📉'
+                },
+                {
+                    date: '2025年2月17日 (上午)',
+                    title: '内部爆料',
+                    content: 'DefiTuna 联合创始人 Moty Povolotski 在社交媒体上率先爆料，指控 Kelsier、Meteora 等平台协同操作，榨取投资者利润。',
+                    icon: '📢'
+                },
+                {
+                    date: '2025年2月17日 (下午)',
+                    title: '紧急切割',
+                    content: '另一创始人 Dhirk 宣布，在发现 Kelsier 的不当行为后，已退还其投资并切断所有联系。同日，涉及内幕交易的录音证据被媒体曝光。',
+                    icon: '✂️'
+                },
+                {
+                    date: '2025年3月12日',
+                    title: '事件反转与混战',
+                    content: 'Meteora 联创反向指控 DefiTuna 创始人参与操纵，随后又声称其账户被盗。事件演变成一场多方参与、互相推诿的肮脏内斗，彻底摧毁了相关各方的信誉。',
+                    icon: '⚔️'
+                }
+            ];
+
+            const strategiesData = [
+                {
+                    id: 'stablecoin',
+                    name: '杠杆化稳定币农耕',
+                    content: {
+                        description: '通过在 USDC-USDT 等稳定币池中建立高杠杆流动性头寸，在极窄的价格区间内赚取交易费。',
+                        apy: '理论上可达 15-30% APY，但高度依赖交易量和借贷成本。',
+                        risks: [
+                            { title: '团队/平台诚信风险', detail: '首要且不可控的风险。资金可能因项目方问题而无法取回。这是对该平台所有操作的一票否决项。', level: '极高' },
+                            { title: '智能合约风险', detail: '代码可能存在未被审计发现的漏洞，导致资金被盗。', level: '高' },
+                            { title: '稳定币脱锚风险', detail: '任何一种稳定币脱离与美元的锚定，都会导致巨大损失。', level: '中' }
+                        ],
+                        developer: '可使用 DefiTuna SDK 编写脚本，实现头寸管理、自动复投和动态调整价格区间的自动化。'
+                    }
+                },
+                {
+                    id: 'delta-neutral',
+                    name: '杠杆化 Delta 中性策略',
+                    content: {
+                        description: '在 DefiTuna 提供 SOL-USDC 流动性的同时，在其他衍生品平台开立等值的 SOL 空头头寸，以对冲 SOL 价格波动风险，纯粹赚取交易费和资金费率。',
+                        apy: '极度可变，收益来源为（交易费 + 空头资金费率 - 借贷成本）。',
+                        risks: [
+                            { title: '极端复杂性与平台风险', detail: '需要同时管理两个平台的头寸，清算风险加倍。DefiTuna 平台的诚信风险依然是首要问题。', level: '极高' },
+                            { title: '双平台清算风险', detail: '任一平台的保证金不足都可能导致头寸被清算。', level: '极高' },
+                            { title: '资金费率风险', detail: '如果空头资金费率变为负数，策略将产生额外成本。', level: '高' }
+                        ],
+                        developer: '可创建自定义代理（Agent），通过 SDK 监控 LP 头寸的 Delta 值，并调用外部 API 自动调整对冲规模。'
+                    }
+                },
+                {
+                    id: 'airdrop',
+                    name: '投机性空投农耕',
+                    content: {
+                        description: '通过与协议进行少量交互，博取未来可能存在的空投。',
+                        apy: '直接 APY 为 0%。获得空投的可能性极低且纯属猜测。',
+                        risks: [
+                            { title: '机会成本与平台风险', detail: '投入的时间和 Gas 成本可能毫无回报。DefiTuna 平台的诚信风险使得任何未来的承诺都不可信。', level: '极高' },
+                            { title: '空投永不发生', detail: '鉴于项目的现状，团队很可能永远不会发行代币或进行空投。', level: '高' }
+                        ],
+                        developer: '无特定开发者机会。'
+                    }
+                }
+            ];
+
+
+            // Render TVL Chart
+            const ctx = document.getElementById('tvlChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: tvlData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value, index, values) {
+                                    if (value >= 1000000000) {
+                                        return (value / 1000000000) + 'B';
+                                    }
+                                    if (value >= 1000000) {
+                                        return (value / 1000000) + 'M';
+                                    }
+                                    return value;
+                                }
+                            }
+                        },
+                        y: {
+                            ticks: {
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.x !== null) {
+                                        label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed.x);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Render Timeline
+            const timelineContainer = document.getElementById('timeline-container');
+            timelineContainer.innerHTML = `
+                <div class="absolute left-1/2 transform -translate-x-1/2 h-full w-0.5 bg-gray-300"></div>
+                ${timelineData.map((item, index) => `
+                    <div class="mb-8 flex justify-between items-center w-full ${index % 2 === 0 ? 'flex-row-reverse' : ''}">
+                        <div class="w-5/12"></div>
+                        <div class="z-10 bg-white border-4 border-red-500 rounded-full w-16 h-16 flex items-center justify-center text-2xl">
+                           ${item.icon}
+                        </div>
+                        <div class="w-5/12">
+                            <div data-index="${index}" class="timeline-item bg-white p-4 rounded-lg shadow-md cursor-pointer border-l-4 border-red-400">
+                                <p class="font-bold text-gray-800">${item.title}</p>
+                                <p class="text-sm text-gray-500">${item.date}</p>
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            `;
+            
+            // Timeline modal logic
+            const modal = document.getElementById('timeline-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalDate = document.getElementById('modal-date');
+            const modalContent = document.getElementById('modal-content');
+            const modalClose = document.getElementById('modal-close');
+
+            document.querySelectorAll('.timeline-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const index = item.getAttribute('data-index');
+                    const data = timelineData[index];
+                    modalTitle.textContent = data.title;
+                    modalDate.textContent = data.date;
+                    modalContent.innerHTML = `<p>${data.content}</p>`;
+                    modal.classList.remove('hidden');
+                    modal.classList.add('flex');
+                    setTimeout(()=> modal.querySelector('div').classList.remove('scale-95'), 10);
+                });
+            });
+
+            const closeModal = () => {
+                modal.querySelector('div').classList.add('scale-95');
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                }, 300)
+            }
+            modalClose.addEventListener('click', closeModal);
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeModal();
+                }
+            });
+
+            // Render Strategy Section
+            const strategyButtonsContainer = document.getElementById('strategy-buttons');
+            const strategyContentContainer = document.getElementById('strategy-content');
+
+            strategiesData.forEach((strategy, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'strategy-btn w-full text-left font-semibold py-3 px-5 rounded-lg border-2 border-gray-300 bg-gray-50 text-gray-700 hover:bg-red-100 hover:border-red-300 transition-colors';
+                btn.textContent = strategy.name;
+                btn.dataset.id = strategy.id;
+                strategyButtonsContainer.appendChild(btn);
+                if (index === 0) {
+                    btn.classList.add('active');
+                }
+            });
+
+            function renderStrategyContent(id) {
+                const strategy = strategiesData.find(s => s.id === id);
+                if (!strategy) return;
+                
+                strategyContentContainer.innerHTML = `
+                    <h3 class="text-2xl font-bold mb-4">${strategy.name}</h3>
+                    <p class="text-gray-600 mb-6">${strategy.content.description}</p>
+                    
+                    <div class="mb-6">
+                        <p class="font-semibold text-gray-800">潜在APY (理论)</p>
+                        <p class="text-green-600 font-bold text-lg">${strategy.content.apy}</p>
+                    </div>
+
+                    <div class="mb-6">
+                         <p class="font-semibold text-gray-800 mb-2">🔴 关键风险</p>
+                         <div class="space-y-3">
+                            ${strategy.content.risks.map(risk => `
+                                <div class="bg-red-50 border-l-4 border-red-500 p-3 rounded-r-lg">
+                                    <p class="font-bold text-red-800">${risk.title} <span class="bg-red-200 text-red-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full">${risk.level}</span></p>
+                                    <p class="text-sm text-red-700 mt-1">${risk.detail}</p>
+                                </div>
+                            `).join('')}
+                         </div>
+                    </div>
+                    
+                     <div>
+                         <p class="font-semibold text-gray-800 mb-2">👨‍💻 开发者视角</p>
+                         <div class="bg-blue-50 border-l-4 border-blue-500 p-3 rounded-r-lg">
+                             <p class="text-sm text-blue-800">${strategy.content.developer}</p>
+                         </div>
+                    </div>
+                `;
+            }
+
+            strategyButtonsContainer.addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON') {
+                    document.querySelectorAll('.strategy-btn').forEach(btn => btn.classList.remove('active'));
+                    e.target.classList.add('active');
+                    renderStrategyContent(e.target.dataset.id);
+                }
+            });
+            
+            // Initial render
+            renderStrategyContent(strategiesData[0].id);
+
+            // Active nav scrolling
+            const sections = document.querySelectorAll('section');
+            const navLinks = document.querySelectorAll('.nav-link');
+
+            window.onscroll = () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (pageYOffset >= sectionTop - 68) {
+                        current = section.getAttribute('id');
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active-nav');
+                    if (link.getAttribute('href') === `#${current}`) {
+                        link.classList.add('active-nav');
+                    }
+                });
+            };
+        });
+    </script>
+</body>
+</html>

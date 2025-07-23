@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stream Protocol (STPL): 一个失败项目的剖析</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Sober Neutrals (Light Stone/Slate background, Dark Slate text, Deep Red for warnings/accents) -->
+    <!-- Application Structure Plan: The SPA is structured as a narrative post-mortem, guiding the user from the project's initial promise to its ultimate failure and the lessons learned. A sticky top navigation allows users to jump between key analysis sections: 1) Overview (Promise vs. Reality), 2) Financial Collapse (with charts), 3) Interactive Red Flags (clickable cards revealing details and a comparison chart), 4) Timeline of Abandonment (visual timeline), and 5) Lessons Learned (actionable checklist). This structure was chosen to transform a static report into an engaging, educational case study, prioritizing the "story" of the failure for maximum investor impact and learning, rather than just replicating the report's linear format. -->
+    <!-- Visualization & Content Choices:
+    - Report Info: Final "Strongly Not Recommended" rating & zeroed-out stats. -> Goal: Inform/Warn. -> Viz: High-prominence stat cards and badge. -> Justification: Delivers the most critical conclusion immediately. -> Library: HTML/Tailwind.
+    - Report Info: Price collapse from ATH. -> Goal: Show Change. -> Viz: Line Chart. -> Justification: Visually powerful representation of total value destruction. -> Library: Chart.js (Canvas).
+    - Report Info: Conflicting circulating supply data. -> Goal: Compare/Highlight Deception. -> Viz: Bar Chart. -> Justification: Clearly illustrates the massive, untrustworthy data discrepancy. -> Library: Chart.js (Canvas).
+    - Report Info: Various project failures (team, community, branding). -> Goal: Organize/Explain. -> Viz: Interactive clickable cards. -> Justification: Breaks down complex analysis into digestible chunks, encouraging user engagement. -> Library: HTML/Tailwind/JS.
+    - Report Info: Timeline of project's demise. -> Goal: Show Change over time. -> Viz: Vertical timeline diagram. -> Justification: More engaging and narrative-driven than a simple table. -> Library: HTML/Tailwind.
+    - Report Info: Key takeaways for investors. -> Goal: Inform/Educate. -> Viz: Styled checklist. -> Justification: Provides clear, actionable advice as the final output. -> Library: HTML/Tailwind.
+     -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { font-family: 'Noto Sans SC', sans-serif; }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 40vh;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .nav-link {
+            transition: color 0.3s, border-bottom-color 0.3s;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0">
+                    <h1 class="text-xl font-bold text-slate-900">STPL案例研究</h1>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#overview" class="nav-link text-slate-600 hover:text-red-700 px-3 py-2 rounded-md text-sm font-medium border-b-2 border-transparent hover:border-red-600">概览</a>
+                        <a href="#financials" class="nav-link text-slate-600 hover:text-red-700 px-3 py-2 rounded-md text-sm font-medium border-b-2 border-transparent hover:border-red-600">财务崩溃</a>
+                        <a href="#red-flags" class="nav-link text-slate-600 hover:text-red-700 px-3 py-2 rounded-md text-sm font-medium border-b-2 border-transparent hover:border-red-600">危险信号</a>
+                        <a href="#timeline" class="nav-link text-slate-600 hover:text-red-700 px-3 py-2 rounded-md text-sm font-medium border-b-2 border-transparent hover:border-red-600">消亡时间线</a>
+                        <a href="#lessons" class="nav-link text-slate-600 hover:text-red-700 px-3 py-2 rounded-md text-sm font-medium border-b-2 border-transparent hover:border-red-600">投资者启示</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+
+        <!-- 1. Overview Section -->
+        <section id="overview" class="text-center mb-16 scroll-mt-24">
+            <span class="inline-block bg-red-200 text-red-800 text-sm font-semibold px-4 py-1 rounded-full mb-4">案例剖析</span>
+            <h2 class="text-4xl md:text-5xl font-extrabold text-slate-900 mb-4">Stream Protocol (STPL)</h2>
+            <p class="text-xl text-slate-600 max-w-3xl mx-auto mb-8">一个关于DeFi项目失败的警示故事：从宏大愿景到价值归零。</p>
+            <div class="bg-red-800 text-white font-bold text-lg md:text-xl py-4 px-6 rounded-xl inline-block shadow-lg">
+                最终评级：强烈不建议 (STRONGLY NOT RECOMMENDED)
+            </div>
+        </section>
+
+        <!-- Key Metrics -->
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+            <div class="bg-white p-6 rounded-xl shadow-md text-center border-t-4 border-red-600">
+                <h3 class="text-sm font-semibold text-slate-500 uppercase">当前价格</h3>
+                <p class="text-4xl font-bold text-red-600 mt-2">$0.00</p>
+                <p class="text-xs text-slate-400 mt-1">价值已完全蒸发</p>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-md text-center border-t-4 border-slate-400">
+                <h3 class="text-sm font-semibold text-slate-500 uppercase">24小时交易量</h3>
+                <p class="text-4xl font-bold text-slate-700 mt-2">$0.00</p>
+                 <p class="text-xs text-slate-400 mt-1">流动性完全枯竭</p>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-md text-center border-t-4 border-slate-400">
+                <h3 class="text-sm font-semibold text-slate-500 uppercase">项目状态</h3>
+                <p class="text-4xl font-bold text-slate-700 mt-2">已遗弃</p>
+                 <p class="text-xs text-slate-400 mt-1">官网及应用均已下线</p>
+            </div>
+        </section>
+
+        <div class="bg-white p-8 rounded-xl shadow-lg mb-16">
+            <h3 class="text-2xl font-bold text-slate-900 mb-4">承诺 vs. 现实</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <h4 class="font-semibold text-lg text-green-700 mb-2">最初的愿景</h4>
+                    <p class="text-slate-600">Stream Protocol宣称要打造一个基于区块链的OTT平台，通过智能合约实现对创作者透明、实时的利润分配，解决传统内容产业的痛点。</p>
+                </div>
+                <div>
+                    <h4 class="font-semibold text-lg text-red-700 mb-2">残酷的现实</h4>
+                    <p class="text-slate-600">项目已被完全遗弃。官方网站和DeFi应用均无法访问，社交媒体一片沉寂，代币已无任何价值，成为了一个典型的“数字鬼城”。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Financial Collapse Section -->
+        <section id="financials" class="py-16 bg-slate-100 rounded-2xl scroll-mt-24">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-slate-900">财务崩溃：一次价值归零的研究</h2>
+                <p class="text-lg text-slate-600 mt-2 max-w-2xl mx-auto">所有关键财务指标均证实了项目的彻底失败。</p>
+            </div>
+            <div class="chart-container mb-12">
+                <canvas id="priceCollapseChart"></canvas>
+            </div>
+            <div class="max-w-4xl mx-auto px-4">
+                 <h3 class="text-xl font-bold text-center text-slate-800 mb-4">市场数据事后剖析</h3>
+                <div class="overflow-x-auto bg-white rounded-lg shadow">
+                    <table class="min-w-full text-sm text-left text-slate-500">
+                        <thead class="text-xs text-slate-700 uppercase bg-slate-200">
+                            <tr>
+                                <th scope="col" class="px-6 py-3">指标</th>
+                                <th scope="col" class="px-6 py-3">峰值 (约2021年)</th>
+                                <th scope="col" class="px-6 py-3">现状</th>
+                                <th scope="col" class="px-6 py-3 text-red-600">变化幅度</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="bg-white border-b">
+                                <th scope="row" class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">价格 (USD)</th>
+                                <td class="px-6 py-4">~$0.3139</td>
+                                <td class="px-6 py-4">$0.00</td>
+                                <td class="px-6 py-4 text-red-600 font-semibold">~-100%</td>
+                            </tr>
+                            <tr class="bg-white border-b">
+                               <th scope="row" class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">24小时交易量 (USD)</th>
+                                <td class="px-6 py-4">非零</td>
+                                <td class="px-6 py-4">$0.00</td>
+                                <td class="px-6 py-4 text-red-600 font-semibold">~-100%</td>
+                            </tr>
+                            <tr class="bg-white">
+                                <th scope="row" class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">流动性</th>
+                                <td class="px-6 py-4">存在</td>
+                                <td class="px-6 py-4">枯竭</td>
+                                <td class="px-6 py-4 text-red-600 font-semibold">陷入流动性陷阱</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. Red Flags Section -->
+        <section id="red-flags" class="py-16 scroll-mt-24">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-slate-900">识别危险信号</h2>
+                <p class="text-lg text-slate-600 mt-2 max-w-2xl mx-auto">STPL项目充满了教科书式的危险信号。点击下方卡片查看详情。</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="redFlagsContainer">
+            </div>
+            <div id="redFlagModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 hidden items-center justify-center p-4">
+                <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto transform transition-all scale-95 opacity-0">
+                    <div class="sticky top-0 bg-white p-4 sm:p-6 border-b z-10 flex justify-between items-center">
+                        <h3 id="modalTitle" class="text-xl sm:text-2xl font-bold text-slate-900"></h3>
+                        <button id="closeModal" class="text-slate-500 hover:text-red-600 transition-colors">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+                    <div id="modalContent" class="p-6 sm:p-8"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. Timeline Section -->
+        <section id="timeline" class="py-16 bg-slate-100 rounded-2xl scroll-mt-24">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-slate-900">消亡时间线</h2>
+                <p class="text-lg text-slate-600 mt-2">项目并非一夜之间崩溃，其衰败过程有迹可循。</p>
+            </div>
+            <div class="relative max-w-2xl mx-auto">
+                <div class="absolute left-1/2 -ml-px w-0.5 h-full bg-slate-300"></div>
+                <div id="timelineContainer"></div>
+            </div>
+        </section>
+
+        <!-- 5. Lessons Section -->
+        <section id="lessons" class="py-16 scroll-mt-24">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-slate-900">投资者启示录</h2>
+                <p class="text-lg text-slate-600 mt-2">从STPL的失败中，我们可以总结出未来投资时需要警惕的关键点。</p>
+            </div>
+            <div class="max-w-3xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-red-500">
+                    <h3 class="font-bold text-slate-800 mb-2">1. 审视品牌定位</h3>
+                    <p class="text-slate-600 text-sm">过于通用的项目名称（如“Stream Protocol”）是业余或短视的标志，会给项目发展带来不必要的营销和识别阻力。</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-red-500">
+                    <h3 class="font-bold text-slate-800 mb-2">2. 相信数据，而非炒作</h3>
+                    <p class="text-slate-600 text-sm">务必交叉验证基本数据（如流通供应量）。严重且无法解释的矛盾是重大危险信号。</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-red-500">
+                    <h3 class="font-bold text-slate-800 mb-2">3. 追踪沟通频率</h3>
+                    <p class="text-slate-600 text-sm">团队的长期沉默是项目被遗弃最可靠的指标之一。定期检查官方渠道的公告频率。</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-red-500">
+                    <h3 class="font-bold text-slate-800 mb-2">4. 审计仅是门槛，而非保障</h3>
+                    <p class="text-slate-600 text-sm">不能仅凭一份审计报告就认为项目安全。必须深入评估其经济模型、团队背景和市场风险。</p>
+                </div>
+                 <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-red-500">
+                    <h3 class="font-bold text-slate-800 mb-2">5. 流动性是生命线</h3>
+                    <p class="text-slate-600 text-sm">使用DeFiLlama等专业工具监控项目的流动性池。持续萎缩或已枯竭的流动性是项目濒临死亡的明确信号。</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-red-500">
+                    <h3 class="font-bold text-slate-800 mb-2">6. 评估团队背景</h3>
+                    <p class="text-slate-600 text-sm">相比匿名团队，一个愿意公开身份、有声誉可循的团队，其跑路或放弃项目的风险显著更低。</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-slate-800 text-slate-400 text-sm py-8">
+        <div class="container mx-auto px-4 text-center">
+            <p>本应用基于《Stream Protocol (STPL) 投资分析》报告创建，仅作为DeFi项目尽职调查的教育案例研究。</p>
+            <p class="mt-2">所有数据和分析均来自该报告，不构成任何新的投资建议。</p>
+        </div>
+    </footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    const appData = {
+        priceChart: {
+            labels: ['2021-04 (顶峰)', '2021-12', '2022-06', '2022-12', '2023-06', '2023-12', '现在'],
+            data: [0.3139, 0.05, 0.008, 0.001, 0.0001, 0.00001, 0]
+        },
+        supplyChart: {
+            labels: ['KuCoin报告', 'Coinbase报告', '项目方自报 (CMC)'],
+            data: [4470782, 285031863, 414631861]
+        },
+        redFlags: [
+            { 
+                icon: '❓',
+                title: '品牌定位混乱', 
+                content: `<p class="mb-4">项目名称 "Stream Protocol" 过于通用，与大量现有流媒体技术术语（如RTMP, HLS）和其他不相关的加密项目（如Streamr）产生严重混淆。</p><p>这不仅稀释了营销效果，也反映出团队可能缺乏长远的战略眼光和专业经验，是一个重要的非技术性风险点。</p>`
+            },
+            {
+                icon: '📉',
+                title: '关键数据严重矛盾',
+                content: `<p class="mb-4">流通供应量是计算市值和评估通胀压力的核心数据。STPL项目在此数据上出现了巨大且无法解释的差异，从KuCoin报告的约447万到项目方自报的约4.14亿不等。</p><p class="mb-6">这种基础数据的严重不一致，暴露了团队要么运营无能，要么可能存在故意误导投资者的意图。</p><div class="chart-container !h-64"><canvas id="supplyDiscrepancyChart"></canvas></div>`
+            },
+            { 
+                icon: '👤',
+                title: '匿名且缺乏背景的团队', 
+                content: `<p class="mb-4">尽管有资料显示CEO名为Sangsu Lee，但关于他本人及核心团队的背景、过往经历或专业能力的信息完全缺失。</p><p>在加密世界，一个公开、可验证身份的团队能提供一层重要的社会责任约束。匿名团队则大大降低了其作恶或放弃项目的成本，是一个重大风险因素。</p>`
+            },
+            { 
+                icon: '🛡️',
+                title: '安全审计的幻觉', 
+                content: `<p class="mb-4">项目曾由慢雾科技进行过安全审计，但这并不能豁免项目失败的风险。许多失败甚至欺诈项目都曾利用“通过审计”作为营销工具，营造虚假的安全感。</p><p>审计仅检查技术漏洞，不评估商业模式、团队执行力或经济模型。投资者必须将审计视为必要条件，而非充分条件。</p>`
+            },
+            { 
+                icon: '💬',
+                title: '社区沟通中断', 
+                content: `<p class="mb-4">项目官方社交渠道已沦为“数字墓地”。其Medium最后一篇文章发布于2022年10月4日，此后再无任何官方通讯。</p><p>开发团队的长期沉默是衡量项目健康状况最危险的信号之一，是项目被遗弃的无可辩驳的证据。</p>`
+            },
+            { 
+                icon: '💸',
+                title: '经济模型含糊不清', 
+                content: `<p>STPL代币的效用设计（支付、奖励、质押、治理）虽然听起来全面，但具体描述，特别是质押机制，却含糊不清且过于复杂。</p><p>例如“为每次拍卖参与支付35%的STPL代币给10,000名STPL用户作为基金会钱包存款”这类描述，缺乏透明度和清晰度，本身就是一个危险信号。</p>`
+            }
+        ],
+        timeline: [
+            { date: '2020年 11/12月', event: '公开上市', description: '在Uniswap、Flybit等交易所上市，项目正式进入公开市场。', side: 'left' },
+            { date: '2021年 4月', event: '价格达到顶峰', description: '代币价格达到约$0.3139的历史最高点，市场关注度达到顶峰。', side: 'right' },
+            { date: '2021年 7月', event: '积极营销', description: '团队参与LBank的AMA（问我任何事）活动，仍在进行市场推广。', side: 'left' },
+            { date: '2022年 10月 4日', event: '最后通讯', description: '发布最后一篇Medium文章。这是项目被遗弃前，最后一次已知的公开通讯。', side: 'right', highlight: true },
+            { date: '2023年 2月', event: '信息陈旧', description: '外部数据源（如币安信息页）的更新停止，信息开始变得陈旧。', side: 'left' },
+            { date: '2023-2024年', event: '基础设施崩溃', description: '官方网站 streamprotocol.io 和应用 app.streamprotocol.money 相继下线。', side: 'right' }
+        ]
+    };
+
+    function initPriceCollapseChart() {
+        const ctx = document.getElementById('priceCollapseChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: appData.priceChart.labels,
+                datasets: [{
+                    label: 'STPL 价格 (USD)',
+                    data: appData.priceChart.data,
+                    borderColor: 'rgb(220, 38, 38)',
+                    backgroundColor: 'rgba(220, 38, 38, 0.1)',
+                    fill: true,
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'STPL 价格崩溃走势图 (2021-至今)',
+                        font: { size: 16 },
+                        color: '#334155'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed.y);
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                             callback: function(value, index, values) {
+                                return '$' + value.toFixed(4);
+                             }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function initSupplyDiscrepancyChart() {
+        const ctx = document.getElementById('supplyDiscrepancyChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: appData.supplyChart.labels,
+                datasets: [{
+                    label: '报告的流通供应量',
+                    data: appData.supplyChart.data,
+                    backgroundColor: [
+                        'rgba(255, 159, 64, 0.5)',
+                        'rgba(75, 192, 192, 0.5)',
+                        'rgba(255, 99, 132, 0.5)'
+                    ],
+                    borderColor: [
+                        'rgb(255, 159, 64)',
+                        'rgb(75, 192, 192)',
+                        'rgb(255, 99, 132)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    title: {
+                        display: true,
+                        text: '不同来源的流通供应量对比',
+                        font: { size: 14 },
+                         color: '#334155'
+                    },
+                    tooltip: {
+                         callbacks: {
+                            label: function(context) {
+                                return ' ' + context.parsed.x.toLocaleString();
+                            }
+                        }
+                    }
+                },
+                 scales: {
+                    x: {
+                        ticks: {
+                            callback: function(value, index, values) {
+                                if (value >= 1000000) return (value / 1000000) + 'M';
+                                if (value >= 1000) return (value / 1000) + 'K';
+                                return value;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    const redFlagsContainer = document.getElementById('redFlagsContainer');
+    appData.redFlags.forEach(flag => {
+        const card = document.createElement('div');
+        card.className = 'bg-white p-6 rounded-xl shadow-md hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer border-t-2 border-slate-200';
+        card.innerHTML = `<div class="flex items-center space-x-4">
+                            <div class="text-3xl">${flag.icon}</div>
+                            <h3 class="font-bold text-lg text-slate-800">${flag.title}</h3>
+                         </div>`;
+        card.addEventListener('click', () => openModal(flag));
+        redFlagsContainer.appendChild(card);
+    });
+
+    const modal = document.getElementById('redFlagModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalContent = document.getElementById('modalContent');
+    const closeModalBtn = document.getElementById('closeModal');
+
+    function openModal(flag) {
+        modalTitle.textContent = flag.title;
+        modalContent.innerHTML = flag.content;
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        setTimeout(() => {
+            modal.querySelector('div').classList.remove('scale-95', 'opacity-0');
+        }, 10);
+        
+        if (flag.title === '关键数据严重矛盾') {
+            setTimeout(initSupplyDiscrepancyChart, 50);
+        }
+    }
+
+    function closeModal() {
+        modal.querySelector('div').classList.add('scale-95', 'opacity-0');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }, 300);
+    }
+    closeModalBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeModal();
+        }
+    });
+
+    const timelineContainer = document.getElementById('timelineContainer');
+    appData.timeline.forEach(item => {
+        const sideClass = item.side === 'left' ? 'md:items-start md:text-left' : 'md:items-end md:text-right';
+        const orderClass = item.side === 'left' ? '' : 'md:order-1';
+        const highlightClass = item.highlight ? 'bg-red-100 border-red-500' : 'bg-white';
+        
+        const timelineItem = document.createElement('div');
+        timelineItem.className = `relative flex flex-col items-center md:flex-row mb-8 ${sideClass}`;
+        
+        timelineItem.innerHTML = `
+            <div class="md:w-5/12 ${orderClass}">
+                <div class="p-4 rounded-lg shadow-md ${highlightClass} border-l-4 md:border-l-0 md:border-r-4 md:border-${item.side === 'left' ? 'r' : 'l'}-4 border-slate-300">
+                    <p class="text-sm font-semibold text-slate-500">${item.date}</p>
+                    <h4 class="text-lg font-bold text-slate-800 mb-1">${item.event}</h4>
+                    <p class="text-sm text-slate-600">${item.description}</p>
+                </div>
+            </div>
+            <div class="absolute left-1/2 -ml-2 w-4 h-4 bg-red-600 rounded-full top-1/2 -mt-2 border-2 border-white"></div>
+        `;
+        timelineContainer.appendChild(timelineItem);
+    });
+    
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            document.querySelector(this.getAttribute('href')).scrollIntoView({
+                behavior: 'smooth'
+            });
+        });
+    });
+
+    initPriceCollapseChart();
+});
+</script>
+
+</body>
+</html>

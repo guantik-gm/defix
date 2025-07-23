@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Chosen Palette: Analyst Neutral -->
+    <!-- Application Structure Plan: A single-page application with a persistent left-sidebar navigation for thematic exploration. The structure is designed to guide the user from a high-level summary to detailed analysis. 1. **Overview**: Presents the final 'Neutral' rating and the core investment thesis upfront. 2. **Key Metrics**: A dashboard view of critical on-chain data with visualizations. 3. **Pros vs. Cons**: A direct, balanced comparison of the project's strengths against its weaknesses, emphasizing the critical security risk. 4. **Competitive Analysis**: An interactive table comparing Yala to its main competitor, Liquity. 5. **Investment Strategies**: A task-oriented, tabbed interface allowing users to explore different engagement methods based on risk and capital. This non-linear, thematic structure allows users to quickly grasp the most vital information (the verdict and its reasons) and then explore sections based on their interests, which is more effective for decision-making than a linear report. -->
+    <!-- Visualization & Content Choices: 1. **Key Metrics**: Goal: Inform. Method: KPI cards (HTML/Tailwind) for at-a-glance stats and a Donut Chart (Chart.js/Canvas) for TVL distribution. Interaction: Hover effects on cards. Justification: Quickly communicates the project's scale and composition. 2. **Pros vs. Cons**: Goal: Compare. Method: Two-column layout with Unicode icons (HTML/Tailwind). A strong visual warning for the security flaw. Justification: Highlights the central conflict of the report—high potential vs. severe risk. 3. **Competitive Analysis**: Goal: Compare. Method: An interactive HTML table. Interaction: Hover highlights on rows. Justification: Provides a structured, detailed comparison against a key benchmark. 4. **Investment Strategies**: Goal: Organize/Inform. Method: Tabbed interface (HTML/JS) with Unicode icons and color-coded risk levels. Justification: Breaks down complex strategies into digestible, task-oriented sections, empowering user choice. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <title>Yala 协议 | 交互式投资评估报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans SC', sans-serif; }
+        .chart-container { position: relative; width: 100%; max-width: 400px; margin-left: auto; margin-right: auto; height: 300px; max-height: 400px; }
+        @media (min-width: 768px) { .chart-container { height: 350px; } }
+        .nav-link.active { background-color: #e0f2fe; color: #0c4a6e; font-weight: 700; }
+        .tab.active { border-color: #0c4a6e; background-color: #f0f9ff; }
+        .content-section { display: none; }
+        .content-section.active { display: block; }
+        .strategy-tab-content { display: none; }
+        .strategy-tab-content.active { display: block; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <div class="flex flex-col md:flex-row min-h-screen">
+        <!-- Sidebar Navigation -->
+        <aside class="w-full md:w-64 bg-white border-b md:border-r border-slate-200 flex-shrink-0">
+            <div class="p-6">
+                <h1 class="text-2xl font-bold text-slate-900">Yala 报告</h1>
+                <p class="text-sm text-slate-500 mt-1">交互式评估</p>
+            </div>
+            <nav class="flex md:flex-col p-3 md:p-4 space-x-2 md:space-x-0 md:space-y-2">
+                <a href="#overview" class="nav-link flex items-center px-4 py-2 text-slate-700 hover:bg-slate-100 rounded-lg transition-colors duration-200">
+                    <span class="mr-3">⭐</span> 报告核心
+                </a>
+                <a href="#metrics" class="nav-link flex items-center px-4 py-2 text-slate-700 hover:bg-slate-100 rounded-lg transition-colors duration-200">
+                    <span class="mr-3">📊</span> 关键指标
+                </a>
+                <a href="#pros-cons" class="nav-link flex items-center px-4 py-2 text-slate-700 hover:bg-slate-100 rounded-lg transition-colors duration-200">
+                    <span class="mr-3">⚖️</span> 优势与风险
+                </a>
+                <a href="#competition" class="nav-link flex items-center px-4 py-2 text-slate-700 hover:bg-slate-100 rounded-lg transition-colors duration-200">
+                    <span class="mr-3">⚔️</span> 竞品分析
+                </a>
+                <a href="#strategies" class="nav-link flex items-center px-4 py-2 text-slate-700 hover:bg-slate-100 rounded-lg transition-colors duration-200">
+                    <span class="mr-3">💡</span> 投资策略
+                </a>
+            </nav>
+            <div class="p-4 mt-auto text-xs text-slate-400">
+                <p>免责声明：本报告不构成财务建议，仅供参考。所有投资均有风险。</p>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+            
+            <!-- Section: Overview -->
+            <section id="overview" class="content-section">
+                <div class="max-w-4xl mx-auto">
+                    <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
+                        <h2 class="text-3xl font-bold text-slate-900">报告核心：潜力与风险的脆弱平衡</h2>
+                        <p class="mt-4 text-slate-600">本报告旨在深入剖析新兴的比特币DeFi协议 Yala。其核心使命是通过原生稳定币$YU释放比特币网络中万亿级别的休眠流动性。Yala拥有顶级团队和投资机构背书，精准切入BTCFi热门赛道，但其智能合约中存在未经官方确认修复的“严重”安全漏洞，构成了投资决策中的核心矛盾。</p>
+                        
+                        <div class="mt-8 bg-sky-50 border-l-4 border-sky-500 p-6 rounded-r-lg">
+                            <h3 class="text-xl font-bold text-sky-900">最终投资评级：中立 (Neutral)</h3>
+                            <p class="mt-2 text-sky-800">Yala极高的上行潜力与同样极高的、未经确认的下行风险形成了一种脆弱的平衡。在团队就已知的严重安全漏洞提供详尽解释并发布第三方验证的修复报告前，任何形式的资金投入都伴随着不可接受的技术风险。建议投资者保持密切关注，但暂缓资本部署。</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Key Metrics -->
+            <section id="metrics" class="content-section">
+                <div class="max-w-5xl mx-auto">
+                    <h2 class="text-3xl font-bold text-slate-900 mb-2">链上关键指标</h2>
+                    <p class="text-slate-600 mb-8">以下是Yala协议在早期阶段展现出的核心链上数据，反映了其市场吸引力和财务健康状况。数据来源于DeFiLlama等行业平台。</p>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
+                            <h3 class="text-sm font-semibold text-slate-500">总锁仓价值 (TVL)</h3>
+                            <p class="text-3xl font-bold text-slate-900 mt-2">$1.38亿</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
+                            <h3 class="text-sm font-semibold text-slate-500">年化总收入</h3>
+                            <p class="text-3xl font-bold text-slate-900 mt-2">$89.2万</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
+                            <h3 class="text-sm font-semibold text-slate-500">稳定币流通量 ($YU)</h3>
+                            <p class="text-3xl font-bold text-slate-900 mt-2">$1663万</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
+                            <h3 class="text-sm font-semibold text-slate-500">月度活跃开发者</h3>
+                            <p class="text-3xl font-bold text-slate-900 mt-2">21人</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                         <h3 class="text-xl font-bold text-center text-slate-900 mb-4">TVL 分布</h3>
+                         <div class="chart-container">
+                             <canvas id="tvlDistributionChart"></canvas>
+                         </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Pros & Cons -->
+            <section id="pros-cons" class="content-section">
+                 <div class="max-w-5xl mx-auto">
+                    <h2 class="text-3xl font-bold text-slate-900 mb-2">优势 (Pros) vs. 风险 (Cons)</h2>
+                    <p class="text-slate-600 mb-8">任何投资决策都需要平衡潜在回报与固有风险。Yala项目在这一方面表现得尤为极端，其显著优势与致命风险并存。</p>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <!-- Pros Column -->
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                            <h3 class="text-2xl font-bold text-green-700 mb-4 flex items-center">
+                                <span class="text-3xl mr-3">👍</span>
+                                核心优势
+                            </h3>
+                            <ul class="space-y-4">
+                                <li class="flex items-start">
+                                    <span class="text-green-500 mr-3 mt-1">✔</span>
+                                    <div>
+                                        <h4 class="font-bold text-slate-800">精英团队与顶级VC</h4>
+                                        <p class="text-slate-600 text-sm">创始团队成员来自币安、Circle等巨头，获Polychain领投的800万美元融资，背景雄厚。</p>
+                                    </div>
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="text-green-500 mr-3 mt-1">✔</span>
+                                    <div>
+                                        <h4 class="font-bold text-slate-800">精准的赛道定位</h4>
+                                        <p class="text-slate-600 text-sm">完美契合比特币DeFi（BTCFi）热门叙事，市场想象空间巨大。</p>
+                                    </div>
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="text-green-500 mr-3 mt-1">✔</span>
+                                    <div>
+                                        <h4 class="font-bold text-slate-800">创新的风险管理</h4>
+                                        <p class="text-slate-600 text-sm">引入Takaful保险模块和精简/专业双模式，满足不同用户需求，增强协议稳健性。</p>
+                                    </div>
+                                </li>
+                                 <li class="flex items-start">
+                                    <span class="text-green-500 mr-3 mt-1">✔</span>
+                                    <div>
+                                        <h4 class="font-bold text-slate-800">清晰的激励机制</h4>
+                                        <p class="text-slate-600 text-sm">通过空投积分活动吸引早期用户，旨在快速引导TVL增长，形成正向飞轮。</p>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <!-- Cons Column -->
+                        <div class="bg-red-50 p-6 rounded-2xl shadow-sm border border-red-200">
+                            <h3 class="text-2xl font-bold text-red-700 mb-4 flex items-center">
+                                <span class="text-3xl mr-3">👎</span>
+                                关键风险
+                            </h3>
+                            <ul class="space-y-4">
+                                <li class="flex items-start p-4 rounded-lg bg-white border-2 border-red-500 ring-4 ring-red-500/20">
+                                    <span class="text-red-500 text-2xl mr-3 mt-1">🚨</span>
+                                    <div>
+                                        <h4 class="font-bold text-red-900">严重安全漏洞与透明度缺失</h4>
+                                        <p class="text-red-800 text-sm">CoinFabrik审计发现<strong class="font-extrabold">2项“严重”级别漏洞</strong>，可能导致资金被盗。团队至今未对此进行公开回应或确认修复，构成项目最大风险点。</p>
+                                    </div>
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="text-red-500 mr-3 mt-1">❗</span>
+                                    <div>
+                                        <h4 class="font-bold text-slate-800">激烈的市场竞争</h4>
+                                        <p class="text-slate-600 text-sm">BTCFi赛道日益拥挤，Yala需完美执行才能在与Liquity等成熟协议的竞争中胜出。</p>
+                                    </div>
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="text-red-500 mr-3 mt-1">❗</span>
+                                    <div>
+                                        <h4 class="font-bold text-slate-800">潜在的中心化风险</h4>
+                                        <p class="text-slate-600 text-sm">协议初期由基金会控制关键参数，且依赖中心化托管机构，存在单点故障风险。</p>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Competition -->
+            <section id="competition" class="content-section">
+                <div class="max-w-5xl mx-auto">
+                    <h2 class="text-3xl font-bold text-slate-900 mb-2">竞品分析：Yala vs. Liquity</h2>
+                    <p class="text-slate-600 mb-8">将Yala与CDP领域的标杆项目Liquity进行对比，可以清晰地看出两者在设计哲学和市场策略上的差异化选择。</p>
+                    
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-x-auto">
+                        <table class="w-full text-sm text-left text-slate-600">
+                            <thead class="text-xs text-slate-700 uppercase bg-slate-100">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3">特性</th>
+                                    <th scope="col" class="px-6 py-3">Yala 协议</th>
+                                    <th scope="col" class="px-6 py-3">Liquity 协议 (V1/V2)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="bg-white border-b hover:bg-slate-50">
+                                    <th scope="row" class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">主要抵押品</th>
+                                    <td class="px-6 py-4">比特币 (BTC)</td>
+                                    <td class="px-6 py-4">以太坊 (ETH) / LSTs</td>
+                                </tr>
+                                <tr class="bg-white border-b hover:bg-slate-50">
+                                    <th scope="row" class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">治理模型</th>
+                                    <td class="px-6 py-4">通过$YALA代币和DAO逐步去中心化</td>
+                                    <td class="px-6 py-4">V1完全免治理，V2有限治理</td>
+                                </tr>
+                                 <tr class="bg-white border-b hover:bg-slate-50">
+                                    <th scope="row" class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">跨链策略</th>
+                                    <td class="px-6 py-4">原生多链，主动扩展</td>
+                                    <td class="px-6 py-4">以太坊为中心，保守扩展</td>
+                                </tr>
+                                <tr class="bg-white border-b hover:bg-slate-50">
+                                    <th scope="row" class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">最低抵押率</th>
+                                    <td class="px-6 py-4">动态调整</td>
+                                    <td class="px-6 py-4">110% (V1)</td>
+                                </tr>
+                                <tr class="bg-white hover:bg-slate-50">
+                                    <th scope="row" class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">独特功能</th>
+                                    <td class="px-6 py-4">Takaful保险模块，双模式</td>
+                                    <td class="px-6 py-4">稳定性池，恢复模式</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                     <p class="mt-4 text-xs text-slate-500"><strong>分析师评论：</strong> Yala选择了更务实的商业化路径，通过牺牲部分去中心化纯粹性来换取灵活性和更广泛的用户吸引力；而Liquity则更坚持去中心化原教旨主义。两者代表了CDP模型的不同演进方向。</p>
+                </div>
+            </section>
+
+            <!-- Section: Strategies -->
+            <section id="strategies" class="content-section">
+                <div class="max-w-5xl mx-auto">
+                    <h2 class="text-3xl font-bold text-slate-900 mb-2">可行的投资与参与策略</h2>
+                    <p class="text-slate-600 mb-8">基于对Yala协议的全面分析，我们为不同风险偏好和技能水平的投资者整理了以下可操作的参与策略。请务必在了解所有风险（尤其是智能合约风险）后谨慎决策。</p>
+
+                    <!-- Tabs -->
+                    <div class="mb-4 border-b border-slate-200">
+                        <ul class="flex flex-wrap -mb-px text-sm font-medium text-center" id="strategyTabs">
+                            <li class="mr-2">
+                                <button class="tab inline-block p-4 border-b-2 rounded-t-lg" data-tab="strategy-airdrop">✈️ 空投耕作</button>
+                            </li>
+                            <li class="mr-2">
+                                <button class="tab inline-block p-4 border-b-2 rounded-t-lg" data-tab="strategy-yield">🚜 收益耕作</button>
+                            </li>
+                            <li class="mr-2">
+                                <button class="tab inline-block p-4 border-b-2 rounded-t-lg" data-tab="strategy-token">💰 代币购买</button>
+                            </li>
+                            <li>
+                                <button class="tab inline-block p-4 border-b-2 rounded-t-lg" data-tab="strategy-dev">👨‍💻 开发者参与</button>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Tab Content -->
+                    <div id="strategyTabContent" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                        <div id="strategy-airdrop" class="strategy-tab-content">
+                            <h3 class="text-xl font-bold text-slate-800">空投耕作策略</h3>
+                            <p class="text-slate-600 mt-2">参与官方空投活动，通过完成任务赚取“Berries”和“Ice Berries”积分，以期在未来兑换$YALA代币。</p>
+                            <div class="mt-4 space-y-3">
+                                <div class="p-4 rounded-lg bg-green-50 border border-green-200">
+                                    <h4 class="font-semibold text-green-800">低/零成本方式 (低风险)</h4>
+                                    <p class="text-sm text-green-700">完成关注Twitter、每日签到等社交任务。优点是风险极低，缺点是回报可能较少。</p>
+                                </div>
+                                <div class="p-4 rounded-lg bg-orange-50 border border-orange-200">
+                                    <h4 class="font-semibold text-orange-800">资本密集型方式 (高风险)</h4>
+                                    <p class="text-sm text-orange-700">投入BTC/USDC进行铸造$YU、提供流动性等链上操作。优点是预期回报高，缺点是需承担<strong class="font-bold">严重智能合约风险</strong>和清算风险。</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="strategy-yield" class="strategy-tab-content">
+                            <h3 class="text-xl font-bold text-slate-800">收益耕作策略</h3>
+                            <p class="text-slate-600 mt-2">利用协议功能获取DeFi收益，如稳定币挖矿或更复杂的杠杆策略。</p>
+                             <div class="mt-4 space-y-3">
+                                <div class="p-4 rounded-lg bg-blue-50 border border-blue-200">
+                                    <h4 class="font-semibold text-blue-800">稳定币收益耕作 (中风险)</h4>
+                                    <p class="text-sm text-blue-700">铸造或购买$YU存入稳定性池，赚取清算利润和协议奖励。风险相对较低，但仍受智能合约和$YU脱锚风险影响。</p>
+                                </div>
+                                <div class="p-4 rounded-lg bg-red-50 border border-red-200">
+                                    <h4 class="font-semibold text-red-800">专业模式杠杆质押 (极高风险)</h4>
+                                    <p class="text-sm text-red-700">使用专业模式将抵押品进行再质押，获取多重收益。潜在收益率最高，但风险也是指数级叠加，操作复杂。</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="strategy-token" class="strategy-tab-content">
+                            <h3 class="text-xl font-bold text-slate-800">代币购买策略 (TGE后)</h3>
+                            <p class="text-slate-600 mt-2">待$YALA代币生成事件（TGE）后，在二级市场直接购买，以博取协议长期增长带来的价格升值。</p>
+                             <div class="mt-4 space-y-3">
+                                <div class="p-4 rounded-lg bg-purple-50 border border-purple-200">
+                                     <h4 class="font-semibold text-purple-800">直接投资 (高风险)</h4>
+                                    <p class="text-sm text-purple-700">优点是操作简单，直接分享协议成功。缺点是需承担市场波动风险，且早期估值可能偏高。</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="strategy-dev" class="strategy-tab-content">
+                            <h3 class="text-xl font-bold text-slate-800">开发者生态参与</h3>
+                            <p class="text-slate-600 mt-2">对于具备技术背景的投资者，可以超越单纯投资，为Yala生态系统贡献价值。</p>
+                            <div class="mt-4 space-y-3">
+                                <div class="p-4 rounded-lg bg-gray-100 border border-gray-200">
+                                     <h4 class="font-semibold text-gray-800">构建自动化工具 (中风险)</h4>
+                                    <p class="text-sm text-gray-700">利用官方SDK构建自动风险管理、收益聚合或套利机器人。可能获得官方Grant，但技术门槛高，回报不确定。</p>
+                                </div>
+                                 <div class="p-4 rounded-lg bg-gray-100 border border-gray-200">
+                                     <h4 class="font-semibold text-gray-800">生态系统集成 (中风险)</h4>
+                                    <p class="text-sm text-gray-700">将$YU或yBTC集成到自己的新dApp中。主动建设生态是获得早期认可和潜在丰厚回报的有效途径。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // --- Data Store ---
+    const appData = {
+        tvl: {
+            bitcoin: 105.17,
+            ethereum: 32.78,
+        }
+    };
+
+    // --- Chart.js Initialization ---
+    const tvlCtx = document.getElementById('tvlDistributionChart');
+    if (tvlCtx) {
+        new Chart(tvlCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['比特币网络', '以太坊网络'],
+                datasets: [{
+                    label: 'TVL 分布 (百万美元)',
+                    data: [appData.tvl.bitcoin, appData.tvl.ethereum],
+                    backgroundColor: [
+                        '#f97316', // Orange for Bitcoin
+                        '#60a5fa'  // Blue for Ethereum
+                    ],
+                    borderColor: '#ffffff',
+                    borderWidth: 4,
+                    hoverOffset: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                             font: {
+                                size: 14,
+                                family: "'Noto Sans SC', sans-serif"
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed !== null) {
+                                    label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed * 1000000);
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                cutout: '60%'
+            }
+        });
+    }
+
+    // --- Navigation Logic ---
+    const navLinks = document.querySelectorAll('.nav-link');
+    const contentSections = document.querySelectorAll('.content-section');
+
+    function updateContent(hash) {
+        const targetId = hash ? hash.substring(1) : 'overview';
+        
+        contentSections.forEach(section => {
+            section.classList.remove('active');
+            if (section.id === targetId) {
+                section.classList.add('active');
+            }
+        });
+
+        navLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === `#${targetId}`) {
+                link.classList.add('active');
+            }
+        });
+    }
+    
+    navLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetHash = this.getAttribute('href');
+            history.pushState(null, null, targetHash);
+            updateContent(targetHash);
+        });
+    });
+    
+    // Handle browser back/forward
+    window.addEventListener('popstate', function() {
+        updateContent(window.location.hash);
+    });
+
+    // Initial load
+    updateContent(window.location.hash || '#overview');
+
+
+    // --- Strategy Tabs Logic ---
+    const strategyTabs = document.querySelectorAll('.tab');
+    const strategyTabContents = document.querySelectorAll('.strategy-tab-content');
+
+    function updateStrategyTab(targetId) {
+         strategyTabContents.forEach(content => {
+            content.classList.remove('active');
+            if (content.id === targetId) {
+                content.classList.add('active');
+            }
+        });
+
+        strategyTabs.forEach(tab => {
+            tab.classList.remove('active');
+            if (tab.dataset.tab === targetId) {
+                tab.classList.add('active');
+            }
+        });
+    }
+
+    strategyTabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const targetId = this.dataset.tab;
+            updateStrategyTab(targetId);
+        });
+    });
+
+    // Activate the first tab by default
+    updateStrategyTab('strategy-airdrop');
+
+});
+</script>
+
+</body>
+</html>

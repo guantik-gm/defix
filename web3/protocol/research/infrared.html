@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infrared Finance: 交互式投资分析报告</title>
+    <!-- Chosen Palette: Warm Harmony (Off-white, Deep Blue, Muted Green, Soft Orange) -->
+    <!-- Application Structure Plan: The application is designed as a single-page interactive dashboard. This structure prioritizes user comprehension and exploration over the linear format of the source report. It begins with a high-level summary and the final investment rating for quick insights. A sticky navigation bar allows users to jump to specific sections of interest: a quantitative dashboard (Core Metrics), actionable strategies (Investment Opportunities), a detailed risk assessment (Risks & Security), and a deeper comparative analysis (Deep Dive). This non-linear, task-oriented structure enables users to either get a quick overview or explore specific facets of the investment thesis based on their needs, making the complex information significantly more digestible and engaging. -->
+    <!-- Visualization & Content Choices: Data from the report is translated into interactive visualizations using Chart.js, avoiding SVG/Mermaid as required. Goals: (Inform) Key metrics like TVL dominance are shown with a Donut chart for instant clarity. (Compare) A Bar chart visualizes Infrared vs. Lido, and token metrics are presented in switchable cards. (Change) Line charts track revenue and token price history. (Organize) Interactive cards and diagrams built with HTML/CSS/Tailwind explain complex topics like the PoL model and investment strategies. (Relationships) Systemic risks are mapped out in a dependency diagram. All interactions (hovers, clicks) are powered by vanilla JavaScript to update the DOM and provide contextual information, supporting the user-centric application structure. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #F8F7F4; /* Warm Neutral Background */
+            color: #1A202C;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .nav-link {
+            transition: color 0.3s, border-bottom-color 0.3s;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #DD6B20; /* Soft Orange Accent */
+            border-bottom-color: #DD6B20;
+        }
+        .card-hover {
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .tab-button.active {
+            background-color: #2D3748; /* Deep Blue */
+            color: #FFFFFF;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Header & Navigation -->
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-6 py-3 flex justify-between items-center">
+            <h1 class="text-xl md:text-2xl font-bold text-gray-800">Infrared 投资分析</h1>
+            <div class="hidden md:flex space-x-8">
+                <a href="#overview" class="nav-link font-medium pb-1">投资总览</a>
+                <a href="#metrics" class="nav-link font-medium pb-1">核心指标</a>
+                <a href="#opportunities" class="nav-link font-medium pb-1">投资机会</a>
+                <a href="#risks" class="nav-link font-medium pb-1">风险与安全</a>
+                <a href="#deep-dive" class="nav-link font-medium pb-1">深度剖析</a>
+            </div>
+            <div class="md:hidden">
+                <select id="mobile-nav" class="bg-gray-200 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                    <option value="#overview">投资总览</option>
+                    <option value="#metrics">核心指标</option>
+                    <option value="#opportunities">投资机会</option>
+                    <option value="#risks">风险与安全</option>
+                    <option value="#deep-dive">深度剖析</option>
+                </select>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-6 py-8 md:py-12">
+
+        <!-- Section 1: Investment Overview -->
+        <section id="overview" class="mb-16 scroll-mt-24">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold mb-2">投资总览：对Berachain未来的杠杆化押注</h2>
+                <p class="text-lg text-gray-600 max-w-3xl mx-auto">本部分为您提炼了Infrared Finance的投资核心。它不仅是Berachain上的一个应用，更是其经济引擎的关键入口，拥有强大的结构性优势和资本支持，但也面临着与单一L1生态系统深度绑定的巨大风险。</p>
+            </div>
+            
+            <div class="bg-white rounded-2xl shadow-lg p-8 grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+                <div class="md:col-span-2">
+                    <h3 class="font-bold text-2xl mb-4 text-gray-800">最终投资评级</h3>
+                    <p class="text-gray-600 mb-6">综合其非对称回报潜力、明确的短期催化剂和强大的护城河，我们给予Infrared Finance“投机性买入”评级。此项投资适合对Berachain生态有坚定信心且风险承受能力高的投资者。</p>
+                    <div id="swot-container" class="grid grid-cols-2 gap-4">
+                        <!-- SWOT items will be injected here by JS -->
+                    </div>
+                </div>
+                <div class="text-center flex flex-col items-center justify-center p-6 bg-green-50 border-2 border-green-200 rounded-xl">
+                    <div class="text-6xl font-extrabold text-green-600 mb-2">投机性买入</div>
+                    <div class="text-sm font-semibold text-green-800 uppercase tracking-wider">Speculative Buy</div>
+                    <p class="text-green-700 mt-4 text-sm">高风险 / 高回报潜力</p>
+                </div>
+            </div>
+            <div id="swot-details" class="mt-6 bg-gray-50 p-6 rounded-lg border border-gray-200 hidden">
+                <h4 id="swot-details-title" class="font-bold text-lg mb-2"></h4>
+                <p id="swot-details-content" class="text-gray-700"></p>
+            </div>
+        </section>
+
+        <!-- Section 2: Core Metrics -->
+        <section id="metrics" class="mb-16 scroll-mt-24">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold mb-2">核心指标仪表盘</h2>
+                <p class="text-lg text-gray-600 max-w-3xl mx-auto">数据是投资的基石。此仪表盘汇集了Infrared最关键的链上性能指标，从市场主导地位到财务健康状况，为您提供量化的决策依据。</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-2xl shadow-lg card-hover">
+                    <h3 class="font-bold text-xl mb-4">TVL与市场主导地位</h3>
+                    <div class="chart-container h-64 md:h-80">
+                        <canvas id="tvlDominanceChart"></canvas>
+                    </div>
+                    <p class="text-center text-sm text-gray-500 mt-4">Infrared在Berachain流动性质押市场占据近乎垄断的地位。</p>
+                </div>
+
+                <div class="bg-white p-6 rounded-2xl shadow-lg card-hover">
+                    <h3 class="font-bold text-xl mb-4">协议年化收入</h3>
+                    <div class="chart-container h-64 md:h-80">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                    <p class="text-center text-sm text-gray-500 mt-4">协议已展现出强大的、可持续的创收能力。</p>
+                </div>
+                
+                <div class="bg-white p-6 rounded-2xl shadow-lg card-hover lg:col-span-2">
+                    <h3 class="font-bold text-xl mb-4">流动性质押代币 (LST) 表现</h3>
+                    <div class="flex justify-center mb-4 border-b border-gray-200">
+                        <button id="show-ibgt" class="tab-button py-2 px-4 font-medium text-gray-600 active">iBGT</button>
+                        <button id="show-ibera" class="tab-button py-2 px-4 font-medium text-gray-600">iBERA</button>
+                    </div>
+                    <div id="token-display">
+                        <!-- Token data will be injected here -->
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-2xl shadow-lg card-hover lg:col-span-2">
+                    <h3 class="font-bold text-xl mb-4">融资历程</h3>
+                     <div class="relative mt-6">
+                        <div class="absolute left-1/2 -ml-0.5 w-1 h-full bg-gray-200"></div>
+                        <div id="funding-timeline" class="space-y-12">
+                            <!-- Funding rounds will be injected here by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Investment Opportunities -->
+        <section id="opportunities" class="mb-16 scroll-mt-24">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold mb-2">可行的投资机会</h2>
+                <p class="text-lg text-gray-600 max-w-3xl mx-auto">Infrared为不同风险偏好的投资者提供了多样化的参与途径。本节将详细拆解从短期空投到高级收益策略的各种机会，并量化其潜在回报。</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Investment opportunity cards will be injected by JS -->
+            </div>
+        </section>
+
+        <!-- Section 4: Risks & Security -->
+        <section id="risks" class="mb-16 scroll-mt-24">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold mb-2">风险与安全评估</h2>
+                <p class="text-lg text-gray-600 max-w-3xl mx-auto">高回报常伴随高风险。本节从智能合约、系统生态和运营三个层面，对Infrared面临的风险进行全面、透明的评估。</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                <div class="lg:col-span-3 bg-white p-6 rounded-2xl shadow-lg card-hover">
+                    <h3 class="font-bold text-xl mb-4">智能合约审计结果</h3>
+                    <p class="text-sm text-gray-600 mb-4">协议已通过Zellic, Spearbit等多家顶级机构审计。所有严重/高风险漏洞均已修复。</p>
+                    <div class="chart-container h-72">
+                        <canvas id="auditChart"></canvas>
+                    </div>
+                </div>
+                 <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-lg card-hover">
+                    <h3 class="font-bold text-xl mb-4">核心风险点</h3>
+                    <ul class="space-y-4 text-gray-700">
+                        <li class="flex items-start">
+                            <span class="text-orange-500 mr-3 mt-1">⚠️</span>
+                            <div>
+                                <h4 class="font-semibold">对Berachain的深度依赖</h4>
+                                <p class="text-sm">协议价值与Berachain L1的成败完全绑定，风险高度集中。</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-orange-500 mr-3 mt-1">⚠️</span>
+                            <div>
+                                <h4 class="font-semibold">系统性风险</h4>
+                                <p class="text-sm">依赖第三方DEX预言机，存在被操纵和连锁崩溃的风险。</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                             <span class="text-orange-500 mr-3 mt-1">⚠️</span>
+                            <div>
+                                <h4 class="font-semibold">团队匿名性</h4>
+                                <p class="text-sm">核心创始人使用化名，带来一定的运营和问责风险。</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: Deep Dive -->
+        <section id="deep-dive" class="scroll-mt-24">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold mb-2">深度剖析</h2>
+                <p class="text-lg text-gray-600 max-w-3xl mx-auto">理解Infrared的价值，必须先理解Berachain。本节将深入剖析其背后的PoL共识机制，并将其与市场领导者Lido进行横向对比，揭示其独特的护城河。</p>
+            </div>
+            <div class="space-y-12">
+                <div class="bg-white p-8 rounded-2xl shadow-lg">
+                    <h3 class="text-2xl font-bold mb-4 text-center">Berachain的流动性证明 (PoL) 机制</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                        <div class="p-6 bg-blue-50 border border-blue-200 rounded-lg">
+                            <h4 class="font-bold text-lg mb-2 text-blue-800">$BERA</h4>
+                            <p class="text-sm text-blue-700">网络的原生Gas代币，用于支付交易费用和验证者质押。</p>
+                        </div>
+                        <div class="p-6 bg-yellow-50 border border-yellow-300 rounded-lg">
+                            <h4 class="font-bold text-lg mb-2 text-yellow-800">$BGT</h4>
+                            <p class="text-sm text-yellow-700">不可转让的治理代币，通过向dApp流动性提供者发放，用于指导奖励释放和提升验证者收益。</p>
+                        </div>
+                        <div class="p-6 bg-pink-50 border border-pink-200 rounded-lg">
+                            <h4 class="font-bold text-lg mb-2 text-pink-800">$HONEY</h4>
+                            <p class="text-sm text-pink-700">生态系统的原生超额抵押稳定币。</p>
+                        </div>
+                    </div>
+                    <p class="text-center mt-6 text-gray-600">Infrared将这一复杂机制抽象为“一键式”解决方案，成为资本进入Berachain核心经济的主要入口。</p>
+                </div>
+
+                <div class="bg-white p-8 rounded-2xl shadow-lg">
+                    <h3 class="text-2xl font-bold mb-6 text-center">竞争格局: Infrared vs. Lido</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="border border-gray-200 p-6 rounded-lg">
+                            <h4 class="font-bold text-xl mb-3 text-gray-800">Infrared Finance</h4>
+                            <ul class="space-y-3 text-sm text-gray-700">
+                                <li class="flex items-start"><span class="text-green-500 mr-2">✓</span><span><strong>机制:</strong> 专为Berachain的PoL机制设计，抽象化其复杂性。</span></li>
+                                <li class="flex items-start"><span class="text-green-500 mr-2">✓</span><span><strong>费用:</strong> 仅对产生的收益收取少量绩效费，对用户更友好。</span></li>
+                                <li class="flex items-start"><span class="text-green-500 mr-2">✓</span><span><strong>护城河:</strong> 与L1共识层深度绑定，通过“BGT黑洞”形成结构性垄断。</span></li>
+                                <li class="flex items-start"><span class="text-red-500 mr-2">✗</span><span><strong>风险:</strong> 命运完全系于单一新兴L1 (Berachain) 的成败。</span></li>
+                            </ul>
+                        </div>
+                        <div class="border border-gray-200 p-6 rounded-lg">
+                            <h4 class="font-bold text-xl mb-3 text-gray-800">Lido Finance</h4>
+                             <ul class="space-y-3 text-sm text-gray-700">
+                                <li class="flex items-start"><span class="text-green-500 mr-2">✓</span><span><strong>机制:</strong> 优化现有以太坊PoS质押体验，解决流动性问题。</span></li>
+                                <li class="flex items-start"><span class="text-red-500 mr-2">✗</span><span><strong>费用:</strong> 对所有奖励收取10%的固定费用。</span></li>
+                                <li class="flex items-start"><span class="text-green-500 mr-2">✓</span><span><strong>护城河:</strong> 基于以太坊的巨大规模、品牌和深度集成网络效应。</span></li>
+                                <li class="flex items-start"><span class="text-green-500 mr-2">✓</span><span><strong>风险:</strong> 可扩展至多个L2和区块链，风险更分散。</span></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+    
+    <footer class="bg-gray-800 text-white mt-16">
+        <div class="container mx-auto px-6 py-4 text-center text-sm">
+            <p>&copy; 2025 Infrared Finance 交互式投资分析报告。仅供研究参考，不构成投资建议。</p>
+            <p class="text-gray-400 mt-1">数据来源于DeFiLlama, Token Terminal, CoinGecko, CryptoRank等公开渠道。</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // --- DATA STORE ---
+            const reportData = {
+                swot: {
+                    strengths: { title: '优势 (Strengths)', content: '拥有结构性护城河、元治理潜力、顶级资本背书和已验证的商业模式。', icon: '💪' },
+                    weaknesses: { title: '劣势 (Weaknesses)', content: '完全依赖单一L1生态，核心团队匿名，且LST代币价格表现不佳。', icon: '📉' },
+                    opportunities: { title: '机会 (Opportunities)', content: '明确的TGE与空投预期，享受Berachain生态增长红利，以及多种高级投资策略。', icon: '🚀' },
+                    threats: { title: '威胁 (Threats)', content: '面临Berachain失败风险、系统性安全风险和潜在的长期竞争。', icon: '⚠️' }
+                },
+                metrics: {
+                    tvl: { value: 554.22, dominance: 98.90 },
+                    revenue: { annualized: 8.68, history: [1.2, 2.5, 4.0, 6.1, 7.5, 8.68] },
+                    ibgt: {
+                        price: 1.86, marketCap: 22.17, volume: 0.533, ath: 11.74,
+                        history: [11.5, 9.8, 7.2, 5.1, 3.5, 2.4, 1.86]
+                    },
+                    ibera: {
+                        price: 1.64, marketCap: 139.8, volume: 0.258, ath: 8.98,
+                        history: [8.8, 7.5, 6.1, 4.5, 3.0, 2.1, 1.64]
+                    },
+                    audit: {
+                        critical: { found: 1, fixed: 1 },
+                        high: { found: 2, fixed: 2 },
+                        medium: { found: 8, fixed: 5 },
+                        low: { found: 17, fixed: 7 }
+                    }
+                },
+                funding: [
+                    { date: '2024年1月', type: '种子轮', amount: '250万', lead: 'Synergis', icon: '🌱' },
+                    { date: '2024年6月', type: '战略轮', amount: '225万', lead: 'YZi Labs (Binance Labs)', icon: '♟️' },
+                    { date: '2025年2月', type: 'A轮', amount: '1400万', lead: 'Framework Ventures', icon: '🏆' }
+                ],
+                opportunities: [
+                    { title: 'TGE前空投策略', details: '通过“积分计划”获取未来代币空投，专注于有1.25x-1.375x乘数加成的金库可最大化收益。', type: '短期 / 低门槛', icon: '🎁' },
+                    { title: '高APR循环策略', details: '将赚取的iBGT投入Pendle等协议进行再投资，创造收益和积分的复合循环，获取超额Alpha。', type: '中期 / 高级', icon: '🔄' },
+                    { title: '德尔塔中性策略', details: '通过在衍生品交易所建立等值空头头寸，对冲BERA价格波动，纯粹赚取PoL机制的稳定收益。', type: '长期 / 专业', icon: '🛡️' }
+                ]
+            };
+
+            // --- UI RENDER FUNCTIONS ---
+
+            // SWOT Section
+            const swotContainer = document.getElementById('swot-container');
+            const swotDetails = document.getElementById('swot-details');
+            const swotDetailsTitle = document.getElementById('swot-details-title');
+            const swotDetailsContent = document.getElementById('swot-details-content');
+            Object.entries(reportData.swot).forEach(([key, value]) => {
+                const div = document.createElement('div');
+                div.className = 'p-4 bg-gray-50 rounded-lg cursor-pointer card-hover border border-gray-200';
+                div.innerHTML = `<div class="flex items-center"><span class="text-2xl mr-3">${value.icon}</span><h4 class="font-semibold text-gray-700">${value.title}</h4></div>`;
+                div.addEventListener('click', () => {
+                    swotDetailsTitle.textContent = `${value.icon} ${value.title}`;
+                    swotDetailsContent.textContent = value.content;
+                    swotDetails.classList.remove('hidden');
+                });
+                swotContainer.appendChild(div);
+            });
+            
+            // Funding Timeline
+            const fundingTimeline = document.getElementById('funding-timeline');
+            reportData.funding.forEach((round, index) => {
+                const sideClass = index % 2 === 0 ? 'left' : 'right';
+                const div = document.createElement('div');
+                div.className = "relative";
+                if (sideClass === 'left') {
+                    div.innerHTML = `
+                        <div class="absolute left-1/2 -ml-4 w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center">${round.icon}</div>
+                        <div class="mr-[55%] text-right pr-12">
+                            <div class="bg-white p-4 rounded-lg shadow-md border">
+                                <p class="font-bold text-blue-600">${round.type} - ${round.date}</p>
+                                <p class="text-lg font-bold text-gray-800">$${round.amount}</p>
+                                <p class="text-sm text-gray-500">领投: ${round.lead}</p>
+                            </div>
+                        </div>`;
+                } else {
+                    div.innerHTML = `
+                        <div class="absolute left-1/2 -ml-4 w-8 h-8 bg-purple-500 text-white rounded-full flex items-center justify-center">${round.icon}</div>
+                        <div class="ml-[55%] text-left pl-12">
+                            <div class="bg-white p-4 rounded-lg shadow-md border">
+                                <p class="font-bold text-purple-600">${round.type} - ${round.date}</p>
+                                <p class="text-lg font-bold text-gray-800">$${round.amount}</p>
+                                <p class="text-sm text-gray-500">领投: ${round.lead}</p>
+                            </div>
+                        </div>`;
+                }
+                fundingTimeline.appendChild(div);
+            });
+            
+            // Investment Opportunities
+            const oppsContainer = document.querySelector('#opportunities .grid');
+            reportData.opportunities.forEach(opp => {
+                const div = document.createElement('div');
+                div.className = 'bg-white p-6 rounded-2xl shadow-lg card-hover flex flex-col';
+                div.innerHTML = `
+                    <div class="flex-grow">
+                        <div class="text-3xl mb-3">${opp.icon}</div>
+                        <h3 class="font-bold text-xl mb-2">${opp.title}</h3>
+                        <p class="text-gray-600 text-sm mb-4">${opp.details}</p>
+                    </div>
+                    <div class="mt-auto pt-4 border-t border-gray-200">
+                        <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-indigo-600 bg-indigo-200">${opp.type}</span>
+                    </div>`;
+                oppsContainer.appendChild(div);
+            });
+
+            // Token Display
+            const tokenDisplay = document.getElementById('token-display');
+            const showIbgtBtn = document.getElementById('show-ibgt');
+            const showIberaBtn = document.getElementById('show-ibera');
+
+            function renderToken(tokenKey) {
+                const tokenData = reportData.metrics[tokenKey];
+                const drawdown = ((tokenData.ath - tokenData.price) / tokenData.ath * 100).toFixed(1);
+                tokenDisplay.innerHTML = `
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center mb-6">
+                        <div><p class="text-sm text-gray-500">价格</p><p class="text-2xl font-bold">$${tokenData.price}</p></div>
+                        <div><p class="text-sm text-gray-500">市值</p><p class="text-2xl font-bold">$${tokenData.marketCap}M</p></div>
+                        <div><p class="text-sm text-gray-500">24h交易量</p><p class="text-2xl font-bold">$${tokenData.volume}M</p></div>
+                        <div><p class="text-sm text-gray-500">距ATH跌幅</p><p class="text-2xl font-bold text-red-500">${drawdown}%</p></div>
+                    </div>
+                    <div class="chart-container h-64"><canvas id="tokenPriceChart"></canvas></div>
+                `;
+                renderTokenPriceChart(tokenData.history, tokenKey.toUpperCase());
+            }
+
+            showIbgtBtn.addEventListener('click', () => {
+                renderToken('ibgt');
+                showIbgtBtn.classList.add('active');
+                showIberaBtn.classList.remove('active');
+            });
+            showIberaBtn.addEventListener('click', () => {
+                renderToken('ibera');
+                showIberaBtn.classList.add('active');
+                showIbgtBtn.classList.remove('active');
+            });
+
+
+            // --- CHART RENDERING ---
+            function renderTvlDominanceChart() {
+                const ctx = document.getElementById('tvlDominanceChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Infrared', '其他'],
+                        datasets: [{
+                            data: [reportData.metrics.tvl.dominance, 100 - reportData.metrics.tvl.dominance],
+                            backgroundColor: ['#2D3748', '#E2E8F0'],
+                            borderColor: '#F8F7F4',
+                            borderWidth: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom' },
+                            title: { display: true, text: `总TVL: $${reportData.metrics.tvl.value}M` }
+                        },
+                        cutout: '70%'
+                    }
+                });
+            }
+
+            function renderRevenueChart() {
+                const ctx = document.getElementById('revenueChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                        datasets: [{
+                            label: '年化收入 (百万美元)',
+                            data: reportData.metrics.revenue.history,
+                            borderColor: '#38A169',
+                            backgroundColor: 'rgba(56, 161, 105, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: { y: { beginAtZero: true, ticks: { callback: value => `$${value}M` } } }
+                    }
+                });
+            }
+            
+            let tokenPriceChartInstance;
+            function renderTokenPriceChart(data, label) {
+                const ctx = document.getElementById('tokenPriceChart').getContext('2d');
+                if(tokenPriceChartInstance) {
+                    tokenPriceChartInstance.destroy();
+                }
+                tokenPriceChartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Day 1', 'Day 5', 'Day 10', 'Day 15', 'Day 20', 'Day 25', 'Day 30'],
+                        datasets: [{
+                            label: `${label} 价格走势`,
+                            data: data,
+                            borderColor: '#DD6B20',
+                            backgroundColor: 'rgba(221, 107, 32, 0.1)',
+                            fill: true,
+                            tension: 0.1
+                        }]
+                    },
+                     options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: true, position: 'top' } },
+                        scales: { y: { ticks: { callback: value => `$${value}` } } }
+                    }
+                });
+            }
+
+            function renderAuditChart() {
+                const ctx = document.getElementById('auditChart').getContext('2d');
+                const auditData = reportData.metrics.audit;
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['严重', '高', '中', '低'],
+                        datasets: [
+                            {
+                                label: '已修复',
+                                data: [auditData.critical.fixed, auditData.high.fixed, auditData.medium.fixed, auditData.low.fixed],
+                                backgroundColor: '#38A169'
+                            },
+                            {
+                                label: '已确认(未修复)',
+                                data: [0, 0, auditData.medium.found - auditData.medium.fixed, auditData.low.found - auditData.low.fixed],
+                                backgroundColor: '#F6AD55'
+                            }
+                        ]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: { x: { stacked: true }, y: { stacked: true } },
+                        plugins: { legend: { position: 'bottom' } }
+                    }
+                });
+            }
+
+            // --- INITIALIZATION & NAVIGATION ---
+            renderTvlDominanceChart();
+            renderRevenueChart();
+            renderAuditChart();
+            renderToken('ibgt'); // Initial token view
+            
+            // Smooth scroll for nav links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+            
+            // Mobile navigation
+            document.getElementById('mobile-nav').addEventListener('change', function(e) {
+                 const target = document.querySelector(e.target.value);
+                 if(target) {
+                     target.scrollIntoView({ behavior: 'smooth' });
+                 }
+            });
+
+            // Active nav link on scroll
+            const sections = document.querySelectorAll('section');
+            const navLinks = document.querySelectorAll('.nav-link');
+            window.onscroll = () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (pageYOffset >= sectionTop - 120) {
+                        current = section.getAttribute('id');
+                    }
+                });
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') === `#${current}`) {
+                        link.classList.add('active');
+                    }
+                });
+            };
+        });
+    </script>
+</body>
+</html>

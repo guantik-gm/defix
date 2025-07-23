@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>f(x) Protocol 交互式投资分析面板</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutral Harmony -->
+    <!-- Application Structure Plan: 本应用采用以仪表盘为中心、多标签页导航的结构。用户首先看到一个包含核心指标和最终投资评级的“执行摘要”仪表盘，这能立刻满足其获取关键信息的需求。然后，用户可以通过顶部的导航栏自由探索“协议机制”、“投资机会”、“风险评估”、“数据洞察”和“开发者专区”等主题模块。这种非线性的结构，使用户可以根据自身兴趣（如交易、风控、开发）直接跳转到相关内容，极大地提升了信息获取的效率和体验，远优于简单地将报告从上到下罗列。关键交互包括标签页切换、图表数据悬浮提示、投资策略表格排序等。 -->
+    <!-- Visualization & Content Choices: 报告中的关键信息被转化为最适合其目标的交互式组件：1. **核心指标**: (目标: 告知) -> 使用HTML卡片式布局，实现快速概览。2. **协议机制**: (目标: 解释) -> 使用纯HTML/CSS构建的“波动率分离”图示，将抽象概念可视化。3. **财务数据**: (目标: 趋势与比较) -> 使用Chart.js绘制TVL趋势(折线图)、费用与收入对比(柱状图)，直观展示协议健康度。4. **代币经济学**: (目标: 比例) -> 使用Chart.js的甜甜圈图，清晰揭示流通盘与总量的巨大差异。5. **投资策略**: (目标: 比较与组织) -> 使用可排序的HTML表格，帮助用户根据风险/收益偏好进行决策。6. **风险**: (目标: 警示) -> 使用网格布局的风险卡片，并以颜色区分风险等级，实现信息的有效分层。所有图表均在响应式容器内，确保跨设备体验。 -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { font-family: 'Noto Sans SC', sans-serif; background-color: #FDFBF8; }
+        .chart-container { position: relative; width: 100%; height: 320px; max-height: 400px; }
+        @media (min-width: 768px) { .chart-container { height: 350px; } }
+        .nav-item { transition: all 0.2s ease-in-out; }
+        .nav-item-active { border-color: #14B8A6; color: #0F766E; background-color: #F0FDFA; }
+        .content-section { display: none; }
+        .content-section-active { display: block; }
+        .table-sortable th { cursor: pointer; }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
+        
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-slate-900">f(x) Protocol 深度投资分析</h1>
+            <p class="mt-2 text-lg text-slate-600">一个将波动率分解的创新型DeFi协议</p>
+        </header>
+
+        <nav id="main-nav" class="flex flex-wrap justify-center border-b-2 border-slate-200 mb-8 gap-2 md:gap-4">
+            <button data-target="dashboard" class="nav-item py-3 px-3 md:px-6 text-sm md:text-base font-semibold border-b-4 border-transparent">仪表盘摘要</button>
+            <button data-target="mechanism" class="nav-item py-3 px-3 md:px-6 text-sm md:text-base font-semibold border-b-4 border-transparent">协议机制</button>
+            <button data-target="opportunities" class="nav-item py-3 px-3 md:px-6 text-sm md:text-base font-semibold border-b-4 border-transparent">投资机会</button>
+            <button data-target="risks" class="nav-item py-3 px-3 md:px-6 text-sm md:text-base font-semibold border-b-4 border-transparent">风险评估</button>
+            <button data-target="data" class="nav-item py-3 px-3 md:px-6 text-sm md:text-base font-semibold border-b-4 border-transparent">数据洞察</button>
+            <button data-target="developer" class="nav-item py-3 px-3 md:px-6 text-sm md:text-base font-semibold border-b-4 border-transparent">开发者专区</button>
+        </nav>
+
+        <main id="main-content">
+
+            <!-- Section: Dashboard -->
+            <section id="dashboard" class="content-section">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mb-8">
+                    <h2 class="text-2xl font-bold text-slate-900 mb-4">执行摘要与投资评级</h2>
+                    <p class="text-slate-600 mb-6">本部分为您提供f(x) Protocol的核心价值、关键数据和最终投资结论的快速概览。旨在帮助您在最短时间内了解项目全貌，把握投资要点。</p>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-teal-50 border border-teal-200 p-5 rounded-2xl text-center">
+                        <h3 class="text-sm font-semibold text-teal-800 uppercase">最终投资评级</h3>
+                        <p class="text-3xl font-bold text-teal-600 my-2">建议</p>
+                        <p class="text-xs text-teal-700">高风险/高回报的早期标的</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 text-center">
+                        <h3 class="text-sm font-semibold text-slate-500 uppercase">总锁仓价值 (TVL)</h3>
+                        <p class="text-3xl font-bold text-slate-800 my-2">$1.43亿</p>
+                        <p class="text-xs text-slate-500">数据来源: DeFi Llama</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 text-center">
+                        <h3 class="text-sm font-semibold text-slate-500 uppercase">年化协议收入</h3>
+                        <p class="text-3xl font-bold text-slate-800 my-2">$67.8万</p>
+                         <p class="text-xs text-slate-500">支撑FXN价值的核心现金流</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 text-center">
+                        <h3 class="text-sm font-semibold text-slate-500 uppercase">市销率 (P/S)</h3>
+                        <p class="text-3xl font-bold text-slate-800 my-2">~5.9</p>
+                        <p class="text-xs text-slate-500">相对较低，有低估可能</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="bg-green-50 border border-green-200 p-6 rounded-2xl">
+                        <h3 class="text-xl font-bold text-green-800 mb-4">核心优势 (Strengths)</h3>
+                        <ul class="space-y-3 text-green-900">
+                            <li class="flex items-start"><span class="text-green-500 mr-3 mt-1">✓</span><span><strong>机制创新：</strong>独创的波动率分层模型，资本效率高。</span></li>
+                            <li class="flex items-start"><span class="text-green-500 mr-3 mt-1">✓</span><span><strong>强大团队：</strong>由信誉良好的AladdinDAO发起，核心成员背景雄厚。</span></li>
+                            <li class="flex items-start"><span class="text-green-500 mr-3 mt-1">✓</span><span><strong>清晰收入：</strong>明确的协议收入来源，经济模型可持续。</span></li>
+                            <li class="flex items-start"><span class="text-green-500 mr-3 mt-1">✓</span><span><strong>精巧代币：</strong>veFXN模型深度绑定价值，激励长期持有。</span></li>
+                        </ul>
+                    </div>
+                    <div class="bg-rose-50 border border-rose-200 p-6 rounded-2xl">
+                        <h3 class="text-xl font-bold text-rose-800 mb-4">主要风险 (Weaknesses)</h3>
+                        <ul class="space-y-3 text-rose-900">
+                            <li class="flex items-start"><span class="text-rose-500 mr-3 mt-1">✗</span><span><strong>技术风险：</strong>协议仍处早期，智能合约风险是最大隐患。</span></li>
+                            <li class="flex items-start"><span class="text-rose-500 mr-3 mt-1">✗</span><span><strong>代币抛压：</strong>FDV远高于流通市值，未来解锁抛压巨大。</span></li>
+                            <li class="flex items-start"><span class="text-rose-500 mr-3 mt-1">✗</span><span><strong>外部依赖：</strong>高度依赖stETH的稳定和预言机的安全。</span></li>
+                            <li class="flex items-start"><span class="text-rose-500 mr-3 mt-1">✗</span><span><strong>锚定风险：</strong>fxUSD的稳定性在极端行情下面临考验。</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Mechanism -->
+            <section id="mechanism" class="content-section">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mb-8">
+                    <h2 class="text-2xl font-bold text-slate-900 mb-4">核心机制：波动率的分解艺术</h2>
+                    <p class="text-slate-600 mb-6">f(x) Protocol的核心创新在于将一种资产（如stETH）的风险和收益特征进行分解，而不是像传统协议那样分离本金与利息。这创造出两种共生的代币，满足了市场上两种截然不同的需求：追求稳定和追求高杠杆。下面的图示清晰地解释了这一过程。</p>
+                </div>
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+                    <div class="text-center mb-8">
+                        <span class="inline-block bg-indigo-100 text-indigo-800 text-lg font-semibold px-4 py-2 rounded-full">stETH (基础抵押品)</span>
+                    </div>
+                    <div class="relative flex justify-center items-center mb-8">
+                        <div class="w-1/2 h-1 bg-slate-200"></div>
+                        <div class="absolute text-5xl text-indigo-500 bg-white px-4">↓</div>
+                        <div class="w-1/2 h-1 bg-slate-200"></div>
+                    </div>
+                    <p class="text-center text-slate-600 mb-8 -mt-4">协议将波动率进行分解与转移</p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-center">
+                        <div class="bg-blue-50 border-2 border-dashed border-blue-200 p-6 rounded-2xl">
+                            <h3 class="text-2xl font-bold text-blue-800 mb-2">f-Assets (如 fxUSD)</h3>
+                            <p class="text-blue-600 font-semibold mb-4">🛡️ 低波动率/稳定资产</p>
+                            <p class="text-slate-700">为风险规避者设计，吸收极小部分价格波动，旨在提供稳定价值。其供应量由寻求杠杆的用户驱动。</p>
+                        </div>
+                        <div class="bg-amber-50 border-2 border-dashed border-amber-300 p-6 rounded-2xl">
+                             <h3 class="text-2xl font-bold text-amber-800 mb-2">x-Assets (如 xPOSITION)</h3>
+                            <p class="text-amber-600 font-semibold mb-4">🚀 高波动率/杠杆资产</p>
+                            <p class="text-slate-700">为寻求高回报的交易者设计，吸收了f-Assets转移来的绝大部分波动，形成无资金费率的杠杆头寸。</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 text-center">
+                        <h4 class="font-bold text-lg text-slate-800">核心方程</h4>
+                        <p class="text-sm text-slate-500 mt-1 mb-3">系统通过以下恒等式确保价值守恒：</p>
+                        <code class="bg-slate-100 text-slate-800 p-3 rounded-lg text-sm md:text-base">n × s = n_f × f + n_x × x</code>
+                        <p class="mt-4 text-slate-600">这个自洽的闭环系统，确保了所有被创造出的资产总价值，时刻等于协议中锁定的抵押品总价值。</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Opportunities -->
+            <section id="opportunities" class="content-section">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mb-8">
+                    <h2 class="text-2xl font-bold text-slate-900 mb-4">投资机会与策略矩阵</h2>
+                    <p class="text-slate-600 mb-6">f(x) Protocol提供了多样化的投资途径，以满足不同风险偏好和专业水平的投资者。下表详细对比了主要的投资策略，您可以点击表头进行排序，以便找到最适合您的方案。</p>
+                </div>
+                <div class="w-full overflow-x-auto">
+                    <table id="investment-table" class="min-w-full bg-white rounded-2xl shadow-sm border border-slate-100">
+                        <thead class="bg-slate-50">
+                            <tr>
+                                <th class="p-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider table-sortable" data-sort="strategy">策略名称</th>
+                                <th class="p-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider table-sortable" data-sort="risk">风险等级</th>
+                                <th class="p-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider table-sortable" data-sort="apy">预期回报 (APY)</th>
+                                <th class="p-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">主要优势</th>
+                                <th class="p-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">目标用户</th>
+                            </tr>
+                        </thead>
+                        <tbody id="investment-table-body" class="divide-y divide-slate-200">
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Section: Risks -->
+            <section id="risks" class="content-section">
+                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mb-8">
+                    <h2 class="text-2xl font-bold text-slate-900 mb-4">综合风险评估</h2>
+                    <p class="text-slate-600 mb-6">投资f(x) Protocol需要充分认识其潜在风险。本部分将报告中提到的主要风险点进行归类和分级，帮助您进行全面的尽职调查。高回报的潜力背后，是同样不容忽视的技术与市场风险。</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                        <div class="flex items-center mb-3">
+                            <span class="inline-block h-3 w-3 rounded-full bg-red-500 mr-3"></span>
+                            <h3 class="text-lg font-bold text-slate-900">智能合约风险</h3>
+                        </div>
+                        <p class="text-slate-600 text-sm">协议复杂且仍被第三方评估为“未成熟”状态。尽管经过多轮审计，但隐藏漏洞的风险高于蓝筹项目，这是当前最大的风险点。</p>
+                    </div>
+                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                        <div class="flex items-center mb-3">
+                            <span class="inline-block h-3 w-3 rounded-full bg-red-500 mr-3"></span>
+                            <h3 class="text-lg font-bold text-slate-900">代币抛压风险</h3>
+                        </div>
+                        <p class="text-slate-600 text-sm">FXN的完全稀释估值(FDV)远超流通市值，未来数年内的大量代币解锁可能对币价造成持续的下行压力。</p>
+                    </div>
+                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                        <div class="flex items-center mb-3">
+                            <span class="inline-block h-3 w-3 rounded-full bg-orange-500 mr-3"></span>
+                            <h3 class="text-lg font-bold text-slate-900">外部依赖风险</h3>
+                        </div>
+                        <p class="text-slate-600 text-sm">协议价值根植于stETH的稳定，同时依赖Chainlink预言机。任一外部组件出现问题，都可能对协议造成系统性冲击。</p>
+                    </div>
+                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                        <div class="flex items-center mb-3">
+                            <span class="inline-block h-3 w-3 rounded-full bg-orange-500 mr-3"></span>
+                            <h3 class="text-lg font-bold text-slate-900">脱锚风险 (De-Peg)</h3>
+                        </div>
+                        <p class="text-slate-600 text-sm">fxUSD的稳定性依赖经济博弈。在极端市场恐慌下，稳定池流动性可能被耗尽，导致其价格脱离锚定。</p>
+                    </div>
+                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                        <div class="flex items-center mb-3">
+                            <span class="inline-block h-3 w-3 rounded-full bg-yellow-500 mr-3"></span>
+                            <h3 class="text-lg font-bold text-slate-900">治理中心化风险</h3>
+                        </div>
+                        <p class="text-slate-600 text-sm">项目早期，代币分配相对集中于团队和早期投资者，重大决策权在短期内仍高度中心化。</p>
+                    </div>
+                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                        <div class="flex items-center mb-3">
+                            <span class="inline-block h-3 w-3 rounded-full bg-yellow-500 mr-3"></span>
+                            <h3 class="text-lg font-bold text-slate-900">复杂性风险</h3>
+                        </div>
+                        <p class="text-slate-600 text-sm">协议机制极为复杂，增加了普通用户理解的难度，也可能隐藏未被发现的攻击向量。</p>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Section: Data -->
+            <section id="data" class="content-section">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mb-8">
+                    <h2 class="text-2xl font-bold text-slate-900 mb-4">链上数据洞察</h2>
+                    <p class="text-slate-600 mb-6">数据是衡量DeFi协议健康度的脉搏。本部分通过交互式图表，为您展示f(x) Protocol的关键链上指标，包括总锁仓价值(TVL)的增长、协议收入结构以及其治理代币FXN的供应分布情况。将鼠标悬停在图表上以查看详细数据。</p>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                        <h3 class="text-lg font-bold text-slate-900 mb-4">总锁仓价值 (TVL) 趋势</h3>
+                        <div class="chart-container">
+                            <canvas id="tvlChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                        <h3 class="text-lg font-bold text-slate-900 mb-4">年化费用 vs 协议收入</h3>
+                         <div class="chart-container">
+                            <canvas id="feesRevenueChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 lg:col-span-2">
+                         <h3 class="text-lg font-bold text-slate-900 mb-4 text-center">FXN 代币供应分布</h3>
+                         <div class="chart-container max-w-sm mx-auto h-72 md:h-80">
+                            <canvas id="tokenomicsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Section: Developer -->
+            <section id="developer" class="content-section">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mb-8">
+                    <h2 class="text-2xl font-bold text-slate-900 mb-4">开发者专区：一个关键的澄清</h2>
+                    <p class="text-slate-600 mb-6">在调研中，我们注意到关于“创建agent”的开发机会存在普遍混淆。本节旨在澄清这一问题，并为具备开发背景的投资者提供关于这个独立机会的准确信息。</p>
+                </div>
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+                    <h3 class="text-xl font-bold text-slate-900 mb-4">f(x) Protocol vs. Virtuals Protocol</h3>
+                    <p class="text-slate-700 mb-4">首先必须明确，投资者提及的“创建agent”功能，<strong class="text-red-600">并非f(x) Protocol的组成部分</strong>。该功能属于一个部署在Base链上的独立项目：<strong class="text-indigo-600">Virtuals Protocol</strong>。</p>
+                    <blockquote class="border-l-4 border-indigo-300 bg-indigo-50 text-indigo-800 p-4 rounded-r-lg my-6">
+                        <strong>混淆来源：</strong>在Virtuals平台上，存在一个名为“Ali for fx protocol”的社区AI代理项目，其代币简称为`FX`。这导致了市场误认为它与AladdinDAO的f(x) Protocol（代币为`FXN`）相关。它们是两个完全不同的项目。
+                    </blockquote>
+                    <h3 class="text-xl font-bold text-slate-900 mb-4 mt-8">机会分析：在Virtuals Protocol创建AI代理</h3>
+                    <p class="text-slate-700 mb-4">对于开发者而言，在Virtuals平台创建自己的AI代理是一个新兴的、充满想象力的机会，但这同样伴随着极高的早期风险。</p>
+                    <ul class="list-disc list-inside space-y-2 text-slate-700">
+                        <li><strong>平台概述：</strong>Virtuals是一个允许用户创建、代币化并货币化AI代理的去中心化平台。</li>
+                        <li><strong>创建流程：</strong>开发者可通过其官网应用，提供代理名称、形象和描述来发行一个与之一一绑定的ERC-20代币。</li>
+                        <li><strong>成本与收益：</strong>创建代理需支付平台原生代币`$VIRTUAL`作为初始流动性。创作者可获得部分代理代币，并通过未来用户与代理交互产生的费用来盈利。</li>
+                        <li><strong>当前风险：</strong>该生态仍处于极早期，大部分代理代币被视为高投机性的“AI meme币”，投资需极度谨慎。</li>
+                    </ul>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            
+            const investmentData = [
+                { strategy: 'xPOSITION 杠杆交易', risk: 3, risk_text: '高', apy: '杠杆倍数', apy_text: 'ETH涨幅的杠杆倍数', advantage: '无资金费率，清算风险极低', user: '激进型交易者 / ETH看多者', complexity: 3 },
+                { strategy: 'FXN 质押 (veFXN)', risk: 2, risk_text: '中', apy: '可变', apy_text: '可变 (协议收入)', advantage: '分享协议真实收入，获得治理权', user: '协议长期信仰者', complexity: 2 },
+                { strategy: 'FXN/WETH LP', risk: 2, risk_text: '中', apy: '可变', apy_text: '可变 (交易费+挖矿)', advantage: '可能获得高额挖矿奖励', user: '能承受无常损失的LP', complexity: 2 },
+                { strategy: 'fxUSD 稳定池挖矿', risk: 1, risk_text: '低', apy: '12%', apy_text: '~10-14%', advantage: '本金为稳定币，赚取真实收益', user: '稳健的收益农夫', complexity: 1 },
+                { strategy: 'Delta 中性对冲', risk: 4, risk_text: '专业', apy: '可变', apy_text: '可变 (套利收益)', advantage: '理论上可实现市场中性收益', user: '专业量化投资者', complexity: 4 },
+            ];
+
+            const nav = document.getElementById('main-nav');
+            const contentSections = document.querySelectorAll('.content-section');
+            const navItems = nav.querySelectorAll('button');
+
+            function setActiveTab(targetId) {
+                navItems.forEach(item => {
+                    if (item.dataset.target === targetId) {
+                        item.classList.add('nav-item-active');
+                    } else {
+                        item.classList.remove('nav-item-active');
+                    }
+                });
+
+                contentSections.forEach(section => {
+                    if (section.id === targetId) {
+                        section.classList.add('content-section-active');
+                    } else {
+                        section.classList.remove('content-section-active');
+                    }
+                });
+                window.scrollTo(0, 0);
+            }
+
+            nav.addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON') {
+                    setActiveTab(e.target.dataset.target);
+                }
+            });
+            
+            setActiveTab('dashboard');
+
+            let charts = {};
+            const chartColors = {
+                primary: 'rgba(20, 184, 172, 0.6)',
+                primaryBorder: 'rgba(15, 118, 110, 1)',
+                secondary: 'rgba(59, 130, 246, 0.6)',
+                secondaryBorder: 'rgba(37, 99, 235, 1)',
+                accent: 'rgba(245, 158, 11, 0.8)',
+                accentBorder: 'rgba(217, 119, 6, 1)',
+                grey: 'rgba(107, 114, 128, 0.3)',
+                text: '#374151'
+            };
+            
+            function createTVLChart() {
+                if (charts.tvl) charts.tvl.destroy();
+                const ctx = document.getElementById('tvlChart').getContext('2d');
+                charts.tvl = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ['1月', '2月', '3月', '4月', '5月', '6月', '7月'],
+                        datasets: [{
+                            label: 'TVL (百万美元)',
+                            data: [45, 60, 85, 110, 125, 130, 143],
+                            backgroundColor: chartColors.primary,
+                            borderColor: chartColors.primaryBorder,
+                            borderWidth: 2,
+                            pointBackgroundColor: chartColors.primaryBorder,
+                            tension: 0.3,
+                            fill: true,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: { y: { beginAtZero: true, ticks: { color: chartColors.text } }, x: { ticks: { color: chartColors.text } } },
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            }
+            
+            function createFeesRevenueChart() {
+                 if (charts.fees) charts.fees.destroy();
+                 const ctx = document.getElementById('feesRevenueChart').getContext('2d');
+                 charts.fees = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['年化估算'],
+                        datasets: [{
+                            label: '总费用 (百万美元)',
+                            data: [6.27],
+                            backgroundColor: chartColors.secondary,
+                            borderColor: chartColors.secondaryBorder,
+                            borderWidth: 1
+                        },
+                        {
+                            label: '协议收入 (百万美元)',
+                            data: [0.678],
+                            backgroundColor: chartColors.accent,
+                            borderColor: chartColors.accentBorder,
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: { y: { beginAtZero: true, ticks: { color: chartColors.text } }, x: { ticks: { color: chartColors.text } } },
+                        plugins: {
+                            legend: { position: 'top', labels: { color: chartColors.text } },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) { label += ': '; }
+                                        if (context.parsed.y !== null) { label += '$' + context.parsed.y + 'M'; }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            function createTokenomicsChart() {
+                if (charts.tokenomics) charts.tokenomics.destroy();
+                const ctx = document.getElementById('tokenomicsChart').getContext('2d');
+                const circulatingSupply = 4;
+                const totalLockedSupply = 70 - 4;
+
+                charts.tokenomics = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['流通市值 (百万美元)', '未解锁/锁定部分'],
+                        datasets: [{
+                            data: [circulatingSupply, totalLockedSupply],
+                            backgroundColor: [chartColors.accent, chartColors.grey],
+                            borderColor: ['#FDFBF8'],
+                            borderWidth: 4,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '60%',
+                        plugins: {
+                            legend: { position: 'bottom', labels: { color: chartColors.text } },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.label || '';
+                                        if (label) { label += ': '; }
+                                        if (context.parsed !== null) { label += '$' + context.parsed + 'M'; }
+                                        return " " + label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            createTVLChart();
+            createFeesRevenueChart();
+            createTokenomicsChart();
+
+            const tableBody = document.getElementById('investment-table-body');
+            const tableHeaders = document.querySelectorAll('.table-sortable');
+            let currentSort = { column: 'risk', order: 'asc' };
+            
+            const riskColors = {
+                '低': 'bg-green-100 text-green-800',
+                '中': 'bg-yellow-100 text-yellow-800',
+                '高': 'bg-orange-100 text-orange-800',
+                '专业': 'bg-purple-100 text-purple-800',
+            }
+
+            function renderTable(data) {
+                tableBody.innerHTML = '';
+                data.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.className = "hover:bg-slate-50 transition-colors";
+                    row.innerHTML = `
+                        <td class="p-4 text-sm font-medium text-slate-900">${item.strategy}</td>
+                        <td class="p-4 text-sm text-slate-700">
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full ${riskColors[item.risk_text]}">${item.risk_text}</span>
+                        </td>
+                        <td class="p-4 text-sm text-slate-700">${item.apy_text}</td>
+                        <td class="p-4 text-sm text-slate-700">${item.advantage}</td>
+                        <td class="p-4 text-sm text-slate-700">${item.user}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            }
+
+            function sortTable(column) {
+                const order = (currentSort.column === column && currentSort.order === 'asc') ? 'desc' : 'asc';
+                currentSort = { column, order };
+
+                const sortedData = [...investmentData].sort((a, b) => {
+                    let valA = a[column];
+                    let valB = b[column];
+                    
+                    if (order === 'asc') {
+                        return valA > valB ? 1 : -1;
+                    } else {
+                        return valA < valB ? 1 : -1;
+                    }
+                });
+                renderTable(sortedData);
+            }
+            
+            tableHeaders.forEach(header => {
+                header.addEventListener('click', () => {
+                    sortTable(header.dataset.sort);
+                });
+            });
+
+            sortTable('risk');
+
+        });
+    </script>
+</body>
+</html>

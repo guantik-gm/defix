@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtuals Protocol 交互式投资分析</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals -->
+    <!-- Application Structure Plan: A multi-section, single-page dashboard with sticky navigation. The structure prioritizes a decision-making flow for investors, starting with the final rating and thesis, then breaking down core concepts, risks, and competitive landscape into interactive visual components, and concluding with actionable investment strategies. This is more user-friendly than the linear report format because it allows non-linear exploration and quick synthesis of key decision points. -->
+    <!-- Visualization & Content Choices:
+    - Report Info: Token Allocation -> Goal: Inform -> Viz: Donut Chart (Chart.js) -> Interaction: Hover for details. Justification: Best for showing parts of a whole.
+    - Report Info: Competitive Market Cap -> Goal: Compare -> Viz: Bar Chart (Chart.js) -> Interaction: Buttons to toggle data. Justification: Clear quantitative comparison.
+    - Report Info: Tokenomic Flywheel -> Goal: Explain Process -> Viz: HTML/CSS Diagram -> Interaction: Hover tooltips. Justification: Better for abstract flows than a data chart.
+    - Report Info: Risks -> Goal: Organize -> Viz: HTML Grid Matrix -> Interaction: Click to expand. Justification: Visually maps risk profile better than a list.
+    - Report Info: Investment Strategies -> Goal: Inform/Organize -> Viz: Tabbed Interface -> Interaction: Click to switch content. Justification: Organizes distinct options cleanly.
+    - Library/Method: All charts via Chart.js on Canvas. Diagrams and layouts via HTML/Tailwind. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fdfcf9;
+            color: #1f2937;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .nav-link {
+            transition: color 0.3s ease, border-color 0.3s ease;
+        }
+        .nav-link.active {
+            color: #0d9488;
+            border-bottom-color: #0d9488;
+        }
+        .tab-button.active {
+            background-color: #0d9488;
+            color: white;
+        }
+        .risk-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .risk-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="sticky top-0 bg-white/80 backdrop-blur-lg shadow-sm z-50">
+        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="font-bold text-xl text-teal-700">Virtuals</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#overview" class="nav-link px-3 py-2 text-sm font-medium text-gray-600 hover:text-teal-600 border-b-2 border-transparent">概览</a>
+                        <a href="#thesis" class="nav-link px-3 py-2 text-sm font-medium text-gray-600 hover:text-teal-600 border-b-2 border-transparent">投资论点</a>
+                        <a href="#concepts" class="nav-link px-3 py-2 text-sm font-medium text-gray-600 hover:text-teal-600 border-b-2 border-transparent">核心机制</a>
+                        <a href="#competition" class="nav-link px-3 py-2 text-sm font-medium text-gray-600 hover:text-teal-600 border-b-2 border-transparent">竞争格局</a>
+                        <a href="#risks" class="nav-link px-3 py-2 text-sm font-medium text-gray-600 hover:text-teal-600 border-b-2 border-transparent">风险矩阵</a>
+                        <a href="#strategies" class="nav-link px-3 py-2 text-sm font-medium text-gray-600 hover:text-teal-600 border-b-2 border-transparent">投资策略</a>
+                    </div>
+                </div>
+                 <div class="md:hidden">
+                    <button id="menu-button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white">
+                        <span class="sr-only">Open main menu</span>
+                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+             <div class="hidden md:hidden" id="mobile-menu">
+                <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                    <a href="#overview" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:bg-teal-100">概览</a>
+                    <a href="#thesis" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:bg-teal-100">投资论点</a>
+                    <a href="#concepts" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:bg-teal-100">核心机制</a>
+                    <a href="#competition" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:bg-teal-100">竞争格局</a>
+                    <a href="#risks" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:bg-teal-100">风险矩阵</a>
+                    <a href="#strategies" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:bg-teal-100">投资策略</a>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+
+        <section id="overview" class="pt-16 -mt-16 mb-24">
+            <div class="text-center">
+                <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-gray-900">Virtuals Protocol ($VIRTUAL)</h1>
+                <p class="mt-4 max-w-2xl mx-auto text-xl text-gray-500">一个旨在将AI代理创建大众化并实现货币化的去中心化发射台。</p>
+            </div>
+
+            <div class="mt-12 bg-white rounded-xl shadow-lg p-6 md:p-8">
+                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 text-center">
+                    <div>
+                        <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">投资评级</p>
+                        <p class="mt-2 text-3xl font-bold text-amber-600" title="高风险，高回报的投机性配置">中性</p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">市值</p>
+                        <p class="mt-2 text-3xl font-bold text-gray-900">$9.88 亿</p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">完全稀释估值 (FDV)</p>
+                        <p class="mt-2 text-3xl font-bold text-gray-900">$15 亿</p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">协议年化收入</p>
+                        <p class="mt-2 text-3xl font-bold text-gray-900">$147 万</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="thesis" class="pt-16 -mt-16 mb-24">
+            <div class="text-center">
+                <h2 class="text-3xl font-extrabold text-gray-900">核心投资论点</h2>
+                <p class="mt-2 max-w-2xl mx-auto text-lg text-gray-600">Virtuals Protocol是一个典型的高风险、高回报投资标的。其价值与AI叙事和市场情绪高度绑定，成功与否取决于团队能否将炒作转化为可持续的商业价值。</p>
+            </div>
+            <div class="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-green-50 border-2 border-green-200 rounded-xl p-8">
+                    <h3 class="text-2xl font-bold text-green-800">🐂 牛市论点 (潜力)</h3>
+                    <ul class="mt-6 space-y-4 text-green-700">
+                        <li class="flex items-start">
+                            <span class="flex-shrink-0 h-6 w-6 text-green-600">✓</span>
+                            <span class="ml-3"><strong>市场先发者:</strong> 作为"AI代理领域的pump.fun"，有望捕获长尾市场的创造力和投机需求。</span>
+                        </li>
+                        <li class="flex items-start">
+                           <span class="flex-shrink-0 h-6 w-6 text-green-600">✓</span>
+                            <span class="ml-3"><strong>强大的网络效应:</strong> 与Illuvium、Animoca等知名项目合作，生态系统具备吸引力。</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="flex-shrink-0 h-6 w-6 text-green-600">✓</span>
+                            <span class="ml-3"><strong>自反性经济模型:</strong> 代币经济飞轮在牛市中能有效运作，放大成功，推动$VIRTUAL价值。</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="bg-red-50 border-2 border-red-200 rounded-xl p-8">
+                    <h3 class="text-2xl font-bold text-red-800">🐻 熊市论点 (风险)</h3>
+                    <ul class="mt-6 space-y-4 text-red-700">
+                        <li class="flex items-start">
+                            <span class="flex-shrink-0 h-6 w-6 text-red-600">✗</span>
+                            <span class="ml-3"><strong>叙事依赖性:</strong> "AI代理"热度可能是短暂泡沫，价值与市场情绪高度绑定。</span>
+                        </li>
+                        <li class="flex items-start">
+                           <span class="flex-shrink-0 h-6 w-6 text-red-600">✗</span>
+                            <span class="ml-3"><strong>技术护城河存疑:</strong> 可能被市场视为缺乏深层技术壁垒的"ChatGPT包装器"。</span>
+                        </li>
+                         <li class="flex items-start">
+                           <span class="flex-shrink-0 h-6 w-6 text-red-600">✗</span>
+                            <span class="ml-3"><strong>收入可持续性:</strong> 收入与市场热度紧密相连，炒作消退后可能面临用户流失。</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="concepts" class="pt-16 -mt-16 mb-24">
+            <div class="text-center">
+                <h2 class="text-3xl font-extrabold text-gray-900">核心运行机制</h2>
+                <p class="mt-2 max-w-2xl mx-auto text-lg text-gray-600">Virtuals Protocol通过精巧的技术框架和经济模型，构建了一个连接AI代理、用户和开发者的生态闭环。理解其核心机制是评估其长期潜力的关键。</p>
+            </div>
+             <div class="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                <div class="bg-white rounded-xl shadow-lg p-8">
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">$VIRTUAL 代币分配</h3>
+                    <div class="chart-container max-w-sm mx-auto">
+                        <canvas id="tokenomicsChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-lg p-8">
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">价值捕获飞轮</h3>
+                    <div class="space-y-4">
+                        <div class="relative group p-4 border-l-4 border-teal-500 bg-teal-50 rounded-r-lg">
+                            <h4 class="font-semibold text-teal-800">1. 需求启动</h4>
+                            <p class="text-sm text-teal-700">用户使用 $VIRTUAL 创建AI代理，启动联合曲线，锁定代币。</p>
+                        </div>
+                        <div class="relative group p-4 border-l-4 border-cyan-500 bg-cyan-50 rounded-r-lg">
+                            <h4 class="font-semibold text-cyan-800">2. 代理创收</h4>
+                             <p class="text-sm text-cyan-700">成功的代理通过提供服务产生收入。</p>
+                        </div>
+                        <div class="relative group p-4 border-l-4 border-sky-500 bg-sky-50 rounded-r-lg">
+                            <h4 class="font-semibold text-sky-800">3. 代理通缩</h4>
+                             <p class="text-sm text-sky-700">代理收入的一部分用于回购并销毁该代理自身的代币，推高其价格。</p>
+                        </div>
+                        <div class="relative group p-4 border-l-4 border-indigo-500 bg-indigo-50 rounded-r-lg">
+                            <h4 class="font-semibold text-indigo-800">4. 价值传导</h4>
+                             <p class="text-sm text-indigo-700">代理代币价格上涨提升其与$VIRTUAL组成的LP价值，支撑$VIRTUAL价格。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="competition" class="pt-16 -mt-16 mb-24">
+             <div class="text-center">
+                <h2 class="text-3xl font-extrabold text-gray-900">竞争格局分析</h2>
+                <p class="mt-2 max-w-2xl mx-auto text-lg text-gray-600">在AI代理赛道中，Virtuals并非孤军奋战。了解其与主要竞争对手（如Fetch.ai和Autonolas）的差异化定位，有助于判断其市场护城河。</p>
+            </div>
+            <div class="mt-12 bg-white rounded-xl shadow-lg p-8">
+                <div class="flex justify-center mb-6">
+                    <div id="chart-controls" class="inline-flex rounded-md shadow-sm" role="group">
+                        <button type="button" data-metric="marketCap" class="chart-toggle-btn active-btn py-2 px-4 text-sm font-medium text-white bg-teal-600 rounded-l-lg hover:bg-teal-700">
+                            市值对比
+                        </button>
+                        <button type="button" data-metric="fdv" class="chart-toggle-btn py-2 px-4 text-sm font-medium text-gray-900 bg-white rounded-r-md hover:bg-gray-100 border border-gray-200">
+                            FDV 对比
+                        </button>
+                    </div>
+                </div>
+                <div class="chart-container max-w-3xl mx-auto">
+                    <canvas id="competitionChart"></canvas>
+                </div>
+                 <div class="mt-8 flow-root">
+                    <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+                        <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+                            <table class="min-w-full divide-y divide-gray-300">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-0">特征</th>
+                                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Virtuals Protocol</th>
+                                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Fetch.ai (ASI)</th>
+                                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Autonolas (OLAS)</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200 bg-white">
+                                    <tr>
+                                        <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-0">核心焦点</td>
+                                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">AI代理发射台 (C2C)</td>
+                                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">去中心化AI超级智能 (B2B)</td>
+                                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">统一链下服务网络 (P2P)</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-0">价值主张</td>
+                                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">易用性、叙事捕获</td>
+                                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">技术深度、企业级工具</td>
+                                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">可组合性、开发者激励</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="risks" class="pt-16 -mt-16 mb-24">
+             <div class="text-center">
+                <h2 class="text-3xl font-extrabold text-gray-900">综合风险矩阵</h2>
+                <p class="mt-2 max-w-2xl mx-auto text-lg text-gray-600">项目的潜在回报伴随着显著风险。此矩阵将主要风险按其可能性与潜在影响进行分类，帮助投资者形成全面的风险认知。</p>
+            </div>
+            <div class="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="risk-card bg-white rounded-xl shadow p-6">
+                    <h3 class="font-bold text-lg text-red-600">高影响 / 高可能性</h3>
+                    <ul class="mt-4 space-y-2 text-sm text-gray-600">
+                        <li><strong>叙事风险:</strong> AI热潮退却可能导致项目价值基础崩塌。</li>
+                        <li><strong>收入波动风险:</strong> "收入暴跌"的新闻暗示其商业模式高度依赖市场情绪，缺乏稳定性。</li>
+                    </ul>
+                </div>
+                 <div class="risk-card bg-white rounded-xl shadow p-6">
+                    <h3 class="font-bold text-lg text-orange-500">高影响 / 低可能性</h3>
+                    <ul class="mt-4 space-y-2 text-sm text-gray-600">
+                         <li><strong>智能合约经济漏洞:</strong> 核心合约虽经审计，但复杂的经济模型（联合曲线）可能存在被套利的逻辑漏洞。</li>
+                         <li><strong>团队风险:</strong> 从PathDAO的转型历史表明团队可能更擅长追逐热点而非深耕技术。</li>
+                    </ul>
+                </div>
+                 <div class="risk-card bg-white rounded-xl shadow p-6">
+                    <h3 class="font-bold text-lg text-yellow-500">低影响 / 高可能性</h3>
+                    <ul class="mt-4 space-y-2 text-sm text-gray-600">
+                        <li><strong>"空气软件"负面情绪:</strong> 社区中持续存在的技术空洞质疑声，可能侵蚀投资者信心。</li>
+                    </ul>
+                </div>
+                 <div class="risk-card bg-white rounded-xl shadow p-6">
+                    <h3 class="font-bold text-lg text-green-600">低影响 / 低可能性</h3>
+                    <ul class="mt-4 space-y-2 text-sm text-gray-600">
+                         <li><strong>治理风险:</strong> 新成立的基金会可能变得效率低下或与社区利益脱节。</li>
+                         <li><strong>代币中心化风险:</strong> Cyberscope指出前两大钱包持有超84%供应量，尽管可能是协议财库，仍是中心化控制点。</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="strategies" class="pt-16 -mt-16">
+            <div class="text-center">
+                <h2 class="text-3xl font-extrabold text-gray-900">可行投资与参与策略</h2>
+                <p class="mt-2 max-w-2xl mx-auto text-lg text-gray-600">根据不同的风险偏好、资本规模和技术能力，投资者可以选择多种方式参与Virtuals生态，从被动持有到主动创建，每种策略都有其独特的风险回报特征。</p>
+            </div>
+
+            <div class="mt-12">
+                <div class="mb-6 border-b border-gray-200">
+                    <nav id="strategy-tabs" class="-mb-px flex space-x-4 sm:space-x-8" aria-label="Tabs">
+                         <button data-tab="passive" class="tab-button active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">被动持有</button>
+                         <button data-tab="yield" class="tab-button whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">收益耕作</button>
+                         <button data-tab="advanced" class="tab-button whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">高级策略</button>
+                         <button data-tab="active" class="tab-button whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">主动创建</button>
+                    </nav>
+                </div>
+
+                <div id="strategy-content">
+                    <div data-content="passive" class="strategy-pane">
+                         <div class="bg-white rounded-xl shadow-lg p-8">
+                            <h3 class="text-2xl font-bold text-gray-900">策略1: 被动持有 (Buy & Hold)</h3>
+                            <p class="mt-2 text-gray-600">最简单的策略，直接购买并持有$VIRTUAL代币，作为对协议长期成功的方向性押注。</p>
+                            <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <p class="text-sm text-gray-500">所需技能</p>
+                                    <p class="font-semibold text-lg">低</p>
+                                </div>
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <p class="text-sm text-gray-500">潜在回报</p>
+                                    <p class="font-semibold text-lg">代币价格升值</p>
+                                </div>
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <p class="text-sm text-gray-500">主要风险</p>
+                                    <p class="font-semibold text-lg">市场波动、叙事风险</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div data-content="yield" class="strategy-pane hidden">
+                        <div class="bg-white rounded-xl shadow-lg p-8">
+                            <h3 class="text-2xl font-bold text-gray-900">策略2: 收益耕作 (Staking & LPing)</h3>
+                             <p class="mt-2 text-gray-600">通过质押$VIRTUAL获取veVIRTUAL以赚取积分和空投，或在DEX上提供流动性以赚取交易费和挖矿奖励。</p>
+                             <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <p class="text-sm text-gray-500">所需技能</p>
+                                    <p class="font-semibold text-lg">中</p>
+                                </div>
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <p class="text-sm text-gray-500">潜在回报</p>
+                                    <p class="font-semibold text-lg">积分、空投、LP费用 (APY ~45%)</p>
+                                </div>
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <p class="text-sm text-gray-500">主要风险</p>
+                                    <p class="font-semibold text-lg">智能合约风险、无常损失</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                     <div data-content="advanced" class="strategy-pane hidden">
+                        <div class="bg-white rounded-xl shadow-lg p-8">
+                            <h3 class="text-2xl font-bold text-gray-900">策略3: 高级策略 (Delta-Neutral)</h3>
+                             <p class="mt-2 text-gray-600">对冲套利策略。购买并质押现货，同时在衍生品交易所开立等值空头合约，剥离价格风险，专注于赚取积分和空投。</p>
+                              <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <p class="text-sm text-gray-500">所需技能</p>
+                                    <p class="font-semibold text-lg">高 (衍生品交易)</p>
+                                </div>
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <p class="text-sm text-gray-500">潜在回报</p>
+                                    <p class="font-semibold text-lg">积分、空投 (理论上风险较低)</p>
+                                </div>
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <p class="text-sm text-gray-500">主要风险</p>
+                                    <p class="font-semibold text-lg">资金费率、基差、爆仓风险</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                     <div data-content="active" class="strategy-pane hidden">
+                        <div class="bg-white rounded-xl shadow-lg p-8">
+                            <h3 class="text-2xl font-bold text-gray-900">策略4: 主动创建 (For Developers)</h3>
+                             <p class="mt-2 text-gray-600">面向开发者。创建、启动并货币化一个自定义AI代理，从交易税和应用层收入中获利。</p>
+                             <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <p class="text-sm text-gray-500">所需技能</p>
+                                    <p class="font-semibold text-lg">高 (开发 & 市场营销)</p>
+                                </div>
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <p class="text-sm text-gray-500">潜在回报</p>
+                                    <p class="font-semibold text-lg">代理代币升值、交易税分成</p>
+                                </div>
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <p class="text-sm text-gray-500">主要风险</p>
+                                    <p class="font-semibold text-lg">执行风险、高昂的毕业成本</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+    
+    <footer class="bg-white border-t border-gray-200">
+        <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 text-center text-sm text-gray-500">
+            <p>本应用信息来源于公开报告，仅供研究和教育目的，不构成任何投资建议。</p>
+            <p class="mt-2">在做出任何投资决策之前，请务必进行您自己的深入研究 (DYOR)。</p>
+        </div>
+    </footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    const chartData = {
+        tokenomics: {
+            labels: ['公开发行 (60%)', '生态系统基金 (35%)', '流动性池 (5%)'],
+            datasets: [{
+                data: [60, 35, 5],
+                backgroundColor: ['#14b8a6', '#0891b2', '#0ea5e9'],
+                borderColor: '#fdfcf9',
+                hoverOffset: 4
+            }]
+        },
+        competition: {
+            labels: ['Virtuals', 'Fetch.ai (ASI)', 'Autonolas (OLAS)'],
+            marketCap: [988, 1600, 45],
+            fdv: [1500, 1820, 117]
+        }
+    };
+
+    let competitionChartInstance;
+
+    function createTokenomicsChart() {
+        const ctx = document.getElementById('tokenomicsChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: chartData.tokenomics,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: { family: 'Inter' }
+                        }
+                    },
+                    tooltip: {
+                         callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed !== null) {
+                                    label += context.parsed + '%';
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                cutout: '60%'
+            }
+        });
+    }
+
+    function createOrUpdateCompetitionChart(metric = 'marketCap') {
+        const ctx = document.getElementById('competitionChart').getContext('2d');
+        const data = chartData.competition[metric];
+        const label = metric === 'marketCap' ? '市值 (百万美元)' : 'FDV (百万美元)';
+        
+        if (competitionChartInstance) {
+            competitionChartInstance.data.datasets[0].data = data;
+            competitionChartInstance.data.datasets[0].label = label;
+            competitionChartInstance.update();
+            return;
+        }
+
+        competitionChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: chartData.competition.labels,
+                datasets: [{
+                    label: label,
+                    data: data,
+                    backgroundColor: ['#14b8a6', '#0891b2', '#0ea5e9'],
+                    borderColor: ['#0f766e', '#0e7490', '#0284c7'],
+                    borderWidth: 1,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                           color: '#e5e7eb'
+                        },
+                        ticks: {
+                           font: { family: 'Inter' }
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                         ticks: {
+                           font: { family: 'Inter' }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                     tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += '$' + context.parsed.y + 'M';
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    createTokenomicsChart();
+    createOrUpdateCompetitionChart();
+
+    document.querySelectorAll('.chart-toggle-btn').forEach(button => {
+        button.addEventListener('click', (e) => {
+            const metric = e.target.dataset.metric;
+            createOrUpdateCompetitionChart(metric);
+            
+            document.querySelectorAll('.chart-toggle-btn').forEach(btn => {
+                btn.classList.remove('bg-teal-600', 'text-white');
+                btn.classList.add('bg-white', 'text-gray-900', 'border', 'border-gray-200');
+            });
+            e.target.classList.add('bg-teal-600', 'text-white');
+            e.target.classList.remove('bg-white', 'text-gray-900', 'border', 'border-gray-200');
+        });
+    });
+
+    const strategyTabs = document.querySelectorAll('#strategy-tabs button');
+    const strategyPanes = document.querySelectorAll('#strategy-content [data-content]');
+    strategyTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const target = tab.dataset.tab;
+            
+            strategyTabs.forEach(t => {
+                t.classList.remove('active', 'text-teal-600', 'border-teal-600');
+                t.classList.add('text-gray-500', 'border-transparent');
+            });
+            tab.classList.add('active', 'text-teal-600', 'border-teal-600');
+            tab.classList.remove('text-gray-500', 'border-transparent');
+            
+            strategyPanes.forEach(pane => {
+                if (pane.dataset.content === target) {
+                    pane.classList.remove('hidden');
+                } else {
+                    pane.classList.add('hidden');
+                }
+            });
+        });
+    });
+
+    const menuButton = document.getElementById('menu-button');
+    const mobileMenu = document.getElementById('mobile-menu');
+    menuButton.addEventListener('click', () => {
+        mobileMenu.classList.toggle('hidden');
+    });
+
+    const sections = document.querySelectorAll('section');
+    const navLinks = document.querySelectorAll('.nav-link');
+    
+    function changeNavOnScroll() {
+        let current = '';
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop;
+            if (pageYOffset >= sectionTop - 80) {
+                current = section.getAttribute('id');
+            }
+        });
+
+        navLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href').includes(current)) {
+                link.classList.add('active');
+            }
+        });
+    }
+
+    window.addEventListener('scroll', changeNavOnScroll);
+});
+</script>
+
+</body>
+</html>

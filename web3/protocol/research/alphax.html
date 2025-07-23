@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AlphaX DEX - 交互式风险分析报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Slate Gray, Amber, and Crimson Red -->
+    <!-- Application Structure Plan: The SPA is structured as a top-down, "scrollytelling" investigative report. It starts with the final verdict to immediately warn the user, then uses sections to debunk claims with hard data, detail major red flags interactively, provide a stark competitive comparison, and finally, present damning user testimonials. This narrative structure is chosen over a free-form dashboard to guide the user logically through the evidence, ensuring the report's critical "Strongly Not Recommended" conclusion is clearly understood and justified. -->
+    <!-- Visualization & Content Choices: 
+        - Verdict: Goal: Warn. Method: Large text, icons (Unicode). Justification: Immediate, high-impact communication of the core message.
+        - Data Debunk: Goal: Compare. Method: Stat cards (HTML/Tailwind), Donut Chart (Chart.js). Justification: Visually contrasts marketing claims with verifiable, poor-performance data.
+        - Red Flags: Goal: Organize/Detail. Method: Interactive clickable grid (HTML/JS). Justification: Manages a large amount of negative info, allowing user-driven deep dives without initial overload.
+        - Competitor Table: Goal: Compare. Method: Color-coded HTML table. Justification: Provides a clear, direct comparison against legitimate projects.
+        - User Testimonials: Goal: Inform/Persuade. Method: Styled blockquotes (HTML). Justification: Adds powerful, human evidence to support the scam allegations.
+        - All choices confirm NO SVG/Mermaid. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+        }
+        .nav-button.active {
+            background-color: #dc2626; /* red-600 */
+            color: #ffffff;
+        }
+        .risk-card {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .risk-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.05);
+        }
+        .details-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <header class="bg-slate-800 text-white p-4 sticky top-0 z-50 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-xl md:text-2xl font-bold">AlphaX DEX: 投资风险评估</h1>
+            <nav id="navbar" class="hidden md:flex space-x-2">
+                <button data-target="verdict" class="nav-button px-3 py-1 rounded-md text-sm font-medium transition-colors duration-200 hover:bg-red-700">最终评级</button>
+                <button data-target="reality-check" class="nav-button px-3 py-1 rounded-md text-sm font-medium transition-colors duration-200 hover:bg-red-700">数据核查</button>
+                <button data-target="red-flags" class="nav-button px-3 py-1 rounded-md text-sm font-medium transition-colors duration-200 hover:bg-red-700">核心风险</button>
+                <button data-target="comparison" class="nav-button px-3 py-1 rounded-md text-sm font-medium transition-colors duration-200 hover:bg-red-700">竞品对比</button>
+                <button data-target="user-voices" class="nav-button px-3 py-1 rounded-md text-sm font-medium transition-colors duration-200 hover:bg-red-700">用户之声</button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-4 md:p-8">
+        
+        <section id="verdict" class="scroll-mt-20 text-center bg-white p-6 rounded-lg shadow-md border-l-4 border-red-600">
+            <h2 class="text-2xl md:text-3xl font-bold text-slate-900 mb-2">最终投资评级</h2>
+            <div class="bg-red-600 text-white text-3xl md:text-5xl font-bold py-4 px-6 rounded-lg inline-block my-4">
+                强烈不建议
+            </div>
+            <p class="text-lg text-slate-700 max-w-3xl mx-auto mt-4">
+                本报告对AlphaX DEX的最终投资评级为“强烈不建议”。经过全面深入的分析，该项目在运营、安全、团队背景和市场数据等多个关键维度上，展现出与合法DeFi项目截然相反的特征，并带有极高的欺诈风险。任何形式的资金投入都面临着永久性损失的高度可能性。
+            </p>
+            <div class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-left">
+                <div class="bg-red-50 p-4 rounded-lg flex items-start space-x-3">
+                    <span class="text-2xl text-red-600">⚠️</span>
+                    <div>
+                        <h3 class="font-bold text-slate-800">致命运营风险</h3>
+                        <p class="text-sm text-slate-600">大量用户报告无法提取资金，这是最明确的“骗局”特征。</p>
+                    </div>
+                </div>
+                <div class="bg-red-50 p-4 rounded-lg flex items-start space-x-3">
+                    <span class="text-2xl text-red-600">🛡️</span>
+                    <div>
+                        <h3 class="font-bold text-slate-800">灾难性安全风险</h3>
+                        <p class="text-sm text-slate-600">缺乏顶级安全审计，且与一桩3.2亿美元的黑客攻击传闻相关联。</p>
+                    </div>
+                </div>
+                <div class="bg-red-50 p-4 rounded-lg flex items-start space-x-3">
+                    <span class="text-2xl text-red-600">👻</span>
+                    <div>
+                        <h3 class="font-bold text-slate-800">匿名可疑团队</h3>
+                        <p class="text-sm text-slate-600">团队完全匿名，其宣称的精英背景无法得到任何验证。</p>
+                    </div>
+                </div>
+                <div class="bg-red-50 p-4 rounded-lg flex items-start space-x-3">
+                    <span class="text-2xl text-red-600">📉</span>
+                    <div>
+                        <h3 class="font-bold text-slate-800">虚假市场数据</h3>
+                        <p class="text-sm text-slate-600">链上TVL几乎为零，交易量不被追踪，与营销宣传严重不符。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="reality-check" class="scroll-mt-20 mt-12">
+            <h2 class="text-2xl md:text-3xl font-bold text-center text-slate-900 mb-2">承诺 vs. 现实：数据核查</h2>
+            <p class="text-center text-slate-600 mb-8 max-w-3xl mx-auto">AlphaX DEX宣称提供“比CEX更安全，比DEX更流畅”的体验。然而，公开、可验证的数据揭示了一个完全不同的故事。以下是该平台真实表现的关键指标，这些数据是评估任何DeFi项目健康状况的基石。</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-lg shadow-md text-center">
+                    <h3 class="text-lg font-semibold text-slate-500 mb-2">总锁仓价值 (TVL)</h3>
+                    <p class="text-5xl font-bold text-red-600">$6.12</p>
+                    <p class="text-sm text-slate-500 mt-2">数据来源: DeFiLlama</p>
+                    <p class="mt-4 text-slate-600 text-sm">此数据在统计上等同于零，表明市场对其极度不信任，无人愿意存入资金。</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md text-center">
+                    <h3 class="text-lg font-semibold text-slate-500 mb-2">24小时交易量</h3>
+                    <p class="text-5xl font-bold text-amber-600">未被追踪</p>
+                    <p class="text-sm text-slate-500 mt-2">数据来源: CoinMarketCap</p>
+                    <p class="mt-4 text-slate-600 text-sm">权威平台拒绝采纳其交易数据，通常意味着数据不可靠或存在严重刷量嫌疑。</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md text-center flex flex-col justify-center items-center">
+                    <h3 class="text-lg font-semibold text-slate-500 mb-2">平台安全评级</h3>
+                    <div class="chart-container relative h-48 w-48 mx-auto">
+                        <canvas id="securityScoreChart"></canvas>
+                    </div>
+                    <p class="text-sm text-slate-500 mt-2">数据来源: CER.live</p>
+                    <p class="mt-1 text-slate-600 text-sm">评级为“C”，且缺少最关键的渗透测试和储备金证明审计。</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="red-flags" class="scroll-mt-20 mt-12">
+            <h2 class="text-2xl md:text-3xl font-bold text-center text-slate-900 mb-2">核心风险深度剖析</h2>
+            <p class="text-center text-slate-600 mb-8 max-w-3xl mx-auto">AlphaX项目交织着多个严重的风险点。点击下方的卡片以展开每个风险的详细分析，了解为何该项目对投资者构成系统性威胁。</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="risk-card bg-white rounded-lg shadow-md overflow-hidden cursor-pointer">
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold text-slate-800">🕵️ 团队匿名与资历疑云</h3>
+                        <p class="mt-2 text-slate-600">创始团队完全匿名，其宣称的“来自摩根大通、谷歌”等精英背景无任何公开信息可以证实，这是一种典型的欺骗性营销策略。</p>
+                    </div>
+                    <div class="details-content bg-slate-50 px-6">
+                        <p class="py-4 text-slate-700 text-sm">一个合法项目通常会将其团队资历作为建立信任的核心资产。AlphaX反其道而行之：高调宣称拥有精英背景，却隐藏所有可供验证的身份信息。在LinkedIn、GitHub等专业平台上均无法找到任何相关人员资料。这种行为模式将该项目是欺诈行为的可能性提升到了“极有可能”。</p>
+                    </div>
+                </div>
+                <div class="risk-card bg-white rounded-lg shadow-md overflow-hidden cursor-pointer">
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold text-slate-800">💸 缺乏机构投资</h3>
+                        <p class="mt-2 text-slate-600">未能查到任何关于该项目获得过风险投资（VC）或机构投资的记录，这表明它很可能未能通过任何专业投资机构的尽职调查。</p>
+                    </div>
+                    <div class="details-content bg-slate-50 px-6">
+                        <p class="py-4 text-slate-700 text-sm">顶级DeFi项目通常能吸引知名VC。这些机构的背书不仅提供资金，更重要的是侧面验证了项目的可靠性。AlphaX缺乏任何此类背书，这对于一个需要大量资源进行开发的衍生品DEX来说极不寻常，并极大地增加了投资风险。</p>
+                    </div>
+                </div>
+                 <div class="risk-card bg-white rounded-lg shadow-md overflow-hidden cursor-pointer">
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold text-slate-800">🚨 提款失败：最致命的指控</h3>
+                        <p class="mt-2 text-slate-600">Google Play等平台充斥着大量用户的血泪控诉，反映在盈利后无法提取资金，账户被无故冻结。这是平台挪用或窃取用户资产的直接证据。</p>
+                    </div>
+                    <div class="details-content bg-slate-50 px-6">
+                        <p class="py-4 text-slate-700 text-sm">这些来自真实用户的反馈是评估平台风险最强有力的证据。这种模式完全符合“罗奇汽车旅馆（Roach Motel）”式骗局的特征：资金可以轻松进入，但永远无法离开。这表明，即使投资者有能力在该平台获利，也无法保证能安全撤出本金和利润。</p>
+                    </div>
+                </div>
+                <div class="risk-card bg-white rounded-lg shadow-md overflow-hidden cursor-pointer">
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold text-slate-800">🎭 伪去中心化与空投陷阱</h3>
+                        <p class="mt-2 text-slate-600">平台通过邮件登录和冻结用户资金的能力，证明了其中心化本质。其“未来空投”的承诺很可能是诱骗用户存入资金并进行交易的虚假诱饵。</p>
+                    </div>
+                     <div class="details-content bg-slate-50 px-6">
+                        <p class="py-4 text-slate-700 text-sm">一个真正的DEX，用户对资产拥有绝对控制权。AlphaX的“邮件登录”和“审核提款”功能违背了去中心化的核心原则。其空投承诺在缺乏基本面和信誉的背景下，极有可能是为了骗取用户交易手续费的空头支票。为博取这种虚假空投而进行的任何交互，都可能导致本金的完全损失。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="comparison" class="scroll-mt-20 mt-12">
+            <h2 class="text-2xl md:text-3xl font-bold text-center text-slate-900 mb-2">市场竞争力对比</h2>
+            <p class="text-center text-slate-600 mb-8 max-w-3xl mx-auto">永续合约DEX赛道竞争激烈。通过与市场公认的头部项目GMX和dYdX进行直接对比，可以清晰地看到AlphaX在各个维度的巨大差距，它不具备任何可持续的竞争优势。</p>
+            <div class="overflow-x-auto bg-white rounded-lg shadow-md">
+                <table class="w-full text-sm text-left text-slate-500">
+                    <thead class="text-xs text-slate-700 uppercase bg-slate-100">
+                        <tr>
+                            <th scope="col" class="px-6 py-3">指标</th>
+                            <th scope="col" class="px-6 py-3 text-center bg-red-100">AlphaX DEX</th>
+                            <th scope="col" class="px-6 py-3 text-center">GMX</th>
+                            <th scope="col" class="px-6 py-3 text-center">dYdX</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="bg-white border-b">
+                            <td class="px-6 py-4 font-medium text-slate-900">链上 TVL</td>
+                            <td class="px-6 py-4 text-center font-bold text-red-600">约 $6</td>
+                            <td class="px-6 py-4 text-center text-green-600">约 $3.68亿</td>
+                            <td class="px-6 py-4 text-center text-green-600">N/A (应用链)</td>
+                        </tr>
+                        <tr class="bg-slate-50 border-b">
+                            <td class="px-6 py-4 font-medium text-slate-900">24小时交易量</td>
+                            <td class="px-6 py-4 text-center font-bold text-red-600">未被追踪</td>
+                            <td class="px-6 py-4 text-center text-green-600">约 $1.15亿</td>
+                            <td class="px-6 py-4 text-center text-green-600">约 $5亿+</td>
+                        </tr>
+                        <tr class="bg-white border-b">
+                            <td class="px-6 py-4 font-medium text-slate-900">安全审计</td>
+                            <td class="px-6 py-4 text-center font-bold text-red-600">无顶级审计</td>
+                            <td class="px-6 py-4 text-center text-green-600">已由顶级公司审计</td>
+                            <td class="px-6 py-4 text-center text-green-600">已由顶级公司审计</td>
+                        </tr>
+                        <tr class="bg-slate-50">
+                            <td class="px-6 py-4 font-medium text-slate-900">团队背景</td>
+                            <td class="px-6 py-4 text-center font-bold text-red-600">完全匿名</td>
+                            <td class="px-6 py-4 text-center text-amber-600">匿名</td>
+                            <td class="px-6 py-4 text-center text-green-600">公开</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="user-voices" class="scroll-mt-20 mt-12">
+            <h2 class="text-2xl md:text-3xl font-bold text-center text-slate-900 mb-2">用户之声：来自前线的警报</h2>
+            <p class="text-center text-slate-600 mb-8 max-w-3xl mx-auto">数据是冰冷的，但用户的经历是有温度的。在Google Play等平台上，关于AlphaX的评论区充满了愤怒与失望。这些来自直接受害者的声音，构成了对该平台最真实、也最负面的评价。</p>
+            <div class="space-y-6">
+                <blockquote class="bg-white p-6 rounded-lg shadow-md border-l-4 border-amber-500">
+                    <p class="text-slate-700 italic">"This is a scam app. I deposited money, made a profit, and then they locked my account. I can't access any of my funds. Stay away!"</p>
+                    <footer class="mt-4 text-sm text-slate-500">- Google Play 用户评论</footer>
+                </blockquote>
+                <blockquote class="bg-white p-6 rounded-lg shadow-md border-l-4 border-amber-500">
+                    <p class="text-slate-700 italic">"完全是骗局。一开始小额提款可以到账，让你放松警惕。等你投入大资金并盈利后，他们就以‘异常交易’为由冻结你的账户。我的钱全没了。"</p>
+                    <footer class="mt-4 text-sm text-slate-500">- 某论坛用户分享</footer>
+                </blockquote>
+                 <blockquote class="bg-white p-6 rounded-lg shadow-md border-l-4 border-amber-500">
+                    <p class="text-slate-700 italic">"Don't be fooled by the 'no KYC' and high leverage. It's a trap. Their support doesn't respond, and the withdrawal process is designed to fail. It's a fake exchange."</p>
+                    <footer class="mt-4 text-sm text-slate-500">- Google Play 用户评论</footer>
+                </blockquote>
+            </div>
+        </section>
+
+        <footer class="mt-16 pt-8 border-t border-slate-200 text-center text-sm text-slate-500">
+            <p>本交互式报告基于公开可得信息生成，旨在进行风险教育。投资有风险，决策需谨慎。</p>
+            <p class="mt-1">资本安全应永远是投资的第一原则。</p>
+        </footer>
+
+    </main>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const ctx = document.getElementById('securityScoreChart').getContext('2d');
+            const securityScore = 41;
+
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['安全得分', '缺失部分'],
+                    datasets: [{
+                        data: [securityScore, 100 - securityScore],
+                        backgroundColor: [
+                            '#dc2626', // red-600
+                            '#e2e8f0'  // slate-200
+                        ],
+                        borderColor: [
+                           '#ffffff',
+                           '#ffffff'
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            enabled: false
+                        },
+                        title: {
+                            display: true,
+                            text: `${securityScore}/100`,
+                            position: 'bottom',
+                            font: {
+                                size: 16,
+                                weight: 'bold'
+                            },
+                             color: '#1e293b' // slate-800
+                        }
+                    }
+                },
+                 plugins: [{
+                    id: 'doughnutText',
+                    beforeDraw: function(chart) {
+                        const {width, height, ctx} = chart;
+                        ctx.restore();
+                        const fontSize = (height / 114).toFixed(2);
+                        ctx.font = `bold ${fontSize}em sans-serif`;
+                        ctx.textBaseline = 'middle';
+                        ctx.fillStyle = '#dc2626';
+
+                        const text = 'C级';
+                        const textX = Math.round((width - ctx.measureText(text).width) / 2);
+                        const textY = height / 2 - (fontSize * 8); 
+                        ctx.fillText(text, textX, textY);
+                        ctx.save();
+                    }
+                }]
+            });
+            
+            const riskCards = document.querySelectorAll('.risk-card');
+            riskCards.forEach(card => {
+                card.addEventListener('click', () => {
+                    const details = card.querySelector('.details-content');
+                    if (details.style.maxHeight) {
+                        details.style.maxHeight = null;
+                    } else {
+                        details.style.maxHeight = details.scrollHeight + "px";
+                    }
+                });
+            });
+            
+            const navbar = document.getElementById('navbar');
+            const navButtons = navbar.querySelectorAll('.nav-button');
+            const sections = document.querySelectorAll('main section');
+
+            const observerOptions = {
+                root: null,
+                rootMargin: '0px',
+                threshold: 0.5
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const targetId = entry.target.id;
+                        navButtons.forEach(btn => {
+                            btn.classList.toggle('active', btn.dataset.target === targetId);
+                        });
+                    }
+                });
+            }, observerOptions);
+
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+
+            navButtons.forEach(button => {
+                button.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetId = button.dataset.target;
+                    const targetSection = document.getElementById(targetId);
+                    if (targetSection) {
+                        window.scrollTo({
+                            top: targetSection.offsetTop - 80, 
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

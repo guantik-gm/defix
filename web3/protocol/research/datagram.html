@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Datagram ($DGRAM) 交互式投资分析报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals with Cyan Accent -->
+    <!-- Application Structure Plan: A thematic, single-page scrolling application designed for investor decision-making. The flow starts with a high-level verdict (the 'what'), moves to the core investment theses (the 'why' via an interactive Bull vs. Bear toggle), then allows for deep dives into specific areas (Vision, Tech, Tokenomics via an accordion). It then presents market context, a detailed risk analysis, and finally, actionable investment opportunities. This structure guides the user from summary to detail to action, which is a more natural and effective flow for digesting a complex investment report than a linear read-through. -->
+    <!-- Visualization & Content Choices:
+        - Report Info: Final Investment Rating -> Goal: Inform Instantly -> Viz: Prominent Header Card -> Justification: Delivers the most critical takeaway immediately. -> Library: HTML/Tailwind.
+        - Report Info: Bull vs. Bear Cases -> Goal: Compare Opposing Views -> Viz: Interactive Toggle Button -> Justification: Engages the user and highlights the core investment conflict. -> Library: JS/Tailwind.
+        - Report Info: Token Allocation -> Goal: Show Proportions -> Viz: Donut Chart -> Justification: Standard, clear visualization for percentage breakdowns. -> Library: Chart.js (Canvas).
+        - Report Info: Three-Token Economic Model -> Goal: Explain a Complex Flow -> Viz: HTML/CSS Diagram -> Justification: A visual flow is more intuitive than text. Avoids proscribed libraries. -> Library: HTML/Tailwind.
+        - Report Info: Risk Matrix (Likelihood/Impact) -> Goal: Organize & Prioritize -> Viz: Interactive Sortable Table -> Justification: More data-rich and practical than a visual plot, allows user-driven analysis. -> Library: JS/Tailwind.
+        - Report Info: Competitor Comparison -> Goal: Compare -> Viz: Static but clearly styled table -> Justification: Simple and effective for direct feature-to-feature comparison. -> Library: HTML/Tailwind.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { font-family: 'Noto Sans SC', sans-serif; }
+        .chart-container { position: relative; width: 100%; max-width: 400px; margin-left: auto; margin-right: auto; height: 300px; max-height: 400px; }
+        @media (min-width: 768px) { .chart-container { height: 350px; } }
+        .section-title { font-size: 1.875rem; font-weight: 700; margin-bottom: 1rem; color: #1f2937; border-left: 5px solid #0891b2; padding-left: 1rem; }
+        .nav-link { transition: all 0.3s ease; }
+        .nav-link.active { color: #0891b2; font-weight: 600; border-bottom: 2px solid #0891b2; }
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.5s ease-out; }
+        .risk-high { background-color: #fef2f2; color: #b91c1c; }
+        .risk-medium { background-color: #fefce8; color: #a16207; }
+        .risk-low { background-color: #f0fdf4; color: #166534; }
+        [x-cloak] { display: none; }
+    </style>
+</head>
+<body class="bg-stone-50 text-slate-700 antialiased" x-data="{ activeSection: 'hero' }">
+
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="font-bold text-xl text-slate-800">Datagram 分析</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#hero" @click="activeSection = 'hero'" :class="{ 'active': activeSection === 'hero' }" class="nav-link text-gray-500 hover:text-cyan-600 px-3 py-2 rounded-md text-sm font-medium">概览</a>
+                        <a href="#thesis" @click="activeSection = 'thesis'" :class="{ 'active': activeSection === 'thesis' }" class="nav-link text-gray-500 hover:text-cyan-600 px-3 py-2 rounded-md text-sm font-medium">投资论点</a>
+                        <a href="#deep-dive" @click="activeSection = 'deep-dive'" :class="{ 'active': activeSection === 'deep-dive' }" class="nav-link text-gray-500 hover:text-cyan-600 px-3 py-2 rounded-md text-sm font-medium">项目深潜</a>
+                        <a href="#risks" @click="activeSection = 'risks'" :class="{ 'active': activeSection === 'risks' }" class="nav-link text-gray-500 hover:text-cyan-600 px-3 py-2 rounded-md text-sm font-medium">风险评估</a>
+                        <a href="#opportunities" @click="activeSection = 'opportunities'" :class="{ 'active': activeSection === 'opportunities' }" class="nav-link text-gray-500 hover:text-cyan-600 px-3 py-2 rounded-md text-sm font-medium">投资机会</a>
+                        <a href="#team" @click="activeSection = 'team'" :class="{ 'active': activeSection === 'team' }" class="nav-link text-gray-500 hover:text-cyan-600 px-3 py-2 rounded-md text-sm font-medium">团队与伙伴</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        
+        <section id="hero" class="text-center py-16">
+            <h1 class="text-4xl md:text-6xl font-extrabold text-slate-800 leading-tight">
+                Datagram Network <span class="text-cyan-600">($DGRAM)</span>
+            </h1>
+            <p class="mt-4 text-lg md:text-xl text-slate-600 max-w-3xl mx-auto">一个由AI驱动、专为DePIN打造的L1基础层项目，旨在成为Web3的“亚马逊云服务”。</p>
+            <div class="mt-12 max-w-2xl mx-auto bg-white rounded-2xl shadow-lg p-6 border border-slate-200">
+                <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider">最终投资评级</h2>
+                <p class="mt-2 text-3xl font-bold text-amber-600">高风险 / 投机性买入</p>
+                <p class="mt-3 text-sm text-slate-500">潜力巨大，但当前透明度严重缺失。建议在严格风控下，以少量资金参与早期阶段，并密切监控关键催化剂（如审计报告发布）。</p>
+            </div>
+        </section>
+
+        <hr class="my-12 border-slate-200">
+        
+        <section id="thesis" x-data="{ view: 'bull' }">
+            <h2 class="section-title">投资论点：机遇与挑战</h2>
+            <p class="text-slate-600 max-w-3xl mx-auto text-center mb-8">Datagram是一个充满矛盾的投资标的，其巨大的潜力和严峻的风险并存。投资者必须同时理解其牛市和熊市两种可能性。</p>
+            <div class="flex justify-center mb-8">
+                <div class="flex p-1 bg-slate-200 rounded-full">
+                    <button @click="view = 'bull'" :class="view === 'bull' ? 'bg-cyan-600 text-white' : 'text-slate-600'" class="px-6 py-2 rounded-full font-semibold transition-colors duration-300">🐂 牛市论据 (Bull Case)</button>
+                    <button @click="view = 'bear'" :class="view === 'bear' ? 'bg-rose-600 text-white' : 'text-slate-600'" class="px-6 py-2 rounded-full font-semibold transition-colors duration-300">🐻 熊市论据 (Bear Case)</button>
+                </div>
+            </div>
+
+            <div class="max-w-4xl mx-auto">
+                <div x-show="view === 'bull'" x-transition>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="bg-white p-6 rounded-lg border border-green-200 shadow-sm">
+                            <h3 class="font-bold text-lg text-green-700">宏大叙事与市场契合</h3>
+                            <p class="mt-2 text-sm text-slate-600">巧妙融合DePIN和AI两大热门赛道，“DePIN的AWS”定位极具吸引力，切入一个预计超300亿美元的庞大市场。</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-lg border border-green-200 shadow-sm">
+                            <h3 class="font-bold text-lg text-green-700">经验丰富的领导团队</h3>
+                            <p class="mt-2 text-sm text-slate-600">CEO Jason Brink（前Gala总裁）在社区和代币经济学方面经验丰富，CTO则提供坚实的技术和学术背景。</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-lg border border-green-200 shadow-sm">
+                            <h3 class="font-bold text-lg text-green-700">顶级机构背书</h3>
+                            <p class="mt-2 text-sm text-slate-600">由Avalanche官方基金Blizzard领投，Animoca Brands等战略投资方支持，提供了强大的资本和生态背书。</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-lg border border-green-200 shadow-sm">
+                            <h3 class="font-bold text-lg text-green-700">战略性技术选型</h3>
+                            <p class="mt-2 text-sm text-slate-600">选择Avalanche Subnet，提供了高度定制化能力和主权，能为特定用例优化网络并捕获价值。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div x-show="view === 'bear'" x-transition x-cloak>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="bg-white p-6 rounded-lg border border-red-200 shadow-sm">
+                            <h3 class="font-bold text-lg text-red-700">⚠️ 透明度严重缺失（核心风险）</h3>
+                            <p class="mt-2 text-sm text-slate-600">未公布任何第三方安全审计报告，也未提供公共GitHub代码库。对L1基础设施项目而言，这是致命的危险信号。</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-lg border border-red-200 shadow-sm">
+                            <h3 class="font-bold text-lg text-red-700">复杂的经济模型未经证实</h3>
+                            <p class="mt-2 text-sm text-slate-600">创新的三代币模型设计精巧，但其内部经济循环的稳定性和可持续性完全未经市场检验，存在死亡螺旋风险。</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-lg border border-red-200 shadow-sm">
+                            <h3 class="font-bold text-lg text-red-700">执行与采用风险</h3>
+                            <p class="mt-2 text-sm text-slate-600">“基础层”战略面临“先有鸡还是先有蛋”的困境，需要说服其他项目集成。宣称的用户量可能来自Web2业务，转化率存疑。</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-lg border border-red-200 shadow-sm">
+                            <h3 class="font-bold text-lg text-red-700">竞争激烈</h3>
+                            <p class="mt-2 text-sm text-slate-600">不仅面临Helium等垂直DePIN巨头的竞争，更要与Solana等通用L1/L2平台争夺开发者和项目资源。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <hr class="my-12 border-slate-200">
+
+        <section id="deep-dive" x-data="{ openAccordion: 1 }">
+            <h2 class="section-title">项目深潜：愿景、技术与经济模型</h2>
+            <p class="text-slate-600 max-w-3xl mx-auto text-center mb-8">要理解Datagram的潜力，必须深入其核心架构。以下部分将拆解其愿景、技术选型和创新的三代币经济模型。</p>
+            <div class="max-w-4xl mx-auto space-y-4">
+                
+                <div class="bg-white rounded-lg border border-slate-200 shadow-sm">
+                    <button @click="openAccordion = (openAccordion === 1 ? null : 1)" class="w-full flex justify-between items-center p-6 text-left">
+                        <h3 class="font-semibold text-lg text-slate-800">🎯 愿景：成为“DePIN的AWS”</h3>
+                        <span class="text-cyan-600" x-text="openAccordion === 1 ? '−' : '+'"></span>
+                    </button>
+                    <div class="accordion-content" x-ref="accordion1" :style="openAccordion === 1 ? `max-height: ${$refs.accordion1.scrollHeight}px` : ''">
+                        <div class="p-6 pt-0">
+                            <p class="text-slate-600">Datagram的核心定位是成为DePIN项目的基础设施层。正如AWS为Web2公司提供底层服务，Datagram旨在为其他DePIN项目提供一个无需管理定制网络、即可直接部署的“通用基础层”。它旨在解决当前DePIN项目自建网络成本高、技术门槛高的痛点，让开发者可以专注于自身业务逻辑。</p>
+                            <div class="mt-4 grid sm:grid-cols-2 gap-4 text-center">
+                                <div class="bg-slate-100 p-4 rounded-lg">
+                                    <span class="text-2xl font-bold text-cyan-600">1500+</span>
+                                    <p class="text-sm text-slate-500">全球DePIN项目数量</p>
+                                </div>
+                                <div class="bg-slate-100 p-4 rounded-lg">
+                                    <span class="text-2xl font-bold text-cyan-600">$30B - $50B</span>
+                                    <p class="text-sm text-slate-500">DePIN赛道总市值 (2025)</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg border border-slate-200 shadow-sm">
+                    <button @click="openAccordion = (openAccordion === 2 ? null : 2)" class="w-full flex justify-between items-center p-6 text-left">
+                        <h3 class="font-semibold text-lg text-slate-800">🛠️ 技术：Avalanche Subnet 与 AI集成</h3>
+                        <span class="text-cyan-600" x-text="openAccordion === 2 ? '−' : '+'"></span>
+                    </button>
+                    <div class="accordion-content" x-ref="accordion2" :style="openAccordion === 2 ? `max-height: ${$refs.accordion2.scrollHeight}px` : ''">
+                        <div class="p-6 pt-0">
+                            <p class="text-slate-600 mb-4">选择在Avalanche上构建主权L1子网是其核心技术战略。这带来了高度可定制性、专用性能和经济主权，但也意味着项目需自行承担安全责任。其架构分为两层：</p>
+                            <ul class="list-disc list-inside space-y-2 text-slate-600">
+                                <li><strong>Datagram核心基板 (DCS):</strong> 即其Avalanche Subnet本身，负责协调去中心化节点网络，处理注册、激励和验证。</li>
+                                <li><strong>超网络层 (Hyper Network):</strong> 构建于DCS之上，负责动态分配网络资源，并实现AI驱动的流量路由、服务质量保证等功能。</li>
+                            </ul>
+                            <p class="mt-4 text-sm text-slate-500 italic">这一分层架构暗示了未来可能有两种节点：高质押的“验证者节点”保障安全，和轻量级的“资源节点”提供服务。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg border border-slate-200 shadow-sm">
+                    <button @click="openAccordion = (openAccordion === 3 ? null : 3)" class="w-full flex justify-between items-center p-6 text-left">
+                        <h3 class="font-semibold text-lg text-slate-800">💸 经济模型：$DGRAM, $UDP, $TCP 三代币系统</h3>
+                        <span class="text-cyan-600" x-text="openAccordion === 3 ? '−' : '+'"></span>
+                    </button>
+                    <div class="accordion-content" x-ref="accordion3" :style="openAccordion === 3 ? `max-height: ${$refs.accordion3.scrollHeight}px` : ''">
+                        <div class="p-6 pt-0 grid md:grid-cols-2 gap-8 items-center">
+                            <div>
+                                <p class="text-slate-600 mb-4">项目采用复杂的三代币模型，旨在精细化管理网络治理、激励和效用，以驱动DePIN飞轮效应。</p>
+                                <div class="space-y-3">
+                                    <p><strong class="text-cyan-700">$DGRAM:</strong> 治理与安全代币，用于质押成为验证者和参与治理。</p>
+                                    <p><strong class="text-yellow-700">$UDP:</strong> 高频奖励代币，奖励给提供资源的节点。</p>
+                                    <p><strong class="text-sky-700">$TCP:</strong> 效用与收入代币，用于支付企业级高级服务，并分享协议收入。</p>
+                                </div>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-center mb-2">代币分配</h4>
+                                <div class="chart-container">
+                                    <canvas id="tokenomicsChart"></canvas>
+                                </div>
+                                <p class="text-xs text-center text-slate-500 mt-2">注：仅节点运营商的分配比例（50%）已公布，其余为推测比例，用于说明。完整细节待项目方公布。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <hr class="my-12 border-slate-200">
+        
+        <section id="risks">
+            <h2 class="section-title">综合风险评估</h2>
+            <p class="text-slate-600 max-w-3xl mx-auto text-center mb-8">投资决策必须建立在对多维度风险的清醒认识之上。下表总结了项目面临的主要风险，按影响和可能性排序。</p>
+            <div class="max-w-5xl mx-auto bg-white rounded-lg shadow-md overflow-hidden border border-slate-200">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-slate-600">
+                        <thead class="text-xs text-slate-700 uppercase bg-slate-100">
+                            <tr>
+                                <th scope="col" class="px-6 py-3">风险点</th>
+                                <th scope="col" class="px-6 py-3">风险类别</th>
+                                <th scope="col" class="px-6 py-3 text-center">可能性</th>
+                                <th scope="col" class="px-6 py-3 text-center">影响程度</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="bg-white border-b">
+                                <td class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">无公开安全审计</td>
+                                <td class="px-6 py-4">安全/技术</td>
+                                <td class="px-6 py-4 text-center"><span class="risk-high px-2 py-1 rounded-full text-xs font-semibold">高</span></td>
+                                <td class="px-6 py-4 text-center"><span class="risk-high px-2 py-1 rounded-full text-xs font-semibold">极高</span></td>
+                            </tr>
+                            <tr class="bg-slate-50 border-b">
+                                <td class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">代码库不透明</td>
+                                <td class="px-6 py-4">技术/治理</td>
+                                <td class="px-6 py-4 text-center"><span class="risk-high px-2 py-1 rounded-full text-xs font-semibold">高</span></td>
+                                <td class="px-6 py-4 text-center"><span class="risk-high px-2 py-1 rounded-full text-xs font-semibold">极高</span></td>
+                            </tr>
+                            <tr class="bg-white border-b">
+                                <td class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">经济模型失败</td>
+                                <td class="px-6 py-4">技术/市场</td>
+                                <td class="px-6 py-4 text-center"><span class="risk-medium px-2 py-1 rounded-full text-xs font-semibold">中</span></td>
+                                <td class="px-6 py-4 text-center"><span class="risk-high px-2 py-1 rounded-full text-xs font-semibold">极高</span></td>
+                            </tr>
+                            <tr class="bg-slate-50 border-b">
+                                <td class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">市场采用率低</td>
+                                <td class="px-6 py-4">市场</td>
+                                <td class="px-6 py-4 text-center"><span class="risk-medium px-2 py-1 rounded-full text-xs font-semibold">中</span></td>
+                                <td class="px-6 py-4 text-center"><span class="risk-medium px-2 py-1 rounded-full text-xs font-semibold">高</span></td>
+                            </tr>
+                             <tr class="bg-white">
+                                <td class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">团队/VC代币抛压</td>
+                                <td class="px-6 py-4">治理/金融</td>
+                                <td class="px-6 py-4 text-center"><span class="risk-medium px-2 py-1 rounded-full text-xs font-semibold">中</span></td>
+                                <td class="px-6 py-4 text-center"><span class="risk-medium px-2 py-1 rounded-full text-xs font-semibold">高</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <hr class="my-12 border-slate-200">
+
+        <section id="opportunities">
+            <h2 class="section-title">投资机会与可操作策略</h2>
+            <p class="text-slate-600 max-w-3xl mx-auto text-center mb-8">尽管风险重重，Datagram仍为不同类型的投资者提供了多个潜在的参与和盈利机会，尤其是在早期阶段。</p>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                    <h3 class="font-bold text-lg text-cyan-700">1. Alpha测试网空投 (当前)</h3>
+                    <p class="mt-2 text-sm text-slate-600">这是当前最直接、门槛最低的参与方式。通过运行测试节点和完成社区任务，可以零成本获得未来的代币空投。</p>
+                    <a href="https://dashboard.datagram.network/" target="_blank" class="inline-block mt-4 bg-cyan-600 text-white font-semibold text-sm px-4 py-2 rounded-lg hover:bg-cyan-700 transition-colors">参与测试网 →</a>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                    <h3 class="font-bold text-lg text-cyan-700">2. 主网验证者节点 (未来)</h3>
+                    <p class="mt-2 text-sm text-slate-600">高资本要求的机会。主网启动后，通过购买和质押$DGRAM成为验证者，赚取网络交易费和区块奖励。</p>
+                    <p class="mt-4 text-xs text-slate-500 italic">需关注官方节点销售公告。</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                    <h3 class="font-bold text-lg text-cyan-700">3. TGE后DeFi策略 (未来)</h3>
+                    <p class="mt-2 text-sm text-slate-600">代币上线后，可参与质押（Staking）获取被动收益，或在DEX上提供流动性（LP）赚取高APR（伴随无常损失风险）。</p>
+                    <p class="mt-4 text-xs text-slate-500 italic">需等待代币生成事件（TGE）。</p>
+                </div>
+            </div>
+        </section>
+        
+        <hr class="my-12 border-slate-200">
+        
+        <section id="team">
+            <h2 class="section-title">团队与战略伙伴</h2>
+            <p class="text-slate-600 max-w-3xl mx-auto text-center mb-8">项目的成功很大程度上取决于其团队的执行力和合作伙伴的生态支持。Datagram在这两方面都拥有显著优势。</p>
+            <div class="grid md:grid-cols-2 gap-8 items-start">
+                <div>
+                    <h3 class="font-semibold text-xl mb-4 text-slate-800">核心领导团队</h3>
+                    <div class="space-y-4">
+                        <div class="bg-white p-4 rounded-lg border border-slate-200">
+                            <h4 class="font-bold">Jason "BitBender" Brink</h4>
+                            <p class="text-sm text-cyan-600 font-semibold">联合创始人 & CEO</p>
+                            <p class="mt-1 text-sm text-slate-500">前Gala Games区块链总裁，在社区建设和代币经济学方面拥有丰富实战经验。</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg border border-slate-200">
+                            <h4 class="font-bold">Dr. William H. Nguyen</h4>
+                            <p class="text-sm text-cyan-600 font-semibold">联合创始人 & CTO</p>
+                            <p class="mt-1 text-sm text-slate-500">拥有哈佛、加州大学等顶尖机构学术背景，为项目提供强大的技术可信度。</p>
+                        </div>
+                    </div>
+                </div>
+                 <div>
+                    <h3 class="font-semibold text-xl mb-4 text-slate-800">主要投资者与伙伴</h3>
+                    <div class="bg-white p-6 rounded-lg border border-slate-200">
+                        <div class="flex flex-wrap justify-center items-center gap-x-8 gap-y-4">
+                            <div class="text-center">
+                                <p class="font-bold text-lg">Blizzard</p>
+                                <p class="text-xs text-slate-500">(领投, Avalanche基金)</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="font-bold text-lg">Animoca Brands</p>
+                                <p class="text-xs text-slate-500">(Web3游戏巨头)</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="font-bold text-lg">Amber Group</p>
+                                <p class="text-xs text-slate-500">(机构级数字资产公司)</p>
+                            </div>
+                             <div class="text-center">
+                                <p class="font-bold text-lg">Cointelegraph</p>
+                                <p class="text-xs text-slate-500">(行业媒体)</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+    
+    <footer class="bg-slate-800 text-slate-400 mt-16">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4 text-center text-sm">
+            <p>本报告仅为投资分析，不构成任何财务建议。所有信息均来源于公开渠道，请自行进行尽职调查（DYOR）。</p>
+            <p>&copy; 2025 交互式投资分析报告. All Rights Reserved.</p>
+        </div>
+    </footer>
+    
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+        const tokenomicsCtx = document.getElementById('tokenomicsChart');
+        if (tokenomicsCtx) {
+            new Chart(tokenomicsCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['节点运营商', '团队 (推测)', '投资者 (推测)', '生态/财库 (推测)'],
+                    datasets: [{
+                        label: '代币分配',
+                        data: [50, 15, 15, 20],
+                        backgroundColor: [
+                            '#0e7490',
+                            '#0369a1',
+                            '#0ea5e9',
+                            '#67e8f9'
+                        ],
+                        borderColor: '#f8fafc',
+                        borderWidth: 2,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#475569',
+                                font: {
+                                    family: "'Noto Sans SC', sans-serif"
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += context.parsed + '%';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '60%'
+                }
+            });
+        }
+        
+        const sections = document.querySelectorAll('section[id]');
+        const navLinks = document.querySelectorAll('nav a.nav-link');
+        const app = Alpine.store('app');
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const id = entry.target.getAttribute('id');
+                    const alpineData = document.querySelector('[x-data]').__x;
+                    if (alpineData) {
+                        alpineData.activeSection = id;
+                    }
+                }
+            });
+        }, { rootMargin: '-50% 0px -50% 0px' });
+
+        sections.forEach(section => {
+            observer.observe(section);
+        });
+
+        navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = e.currentTarget.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    window.scrollTo({
+                        top: targetElement.offsetTop - 64, // 64 is header height
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+    });
+    </script>
+</body>
+</html>

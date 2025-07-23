@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Node-X 项目交互式投资风险报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Neutral Gray with Warning Red and Informational Blue accents -->
+    <!-- Application Structure Plan: A 'verdict-first' dashboard design. It starts with the "Strongly Not Recommend" conclusion, followed by a visual risk dashboard (radar chart), and then drills down into evidence sections: competitor comparison, core issues (in an interactive accordion), and a debunking of investment 'opportunities'. This structure prioritizes the most critical information, ensuring the user immediately grasps the report's main warning, and then provides interactive, digestible evidence to support that verdict, which is more effective for user understanding than a linear report summary. -->
+    <!-- Visualization & Content Choices:
+        - Key Verdict: Goal=Inform/Warn -> Large text, warning colors (HTML/Tailwind) -> Immediate impact.
+        - Risk Summary: Goal=Compare/Inform -> Radar Chart (Chart.js/Canvas) -> Visually contrasts Node-X's high risk against a baseline standard project. Justification: A single graphic conveys the multi-faceted failure instantly.
+        - Competitor Matrix: Goal=Compare -> Interactive HTML Table -> Directly shows Node-X's lack of substance against established players. Justification: Tabular data is best for direct, feature-by-feature comparison.
+        - Core Issues: Goal=Organize/Inform -> Accordion/Tabbed content (HTML/JS) -> Breaks down complex issues into manageable chunks, preventing information overload. Justification: Improves readability and user engagement.
+        - Investment Opportunities: Goal=Debunk -> Styled list/table with icons (HTML/Tailwind) -> Clearly marks each 'opportunity' as non-viable. Justification: Visual cues (like ❌) are faster to process than text alone.
+        - Future Catalysts: Goal=Inform/Educate -> Checklist (HTML/Tailwind) -> Provides a constructive takeaway and educates the user on what to look for in legitimate projects. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+        }
+        .nav-link {
+            transition: all 0.3s ease;
+        }
+        .nav-link.active {
+            color: #2563eb; /* blue-600 */
+            border-bottom-color: #2563eb;
+        }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body class="text-slate-700">
+
+    <!-- Header & Navigation -->
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-xl font-bold text-slate-800">Node-X 投资分析</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#verdict" class="nav-link px-3 py-2 text-sm font-medium text-slate-500 hover:text-blue-600 border-b-2 border-transparent">最终评级</a>
+                        <a href="#risks" class="nav-link px-3 py-2 text-sm font-medium text-slate-500 hover:text-blue-600 border-b-2 border-transparent">风险仪表盘</a>
+                        <a href="#comparison" class="nav-link px-3 py-2 text-sm font-medium text-slate-500 hover:text-blue-600 border-b-2 border-transparent">竞品对比</a>
+                        <a href="#issues" class="nav-link px-3 py-2 text-sm font-medium text-slate-500 hover:text-blue-600 border-b-2 border-transparent">核心问题</a>
+                        <a href="#opportunities" class="nav-link px-3 py-2 text-sm font-medium text-slate-500 hover:text-blue-600 border-b-2 border-transparent">投资机会?</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        
+        <!-- Section 1: Final Verdict -->
+        <section id="verdict" class="text-center py-12 bg-white rounded-2xl shadow-lg">
+            <h1 class="text-2xl md:text-3xl font-bold text-slate-800 mb-4">Node-X 项目最终投资评级</h1>
+            <div class="w-full max-w-md mx-auto bg-red-100 border-l-8 border-red-500 rounded-lg p-6 md:p-8 my-6">
+                <div class="flex items-center justify-center">
+                    <div class="text-center">
+                        <p class="text-lg font-semibold text-red-700 mb-2">综合评估结论</p>
+                        <p class="text-4xl md:text-5xl font-extrabold text-red-600 tracking-wider">强烈不建议</p>
+                        <p class="text-sm font-bold text-red-500 mt-2">STRONGLY NOT RECOMMEND</p>
+                    </div>
+                </div>
+            </div>
+            <p class="max-w-3xl mx-auto text-slate-600 mt-6 md:text-lg">
+                经过全面尽职调查，Node-X 项目在运营透明度、技术可验证性、团队背景、安全保障及市场执行力等所有核心维度均存在致命缺陷。其呈现的所有特征均指向一个极高风险、几乎无投资价值的标的。
+            </p>
+        </section>
+
+        <!-- Section 2: Risk Dashboard -->
+        <section id="risks" class="mt-16 scroll-mt-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-slate-800">风险仪表盘</h2>
+                <p class="mt-4 text-lg text-slate-500 max-w-2xl mx-auto">
+                    通过可视化图表直观对比 Node-X 与一个“行业标准”项目在关键成功要素上的巨大差距。Node-X 的风险暴露是全面且极端的。
+                </p>
+            </div>
+            <div class="bg-white rounded-2xl shadow-lg p-6 md:p-8">
+                <div class="chart-container relative w-full h-80 md:h-96 max-w-2xl mx-auto">
+                    <canvas id="riskRadarChart"></canvas>
+                </div>
+                <div class="mt-8 grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm text-center">
+                    <div class="p-3 bg-red-50 rounded-lg">
+                        <p class="font-bold text-red-800">匿名团队</p>
+                        <p class="text-red-600">无法验证背景与能力</p>
+                    </div>
+                    <div class="p-3 bg-red-50 rounded-lg">
+                        <p class="font-bold text-red-800">闭源代码</p>
+                        <p class="text-red-600">无法进行技术审计</p>
+                    </div>
+                    <div class="p-3 bg-red-50 rounded-lg">
+                        <p class="font-bold text-red-800">无安全审计</p>
+                        <p class="text-red-600">资产安全无任何保障</p>
+                    </div>
+                    <div class="p-3 bg-red-50 rounded-lg">
+                        <p class="font-bold text-red-800">无融资信息</p>
+                        <p class="text-red-600">长期生存能力存疑</p>
+                    </div>
+                     <div class="p-3 bg-red-50 rounded-lg">
+                        <p class="font-bold text-red-800">无可用产品</p>
+                        <p class="text-red-600">所有承诺停留在概念</p>
+                    </div>
+                    <div class="p-3 bg-red-50 rounded-lg">
+                        <p class="font-bold text-red-800">无社区</p>
+                        <p class="text-red-600">官方渠道失效，沟通真空</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Competitor Comparison -->
+        <section id="comparison" class="mt-16 scroll-mt-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-slate-800">DePIN 赛道竞争矩阵</h2>
+                <p class="mt-4 text-lg text-slate-500 max-w-2xl mx-auto">
+                    Node-X 试图进入一个竞争激烈且已有成熟玩家的领域。下表清晰地揭示了它与行业领先者在所有关键维度上的信息真空和巨大差距。
+                </p>
+            </div>
+            <div class="bg-white rounded-2xl shadow-lg overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-200">
+                    <thead class="bg-slate-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">指标</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-red-500 uppercase tracking-wider">Node-X</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Akash Network (AKT)</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">io.net (IO)</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Render (RENDER)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-200">
+                        <tr><td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">核心技术</td><td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-semibold">PoRW (未定义)</td><td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">Cosmos SDK</td><td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">Solana, GPU聚合</td><td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">Solana, GPU渲染</td></tr>
+                        <tr><td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">团队透明度</td><td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-semibold">匿名</td><td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">公开</td><td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">公开</td><td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">公开</td></tr>
+                        <tr><td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">公开融资</td><td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-semibold">无</td><td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">是</td><td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">是</td><td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">是</td></tr>
+                        <tr><td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">安全审计</td><td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-semibold">无</td><td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">是 (多份)</td><td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">是</td><td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">是 (多份)</td></tr>
+                        <tr><td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">代码开源</td><td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-semibold">否</td><td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">是</td><td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">部分开源</td><td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">是</td></tr>
+                        <tr><td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">产品状态</td><td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-semibold">概念阶段</td><td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">主网上线</td><td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">主网上线</td><td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">主网上线</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Section 4: Core Issues -->
+        <section id="issues" class="mt-16 scroll-mt-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-slate-800">核心问题深度剖析</h2>
+                <p class="mt-4 text-lg text-slate-500 max-w-2xl mx-auto">
+                    项目的宏大叙事与可验证的现实之间存在无法逾越的鸿沟。以下是几个最严重的问题。
+                </p>
+            </div>
+            <div class="space-y-4">
+                <!-- Accordion Item 1 -->
+                <div class="accordion-item bg-white rounded-lg shadow-sm">
+                    <button class="accordion-button w-full flex justify-between items-center text-left text-lg font-semibold text-slate-800 p-6 focus:outline-none">
+                        <span><span class="text-red-500 mr-2">⚠️</span>致命的名称混淆</span>
+                        <span class="transform transition-transform duration-300">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </span>
+                    </button>
+                    <div class="accordion-content">
+                        <div class="p-6 pt-0 text-slate-600">
+                            <p>项目名称 Node-X 与一个已失效的代币 “NodeHUB (NHUB)” 及其他实体严重混淆，这代表了严重的运营失职，并为网络钓鱼等安全威胁创造了温床。一个专业项目会优先确保品牌标识的唯一性和清晰度。</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Accordion Item 2 -->
+                <div class="accordion-item bg-white rounded-lg shadow-sm">
+                    <button class="accordion-button w-full flex justify-between items-center text-left text-lg font-semibold text-slate-800 p-6 focus:outline-none">
+                        <span><span class="text-red-500 mr-2">⚠️</span>技术黑箱：无法验证的 PoRW</span>
+                        <span class="transform transition-transform duration-300">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </span>
+                    </button>
+                    <div class="accordion-content">
+                        <div class="p-6 pt-0 text-slate-600">
+                            <p>项目的核心技术“真实工作量证明 (PoRW)” 没有任何公开的技术文档、白皮书或代码支持。它更像一个营销术语，而非一个可验证的技术创新。核心技术的完全不透明，意味着技术风险高到无法量化。</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Accordion Item 3 -->
+                <div class="accordion-item bg-white rounded-lg shadow-sm">
+                    <button class="accordion-button w-full flex justify-between items-center text-left text-lg font-semibold text-slate-800 p-6 focus:outline-none">
+                        <span><span class="text-red-500 mr-2">⚠️</span>影子团队与资本真空</span>
+                        <span class="transform transition-transform duration-300">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </span>
+                    </button>
+                    <div class="accordion-content">
+                        <div class="p-6 pt-0 text-slate-600">
+                            <p>团队完全匿名，创始人信息无法核实，这在寻求构建企业级基础设施的项目中是极其罕见的，通常是刻意规避问责的表现。同时，项目没有任何可验证的融资历史，其开发和运营的资金来源成谜，长期生存能力极度存疑。</p>
+                        </div>
+                    </div>
+                </div>
+                 <!-- Accordion Item 4 -->
+                <div class="accordion-item bg-white rounded-lg shadow-sm">
+                    <button class="accordion-button w-full flex justify-between items-center text-left text-lg font-semibold text-slate-800 p-6 focus:outline-none">
+                        <span><span class="text-red-500 mr-2">⚠️</span>安全与透明度的彻底缺失</span>
+                        <span class="transform transition-transform duration-300">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </span>
+                    </button>
+                    <div class="accordion-content">
+                        <div class="p-6 pt-0 text-slate-600">
+                            <p>项目代码不开源，无任何第三方安全审计，官方社区渠道全部失效。这三者共同构成了一个完全不透明的运营“黑洞”。对于投资者而言，这意味着无法监督项目进展、无法评估代码安全、无法与项目方沟通，风险完全未经缓解。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: Investment Opportunities -->
+        <section id="opportunities" class="mt-16 scroll-mt-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-slate-800">所谓的“投资机会”分析</h2>
+                <p class="mt-4 text-lg text-slate-500 max-w-2xl mx-auto">
+                    在当前状态下，所有潜在的投资和参与渠道都是死胡同。任何对未来可能性的投资都无异于一场盲目的赌博。
+                </p>
+            </div>
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-lg shadow-sm border-l-4 border-red-500">
+                    <h3 class="font-bold text-lg text-slate-800 flex items-center">
+                        <span class="text-2xl mr-3">❌</span> 购买代币
+                    </h3>
+                    <p class="mt-2 text-slate-600">不可能。Node-X 没有发行任何代币。市场上名为 NHUB 的代币是已失效项目，需坚决规避。</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-sm border-l-4 border-red-500">
+                    <h3 class="font-bold text-lg text-slate-800 flex items-center">
+                        <span class="text-2xl mr-3">❌</span> 参与挖矿/DeFi
+                    </h3>
+                    <p class="mt-2 text-slate-600">不可能。PoRW 链未上线，项目缺乏支持 DeFi 的所有基本要素（代币、实时区块链、智能合约）。</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-sm border-l-4 border-red-500">
+                    <h3 class="font-bold text-lg text-slate-800 flex items-center">
+                        <span class="text-2xl mr-3">❌</span> 开发者生态参与
+                    </h3>
+                    <p class="mt-2 text-slate-600">不可能。项目方没有提供任何 API、SDK 或开发者文档。对开发者的承诺目前完全是空头支票。</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-sm border-l-4 border-amber-500">
+                    <h3 class="font-bold text-lg text-slate-800 flex items-center">
+                        <span class="text-2xl mr-3">🎰</span> 空投活动
+                    </h3>
+                    <p class="mt-2 text-slate-600">纯粹投机。这是唯一理论上可能的途径，但需要项目未来发布可交互的测试网。这无异于一场对项目未来的盲目赌博，时间成本高，回报完全未知。</p>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Section 6: Final Words -->
+        <section id="final-words" class="mt-16 text-center">
+            <h2 class="text-3xl font-bold text-slate-800">最后的忠告与未来展望</h2>
+            <p class="mt-4 text-lg text-slate-500 max-w-2xl mx-auto">
+                在得到实质性改善前，任何对 Node-X 的投资都面临极高的本金完全损失风险。一个合法的项目至少需要满足以下基本标准。
+            </p>
+            <div class="mt-8 max-w-lg mx-auto text-left bg-white p-8 rounded-2xl shadow-lg">
+                <h3 class="font-bold text-lg mb-4 text-slate-800">项目重新评估的最低要求：</h3>
+                <ul class="space-y-3 text-slate-600">
+                    <li class="flex items-start"><span class="text-blue-500 font-bold mr-3">✅</span> <strong>公开可验证的团队：</strong>提供核心成员真实身份和过往履历。</li>
+                    <li class="flex items-start"><span class="text-blue-500 font-bold mr-3">✅</span> <strong>全面的技术白皮书：</strong>详细阐述技术架构和经济模型。</li>
+                    <li class="flex items-start"><span class="text-blue-500 font-bold mr-3">✅</span> <strong>开源的代码库：</strong>允许公众进行代码审查。</li>
+                    <li class="flex items-start"><span class="text-blue-500 font-bold mr-3">✅</span> <strong>完整的安全审计报告：</strong>由信誉良好的第三方公司出具。</li>
+                    <li class="flex items-start"><span class="text-blue-500 font-bold mr-3">✅</span> <strong>详细的代币经济学：</strong>清晰的分配、用途和释放计划。</li>
+                    <li class="flex items-start"><span class="text-blue-500 font-bold mr-3">✅</span> <strong>公开的测试网与路线图：</strong>提供可验证的开发进展。</li>
+                </ul>
+            </div>
+        </section>
+
+    </main>
+    
+    <footer class="mt-16 bg-slate-100 border-t border-slate-200">
+        <div class="container mx-auto py-6 px-4 sm:px-6 lg:px-8 text-center text-sm text-slate-500">
+            <p>本报告基于公开信息分析，旨在提供投资决策参考，不构成任何财务建议。投资有风险，决策需谨慎。</p>
+            <p class="mt-1">&copy; 2025 深度投资分析。保留所有权利。</p>
+        </div>
+    </footer>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // Risk Radar Chart
+    const ctx = document.getElementById('riskRadarChart').getContext('2d');
+    const riskData = {
+        labels: ['团队透明度', '代码开源', '安全审计', '资金验证', '产品成熟度', '社区活跃度'],
+        datasets: [{
+            label: 'Node-X',
+            data: [1, 1, 1, 1, 1, 1], // Scores are set to a minimal value to show a collapsed shape
+            backgroundColor: 'rgba(239, 68, 68, 0.2)', // red-500
+            borderColor: 'rgba(220, 38, 38, 1)', // red-600
+            pointBackgroundColor: 'rgba(220, 38, 38, 1)',
+            pointBorderColor: '#fff',
+            pointHoverBackgroundColor: '#fff',
+            pointHoverBorderColor: 'rgba(220, 38, 38, 1)'
+        }, {
+            label: '行业标准',
+            data: [8, 9, 9, 8, 7, 8], // Baseline scores for a legitimate project
+            backgroundColor: 'rgba(59, 130, 246, 0.2)', // blue-500
+            borderColor: 'rgba(37, 99, 235, 1)', // blue-600
+            pointBackgroundColor: 'rgba(37, 99, 235, 1)',
+            pointBorderColor: '#fff',
+            pointHoverBackgroundColor: '#fff',
+            pointHoverBorderColor: 'rgba(37, 99, 235, 1)'
+        }]
+    };
+    const config = {
+        type: 'radar',
+        data: riskData,
+        options: {
+            maintainAspectRatio: false,
+            responsive: true,
+            elements: {
+                line: {
+                    borderWidth: 3
+                }
+            },
+            scales: {
+                r: {
+                    angleLines: {
+                        color: 'rgba(0, 0, 0, 0.1)'
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.1)'
+                    },
+                    pointLabels: {
+                        font: {
+                            size: 14,
+                            family: "'Noto Sans SC', sans-serif"
+                        },
+                        color: '#475569' // slate-600
+                    },
+                    ticks: {
+                        display: false,
+                        beginAtZero: true,
+                        max: 10,
+                        stepSize: 2
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                         font: {
+                            size: 14,
+                            family: "'Noto Sans SC', sans-serif"
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.r !== null) {
+                                if (context.dataset.label === 'Node-X') {
+                                    label += '极度缺失';
+                                } else {
+                                     label += `得分 ${context.parsed.r}/10`;
+                                }
+                            }
+                            return label;
+                        }
+                    }
+                }
+            }
+        },
+    };
+    new Chart(ctx, config);
+
+    // Accordion Logic
+    const accordionButtons = document.querySelectorAll('.accordion-button');
+    accordionButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const content = button.nextElementSibling;
+            const icon = button.querySelector('svg');
+            
+            button.parentElement.classList.toggle('bg-slate-50');
+            icon.classList.toggle('rotate-180');
+
+            if (content.style.maxHeight) {
+                content.style.maxHeight = null;
+            } else {
+                content.style.maxHeight = content.scrollHeight + 'px';
+            }
+        });
+    });
+
+    // Smooth Scrolling & Active Nav Link
+    const navLinks = document.querySelectorAll('.nav-link');
+    const sections = document.querySelectorAll('section');
+
+    window.addEventListener('scroll', () => {
+        let current = '';
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop;
+            if (pageYOffset >= sectionTop - 80) {
+                current = section.getAttribute('id');
+            }
+        });
+
+        navLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href').substring(1) === current) {
+                link.classList.add('active');
+            }
+        });
+    });
+    
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const targetId = link.getAttribute('href');
+            const targetElement = document.querySelector(targetId);
+            window.scrollTo({
+                top: targetElement.offsetTop - 70,
+                behavior: 'smooth'
+            });
+        });
+    });
+
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lighter (lighter.xyz) - 交互式投资分析报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Analyst Calm -->
+    <!-- Application Structure Plan: The application is structured as an interactive dashboard, diverging from the linear report format. It starts with a prominent header containing the final investment rating and core thesis for quick takeaways. A sticky navigation bar allows users to jump to thematic sections: 1. **摘要与评级 (Summary & Rating)**: A top-level view with key findings and SWOT. 2. **核心洞察 (Core Insights)**: Combines technology, team, and the unique go-to-market strategy. 3. **市场与数据 (Market & Data)**: An interactive section with charts for competitive analysis and on-chain metrics. 4. **投资策略 (Investment Strategy)**: A clear, actionable guide with a tabbed interface to compare different investment paths. 5. **风险评估 (Risk Assessment)**: An accordion to present complex risks without overwhelming the user. This non-linear, task-oriented structure is chosen for usability, allowing investors to either get a quick overview or deep-dive into specific areas of interest (like data or strategy) based on their needs. -->
+    <!-- Visualization & Content Choices: 1. **Investment Rating**: Goal: Inform. Method: Prominent card. Justification: Most critical info first. 2. **Key Metrics (TVL, Users)**: Goal: Inform. Method: Stat cards. Justification: Highlights key performance indicators. 3. **SWOT Analysis**: Goal: Organize. Method: Four-quadrant grid layout. Justification: Classic, intuitive structure for strategic analysis. 4. **Tech Diagram**: Goal: Organize. Method: HTML/CSS flexbox diagram. Justification: Visually explains the complex architecture without external images. 5. **Competitive TVL**: Goal: Compare. Method: Chart.js Bar Chart. Justification: Direct visual comparison of market share. 6. **On-Chain Growth**: Goal: Change. Method: Chart.js Line Charts (TVL & Users). Justification: Clearly shows trends over time. 7. **Community Sentiment**: Goal: Inform. Method: Chart.js Doughnut Chart. Justification: Quick visualization of community proportion. 8. **Investment Paths**: Goal: Compare/Organize. Method: Tabbed interface with a comparison table. Justification: Allows easy side-by-side comparison of actionable strategies. 9. **Risks**: Goal: Organize. Method: Accordion. Justification: Manages information density, allowing users to explore risks on demand. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .tab-button.active {
+            border-color: #0ea5e9; /* sky-500 */
+            color: #0ea5e9; /* sky-500 */
+            background-color: #f0f9ff; /* sky-50 */
+        }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-in-out;
+        }
+        .accordion-button.open + .accordion-content {
+            max-height: 500px; /* Adjust as needed */
+        }
+        .accordion-button .arrow {
+            transition: transform 0.3s ease-in-out;
+        }
+        .accordion-button.open .arrow {
+            transform: rotate(180deg);
+        }
+    </style>
+</head>
+<body class="text-slate-700">
+
+    <!-- Header & Navigation -->
+    <header class="bg-white/80 backdrop-blur-sm sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-xl font-bold text-slate-800">Lighter.xyz 分析</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#summary" class="text-slate-600 hover:text-sky-500 px-3 py-2 rounded-md text-sm font-medium">摘要与评级</a>
+                        <a href="#insights" class="text-slate-600 hover:text-sky-500 px-3 py-2 rounded-md text-sm font-medium">核心洞察</a>
+                        <a href="#data" class="text-slate-600 hover:text-sky-500 px-3 py-2 rounded-md text-sm font-medium">市场与数据</a>
+                        <a href="#strategy" class="text-slate-600 hover:text-sky-500 px-3 py-2 rounded-md text-sm font-medium">投资策略</a>
+                        <a href="#risks" class="text-slate-600 hover:text-sky-500 px-3 py-2 rounded-md text-sm font-medium">风险评估</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+
+        <!-- Section: Summary -->
+        <section id="summary" class="mb-16">
+            <div class="text-center mb-12">
+                <h1 class="text-4xl md:text-5xl font-extrabold text-slate-800 mb-4">Lighter (lighter.xyz) 投资评估</h1>
+                <p class="text-lg text-slate-500 max-w-3xl mx-auto">一份交互式报告，旨在揭示一个由 a16z 支持的新兴永续合约DEX的机遇与挑战。</p>
+            </div>
+
+            <div class="bg-white p-8 rounded-2xl shadow-lg border border-slate-200/80">
+                <div class="grid md:grid-cols-3 gap-8 items-center">
+                    <div class="md:col-span-1 text-center">
+                        <span class="text-sm font-semibold text-slate-500">最终投资评级</span>
+                        <div class="my-4">
+                            <span class="inline-block bg-sky-100 text-sky-800 text-2xl font-bold px-8 py-4 rounded-full">投机性买入</span>
+                        </div>
+                         <p class="text-xs text-slate-400">基于其非对称风险回报特性</p>
+                    </div>
+                    <div class="md:col-span-2">
+                        <h3 class="text-xl font-bold text-slate-800 mb-2">核心投资论点</h3>
+                        <p class="text-slate-600">本报告的核心论点是：通过积极参与Lighter的 **积分计划**，在代币生成事件（TGE）之前，以较低的直接资本风险，获得对一个拥有 **卓越技术、世界级团队和明确市场定位** 的协议的早期敞口。这是一个具有时效性的空投机会，可能为投入的资本和精力带来高倍数回报。</p>
+                    </div>
+                </div>
+                 <hr class="my-8 border-slate-200/80">
+                 <!-- SWOT Analysis -->
+                <div>
+                     <h3 class="text-xl font-bold text-slate-800 mb-6 text-center">SWOT 综合分析</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-green-50 p-4 rounded-lg border border-green-200">
+                            <h4 class="font-bold text-green-800">优势 (Strengths)</h4>
+                            <ul class="list-disc list-inside text-sm text-green-700 mt-2 space-y-1">
+                                <li>精英团队与顶级VC (a16z) 支持</li>
+                                <li>基于ZK的可验证引擎，技术领先</li>
+                                <li>高透明度与安全性，解决行业痛点</li>
+                                <li>与1inch合作，市场进入策略巧妙</li>
+                            </ul>
+                        </div>
+                        <div class="bg-red-50 p-4 rounded-lg border border-red-200">
+                            <h4 class="font-bold text-red-800">劣势 (Weaknesses)</h4>
+                            <ul class="list-disc list-inside text-sm text-red-700 mt-2 space-y-1">
+                                <li>代币未发行，经济模型不确定</li>
+                                <li>早期项目，治理模式中心化</li>
+                                <li>技术复杂性可能带来未知风险</li>
+                            </ul>
+                        </div>
+                        <div class="bg-sky-50 p-4 rounded-lg border border-sky-200">
+                            <h4 class="font-bold text-sky-800">机会 (Opportunities)</h4>
+                            <ul class="list-disc list-inside text-sm text-sky-700 mt-2 space-y-1">
+                                <li>即将到来的空投是最大短期机会</li>
+                                <li>凭借技术优势夺取市场份额</li>
+                                <li>计划向其他L2网络扩张</li>
+                            </ul>
+                        </div>
+                        <div class="bg-amber-50 p-4 rounded-lg border border-amber-200">
+                            <h4 class="font-bold text-amber-800">威胁 (Threats)</h4>
+                            <ul class="list-disc list-inside text-sm text-amber-700 mt-2 space-y-1">
+                                <li>永续合约DEX赛道竞争异常激烈</li>
+                                <li>全球监管环境不确定性</li>
+                                <li>潜在的重大安全漏洞风险</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Core Insights -->
+        <section id="insights" class="mb-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-slate-800">核心洞察：技术、团队与策略</h2>
+                <p class="text-slate-500 mt-2">Lighter成功的基石在于其创新的技术架构、精英团队以及精准的市场切入点。</p>
+            </div>
+            <div class="grid md:grid-cols-2 gap-8">
+                 <!-- Tech Insight -->
+                <div class="bg-white p-6 rounded-2xl shadow-md border border-slate-200/80">
+                    <h3 class="font-bold text-lg text-slate-800 mb-4">可验证匹配引擎：构建无需信任的CEX</h3>
+                    <p class="text-sm text-slate-600 mb-4">Lighter并非通用L2，而是为交易定制的ZK-Rollup。其核心是可验证匹配引擎，它使用零知识证明（SNARKs）来确保每一笔订单撮合都公平且无法被操纵，从根本上杜绝了抢跑和恶意操作。</p>
+                    <div class="border border-slate-200 rounded-lg p-4 bg-slate-50 text-sm">
+                        <div class="flex flex-col space-y-2">
+                             <div class="flex items-center space-x-2">
+                                <span class="font-mono bg-sky-100 text-sky-700 rounded px-2 py-1 text-xs">用户订单</span>
+                                <span class="text-sky-500 font-bold">→</span>
+                                <span class="font-mono bg-sky-100 text-sky-700 rounded px-2 py-1 text-xs">L2 定序器</span>
+                             </div>
+                             <div class="ml-auto flex items-center space-x-2">
+                                 <span class="font-mono bg-purple-100 text-purple-700 rounded px-2 py-1 text-xs">订单簿撮合</span>
+                                 <span class="text-purple-500 font-bold">←</span>
+                             </div>
+                             <div class="flex items-center space-x-2">
+                                <span class="font-mono bg-green-100 text-green-700 rounded px-2 py-1 text-xs">ZK 证明生成</span>
+                                <span class="text-green-500 font-bold">→</span>
+                                <span class="font-mono bg-green-100 text-green-700 rounded px-2 py-1 text-xs">以太坊 L1 验证</span>
+                             </div>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-3">这个流程确保了交易的高性能和绝对的完整性与透明度。</p>
+                    </div>
+                </div>
+                <!-- Team & GTM Insight -->
+                <div class="bg-white p-6 rounded-2xl shadow-md border border-slate-200/80">
+                    <h3 class="font-bold text-lg text-slate-800 mb-4">精英团队与B2B2C增长飞轮</h3>
+                    <p class="text-sm text-slate-600 mb-4">创始人 <strong class="text-slate-900">Vladimir Novakovski</strong> 拥有Citadel等顶级量化金融背景，并获a16z和Lightspeed支持。项目采取了精明的“隐形启动”和B2B2C策略。</p>
+                    <div class="border border-slate-200 rounded-lg p-4 bg-slate-50 text-sm">
+                        <p class="font-semibold text-slate-700">1inch 增长飞轮:</p>
+                        <ol class="list-decimal list-inside mt-2 space-y-1 text-slate-600">
+                            <li>Lighter为DEX聚合器 <strong class="text-sky-600">1inch</strong> 提供最优流动性。</li>
+                            <li>1inch将海量交易流路由至Lighter。</li>
+                            <li>这些交易量为用户（甚至无感知的用户）累积Lighter积分。</li>
+                            <li>积分预期带来空投，吸引更多专业用户直接使用Lighter。</li>
+                        </ol>
+                         <p class="text-xs text-slate-500 mt-3">这一策略在不耗费巨额营销费用的情况下，实现了高效的用户和交易量增长。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Market & Data -->
+        <section id="data" class="mb-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-slate-800">市场与数据分析</h2>
+                <p class="text-slate-500 mt-2">通过链上数据和竞品对比，洞察Lighter的市场表现和增长潜力。</p>
+            </div>
+             <div class="bg-white p-6 rounded-2xl shadow-lg border border-slate-200/80 space-y-12">
+                <!-- Competitor Analysis -->
+                <div>
+                    <h3 class="font-bold text-lg text-slate-800 mb-4 text-center">永续合约DEX赛道竞争格局 (TVL对比)</h3>
+                    <p class="text-sm text-slate-500 max-w-2xl mx-auto text-center mb-6">永续合约DEX是一个高增长赛道，Lighter凭借其技术优势加入竞争。下图展示了Lighter与主要竞争对手在总锁仓价值（TVL）上的对比。</p>
+                    <div class="chart-container">
+                        <canvas id="competitorChart"></canvas>
+                    </div>
+                </div>
+                <!-- On-chain Data -->
+                <div>
+                     <h3 class="font-bold text-lg text-slate-800 mb-8 text-center">链上数据看板</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <div class="bg-slate-50 p-4 rounded-lg text-center border">
+                            <p class="text-sm text-slate-500">总锁仓价值 (TVL)</p>
+                            <p class="text-3xl font-bold text-slate-800">$1.88亿</p>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-lg text-center border">
+                            <p class="text-sm text-slate-500">总交易者数</p>
+                            <p class="text-3xl font-bold text-slate-800">33,048</p>
+                        </div>
+                         <div class="bg-slate-50 p-4 rounded-lg text-center border">
+                            <p class="text-sm text-slate-500">用户留存率</p>
+                            <p class="text-3xl font-bold text-slate-800">48%</p>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-lg text-center border">
+                            <p class="text-sm text-slate-500">每周积分分发</p>
+                            <p class="text-3xl font-bold text-slate-800">25万</p>
+                        </div>
+                    </div>
+                     <div class="grid md:grid-cols-2 gap-8">
+                         <div>
+                            <h4 class="font-semibold text-center mb-4 text-slate-700">TVL 增长趋势</h4>
+                            <div class="chart-container h-64 md:h-80">
+                                <canvas id="tvlChart"></canvas>
+                            </div>
+                         </div>
+                         <div>
+                            <h4 class="font-semibold text-center mb-4 text-slate-700">累计用户增长</h4>
+                             <div class="chart-container h-64 md:h-80">
+                                <canvas id="userChart"></canvas>
+                            </div>
+                         </div>
+                     </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Investment Strategy -->
+        <section id="strategy" class="mb-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-slate-800">投资策略与路径</h2>
+                <p class="text-slate-500 mt-2">根据您的风险偏好和资本情况，选择最适合的参与方式。</p>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-lg border border-slate-200/80">
+                <div id="tabs-container" class="mb-4 flex border-b border-slate-200">
+                    <button data-tab="airdrop" class="tab-button flex-1 text-slate-500 py-3 px-1 text-center text-sm sm:text-base font-medium border-b-2 border-transparent hover:text-sky-600 focus:outline-none">1. 空投 Farming (主要机会)</button>
+                    <button data-tab="lp" class="tab-button flex-1 text-slate-500 py-3 px-1 text-center text-sm sm:text-base font-medium border-b-2 border-transparent hover:text-sky-600 focus:outline-none">2. 流动性供应 (中期机会)</button>
+                    <button data-tab="buy" class="tab-button flex-1 text-slate-500 py-3 px-1 text-center text-sm sm:text-base font-medium border-b-2 border-transparent hover:text-sky-600 focus:outline-none">3. 直接购买 (长期机会)</button>
+                </div>
+                <div id="tab-content-container">
+                    <div id="tab-airdrop" class="tab-content">
+                        <h4 class="text-lg font-bold text-slate-800 mb-2">策略：通过交易累积积分</h4>
+                        <p class="text-sm text-slate-600 mb-4">这是当前阶段最具非对称回报的策略。通过在平台上积极交易来最大化积分，以换取未来的代币空投。社区反馈表明，积分与 **交易量** 高度相关。</p>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left">
+                                <thead class="bg-slate-50 text-xs text-slate-700 uppercase">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3">方面</th>
+                                        <th scope="col" class="px-6 py-3">描述</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="bg-white border-b">
+                                        <th scope="row" class="px-6 py-4 font-medium text-slate-900">潜在上行空间</th>
+                                        <td class="px-6 py-4"><span class="font-bold text-green-600">高</span> - 可能获得价值可观的大额空投。</td>
+                                    </tr>
+                                    <tr class="bg-white border-b">
+                                        <th scope="row" class="px-6 py-4 font-medium text-slate-900">主要风险</th>
+                                        <td class="px-6 py-4">空投可能落空；兑换比例不佳；交易本身可能产生亏损。</td>
+                                    </tr>
+                                    <tr class="bg-white">
+                                        <th scope="row" class="px-6 py-4 font-medium text-slate-900">行动方案</th>
+                                        <td class="px-6 py-4">获取邀请码，存入USDC，通过高频/大额交易产生名义交易量，同时设置严格止损控制风险。</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div id="tab-lp" class="tab-content hidden">
+                        <h4 class="text-lg font-bold text-slate-800 mb-2">策略：成为流动性提供者 (LLP)</h4>
+                        <p class="text-sm text-slate-600 mb-4">在TGE后，向Lighter的公共流动性池（LLP）提供资产（如USDC），以赚取交易费分成和潜在的代币激励（流动性挖矿）。</p>
+                         <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left">
+                                <thead class="bg-slate-50 text-xs text-slate-700 uppercase">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3">方面</th>
+                                        <th scope="col" class="px-6 py-3">描述</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="bg-white border-b">
+                                        <th scope="row" class="px-6 py-4 font-medium text-slate-900">潜在上行空间</th>
+                                        <td class="px-6 py-4"><span class="font-bold text-yellow-600">中</span> - 来自手续费的稳定APY + 流动性挖矿奖励。</td>
+                                    </tr>
+                                    <tr class="bg-white border-b">
+                                        <th scope="row" class="px-6 py-4 font-medium text-slate-900">主要风险</th>
+                                        <td class="px-6 py-4">无常损失；智能合约漏洞；协议交易量低导致费用收入低。</td>
+                                    </tr>
+                                    <tr class="bg-white">
+                                        <th scope="row" class="px-6 py-4 font-medium text-slate-900">行动方案</th>
+                                        <td class="px-6 py-4">在TGE后，根据官方公布的细则和APY，将资产存入LLP智能合约。</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div id="tab-buy" class="tab-content hidden">
+                        <h4 class="text-lg font-bold text-slate-800 mb-2">策略：在公开市场购买代币</h4>
+                        <p class="text-sm text-slate-600 mb-4">最直接但也可能成本最高的策略。在代币生成事件（TGE）后，于DEX或CEX上购买Lighter的原生代币，作为长期价值投资。</p>
+                         <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left">
+                                <thead class="bg-slate-50 text-xs text-slate-700 uppercase">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3">方面</th>
+                                        <th scope="col" class="px-6 py-3">描述</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="bg-white border-b">
+                                        <th scope="row" class="px-6 py-4 font-medium text-slate-900">潜在上行空间</th>
+                                        <td class="px-6 py-4"><span class="font-bold text-yellow-600">中至高</span> - 价值由协议增长、收入分成和市场叙事驱动。</td>
+                                    </tr>
+                                    <tr class="bg-white border-b">
+                                        <th scope="row" class="px-6 py-4 font-medium text-slate-900">主要风险</th>
+                                        <td class="px-6 py-4">市场波动导致价格下跌；项目未能实现预期增长。</td>
+                                    </tr>
+                                    <tr class="bg-white">
+                                        <th scope="row" class="px-6 py-4 font-medium text-slate-900">行动方案</th>
+                                        <td class="px-6 py-4">在代币发行后，评估其价格和代币经济学，在合适的价位买入并持有。</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Risks -->
+        <section id="risks" class="mb-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-slate-800">综合风险评估</h2>
+                <p class="text-slate-500 mt-2">了解潜在风险是做出明智决策的关键。点击下方查看各类风险详情。</p>
+            </div>
+            <div class="max-w-4xl mx-auto space-y-4">
+                <!-- Accordion Item 1 -->
+                <div class="bg-white rounded-lg border border-slate-200/80 shadow-sm">
+                    <h2>
+                        <button type="button" class="accordion-button flex items-center justify-between w-full p-5 font-medium text-left text-slate-700 hover:bg-slate-50">
+                            <span>💻 技术与安全风险</span>
+                            <span class="arrow transition-transform duration-200">▼</span>
+                        </button>
+                    </h2>
+                    <div class="accordion-content p-5 border-t border-slate-200/80">
+                        <ul class="list-disc pl-5 space-y-2 text-slate-600 text-sm">
+                            <li><strong>智能合约风险:</strong> 尽管通过了ZKSECURITY的审计，但作为新兴复杂协议，未知漏洞风险依然存在。</li>
+                            <li><strong>预言机风险:</strong> 协议使用`标记价格`依赖于外部`现货价格指数`预言机，若预言机被攻击，可能导致不公平清算。</li>
+                            <li><strong>L2定序器中心化:</strong> 在当前阶段，定序器可能中心化，存在单点故障或审查风险（部分被“退出舱口”机制缓解）。</li>
+                        </ul>
+                    </div>
+                </div>
+                <!-- Accordion Item 2 -->
+                <div class="bg-white rounded-lg border border-slate-200/80 shadow-sm">
+                    <h2>
+                        <button type="button" class="accordion-button flex items-center justify-between w-full p-5 font-medium text-left text-slate-700 hover:bg-slate-50">
+                            <span>💰 经济与金融风险</span>
+                             <span class="arrow transition-transform duration-200">▼</span>
+                        </button>
+                    </h2>
+                     <div class="accordion-content p-5 border-t border-slate-200/80">
+                        <ul class="list-disc pl-5 space-y-2 text-slate-600 text-sm">
+                            <li><strong>空投不确定性:</strong> 最大的金融风险。空投可能推迟、取消，或代币经济学不佳（如兑换比例低、锁仓期长）。</li>
+                            <li><strong>流动性池(LLP)风险:</strong> 对于未来的流动性提供者，主要风险是无常损失（Impermanent Loss）。</li>
+                        </ul>
+                    </div>
+                </div>
+                 <!-- Accordion Item 3 -->
+                <div class="bg-white rounded-lg border border-slate-200/80 shadow-sm">
+                    <h2>
+                        <button type="button" class="accordion-button flex items-center justify-between w-full p-5 font-medium text-left text-slate-700 hover:bg-slate-50">
+                            <span>📈 市场与监管风险</span>
+                             <span class="arrow transition-transform duration-200">▼</span>
+                        </button>
+                    </h2>
+                    <div class="accordion-content p-5 border-t border-slate-200/80">
+                         <ul class="list-disc pl-5 space-y-2 text-slate-600 text-sm">
+                            <li><strong>激烈竞争:</strong> 永续合约DEX赛道竞争激烈，Lighter需与dYdX, GMX, Hyperliquid等强劲对手竞争市场份额。</li>
+                            <li><strong>监管不确定性:</strong> 全球对衍生品平台的监管日趋严格，未来法规可能对协议运营产生负面影响。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+    
+    <footer class="bg-slate-800 text-slate-400">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4 text-center text-xs">
+            <p>本报告仅供参考，不构成任何投资建议。所有数据来源于公开报告，请自行进行研究与决策 (DYOR)。</p>
+        </div>
+    </footer>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        
+        const smoothScrollLinks = document.querySelectorAll('a[href^="#"]');
+        smoothScrollLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    targetElement.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+
+        // Tab functionality
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const tabId = button.dataset.tab;
+
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+
+                tabContents.forEach(content => {
+                    if (content.id === `tab-${tabId}`) {
+                        content.classList.remove('hidden');
+                    } else {
+                        content.classList.add('hidden');
+                    }
+                });
+            });
+        });
+        document.querySelector('.tab-button[data-tab="airdrop"]').click();
+
+        // Accordion functionality
+        const accordionButtons = document.querySelectorAll('.accordion-button');
+        accordionButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                button.classList.toggle('open');
+                const content = button.nextElementSibling;
+                if (content.style.maxHeight) {
+                    content.style.maxHeight = null;
+                } else {
+                    content.style.maxHeight = content.scrollHeight + 'px';
+                }
+            });
+        });
+
+        const chartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                       color: '#475569' // slate-600
+                    }
+                },
+                tooltip: {
+                    backgroundColor: '#0f172a', // slate-900
+                    titleColor: '#f1f5f9', // slate-100
+                    bodyColor: '#e2e8f0', // slate-200
+                    borderColor: '#334155', // slate-700
+                    borderWidth: 1,
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.y !== null) {
+                                label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed.y);
+                            }
+                            return label;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { 
+                        color: '#475569', // slate-600
+                        callback: function(value) {
+                             if (value >= 1e9) {
+                                return (value / 1e9).toFixed(1) + 'B';
+                             }
+                             if (value >= 1e6) {
+                                return (value / 1e6).toFixed(1) + 'M';
+                             }
+                             if (value >= 1e3) {
+                                return (value / 1e3).toFixed(1) + 'K';
+                             }
+                             return value;
+                        }
+                    },
+                    grid: {
+                        color: '#e2e8f0' // slate-200
+                    }
+                },
+                x: {
+                    ticks: { color: '#475569' }, // slate-600
+                     grid: {
+                        display: false
+                    }
+                }
+            }
+        };
+
+        // Competitor Chart
+        const competitorCtx = document.getElementById('competitorChart').getContext('2d');
+        const competitorData = {
+            labels: ['Hyperliquid', 'GMX', 'dYdX', 'Lighter', 'Vertex'],
+            datasets: [{
+                label: '总锁仓价值 (TVL)',
+                data: [373000000, 501000000, 260000000, 188000000, 73000000],
+                backgroundColor: [
+                    'rgba(239, 68, 68, 0.6)',   // red-500
+                    'rgba(59, 130, 246, 0.6)',  // blue-500
+                    'rgba(249, 115, 22, 0.6)', // orange-500
+                    'rgba(14, 165, 233, 0.6)', // sky-500 (Lighter)
+                    'rgba(34, 197, 94, 0.6)'   // green-500
+                ],
+                borderColor: [
+                    'rgba(239, 68, 68, 1)',
+                    'rgba(59, 130, 246, 1)',
+                    'rgba(249, 115, 22, 1)',
+                    'rgba(14, 165, 233, 1)',
+                    'rgba(34, 197, 94, 1)'
+                ],
+                borderWidth: 1
+            }]
+        };
+        new Chart(competitorCtx, {
+            type: 'bar',
+            data: competitorData,
+            options: chartOptions
+        });
+
+        // TVL Growth Chart
+        const tvlCtx = document.getElementById('tvlChart').getContext('2d');
+        const tvlData = {
+            labels: ['1月', '2月', '3月', '4月', '5月', '6月'],
+            datasets: [{
+                label: 'TVL (美元)',
+                data: [20000000, 45000000, 80000000, 110000000, 158000000, 188000000],
+                fill: true,
+                backgroundColor: 'rgba(14, 165, 233, 0.2)',
+                borderColor: 'rgba(14, 165, 233, 1)',
+                tension: 0.3
+            }]
+        };
+        new Chart(tvlCtx, {
+            type: 'line',
+            data: tvlData,
+            options: chartOptions
+        });
+        
+        // User Growth Chart
+        const userCtx = document.getElementById('userChart').getContext('2d');
+        const userData = {
+            labels: ['1月', '2月', '3月', '4月', '5月', '6月'],
+            datasets: [{
+                label: '累计用户数',
+                data: [1200, 5000, 11000, 19000, 27000, 33048],
+                fill: true,
+                backgroundColor: 'rgba(139, 92, 246, 0.2)', // violet-500
+                borderColor: 'rgba(139, 92, 246, 1)',
+                tension: 0.3
+            }]
+        };
+        const userChartOptions = JSON.parse(JSON.stringify(chartOptions));
+        userChartOptions.plugins.tooltip.callbacks.label = function(context) {
+            let label = context.dataset.label || '';
+            if (label) {
+                label += ': ';
+            }
+            if (context.parsed.y !== null) {
+                label += new Intl.NumberFormat('en-US').format(context.parsed.y);
+            }
+            return label;
+        };
+         new Chart(userCtx, {
+            type: 'line',
+            data: userData,
+            options: userChartOptions
+        });
+    });
+    </script>
+</body>
+</html>

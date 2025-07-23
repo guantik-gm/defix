@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ApeX Protocol - 交互式投资分析</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals & Subtle Teal -->
+    <!-- Application Structure Plan: A tab-based SPA with four main sections: a 'Dashboard' for a high-level overview (rating, key metrics, bull/bear case), a 'Deep Dive' for technology and competitive analysis, a 'Risk Assessment' to prominently feature critical issues like the audit and anonymous team, and an 'Investment Strategies' section for actionable insights. This structure guides the user from a broad summary to specific details, allowing them to explore based on their interests rather than following a linear report format. The dashboard-first approach immediately delivers the most critical conclusions for quick decision-making. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Key Metrics (TVL, Volume, etc.) -> Goal: Inform -> Viz/Method: Dynamic-looking stat cards (HTML/Tailwind) -> Interaction: None -> Justification: Quick, scannable overview.
+        - Report Info: Competitive Landscape -> Goal: Compare -> Viz/Method: Bar Chart (Chart.js Canvas) -> Interaction: Hover tooltips -> Justification: Visually compares ApeX against key competitors on primary metrics.
+        - Report Info: Technology Stack & Tokenomics -> Goal: Organize/Inform -> Viz/Method: Interactive cards and diagrams (HTML/Tailwind) -> Interaction: Click/hover to reveal info -> Justification: Breaks down complex concepts into digestible, non-overwhelming chunks.
+        - Report Info: Risk Analysis -> Goal: Emphasize Caution -> Viz/Method: Themed section with stark visual cards (HTML/Tailwind) -> Interaction: None -> Justification: Uses color and iconography to draw immediate attention to the most critical investment risks.
+        - Report Info: Investment Strategies -> Goal: Guide Action -> Viz/Method: Tabbed content and an interactive table (HTML/Tailwind/JS) -> Interaction: Tab switching -> Justification: Organizes actionable advice by investor profile for easy navigation.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { font-family: 'Noto Sans SC', sans-serif; }
+        .tab-active { border-color: #0d9488; color: #0d9488; background-color: #f0fdfa; }
+        .tab-inactive { border-color: transparent; color: #52525b; }
+        .section-active { display: block; }
+        .section-inactive { display: none; }
+        .chart-container { position: relative; width: 100%; max-width: 800px; margin-left: auto; margin-right: auto; height: 400px; max-height: 50vh; }
+        @media (min-width: 768px) { .chart-container { height: 450px; } }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-900">ApeX Protocol ($APEX)</h1>
+            <p class="text-lg text-slate-600 mt-2">一份面向专业投资者的交互式深度评估报告</p>
+        </header>
+
+        <main>
+            <div id="executive-summary" class="bg-white p-6 rounded-2xl shadow-lg mb-8 border-l-4 border-amber-400">
+                <div class="flex flex-col md:flex-row items-center md:items-start">
+                    <div class="flex-grow">
+                        <h2 class="text-2xl font-bold text-slate-900 mb-2">最终投资评级: 中立 (Neutral)</h2>
+                        <p class="text-slate-600 leading-relaxed">
+                            ApeX Protocol 是一个在技术、资本和经济模型上都表现出色的项目，但其在安全透明度方面的严重缺陷（无法验证的审计报告）构成了不可忽视的障碍。对于寻求高风险、高回报的激进投资者，可考虑作为小部分投机性配置。然而，在完整的安全审计报告被公开并可供审查之前，该项目不适合作为核心投资标的。
+                        </p>
+                    </div>
+                     <div class="mt-4 md:mt-0 md:ml-6 flex-shrink-0 flex flex-col items-center justify-center bg-amber-100/50 text-amber-700 rounded-full w-32 h-32 md:w-40 md:h-40 border-4 border-amber-200">
+                        <span class="text-5xl md:text-6xl font-bold">🚦</span>
+                        <span class="font-semibold mt-2">中立评级</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 text-center">
+                <div class="bg-white p-4 rounded-xl shadow">
+                    <p class="text-sm text-slate-500">总锁仓价值 (TVL)</p>
+                    <p class="text-2xl font-bold text-teal-600">~$18.1M</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow">
+                    <p class="text-sm text-slate-500">24小时交易量</p>
+                    <p class="text-2xl font-bold text-teal-600">~$366M</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow">
+                    <p class="text-sm text-slate-500">年化费用</p>
+                    <p class="text-2xl font-bold text-teal-600">~$6.2M</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow">
+                    <p class="text-sm text-slate-500">流通市值</p>
+                    <p class="text-2xl font-bold text-teal-600">~$16.9M</p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-lg p-2 sm:p-4">
+                <nav class="flex flex-wrap justify-center border-b border-slate-200">
+                    <button data-tab="dashboard" class="nav-tab py-3 px-4 sm:px-6 text-sm md:text-base font-medium border-b-2 transition-colors duration-200">📊 仪表盘</button>
+                    <button data-tab="deep-dive" class="nav-tab py-3 px-4 sm:px-6 text-sm md:text-base font-medium border-b-2 transition-colors duration-200">🔬 深度分析</button>
+                    <button data-tab="risk" class="nav-tab py-3 px-4 sm:px-6 text-sm md:text-base font-medium border-b-2 transition-colors duration-200">⚠️ 风险评估</button>
+                    <button data-tab="strategy" class="nav-tab py-3 px-4 sm:px-6 text-sm md:text-base font-medium border-b-2 transition-colors duration-200">🧭 投资策略</button>
+                </nav>
+
+                <div class="p-4 md:p-6">
+                    <section id="dashboard" class="tab-content">
+                        <p class="text-center text-slate-600 mb-6">此仪表盘旨在提供对 ApeX Protocol 投资价值的最高级别概览，整合了核心的看涨与看跌理由、关键的竞争格局数据以及其代币经济学模型。这是您快速形成初步判断的起点。</p>
+                        <div class="grid md:grid-cols-2 gap-6 mb-8">
+                            <div class="bg-green-50 border border-green-200 p-6 rounded-lg">
+                                <h3 class="text-xl font-bold text-green-800 mb-3 flex items-center">
+                                    <span class="mr-2">👍</span> 看涨理由 (Bull Case)
+                                </h3>
+                                <ul class="space-y-2 text-green-700 list-disc list-inside">
+                                    <li><strong class="font-semibold">技术护城河:</strong> 依托StarkWare提供行业领先的交易体验。</li>
+                                    <li><strong class="font-semibold">顶级资本背书:</strong> Dragonfly、Jump等顶级VC的投资是对项目质量的强力信号。</li>
+                                    <li><strong class="font-semibold">强大的财务表现:</strong> 协议已证明其高资本效率和持续的费用生成能力。</li>
+                                    <li><strong class="font-semibold">持有者友好的代币经济学:</strong> 50%的代币销毁和回购计划，明确将价值回馈给长期持有者。</li>
+                                </ul>
+                            </div>
+                            <div class="bg-red-50 border border-red-200 p-6 rounded-lg">
+                                <h3 class="text-xl font-bold text-red-800 mb-3 flex items-center">
+                                    <span class="mr-2">👎</span> 看跌理由 (Bear Case)
+                                </h3>
+                                <ul class="space-y-2 text-red-700 list-disc list-inside">
+                                    <li><strong class="font-semibold">无法验证的安全审计:</strong> 最致命的风险，使智能合约风险无法被量化。</li>
+                                    <li><strong class="font-semibold">匿名团队:</strong> 缺乏公开的问责机制，增加了极端情况下的不确定性。</li>
+                                    <li><strong class="font-semibold">激烈的市场竞争:</strong> 衍生品DEX赛道巨头林立，ApeX面临持续的竞争压力。</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <h3 class="text-xl font-bold text-center text-slate-800 mb-4">竞争格局：关键指标对比</h3>
+                        <div class="chart-container">
+                            <canvas id="competitorChart"></canvas>
+                        </div>
+
+                         <h3 class="text-xl font-bold text-center text-slate-800 mt-12 mb-4">代币经济学闭环: APEX / esAPEX / veAPEX</h3>
+                        <div class="w-full max-w-4xl mx-auto p-4">
+                            <div class="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0 md:space-x-4">
+                                <div class="text-center p-4 bg-sky-100 rounded-lg shadow w-full md:w-1/3">
+                                    <h4 class="font-bold text-sky-800 text-lg">$APEX</h4>
+                                    <p class="text-sm text-sky-700">原生治理代币<br>质押、支付费用</p>
+                                </div>
+                                <div class="text-2xl font-mono text-slate-400 transform md:-rotate-90">➔</div>
+                                <div class="text-center p-4 bg-indigo-100 rounded-lg shadow w-full md:w-1/3">
+                                    <h4 class="font-bold text-indigo-800 text-lg">$esAPEX</h4>
+                                    <p class="text-sm text-indigo-700">托管代币<br>作为质押奖励发放</p>
+                                </div>
+                                 <div class="text-2xl font-mono text-slate-400 transform md:-rotate-90">➔</div>
+                                <div class="text-center p-4 bg-purple-100 rounded-lg shadow w-full md:w-1/3">
+                                    <h4 class="font-bold text-purple-800 text-lg">$veAPEX</h4>
+                                    <p class="text-sm text-purple-700">投票凭证<br>分享协议收入</p>
+                                </div>
+                            </div>
+                            <div class="text-center mt-6 text-slate-600">
+                                <p>该模型借鉴Curve和GMX，通过时间锁定激励长期持有，减少“挖卖提”抛压。这是一个旨在构建可持续经济体系的深思熟虑的设计。</p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section id="deep-dive" class="tab-content">
+                        <p class="text-center text-slate-600 mb-6">本节深入剖析 ApeX Protocol 的核心竞争力，包括其底层的技术架构和在激烈市场中的相对位置。通过理解这些细节，您可以评估其长期发展的潜力和护城河。</p>
+                        <h3 class="text-xl font-bold text-center text-slate-800 mb-6">核心技术架构</h3>
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="bg-white p-6 rounded-lg border">
+                                <h4 class="font-bold text-lg mb-2 text-teal-700">StarkEx L2 + Validium</h4>
+                                <p class="text-slate-600">ApeX Pro构建于StarkWare的Layer 2扩容引擎StarkEx之上，采用Validium方案。该方案仅将有效性证明（ZK-Proofs）发布在链上，而交易数据保存在链下。这带来了极致的性能（高TPS，低费用）和类似CEX的用户体验，但引入了对数据可用性委员会（DAC）的信任假设。不过，用户的资金安全仍由以太坊主网上的强制退出机制保障。</p>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg border">
+                                <h4 class="font-bold text-lg mb-2 text-teal-700">eAMM + PCV 流动性模型</h4>
+                                <p class="text-slate-600">协议采用弹性自动做市商（eAMM）和协议控制价值（PCV）模型。eAMM允许单边资产提供流动性，提升资本效率。PCV则意味着协议通过债券等方式获取并永久拥有流动性，从而解决了“雇佣资本”问题，为交易者提供了稳定、深厚的流动性池。这是一个在去中心化和稳定性之间取得平衡的创新设计。</p>
+                            </div>
+                        </div>
+
+                        <h3 class="text-xl font-bold text-center text-slate-800 mt-12 mb-6">竞争格局分析表</h3>
+                        <div class="overflow-x-auto">
+                           <table class="w-full min-w-[600px] text-sm text-left text-slate-500">
+                                <thead class="text-xs text-slate-700 uppercase bg-slate-100">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3">特征</th>
+                                        <th scope="col" class="px-6 py-3 bg-teal-50">ApeX Protocol</th>
+                                        <th scope="col" class="px-6 py-3">dYdX</th>
+                                        <th scope="col" class="px-6 py-3">GMX</th>
+                                        <th scope="col" class="px-6 py-3">Hyperliquid</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="bg-white border-b">
+                                        <th scope="row" class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">底层技术</th>
+                                        <td class="px-6 py-4 bg-teal-50/50">StarkEx (Validium L2)</td>
+                                        <td class="px-6 py-4">Cosmos SDK (App-Chain)</td>
+                                        <td class="px-6 py-4">Arbitrum/Avalanche (L2)</td>
+                                        <td class="px-6 py-4">Custom L1 Blockchain</td>
+                                    </tr>
+                                    <tr class="bg-white border-b">
+                                        <th scope="row" class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">核心差异点</th>
+                                        <td class="px-6 py-4 bg-teal-50/50">PCV模型提供稳定流动性</td>
+                                        <td class="px-6 py-4">主权应用链，高度可定制</td>
+                                        <td class="px-6 py-4">GLP池，为LP创造真实收益</td>
+                                        <td class="px-6 py-4">专为交易优化的L1，开发者生态开放</td>
+                                    </tr>
+                                    <tr class="bg-white">
+                                        <th scope="row" class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">主要弱点</th>
+                                        <td class="px-6 py-4 bg-teal-50/50 text-red-600 font-semibold">安全审计不透明；团队匿名</td>
+                                        <td class="px-6 py-4">用户门槛高；生态可组合性受限</td>
+                                        <td class="px-6 py-4">交易费用相对较高</td>
+                                        <td class="px-6 py-4">相对较新，长期稳健性待检验</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <section id="risk" class="tab-content">
+                         <p class="text-center text-slate-600 mb-6">风险评估是任何投资决策的核心。本节将毫无保留地揭示投资 ApeX Protocol 所面临的最重大风险。请务必仔细阅读并理解这些风险点，因为它们是我们将投资评级定为“中立”的关键原因。</p>
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="bg-red-100/50 border-2 border-dashed border-red-300 p-6 rounded-lg">
+                                 <h3 class="text-xl font-bold text-red-800 mb-3 flex items-center">
+                                    <span class="text-2xl mr-3">🚨</span> 安全审计：致命的信息鸿沟
+                                </h3>
+                                <p class="text-red-700 mb-4">尽管项目方声称已通过 Secure3 的审计，但在所有公开渠道均**无法获取完整的审计报告**进行独立验证。在 DeFi 领域，<strong class="font-semibold">“无法验证”等同于“未经审计”</strong>。</p>
+                                <p class="text-red-700">这是一个极其严重的风险点，也是最大的危险信号。它使得任何投资者都无法评估协议的智能合约是否存在致命漏洞，构成了无法量化的投资风险。</p>
+                            </div>
+                             <div class="bg-amber-100/50 border-2 border-dashed border-amber-300 p-6 rounded-lg">
+                                <h3 class="text-xl font-bold text-amber-800 mb-3 flex items-center">
+                                    <span class="text-2xl mr-3">👤</span> 团队匿名：问责制的双重影响
+                                </h3>
+                                <p class="text-amber-700 mb-4">创始团队的匿名带来了显著的问责制风险。在发生极端负面事件时，投资者将缺乏明确的追责对象。</p>
+                                <p class="text-amber-700">然而，顶级VC的投资可被视为一个强有力的“私人信号”，表明匿名团队已通过专业尽职调查。这并未消除风险，但显著改变了风险的性质——从对能力的担忧，转变为对极端情况下追责渠道缺失的担忧。</p>
+                            </div>
+                        </div>
+                         <div class="bg-blue-100/60 border border-blue-200 p-6 rounded-lg mt-6">
+                                <h3 class="text-xl font-bold text-blue-800 mb-3 flex items-center">
+                                    <span class="text-2xl mr-3">🛡️</span> 社区骗局与操作安全警示
+                                </h3>
+                                <p class="text-blue-700">已发现有诈骗者利用高额回报为诱饵，在非官方渠道发布钓鱼网站链接。这警示所有用户：</p>
+                                <ul class="mt-2 space-y-1 text-blue-700 list-disc list-inside">
+                                    <li><strong>坚持使用官方渠道 (apex.exchange)</strong> 进行任何操作。</li>
+                                    <li>警惕任何承诺无风险、超高回报的“机会”。</li>
+                                    <li>永远不要在不信任的网站上输入私钥或助记词。</li>
+                                </ul>
+                            </div>
+                    </section>
+
+                    <section id="strategy" class="tab-content">
+                        <p class="text-center text-slate-600 mb-6">本节将前述所有分析转化为具体、可操作的策略，为不同类型的投资者提供全面的参与路径图。请根据您的风险偏好和专业技能，评估最适合您的机会。</p>
+                        <div class="overflow-x-auto">
+                            <table class="w-full min-w-[800px] text-sm text-left text-slate-500">
+                                <thead class="text-xs text-slate-700 uppercase bg-slate-100">
+                                    <tr>
+                                        <th scope="col" class="px-4 py-3">策略</th>
+                                        <th scope="col" class="px-4 py-3">核心机制</th>
+                                        <th scope="col" class="px-4 py-3">潜在回报 (APR/APY)</th>
+                                        <th scope="col" class="px-4 py-3">主要风险</th>
+                                        <th scope="col" class="px-4 py-3">所需技能</th>
+                                        <th scope="col" class="px-4 py-3">分析师建议</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="bg-white border-b">
+                                        <th class="px-4 py-4 font-medium text-slate-900">直接代币购买</th>
+                                        <td class="px-4 py-4">购买并持有$APEX$，期待其价格上涨。</td>
+                                        <td class="px-4 py-4">价格增值 (不确定)</td>
+                                        <td class="px-4 py-4 text-red-600">市场波动、安全审计不透明</td>
+                                        <td class="px-4 py-4">初级</td>
+                                        <td class="px-4 py-4 font-semibold">中立。小额投机。</td>
+                                    </tr>
+                                    <tr class="bg-white border-b">
+                                        <th class="px-4 py-4 font-medium text-slate-900">协议质押</th>
+                                        <td class="px-4 py-4">质押代币分享交易费收入，奖励为$esAPEX$。</td>
+                                        <td class="px-4 py-4">中等 (动态，需自行计算)</td>
+                                        <td class="px-4 py-4 text-red-600">智能合约风险、代币价格风险</td>
+                                        <td class="px-4 py-4">中级</td>
+                                        <td class="px-4 py-4 font-semibold">中立。审计问题解决前风险高。</td>
+                                    </tr>
+                                    <tr class="bg-white border-b">
+                                        <th class="px-4 py-4 font-medium text-slate-900">Delta中性套利</th>
+                                        <td class="px-4 py-4">质押$APEX$获利的同时，做空永续合约对冲。</td>
+                                        <td class="px-4 py-4">中低 (稳定，取决于 `APR - 资金费率`)</td>
+                                        <td class="px-4 py-4">爆仓风险、资金费率成本、管理复杂</td>
+                                        <td class="px-4 py-4">高级</td>
+                                        <td class="px-4 py-4 font-semibold text-amber-600">建议小仓位测试。</td>
+                                    </tr>
+                                    <tr class="bg-white">
+                                        <th class="px-4 py-4 font-medium text-slate-900">开发者生态参与</th>
+                                        <td class="px-4 py-4">利用官方SDK/API开发交易机器人、策略或工具。</td>
+                                        <td class="px-4 py-4">高 (不确定，取决于项目成功与否)</td>
+                                        <td class="px-4 py-4">开发成本、技术实现难度</td>
+                                        <td class="px-4 py-4">专家级 (编程)</td>
+                                        <td class="px-4 py-4 font-semibold text-green-600">建议探索。</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="mt-8 bg-slate-100 p-6 rounded-lg">
+                           <h3 class="text-xl font-bold text-slate-800 mb-3">评级提升的关键路标</h3>
+                           <p class="text-slate-600">对ApeX Protocol的投资决策是动态的。如果以下关键事件发生，本报告的投资评级将具备上调的基础：</p>
+                           <ul class="mt-3 space-y-2">
+                               <li class="flex items-start"><span class="text-green-500 mr-2">🔑</span> <div><strong class="font-semibold text-green-700">[强烈积极]</strong> 发布完整的、可验证的Secure3审计报告。</div></li>
+                               <li class="flex items-start"><span class="text-green-500 mr-2">✅</span> <div><strong class="font-semibold text-green-700">[强烈积极]</strong> 团队部分或全部成员走向公开化 (Doxxing)。</div></li>
+                               <li class="flex items-start"><span class="text-sky-500 mr-2">📈</span> <div><strong class="font-semibold text-sky-700">[积极]</strong> TVL的持续、显著增长，表明捕获长期资本。</div></li>
+                               <li class="flex items-start"><span class="text-red-500 mr-2">💥</span> <div><strong class="font-semibold text-red-700">[强烈消极]</strong> 任何形式的安全事件或资金被盗。</div></li>
+                           </ul>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </main>
+
+        <footer class="text-center mt-12 text-sm text-slate-500">
+            <p>本报告仅供参考，不构成任何投资建议。市场有风险，投资需谨慎。</p>
+            <p>数据来源于公开渠道，截止至2024年分析期间。</p>
+        </footer>
+
+    </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const tabs = document.querySelectorAll('.nav-tab');
+        const contents = document.querySelectorAll('.tab-content');
+
+        function setActiveTab(tabId) {
+            tabs.forEach(tab => {
+                if (tab.dataset.tab === tabId) {
+                    tab.classList.remove('tab-inactive');
+                    tab.classList.add('tab-active');
+                } else {
+                    tab.classList.remove('tab-active');
+                    tab.classList.add('tab-inactive');
+                }
+            });
+
+            contents.forEach(content => {
+                if (content.id === tabId) {
+                    content.classList.remove('section-inactive');
+                    content.classList.add('section-active');
+                } else {
+                    content.classList.remove('section-active');
+                    content.classList.add('section-inactive');
+                }
+            });
+            
+            if (tabId === 'dashboard' && !window.competitorChartInstance) {
+                 renderCompetitorChart();
+            }
+        }
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                setActiveTab(tab.dataset.tab);
+            });
+        });
+
+        // Initial state
+        setActiveTab('dashboard');
+        
+        function renderCompetitorChart() {
+            const ctx = document.getElementById('competitorChart').getContext('2d');
+            const competitorData = {
+                labels: ['Hyperliquid', 'GMX', 'dYdX', 'ApeX Protocol'],
+                datasets: [
+                    {
+                        label: '24小时交易量 (百万美元)',
+                        data: [2400, 233, 0, 366], 
+                        backgroundColor: 'rgba(13, 148, 136, 0.6)', // teal-600
+                        borderColor: 'rgba(13, 148, 136, 1)',
+                        borderWidth: 1,
+                        yAxisID: 'y',
+                    },
+                    {
+                        label: 'TVL (百万美元)',
+                        data: [1700, 518, 309, 88],
+                        backgroundColor: 'rgba(245, 158, 11, 0.6)', // amber-500
+                        borderColor: 'rgba(245, 158, 11, 1)',
+                        borderWidth: 1,
+                        yAxisID: 'y',
+                    }
+                ]
+            };
+            
+            Chart.defaults.font.family = "'Noto Sans SC', sans-serif";
+            Chart.defaults.color = '#334155'; // slate-700
+
+            window.competitorChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: competitorData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'ApeX Protocol vs 主要竞争对手',
+                            font: { size: 16 }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                             callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact' }).format(context.parsed.y * 1000000);
+                                    }
+                                    return label;
+                                }
+                            }
+                        },
+                        legend: {
+                            position: 'top',
+                        },
+                    },
+                    scales: {
+                        x: {
+                            stacked: false,
+                            grid: { display: false }
+                        },
+                        y: {
+                            stacked: false,
+                            beginAtZero: true,
+                            type: 'logarithmic',
+                            title: {
+                                display: true,
+                                text: '百万美元 (对数刻度)'
+                            },
+                             ticks: {
+                                callback: function(value, index, values) {
+                                    if (value === 10000 || value === 1000 || value === 100 || value === 10 || value === 1) {
+                                        return '$' + value + 'M';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    });
+</script>
+
+</body>
+</html>

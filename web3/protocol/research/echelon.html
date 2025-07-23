@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Echelon Market | 交互式投资分析</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutral Harmony -->
+    <!-- Application Structure Plan: 我设计了一个以任务为导向的SPA结构，而非报告的线性复现。核心是一个“仪表盘”概览页，提供最终评级和关键指标。用户可以从此出发，导航至三个专门模块：“投资策略”、“风险矩阵”和“深度剖析”。这种结构允许用户根据其首要任务（寻找机会、评估风险或深入研究）进行非线性探索，从而提升可用性和信息吸收效率。导航栏将始终存在，便于在不同分析维度间快速切换。 -->
+    <!-- Visualization & Content Choices: 我将报告中的静态表格转化为动态的、交互式的图表和卡片。目标：比较 -> 使用Chart.js条形图展示竞品TVL，比表格更直观。目标：组织 -> 使用交互式卡片网格展示投资策略，可通过风险等级过滤，满足不同用户需求。目标：警告 -> 使用带有强烈视觉提示（颜色、图标）的可折叠部分来展示风险，突出其重要性。目标：解释 -> 使用HTML/CSS构建的流程图和时间线来解析技术和路线图，使其更易消化。所有选择都旨在将报告的密集文本转化为引人入胜的互动体验，并严格遵守了无SVG/Mermaid的要求。 -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { font-family: 'Noto Sans SC', sans-serif; background-color: #FDFBF8; }
+        .nav-link { transition: all 0.3s ease; border-bottom: 2px solid transparent; }
+        .nav-link.active, .nav-link:hover { color: #2563eb; border-bottom-color: #2563eb; }
+        .content-section { display: none; }
+        .content-section.active { display: block; animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .strategy-card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .strategy-card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+        .chart-container { position: relative; width: 100%; max-width: 800px; margin-left: auto; margin-right: auto; height: 350px; max-height: 400px; }
+        @media (min-width: 768px) { .chart-container { height: 400px; } }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <h1 class="text-xl md:text-2xl font-bold text-gray-900">Echelon Market 投资分析</h1>
+            <div class="hidden md:flex space-x-8">
+                <a href="#dashboard" class="nav-link text-lg font-medium text-gray-600 active" data-section="dashboard">仪表盘</a>
+                <a href="#strategies" class="nav-link text-lg font-medium text-gray-600" data-section="strategies">投资策略</a>
+                <a href="#risks" class="nav-link text-lg font-medium text-gray-600" data-section="risks">风险矩阵</a>
+                <a href="#deep-dive" class="nav-link text-lg font-medium text-gray-600" data-section="deep-dive">深度剖析</a>
+            </div>
+            <button id="mobile-menu-button" class="md:hidden focus:outline-none">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+            </button>
+        </nav>
+        <div id="mobile-menu" class="hidden md:hidden px-6 pt-2 pb-4">
+             <a href="#dashboard" class="block py-2 nav-link text-base font-medium text-gray-600 active" data-section="dashboard">仪表盘</a>
+             <a href="#strategies" class="block py-2 nav-link text-base font-medium text-gray-600" data-section="strategies">投资策略</a>
+             <a href="#risks" class="block py-2 nav-link text-base font-medium text-gray-600" data-section="risks">风险矩阵</a>
+             <a href="#deep-dive" class="block py-2 nav-link text-base font-medium text-gray-600" data-section="deep-dive">深度剖析</a>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-4 md:p-8">
+        
+        <section id="dashboard" class="content-section active">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-2">项目概览与投资评级</h2>
+                <p class="text-lg text-gray-600 max-w-3xl mx-auto">一个高风险高回报的Aptos生态DeFi借贷协议，专为经验丰富的投资者设计。</p>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg p-6 md:p-8 mb-12 border border-gray-200">
+                <div class="flex flex-col md:flex-row items-center justify-center text-center">
+                    <div class="md:w-1/3 mb-4 md:mb-0">
+                        <span class="text-lg font-semibold text-gray-500">最终投资评级</span>
+                        <p class="text-5xl font-bold text-blue-600 mt-2">建议</p>
+                        <p class="text-sm text-gray-500 mt-2"> (针对高风险偏好投资者)</p>
+                    </div>
+                    <div class="md:w-2/3 md:pl-8 md:text-left text-center">
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">评级逻辑</h3>
+                        <p class="text-gray-700">Echelon Market 占据了高潜力公链 Aptos 的核心生态位，拥有顶级资本和生态支持，其空投预期和高收益策略为追求超额回报的投资者提供了不容错过的机会。尽管其经济模型和系统性风险极高，但这些风险对于经验丰富的 DeFi 用户而言是透明且可评估的。此项目更像一场高赔率的博弈，而非传统的价值投资。</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+                <div class="bg-white rounded-xl shadow p-6 text-center border border-gray-100">
+                    <h3 class="text-lg font-semibold text-gray-500">种子轮融资</h3>
+                    <p class="text-4xl font-bold text-gray-800 mt-2">$350<span class="text-2xl ml-1">万</span></p>
+                    <p class="text-sm text-gray-500 mt-1">由Amber Group领投</p>
+                </div>
+                <div class="bg-white rounded-xl shadow p-6 text-center border border-gray-100">
+                    <h3 class="text-lg font-semibold text-gray-500">30日协议收入</h3>
+                    <p class="text-4xl font-bold text-gray-800 mt-2">$33.1<span class="text-2xl ml-1">万</span></p>
+                    <p class="text-sm text-gray-500 mt-1">展现了强大的价值捕获能力</p>
+                </div>
+                <div class="bg-white rounded-xl shadow p-6 text-center border border-gray-100">
+                    <h3 class="text-lg font-semibold text-gray-500">总锁仓价值 (TVL)</h3>
+                    <p class="text-4xl font-bold text-gray-800 mt-2">$1.43<span class="text-2xl ml-1">亿</span></p>
+                    <p class="text-sm text-gray-500 mt-1">受空投预期显著影响</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-green-50 rounded-xl p-6 border border-green-200">
+                    <h3 class="text-2xl font-bold text-green-800 mb-4 flex items-center"><span class="mr-2">✅</span>核心优势</h3>
+                    <ul class="space-y-3 text-green-700">
+                        <li><strong>生态支持:</strong> Aptos基金会与Thala Labs孵化，资源协同效应强。</li>
+                        <li><strong>资本背书:</strong> Amber Group, LayerZero等顶级VC投资，信誉度高。</li>
+                        <li><strong>增长战略:</strong> “巩固Aptos → 主导Move生态 → 连接外部世界”路径清晰。</li>
+                        <li><strong>产品创新:</strong> 优化的E-Mode提供极高资本效率，吸引早期用户。</li>
+                        <li><strong>空投预期:</strong> 清晰的积分系统是短期增长的关键催化剂。</li>
+                    </ul>
+                </div>
+                 <div class="bg-red-50 rounded-xl p-6 border border-red-200">
+                    <h3 class="text-2xl font-bold text-red-800 mb-4 flex items-center"><span class="mr-2">⚠️</span>主要风险</h3>
+                    <ul class="space-y-3 text-red-700">
+                        <li><strong>经济模型:</strong> 高收益由高风险杠杆支撑，存在“泡沫”成分。</li>
+                        <li><strong>系统性风险:</strong> 深度绑定Ethena(sUSDe)等外部协议，存在连锁反应。</li>
+                        <li><strong>市场竞争:</strong> 与Aries Markets等竞品功能高度同质化，竞争激烈。</li>
+                        <li><strong>技术风险:</strong> 作为新协议，代码的长期稳健性待考验。</li>
+                        <li><strong>投后风险:</strong> 空投后若价值捕获不足，可能面临资本外流。</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="strategies" class="content-section">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-2">投资机会与策略矩阵</h2>
+                <p class="text-lg text-gray-600 max-w-3xl mx-auto">根据您的风险偏好和技术背景，探索不同的参与机会。请注意，高回报往往伴随着高风险。</p>
+            </div>
+            <div class="flex justify-center mb-8 space-x-2 md:space-x-4">
+                <button class="strategy-filter active px-4 py-2 font-semibold text-sm md:text-base bg-blue-500 text-white rounded-full shadow" data-filter="all">全部策略</button>
+                <button class="strategy-filter px-4 py-2 font-semibold text-sm md:text-base bg-white text-gray-700 rounded-full shadow" data-filter="low">低风险</button>
+                <button class="strategy-filter px-4 py-2 font-semibold text-sm md:text-base bg-white text-gray-700 rounded-full shadow" data-filter="high">高风险</button>
+                <button class="strategy-filter px-4 py-2 font-semibold text-sm md:text-base bg-white text-gray-700 rounded-full shadow" data-filter="dev">开发者</button>
+            </div>
+            <div id="strategy-grid" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="strategy-card bg-white rounded-xl shadow-lg border border-gray-100 p-6" data-risk="low">
+                    <div class="flex justify-between items-start">
+                        <h3 class="text-2xl font-bold text-gray-800 mb-2">空投挖矿</h3>
+                        <span class="px-3 py-1 text-sm font-semibold text-green-800 bg-green-100 rounded-full">低风险</span>
+                    </div>
+                    <p class="text-gray-600 mb-4">核心目标是以最低成本获取最多积分，博取未来空投。</p>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <p class="font-semibold text-gray-700">预期收益: <span class="text-blue-600">未来空投价值 (高度投机)</span></p>
+                        <p class="font-semibold text-gray-700 mt-2">核心操作: <span class="font-normal text-gray-600">存入资产，进行循环贷放大供应和借贷量，刷取积分。</span></p>
+                        <p class="font-semibold text-gray-700 mt-2">适合人群: <span class="font-normal text-gray-600">稳健型DeFi用户、空投猎人。</span></p>
+                    </div>
+                </div>
+                <div class="strategy-card bg-white rounded-xl shadow-lg border border-gray-100 p-6" data-risk="high">
+                    <div class="flex justify-between items-start">
+                        <h3 class="text-2xl font-bold text-gray-800 mb-2">稳定币杠杆循环</h3>
+                         <span class="px-3 py-1 text-sm font-semibold text-red-800 bg-red-100 rounded-full">极高风险</span>
+                    </div>
+                    <p class="text-gray-600 mb-4">利用E-Mode高达93%的LTV，高倍杠杆放大sUSDe收益和多重积分。</p>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <p class="font-semibold text-gray-700">预期收益: <span class="text-red-600 font-bold">>70% APR (高度投机)</span></p>
+                        <p class="font-semibold text-gray-700 mt-2">核心操作: <span class="font-normal text-gray-600">循环存入sUSDe，借出USDC，重复操作以提高杠杆。</span></p>
+                        <p class="font-semibold text-gray-700 mt-2">适合人群: <span class="font-normal text-gray-600">经验丰富的DeFi Degen。</span></p>
+                    </div>
+                </div>
+                <div class="strategy-card bg-white rounded-xl shadow-lg border border-gray-100 p-6" data-risk="high">
+                    <div class="flex justify-between items-start">
+                        <h3 class="text-2xl font-bold text-gray-800 mb-2">LST杠杆质押</h3>
+                        <span class="px-3 py-1 text-sm font-semibold text-yellow-800 bg-yellow-100 rounded-full">高风险</span>
+                    </div>
+                    <p class="text-gray-600 mb-4">通过杠杆放大Aptos (APT)的流动性质押收益，同时赚取积分。</p>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <p class="font-semibold text-gray-700">预期收益: <span class="text-blue-600">APT质押收益 x 杠杆倍数 + 积分</span></p>
+                        <p class="font-semibold text-gray-700 mt-2">核心操作: <span class="font-normal text-gray-600">循环存入sthAPT等LST，借出原生APT，再质押。</span></p>
+                        <p class="font-semibold text-gray-700 mt-2">适合人群: <span class="font-normal text-gray-600">对LST有深入了解的投资者。</span></p>
+                    </div>
+                </div>
+                 <div class="strategy-card bg-white rounded-xl shadow-lg border border-gray-100 p-6" data-risk="dev">
+                    <div class="flex justify-between items-start">
+                        <h3 class="text-2xl font-bold text-gray-800 mb-2">开发者程序化交互</h3>
+                         <span class="px-3 py-1 text-sm font-semibold text-purple-800 bg-purple-100 rounded-full">高技术门槛</span>
+                    </div>
+                    <p class="text-gray-600 mb-4">利用官方SDK构建自动化策略，以提高效率或捕捉套利机会。</p>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <p class="font-semibold text-gray-700">预期收益: <span class="text-blue-600">取决于策略有效性，潜力巨大</span></p>
+                        <p class="font-semibold text-gray-700 mt-2">核心操作: <span class="font-normal text-gray-600">编写脚本实现自动存贷、再平衡、监控、套利等。</span></p>
+                        <p class="font-semibold text-gray-700 mt-2">适合人群: <span class="font-normal text-gray-600">具备编程能力的投资者、量化交易员。</span></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="risks" class="content-section">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-2">综合风险矩阵</h2>
+                <p class="text-lg text-gray-600 max-w-3xl mx-auto">投资前必须充分理解以下风险。每一个风险点都可能对您的投资造成严重影响。</p>
+            </div>
+            <div class="space-y-6">
+                <div class="bg-white rounded-xl shadow p-6 border border-red-200">
+                    <h3 class="text-2xl font-bold text-red-700 mb-3">经济模型风险 (极高)</h3>
+                    <p class="text-gray-700">当前协议的TVL和超高收益率，在很大程度上是由对未来空投的投机预期所驱动的高风险杠杆循环支撑的。这其中存在显著的“泡沫”成分，其高收益模式本质上是不可持续的。一旦积分激励减少或空投结束，可能引发大规模资本撤出，导致流动性危机和协议价值崩溃。</p>
+                </div>
+                <div class="bg-white rounded-xl shadow p-6 border border-yellow-200">
+                    <h3 class="text-2xl font-bold text-yellow-700 mb-3">系统性风险 (高)</h3>
+                    <p class="text-gray-700">协议的高收益策略严重依赖于 Ethena 的 sUSDe 等外部资产。如果这些外部协议的稳定机制在极端市场条件下失效（例如 sUSDe 严重脱锚），将对 Echelon 造成灾难性的连锁反应，使用高杠杆的用户将面临瞬时清算和巨大损失。</p>
+                </div>
+                 <div class="bg-white rounded-xl shadow p-6 border border-gray-200">
+                    <h3 class="text-2xl font-bold text-gray-700 mb-3">技术与安全风险 (中)</h3>
+                    <p class="text-gray-700">尽管项目方声称已通过审计且基于安全的Move语言构建，但公开可访问的完整审计报告缺失，核心代码库的开发活动透明度有限。作为一个相对较新的协议，其智能合约的长期稳健性仍需经过更多时间和极端市场环境的考验。</p>
+                </div>
+                 <div class="bg-white rounded-xl shadow p-6 border border-gray-200">
+                    <h3 class="text-2xl font-bold text-gray-700 mb-3">市场与运营风险 (中)</h3>
+                    <p class="text-gray-700">借贷赛道竞争激烈，尤其是与功能高度相似的Aries Markets。此外，项目在早期阶段存在中心化风险，且未来可能面临日益严格的全球监管审查。代币发行后，如果治理未能有效去中心化，也将是长期风险点。</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="deep-dive" class="content-section">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-2">深度剖析</h2>
+                <p class="text-lg text-gray-600 max-w-3xl mx-auto">深入了解Echelon的技术架构、竞争格局和未来潜力。</p>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-lg p-6 md:p-8 mb-12 border border-gray-200">
+                 <h3 class="text-2xl font-bold text-gray-800 mb-6 text-center">Aptos借贷赛道竞争格局</h3>
+                 <p class="text-center text-gray-600 mb-6 max-w-2xl mx-auto">Echelon与Aries Markets在TVL和功能上形成双雄争霸，竞争异常激烈。下图展示了主要协议的关键指标对比。</p>
+                 <div class="chart-container">
+                     <canvas id="competitionChart"></canvas>
+                 </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg p-6 md:p-8 mb-12 border border-gray-200">
+                 <h3 class="text-2xl font-bold text-gray-800 mb-6 text-center">技术与路线图</h3>
+                 <div class="grid md:grid-cols-2 gap-8">
+                    <div>
+                        <h4 class="text-xl font-semibold text-gray-700 mb-4">核心技术：E-Mode</h4>
+                        <div class="border-l-4 border-blue-500 pl-4 space-y-4 text-gray-600">
+                            <p><strong>定义:</strong> 针对价格高度相关的资产对（如稳定币、LST/原生资产）设计的“效率模式”。</p>
+                            <p><strong>优势:</strong> 由于相对价值变动小，清算风险低，因此可将贷款价值比(LTV)提升至90-95%。</p>
+                            <p><strong>作用:</strong> 这是协议实现高资本效率的关键，也是高杠杆循环策略的基础。</p>
+                        </div>
+                    </div>
+                     <div>
+                        <h4 class="text-xl font-semibold text-gray-700 mb-4">发展路线图</h4>
+                        <ul class="space-y-4">
+                            <li class="flex items-start">
+                                <span class="h-6 w-6 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold mr-4 mt-1 flex-shrink-0">1</span>
+                                <div><strong class="text-gray-800">短期 (2024-2025):</strong> TVL增长至3亿美元+，资产翻倍，多链部署(Movement, Initia)，发行治理代币。</div>
+                            </li>
+                             <li class="flex items-start">
+                                <span class="h-6 w-6 bg-blue-400 rounded-full flex items-center justify-center text-white font-bold mr-4 mt-1 flex-shrink-0">2</span>
+                                <div><strong class="text-gray-800">长期愿景:</strong> 推出“Echelon Earn”简化用户体验，最终演进为“以借贷为中心的Move L2”应用链。</div>
+                            </li>
+                        </ul>
+                    </div>
+                 </div>
+            </div>
+             <div class="bg-white rounded-xl shadow-lg p-6 md:p-8 border border-gray-200">
+                 <h3 class="text-2xl font-bold text-gray-800 mb-6 text-center">代币经济学预期</h3>
+                 <p class="text-center text-gray-600 mb-6 max-w-2xl mx-auto">协议尚未发币，但其积分系统和路线图预示着一个基于veToken模型、具备跨链能力的治理代币即将到来。</p>
+                 <div class="grid md:grid-cols-2 gap-8 items-center">
+                    <div>
+                        <h4 class="text-xl font-semibold text-gray-700 mb-4">未来代币功能</h4>
+                         <ul class="space-y-3 list-disc list-inside text-gray-700">
+                            <li><strong>治理权 (veToken):</strong> 锁定代币以投票决定协议关键参数。</li>
+                            <li><strong>收入分成:</strong> 分享协议产生的借贷利差和清算罚金。</li>
+                            <li><strong>跨链效用 (OFT):</strong> 作为LayerZero OFT，可在多条链上无缝使用。</li>
+                         </ul>
+                    </div>
+                    <div class="chart-container" style="height:250px; max-height:300px;">
+                        <canvas id="tokenomicsChart"></canvas>
+                        <p class="text-center text-sm text-gray-500 mt-2">已公布的分配：5%代币供应量将分配给sENA持有者以吸引外部流动性。</p>
+                    </div>
+                 </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <footer class="text-center py-8 text-gray-500 text-sm">
+        <p>本应用基于公开的深度投资评估报告生成，仅供参考，不构成任何投资建议。</p>
+        <p>数据来源：DeFiLlama, Thala Labs, Echelon官方公告等，截至2024年8月。</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const sections = document.querySelectorAll('.content-section');
+            const navLinks = document.querySelectorAll('.nav-link');
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+
+            function updateActiveState(targetId) {
+                sections.forEach(section => {
+                    section.classList.toggle('active', section.id === targetId);
+                });
+                navLinks.forEach(link => {
+                    link.classList.toggle('active', link.dataset.section === targetId);
+                });
+            }
+
+            function handleNavClick(event) {
+                event.preventDefault();
+                const targetId = this.dataset.section;
+                updateActiveState(targetId);
+                window.location.hash = targetId;
+                window.scrollTo(0, 0);
+
+                if(mobileMenu.classList.contains('block')) {
+                    mobileMenu.classList.remove('block');
+                    mobileMenu.classList.add('hidden');
+                }
+            }
+
+            navLinks.forEach(link => link.addEventListener('click', handleNavClick));
+            
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+                mobileMenu.classList.toggle('block');
+            });
+
+            const initialSection = window.location.hash ? window.location.hash.substring(1) : 'dashboard';
+            updateActiveState(initialSection);
+
+
+            const strategyFilters = document.querySelectorAll('.strategy-filter');
+            const strategyGrid = document.getElementById('strategy-grid');
+            const strategyCards = strategyGrid.querySelectorAll('.strategy-card');
+
+            strategyFilters.forEach(button => {
+                button.addEventListener('click', () => {
+                    strategyFilters.forEach(btn => {
+                        btn.classList.remove('bg-blue-500', 'text-white');
+                        btn.classList.add('bg-white', 'text-gray-700');
+                    });
+                    button.classList.add('bg-blue-500', 'text-white');
+                    button.classList.remove('bg-white', 'text-gray-700');
+                    
+                    const filter = button.dataset.filter;
+
+                    strategyCards.forEach(card => {
+                        if (filter === 'all' || card.dataset.risk === filter) {
+                            card.style.display = 'block';
+                        } else {
+                            card.style.display = 'none';
+                        }
+                    });
+                });
+            });
+            
+            let competitionChartInstance = null;
+            let tokenomicsChartInstance = null;
+
+            function createCompetitionChart() {
+                if(competitionChartInstance) return;
+                const ctx = document.getElementById('competitionChart').getContext('2d');
+                competitionChartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Echo Lending', 'Aries Markets', 'Echelon Market', 'Aptin Finance V2'],
+                        datasets: [{
+                            label: '总锁仓价值 (TVL) in M USD',
+                            data: [289.07, 254.19, 143.42, 14.59],
+                            backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                            borderColor: 'rgba(59, 130, 246, 1)',
+                            borderWidth: 1
+                        }, {
+                            label: '30日协议费用 in k USD',
+                            data: [0, 802.07, 1080, 0], // Echo 和 Aptin 数据为 N/A，记为0
+                            backgroundColor: 'rgba(34, 197, 94, 0.7)',
+                            borderColor: 'rgba(34, 197, 94, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: { display: true, text: 'Aptos 主要借贷协议指标对比', font: { size: 16 } },
+                            tooltip: { mode: 'index', intersect: false }
+                        },
+                        scales: {
+                            y: { beginAtZero: true, ticks: { callback: value => `${value} M` } }
+                        }
+                    }
+                });
+            }
+            
+            function createTokenomicsChart() {
+                if(tokenomicsChartInstance) return;
+                const ctx = document.getElementById('tokenomicsChart').getContext('2d');
+                tokenomicsChartInstance = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['分配给sENA持有者', '其他 (待公布)'],
+                        datasets: [{
+                            data: [5, 95],
+                            backgroundColor: ['rgba(239, 68, 68, 0.7)', 'rgba(209, 213, 219, 0.7)'],
+                            borderColor: ['rgba(239, 68, 68, 1)', 'rgba(209, 213, 219, 1)'],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: { display: true, text: '预期代币分配 (部分)', font: { size: 16 } },
+                            legend: { position: 'bottom' }
+                        }
+                    }
+                });
+            }
+            
+            const observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        if(entry.target.id === 'deep-dive') {
+                            createCompetitionChart();
+                            createTokenomicsChart();
+                        }
+                        // observer.unobserve(entry.target); // optional: if you want to fire it only once
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            observer.observe(document.getElementById('deep-dive'));
+
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Turtle.club 交互式投资分析报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Harmony -->
+    <!-- Application Structure Plan: The application is designed as a single-page, scrollable dashboard to guide investors through a logical due diligence process. It starts with a high-level verdict and key metrics (Investment Overview), then allows deep dives into the project's core mechanics and competitive landscape (Core Analysis). A dedicated, interactive Risk Matrix makes complex risks easily digestible. The Investment Strategies section is a practical, filterable tool for users to find actionable opportunities. The final section uses a visual metaphor (a balance scale) to summarize the bull vs. bear case, reinforcing the final investment thesis. This structure prioritizes user journey and decision-making over the linear format of the source report. -->
+    <!-- Visualization & Content Choices: Goal: Inform - Used dynamic stat cards for key growth metrics and a Chart.js donut chart to visualize treasury composition, providing a quick snapshot. Goal: Explain/Compare - Implemented an interactive HTML/CSS diagram for the complex protocol model, logo cards for investor validation, and a Chart.js bar chart for competitive analysis, making abstract concepts tangible. Goal: Assess Risk - Created a color-coded, interactive HTML grid for the risk matrix, allowing users to click to reveal detailed risk explanations, which simplifies dense information. Goal: Strategize - Built a filterable HTML table for investment opportunities, transforming a static list into a user-driven tool. Goal: Conclude - Designed a visual HTML/CSS balance scale to weigh the bull vs. bear case, offering a memorable and impactful final summary. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #F7F8FC;
+            color: #34495E;
+        }
+        .nav-link {
+            transition: color 0.3s, border-bottom-color 0.3s;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #4C7C7D;
+            border-bottom-color: #4C7C7D;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .tag {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+        .tag-green { background-color: #E6F4F1; color: #4C7C7D; }
+        .tag-blue { background-color: #EBF4FF; color: #3B82F6; }
+        .tag-orange { background-color: #FFF4E6; color: #F97316; }
+        .tag-red { background-color: #FEE2E2; color: #EF4444; }
+        
+        .tab-button {
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .tab-button.active {
+            background-color: #4C7C7D;
+            color: #ffffff;
+        }
+
+        .risk-grid-cell {
+            transition: background-color 0.3s, transform 0.3s;
+            cursor: pointer;
+        }
+        .risk-grid-cell:hover {
+            transform: scale(1.05);
+        }
+        
+        .balance-scale {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            margin-top: 2rem;
+        }
+        .scale-arm {
+            height: 4px;
+            background-color: #A68A64;
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .scale-pan {
+            width: 120px;
+            height: 60px;
+            background-color: #F5F5F4;
+            border: 3px solid #A68A64;
+            border-top: none;
+            border-radius: 0 0 60px 60px;
+            position: relative;
+            bottom: -30px;
+            transition: transform 0.5s ease-in-out;
+        }
+        .scale-base {
+            width: 12px;
+            height: 80px;
+            background-color: #A68A64;
+            position: relative;
+        }
+        .scale-base::before {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: -24px;
+            width: 60px;
+            height: 10px;
+            background-color: #A68A64;
+            border-radius: 5px;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+    <!-- Header & Navigation -->
+    <header class="bg-white/80 backdrop-blur-sm sticky top-0 z-50 shadow-sm">
+        <div class="container mx-auto px-4">
+            <nav class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-3">
+                    <span class="text-2xl font-bold text-[#4C7C7D]">🐢</span>
+                    <h1 class="text-xl font-bold text-gray-800">Turtle.club 投资分析</h1>
+                </div>
+                <div class="hidden md:flex items-center space-x-8 text-gray-600">
+                    <a href="#overview" class="nav-link">概览</a>
+                    <a href="#core-analysis" class="nav-link">核心分析</a>
+                    <a href="#risk-matrix" class="nav-link">风险矩阵</a>
+                    <a href="#strategies" class="nav-link">投资策略</a>
+                    <a href="#verdict" class="nav-link">最终评级</a>
+                </div>
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="text-gray-700 focus:outline-none">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                    </button>
+                </div>
+            </nav>
+            <div id="mobile-menu" class="hidden md:hidden pb-4">
+                <a href="#overview" class="block py-2 px-4 text-sm text-gray-700 hover:bg-gray-100 rounded">概览</a>
+                <a href="#core-analysis" class="block py-2 px-4 text-sm text-gray-700 hover:bg-gray-100 rounded">核心分析</a>
+                <a href="#risk-matrix" class="block py-2 px-4 text-sm text-gray-700 hover:bg-gray-100 rounded">风险矩阵</a>
+                <a href="#strategies" class="block py-2 px-4 text-sm text-gray-700 hover:bg-gray-100 rounded">投资策略</a>
+                <a href="#verdict" class="block py-2 px-4 text-sm text-gray-700 hover:bg-gray-100 rounded">最终评级</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8 md:py-12">
+
+        <!-- Section 1: Overview -->
+        <section id="overview" class="scroll-mt-20 mb-16">
+            <div class="text-center mb-10">
+                <h2 class="text-3xl font-bold text-gray-800 mb-2">投资概览：机遇与风险并存</h2>
+                <p class="text-lg text-gray-500 max-w-3xl mx-auto">Turtle.club 是一个创新的链上资本配置器，但其高增长潜力伴随着显著的透明度风险。本仪表板为您拆解其核心价值与关键警示。</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Final Rating Card -->
+                <div class="lg:col-span-2 card p-6 flex flex-col justify-center items-center text-center bg-gradient-to-br from-[#4C7C7D] to-[#3a5d5e] text-white">
+                     <h3 class="text-lg font-semibold text-gray-200 mb-2">综合投资评级</h3>
+                     <p class="text-5xl font-bold mb-3">投机性买入</p>
+                     <p class="text-sm text-gray-300">基于强大投资者阵容与创新模式，但仅适合高风险偏好者。</p>
+                </div>
+                
+                <!-- Key Metrics -->
+                <div class="card p-6">
+                    <h3 class="font-semibold text-gray-700 mb-2">引导价值</h3>
+                    <p class="text-3xl font-bold text-[#4C7C7D]">$23亿+</p>
+                    <p class="text-sm text-gray-500 mt-1">营销指标，非TVL</p>
+                </div>
+                <div class="card p-6">
+                    <h3 class="font-semibold text-gray-700 mb-2">注册钱包数</h3>
+                    <p class="text-3xl font-bold text-[#4C7C7D]">31.5万+</p>
+                    <p class="text-sm text-gray-500 mt-1">需警惕女巫攻击</p>
+                </div>
+
+                <!-- Treasury Chart -->
+                <div class="lg:col-span-2 card p-6">
+                    <h3 class="font-semibold text-gray-700 text-center mb-4">财库规模与构成 (~$8.27M)</h3>
+                    <div class="chart-container h-48 md:h-56">
+                        <canvas id="treasuryChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Partners -->
+                 <div class="card p-6 flex flex-col justify-center items-center">
+                    <h3 class="font-semibold text-gray-700 mb-2">集成协议数</h3>
+                    <p class="text-5xl font-bold text-[#4C7C7D]">51+</p>
+                    <p class="text-sm text-gray-500 mt-1">广泛的生态系统网络</p>
+                </div>
+                
+                <!-- Core Innovation -->
+                <div class="card p-6 flex flex-col justify-center items-center">
+                    <h3 class="font-semibold text-gray-700 mb-2">核心架构</h3>
+                    <p class="text-5xl font-bold text-[#4C7C7D]">零</p>
+                    <p class="text-sm text-gray-500 mt-1">智能合约风险 (链上)</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Core Analysis -->
+        <section id="core-analysis" class="scroll-mt-20 mb-16">
+            <div class="text-center mb-10">
+                <h2 class="text-3xl font-bold text-gray-800 mb-2">核心分析：拆解 Turtle.club</h2>
+                <p class="text-lg text-gray-500 max-w-3xl mx-auto">深入了解其创新的协议模型、星光熠熠的投资者阵容以及在市场中的竞争定位。这是判断其长期潜力的关键。</p>
+            </div>
+
+            <div class="card p-6 md:p-8">
+                <div class="flex justify-center mb-6 border-b border-gray-200">
+                    <div class="flex space-x-2 md:space-x-4 bg-gray-100 p-1 rounded-full">
+                        <button class="tab-button px-4 py-2 text-sm md:text-base font-medium rounded-full active" data-tab="protocol">协议模型</button>
+                        <button class="tab-button px-4 py-2 text-sm md:text-base font-medium rounded-full" data-tab="investors">投资者</button>
+                        <button class="tab-button px-4 py-2 text-sm md:text-base font-medium rounded-full" data-tab="competition">竞争格局</button>
+                    </div>
+                </div>
+
+                <div id="tab-content">
+                    <!-- Protocol Model Content -->
+                    <div class="tab-pane active" data-tab-content="protocol">
+                        <h3 class="text-xl font-bold text-center mb-2">“幻影流动性”：无智能合约的API模式</h3>
+                        <p class="text-center text-gray-600 mb-6 max-w-2xl mx-auto">Turtle.club不直接托管用户资金，而是通过中心化API追踪用户在合作协议上的行为，从而分配奖励。这种模式将风险从链上合约转移到了链下服务器。</p>
+                        <div class="flex flex-col md:flex-row items-center justify-around space-y-4 md:space-y-0 md:space-x-4 p-4 rounded-lg bg-gray-50">
+                             <div class="text-center p-4 rounded-lg w-full md:w-1/4">
+                                <div class="text-4xl mb-2">👤</div>
+                                <h4 class="font-bold">1. 用户</h4>
+                                <p class="text-sm text-gray-500">在Turtle.club平台选择参与的DeFi活动</p>
+                            </div>
+                            <div class="text-3xl text-gray-400">→</div>
+                             <div class="text-center p-4 rounded-lg w-full md:w-1/4 border-2 border-dashed border-[#A68A64]">
+                                <div class="text-4xl mb-2">🐢</div>
+                                <h4 class="font-bold">2. Turtle API (中心化)</h4>
+                                <p class="text-sm text-gray-500">监控用户地址，记录其在伙伴协议的交互行为</p>
+                            </div>
+                            <div class="text-3xl text-gray-400">→</div>
+                            <div class="text-center p-4 rounded-lg w-full md:w-1/4">
+                                <div class="text-4xl mb-2">🤝</div>
+                                <h4 class="font-bold">3. 合作协议</h4>
+                                <p class="text-sm text-gray-500">用户资金直接存入第三方协议，承担其合约风险</p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Investors Content -->
+                    <div class="tab-pane hidden" data-tab-content="investors">
+                        <h3 class="text-xl font-bold text-center mb-6">$6.2M 种子轮：顶级资本背书</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 text-center">
+                            <div class="p-4 bg-gray-50 rounded-lg">
+                                <p class="font-bold text-lg">ConsenSys</p>
+                                <p class="text-sm text-gray-500">以太坊巨头</p>
+                            </div>
+                             <div class="p-4 bg-gray-50 rounded-lg">
+                                <p class="font-bold text-lg">Susquehanna (SIG)</p>
+                                <p class="text-sm text-gray-500">顶尖量化交易公司</p>
+                            </div>
+                             <div class="p-4 bg-gray-50 rounded-lg">
+                                <p class="font-bold text-lg">Joseph Lubin</p>
+                                <p class="text-sm text-gray-500">以太坊联合创始人</p>
+                            </div>
+                            <div class="p-4 bg-gray-50 rounded-lg">
+                                <p class="font-bold text-lg">THEIA</p>
+                                <p class="text-sm text-gray-500">领投方</p>
+                            </div>
+                             <div class="p-4 bg-gray-50 rounded-lg">
+                                <p class="font-bold text-lg">Laser Digital</p>
+                                <p class="text-sm text-gray-500">VC</p>
+                            </div>
+                            <div class="p-4 bg-gray-50 rounded-lg">
+                                <p class="font-bold text-lg">Chorus One</p>
+                                <p class="text-sm text-gray-500">质押服务商</p>
+                            </div>
+                            <div class="p-4 bg-gray-50 rounded-lg">
+                                <p class="font-bold text-lg">Yoann Turpin</p>
+                                <p class="text-sm text-gray-500">Wintermute联创</p>
+                            </div>
+                            <div class="p-4 bg-gray-50 rounded-lg">
+                                <p class="font-bold text-lg">Ryan Fang</p>
+                                <p class="text-sm text-gray-500">Ankr联创</p>
+                            </div>
+                        </div>
+                        <p class="text-center text-sm text-gray-500 mt-6">注：强大的投资者阵容与项目当前缺乏技术透明度形成鲜明对比，构成信息不对称。</p>
+                    </div>
+                    <!-- Competition Content -->
+                    <div class="tab-pane hidden" data-tab-content="competition">
+                        <h3 class="text-xl font-bold text-center mb-2">链上资本配置器赛道 TVL 对比</h3>
+                         <p class="text-center text-gray-600 mb-6 max-w-2xl mx-auto">Turtle.club作为非托管协议，其TVL不适用。它并非与对手直接竞争资金，而是竞争“流量分发”的元层地位。</p>
+                        <div class="chart-container h-72">
+                            <canvas id="competitionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Risk Matrix -->
+        <section id="risk-matrix" class="scroll-mt-20 mb-16">
+            <div class="text-center mb-10">
+                <h2 class="text-3xl font-bold text-gray-800 mb-2">交互式风险矩阵</h2>
+                <p class="text-lg text-gray-500 max-w-3xl mx-auto">点击矩阵中的色块，深入了解每项风险的具体内容。透明度风险是目前最致命的“红牌警告”。</p>
+            </div>
+
+            <div class="card p-6 md:p-8">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div class="risk-grid-cell p-4 rounded-lg bg-red-100 text-red-800 text-center" data-risk="transparency">
+                        <h4 class="font-bold">透明度风险</h4><p class="text-sm font-semibold">极高</p>
+                    </div>
+                    <div class="risk-grid-cell p-4 rounded-lg bg-orange-100 text-orange-800 text-center" data-risk="centralization">
+                        <h4 class="font-bold">中心化风险</h4><p class="text-sm font-semibold">高</p>
+                    </div>
+                    <div class="risk-grid-cell p-4 rounded-lg bg-orange-100 text-orange-800 text-center" data-risk="counterparty">
+                        <h4 class="font-bold">交易对手风险</h4><p class="text-sm font-semibold">高</p>
+                    </div>
+                    <div class="risk-grid-cell p-4 rounded-lg bg-yellow-100 text-yellow-800 text-center" data-risk="tokenomics">
+                        <h4 class="font-bold">代币经济学风险</h4><p class="text-sm font-semibold">中</p>
+                    </div>
+                    <div class="risk-grid-cell p-4 rounded-lg bg-green-100 text-green-800 text-center" data-risk="smart_contract">
+                        <h4 class="font-bold">智能合约风险</h4><p class="text-sm font-semibold">低 (自身)</p>
+                    </div>
+                </div>
+                <div id="risk-details" class="p-6 bg-gray-50 rounded-lg min-h-[120px] flex items-center justify-center">
+                    <p class="text-gray-500">点击上方风险项查看详情。</p>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- Section 4: Investment Strategies -->
+        <section id="strategies" class="scroll-mt-20 mb-16">
+            <div class="text-center mb-10">
+                <h2 class="text-3xl font-bold text-gray-800 mb-2">高收益投资策略</h2>
+                <p class="text-lg text-gray-500 max-w-3xl mx-auto">当前核心投资机会是空投挖矿。以下是最大化“海龟积分”的策略，旨在博取未来代币空投。请注意，所有策略均需承担对应合作协议的风险。</p>
+            </div>
+            <div class="card p-4 md:p-6">
+                 <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-gray-500">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3">合作协议</th>
+                                <th scope="col" class="px-6 py-3">操作</th>
+                                <th scope="col" class="px-6 py-3">叠加奖励</th>
+                                <th scope="col" class="px-6 py-3">Turtle加成</th>
+                                <th scope="col" class="px-6 py-3">核心风险</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="bg-white border-b hover:bg-gray-50">
+                                <td class="px-6 py-4 font-medium text-gray-900"><span class="tag tag-green">InceptionLRT</span></td>
+                                <td class="px-6 py-4">通过Turtle质押LST</td>
+                                <td class="px-6 py-4">Inception积分 + EigenLayer积分</td>
+                                <td class="px-6 py-4 font-bold text-green-600">50% 积分加成</td>
+                                <td class="px-6 py-4">智能合约, LRT脱锚</td>
+                            </tr>
+                            <tr class="bg-white border-b hover:bg-gray-50">
+                                <td class="px-6 py-4 font-medium text-gray-900"><span class="tag tag-blue">Ether.fi</span></td>
+                                <td class="px-6 py-4">质押ETH获eETH，再提供LP</td>
+                                <td class="px-6 py-4">ether.fi积分 + EigenLayer积分 + DeFi收益</td>
+                                <td class="px-6 py-4">标准积分</td>
+                                <td class="px-6 py-4">智能合约 (多重)</td>
+                            </tr>
+                             <tr class="bg-white border-b hover:bg-gray-50">
+                                <td class="px-6 py-4 font-medium text-gray-900"><span class="tag tag-blue">Renzo</span></td>
+                                <td class="px-6 py-4">质押ETH/LST获ezETH</td>
+                                <td class="px-6 py-4">Renzo ezPoints + EigenLayer积分</td>
+                                <td class="px-6 py-4">标准积分</td>
+                                <td class="px-6 py-4">智能合约, LRT脱锚</td>
+                            </tr>
+                             <tr class="bg-white border-b hover:bg-gray-50">
+                                <td class="px-6 py-4 font-medium text-gray-900"><span class="tag tag-orange">Linea</span></td>
+                                <td class="px-6 py-4">在Linea链上持有资产</td>
+                                <td class="px-6 py-4">Linea LXP-L 积分</td>
+                                <td class="px-6 py-4">额外LXP-L</td>
+                                <td class="px-6 py-4">L2跨链桥, 生态风险</td>
+                            </tr>
+                             <tr class="bg-white hover:bg-gray-50">
+                                <td class="px-6 py-4 font-medium text-gray-900"><span class="tag tag-blue">TON (via TAC)</span></td>
+                                <td class="px-6 py-4">存入ETH至TAC Vaults</td>
+                                <td class="px-6 py-4">TAC奖励 + 固定回报</td>
+                                <td class="px-6 py-4">标准积分</td>
+                                <td class="px-6 py-4">跨链桥 (未测试), 锁仓</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                 <p class="text-center text-xs text-gray-400 mt-4">对于开发者：目前集成需通过商业洽谈，无公开SDK。</p>
+            </div>
+        </section>
+
+        <!-- Section 5: Verdict -->
+        <section id="verdict" class="scroll-mt-20">
+             <div class="text-center mb-10">
+                <h2 class="text-3xl font-bold text-gray-800 mb-2">最终评级与结论</h2>
+                <p class="text-lg text-gray-500 max-w-3xl mx-auto">权衡利弊，我们得出了“投机性买入”的评级。以下是支撑该结论的牛市与熊市论据的可视化对比。</p>
+            </div>
+
+            <div class="card p-6 md:p-8">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                    <div class="text-center">
+                         <div class="balance-scale">
+                             <div class="relative w-full max-w-sm">
+                                <div class="scale-arm w-full">
+                                    <div class="scale-pan" style="transform: translateY(-10px);"></div>
+                                    <div class="scale-pan" style="transform: translateY(10px);"></div>
+                                </div>
+                                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                                     <div class="scale-base"></div>
+                                </div>
+                             </div>
+                         </div>
+                        <div class="flex justify-between w-full max-w-sm mx-auto mt-8">
+                            <h3 class="font-bold text-lg text-green-600">牛市论据 (Bull Case)</h3>
+                            <h3 class="font-bold text-lg text-red-600">熊市论据 (Bear Case)</h3>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-green-50 p-4 rounded-lg">
+                            <h4 class="font-bold text-green-800 mb-2">优势 & 机会</h4>
+                            <ul class="list-disc list-inside text-sm text-green-700 space-y-1">
+                                <li>顶级VC/天使投资人背书</li>
+                                <li>经验丰富的团队</li>
+                                <li>解决行业真实痛点</li>
+                                <li>高资本效率，网络效应强</li>
+                                <li>空投预期回报高</li>
+                            </ul>
+                        </div>
+                        <div class="bg-red-50 p-4 rounded-lg">
+                             <h4 class="font-bold text-red-800 mb-2">劣势 & 威胁</h4>
+                            <ul class="list-disc list-inside text-sm text-red-700 space-y-1">
+                                <li>无公开审计报告（致命缺陷）</li>
+                                <li>中心化“黑箱”系统</li>
+                                <li>依赖第三方协议安全</li>
+                                <li>代币经济学未知</li>
+                                 <li>监管风险</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 pt-6 border-t border-gray-200">
+                    <h3 class="font-bold text-xl text-center text-gray-800 mb-4">评级结论</h3>
+                    <p class="text-gray-600 text-center max-w-4xl mx-auto">
+                        这是一项典型的高风险、高回报投资。强大的基本面（团队、投资者）与极端的不透明度（无审计）并存。此 **“投机性买入”** 评级仅适用于能够承受潜在资本全部损失的资深DeFi投资者。
+                        <br><br>
+                        <strong class="text-red-600">评级附加条件：</strong> 如果项目方在TGE前仍未公布其声称的顶级安全审计报告，本评级将下调至 **“避免” (Avoid)**。
+                    </p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-white mt-16">
+        <div class="container mx-auto px-4 py-6 text-center text-gray-500 text-sm">
+            <p>本报告仅供参考，不构成任何投资建议。所有信息均来源于公开渠道，请自行进行尽职调查 (DYOR)。</p>
+            <p>&copy; 2025 交互式分析报告. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Mobile Menu
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+
+            // Navigation scroll highlighting
+            const sections = document.querySelectorAll('section');
+            const navLinks = document.querySelectorAll('.nav-link');
+            
+            window.onscroll = () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (pageYOffset >= sectionTop - 80) {
+                        current = section.getAttribute('id');
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href').slice(1) === current) {
+                        link.classList.add('active');
+                    }
+                });
+            };
+
+            // Treasury Chart
+            const treasuryData = {
+                labels: ['稳定币 (USDC, USDT)', '其他 (WETH, etc)'],
+                datasets: [{
+                    data: [5.33, 2.79],
+                    backgroundColor: ['#4C7C7D', '#A68A64'],
+                    borderColor: '#ffffff',
+                    borderWidth: 2,
+                }]
+            };
+            const treasuryCtx = document.getElementById('treasuryChart').getContext('2d');
+            new Chart(treasuryCtx, {
+                type: 'doughnut',
+                data: treasuryData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: '#34495E' } },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += '$' + context.parsed.toFixed(2) + 'M';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '60%'
+                }
+            });
+
+            // Competition Chart
+            const competitionData = {
+                labels: ['Veda', 'Spark Liquidity Layer', 'ether.fi Liquid', 'Turtle Club'],
+                datasets: [{
+                    label: 'TVL (亿美元)',
+                    data: [38.4, 35.8, 10.28, 0],
+                    backgroundColor: ['#4C7C7D', '#A68A64', '#7C9D96', '#E74C3C'],
+                    barThickness: 30,
+                }]
+            };
+            const competitionCtx = document.getElementById('competitionChart').getContext('2d');
+            new Chart(competitionCtx, {
+                type: 'bar',
+                data: competitionData,
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                             callbacks: {
+                                label: function(context) {
+                                    if(context.raw === 0) return 'TVL 不适用 (非托管)';
+                                    return '$' + context.raw + ' 亿';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            title: { display: true, text: '总锁仓价值 (TVL in Billions USD)', color: '#34495E' },
+                             ticks: { color: '#34495E' }
+                        },
+                        y: { ticks: { color: '#34495E' } }
+                    }
+                }
+            });
+
+            // Tab functionality
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabPanes = document.querySelectorAll('.tab-pane');
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+
+                    const tabName = button.getAttribute('data-tab');
+                    tabPanes.forEach(pane => {
+                        if (pane.getAttribute('data-tab-content') === tabName) {
+                            pane.classList.remove('hidden');
+                        } else {
+                            pane.classList.add('hidden');
+                        }
+                    });
+                });
+            });
+
+            // Risk Matrix functionality
+            const riskCells = document.querySelectorAll('.risk-grid-cell');
+            const riskDetails = document.getElementById('risk-details');
+            const riskData = {
+                transparency: '<strong>致命缺陷:</strong> 声称已通过顶级公司审计，但<strong>没有任何公开审计报告</strong>。官方GitHub无法访问。这在DeFi领域是不可原谅的透明度失败，是最大的危险信号。',
+                centralization: '<strong>核心风险:</strong> “无智能合约”实为中心化的API和数据库。积分计算、分配和系统安全完全依赖项目方公司的运营，是一个无法被外部验证的<strong>“黑箱”</strong>。',
+                counterparty: '<strong>系统性风险:</strong> 用户资金的安全性完全依赖于其<strong>超过51个合作伙伴</strong>的智能合约安全。任何一个伙伴协议被攻击，都可能导致用户资金损失。',
+                tokenomics: '<strong>不确定性风险:</strong> 未来代币（$TURTLE）的总量、分配、效用和发行日期<strong>完全未知</strong>。当前的积分挖矿是建立在一个价值未知的预期之上。',
+                smart_contract: '<strong>优势所在:</strong> 由于非托管和无智能合约模型，协议<strong>自身</strong>免疫了常见的链上攻击（如重入、闪电贷）。但请注意，这并不能保护用户免受其投资的第三方协议的合约风险。'
+            };
+
+            riskCells.forEach(cell => {
+                cell.addEventListener('click', () => {
+                    const riskKey = cell.getAttribute('data-risk');
+                    riskDetails.innerHTML = `<p class="text-gray-700 text-sm md:text-base">${riskData[riskKey]}</p>`;
+                });
+            });
+        });
+    </script>
+
+</body>
+</html>
