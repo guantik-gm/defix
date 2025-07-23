@@ -3,6 +3,7 @@ import { Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { debounce } from '@/lib/utils';
+import { event } from '@/lib/analytics';
 
 interface SearchBarProps {
   placeholder?: string;
@@ -36,18 +37,45 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     setLocalValue(newValue);
     onChange?.(newValue);
     debouncedSearch(newValue);
+    
+    // 追踪搜索事件
+    if (newValue.length > 2) {
+      event({
+        action: 'search',
+        category: 'user_interaction',
+        label: 'pool_search',
+        value: newValue.length
+      });
+    }
   };
 
   const handleClear = () => {
     setLocalValue("");
     onChange?.("");
     onSearch?.("");
+    
+    // 追踪清除搜索事件
+    event({
+      action: 'clear_search',
+      category: 'user_interaction',
+      label: 'pool_search'
+    });
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       onSearch?.(localValue);
+      
+      // 追踪回车搜索事件
+      if (localValue.trim()) {
+        event({
+          action: 'search_enter',
+          category: 'user_interaction',
+          label: 'pool_search',
+          value: localValue.length
+        });
+      }
     }
   };
 

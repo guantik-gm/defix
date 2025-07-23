@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { FilterOptions, SearchFilters, RiskLevel } from '@/types';
+import { event } from '@/lib/analytics';
 
 interface FilterPanelProps {
   filters: FilterOptions;
@@ -29,6 +30,14 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
     const newFilters = { ...tempFilters, [key]: value };
     setTempFilters(newFilters);
     onFiltersChange(newFilters);
+    
+    // 追踪过滤器使用事件
+    event({
+      action: 'filter_change',
+      category: 'user_interaction',
+      label: key,
+      value: Array.isArray(value) ? value.length : (value ? 1 : 0)
+    });
   };
 
   const handleMultiSelectChange = (
@@ -47,6 +56,14 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
     const clearedFilters: SearchFilters = {};
     setTempFilters(clearedFilters);
     onFiltersChange(clearedFilters);
+    
+    // 追踪清除所有过滤器事件
+    event({
+      action: 'clear_all_filters',
+      category: 'user_interaction',
+      label: 'filter_panel',
+      value: activeFilterCount
+    });
   };
 
   const getActiveFilterCount = () => {
@@ -87,7 +104,15 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setIsExpanded(!isExpanded)}
+              onClick={() => {
+                setIsExpanded(!isExpanded);
+                // 追踪过滤器面板展开/收起事件
+                event({
+                  action: isExpanded ? 'collapse_filters' : 'expand_filters',
+                  category: 'user_interaction',
+                  label: 'filter_panel'
+                });
+              }}
               className="h-8 px-2"
             >
               <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />

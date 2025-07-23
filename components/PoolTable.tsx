@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { formatAPRRange } from '@/lib/utils';
+import { event } from '@/lib/analytics';
 
 interface PoolTableProps {
   pools: Pool[];
@@ -213,6 +214,11 @@ const PoolRow: React.FC<{ pool: Pool }> = ({ pool }) => {
             href={`/reports/research/${encodeURIComponent(pool.protocol.nickname)}`}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => event({
+              action: 'view_research_report',
+              category: 'engagement',
+              label: pool.protocol.nickname
+            })}
           >
             <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
               <FileText className="h-4 w-4" />
@@ -229,6 +235,11 @@ const PoolRow: React.FC<{ pool: Pool }> = ({ pool }) => {
             href={`/reports/analysis/${encodeURIComponent(pool.protocol.nickname)}`}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => event({
+              action: 'view_analysis_report',
+              category: 'engagement',
+              label: pool.protocol.nickname
+            })}
           >
             <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
               <BarChart3 className="h-4 w-4" />
@@ -246,6 +257,11 @@ const PoolRow: React.FC<{ pool: Pool }> = ({ pool }) => {
             target="_blank" 
             rel="noopener noreferrer"
             className="inline-flex"
+            onClick={() => event({
+              action: 'visit_protocol_website',
+              category: 'engagement',
+              label: pool.protocol.nickname
+            })}
           >
             <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
               <ExternalLink className="h-4 w-4" />
@@ -305,14 +321,28 @@ const MobilePoolCard: React.FC<{ pool: Pool }> = ({ pool }) => {
             <span className="text-muted-foreground">报告:</span>
             <div className="flex space-x-2">
               {pool.reports.research?.exists && (
-                <Link href={pool.reports.research.url!}>
+                <Link 
+                  href={`/reports/research/${encodeURIComponent(pool.protocol.nickname)}`}
+                  onClick={() => event({
+                    action: 'view_research_report',
+                    category: 'engagement',
+                    label: pool.protocol.nickname
+                  })}
+                >
                   <Button variant="outline" size="sm" className="h-7 text-xs">
                     调研
                   </Button>
                 </Link>
               )}
               {pool.reports.analysis?.exists && (
-                <Link href={pool.reports.analysis.url!}>
+                <Link 
+                  href={`/reports/analysis/${encodeURIComponent(pool.protocol.nickname)}`}
+                  onClick={() => event({
+                    action: 'view_analysis_report',
+                    category: 'engagement',
+                    label: pool.protocol.nickname
+                  })}
+                >
                   <Button variant="outline" size="sm" className="h-7 text-xs">
                     分析
                   </Button>
@@ -328,6 +358,11 @@ const MobilePoolCard: React.FC<{ pool: Pool }> = ({ pool }) => {
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-xs"
+                onClick={() => event({
+                  action: 'visit_protocol_website',
+                  category: 'engagement',
+                  label: pool.protocol.nickname
+                })}
               >
                 <ExternalLink className="h-3 w-3" />
                 访问官网

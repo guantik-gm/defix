@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { VALIDATION_RULES } from '@/lib/constants';
 import { isValidEmail } from '@/lib/utils';
+import { event } from '@/lib/analytics';
 
 interface FormData {
   poolName: string;
@@ -84,6 +85,14 @@ export default function RequestPage() {
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: undefined }));
     }
+    
+    // 追踪表单交互事件
+    event({
+      action: 'form_interaction',
+      category: 'user_interaction',
+      label: `request_form_${field}`,
+      value: value.length
+    });
   };
 
   // 提交表单
@@ -91,6 +100,13 @@ export default function RequestPage() {
     e.preventDefault();
     
     if (!validateForm()) {
+      // 追踪表单验证失败事件
+      event({
+        action: 'form_validation_failed',
+        category: 'user_interaction',
+        label: 'request_form',
+        value: Object.keys(errors).length
+      });
       return;
     }
 
@@ -119,9 +135,24 @@ export default function RequestPage() {
 
       setSubmitted(true);
       setRequestId(data.requestId || '');
+      
+      // 追踪表单提交成功事件
+      event({
+        action: 'form_submit_success',
+        category: 'engagement',
+        label: 'request_form',
+        value: 1
+      });
     } catch (error) {
       setErrors({
         submit: error instanceof Error ? error.message : '提交失败，请稍后重试'
+      });
+      
+      // 追踪表单提交失败事件
+      event({
+        action: 'form_submit_failed',
+        category: 'user_interaction',
+        label: 'request_form'
       });
     } finally {
       setLoading(false);
@@ -139,6 +170,13 @@ export default function RequestPage() {
       userEmail: ''
     });
     setErrors({});
+    
+    // 追踪重新提交事件
+    event({
+      action: 'form_reset',
+      category: 'user_interaction',
+      label: 'request_form'
+    });
   };
 
   if (submitted) {
@@ -179,7 +217,14 @@ export default function RequestPage() {
                   提交新的请求
                 </Button>
                 <Link href="/" className="block">
-                  <Button className="w-full">
+                  <Button 
+                    className="w-full"
+                    onClick={() => event({
+                      action: 'navigate_home',
+                      category: 'navigation',
+                      label: 'from_request_success'
+                    })}
+                  >
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     返回首页
                   </Button>
@@ -205,7 +250,15 @@ export default function RequestPage() {
           {/* 导航 */}
           <div className="mb-8">
             <Link href="/">
-              <Button variant="ghost" className="mb-4">
+              <Button 
+                variant="ghost" 
+                className="mb-4"
+                onClick={() => event({
+                  action: 'navigate_home',
+                  category: 'navigation',
+                  label: 'from_request_form'
+                })}
+              >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 返回首页
               </Button>
