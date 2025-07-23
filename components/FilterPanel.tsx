@@ -3,6 +3,8 @@ import { ChevronDown, Filter, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { MultiSelect } from '@/components/ui/multi-select';
 import { FilterOptions, SearchFilters, RiskLevel } from '@/types';
 import { event } from '@/lib/analytics';
 
@@ -124,37 +126,73 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
         <div className={`grid gap-4 transition-all duration-200 ${isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 overflow-hidden'}`}>
           <div className="min-h-0">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* 区块链过滤 */}
-              <MultiSelectFilter
-                label="区块链"
-                options={filters.chains}
-                selectedValues={tempFilters.chain || []}
-                onChange={(values) => handleFilterChange('chain', values.length > 0 ? values : undefined)}
-              />
+              {/* 区块链过滤 - 单选 */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">区块链</label>
+                <Select
+                  value={tempFilters.chain?.[0] || ""}
+                  onValueChange={(value) => {
+                    handleFilterChange('chain', value ? [value] : undefined);
+                  }}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="选择区块链" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">全部</SelectItem>
+                    {filters.chains.map((chain) => (
+                      <SelectItem key={chain} value={chain}>
+                        {chain}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-              {/* 风险等级过滤 */}
-              <MultiSelectFilter
-                label="风险等级"
-                options={filters.risks}
-                selectedValues={tempFilters.risk || []}
-                onChange={(values) => handleFilterChange('risk', values.length > 0 ? values : undefined)}
-              />
+              {/* 风险等级过滤 - 单选 */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">风险等级</label>
+                <Select
+                  value={tempFilters.risk?.[0] || ""}
+                  onValueChange={(value) => {
+                    handleFilterChange('risk', value ? [value as RiskLevel] : undefined);
+                  }}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="选择风险等级" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">全部</SelectItem>
+                    {filters.risks.map((risk) => (
+                      <SelectItem key={risk} value={risk}>
+                        {risk}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-              {/* 投资类型过滤 */}
-              <MultiSelectFilter
-                label="投资类型"
-                options={filters.types}
-                selectedValues={tempFilters.type || []}
-                onChange={(values) => handleFilterChange('type', values.length > 0 ? values : undefined)}
-              />
+              {/* 投资类型过滤 - 多选 */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">投资类型</label>
+                <MultiSelect
+                  options={filters.types.map(type => ({ label: type, value: type }))}
+                  selected={tempFilters.type || []}
+                  onChange={(values) => handleFilterChange('type', values.length > 0 ? values : undefined)}
+                  placeholder="选择投资类型"
+                />
+              </div>
 
-              {/* Token过滤 */}
-              <MultiSelectFilter
-                label="Token"
-                options={filters.tokens}
-                selectedValues={tempFilters.token || []}
-                onChange={(values) => handleFilterChange('token', values.length > 0 ? values : undefined)}
-              />
+              {/* Token过滤 - 多选 */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Token</label>
+                <MultiSelect
+                  options={filters.tokens.map(token => ({ label: token, value: token }))}
+                  selected={tempFilters.token || []}
+                  onChange={(values) => handleFilterChange('token', values.length > 0 ? values : undefined)}
+                  placeholder="选择Token"
+                />
+              </div>
             </div>
 
             {/* APR范围过滤 */}
@@ -177,47 +215,6 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
   );
 };
 
-// 多选过滤器组件
-interface MultiSelectFilterProps {
-  label: string;
-  options: string[];
-  selectedValues: string[];
-  onChange: (values: string[]) => void;
-}
-
-const MultiSelectFilter: React.FC<MultiSelectFilterProps> = ({
-  label,
-  options,
-  selectedValues,
-  onChange
-}) => {
-  return (
-    <div className="space-y-2">
-      <label className="text-sm font-medium text-gray-700">{label}</label>
-      <div className="flex flex-wrap gap-1">
-        {options.map((option) => {
-          const isSelected = selectedValues.includes(option);
-          return (
-            <Button
-              key={option}
-              variant={isSelected ? "default" : "outline"}
-              size="sm"
-              className="h-7 text-xs"
-              onClick={() => {
-                const newValues = isSelected
-                  ? selectedValues.filter(v => v !== option)
-                  : [...selectedValues, option];
-                onChange(newValues);
-              }}
-            >
-              {option}
-            </Button>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
 
 // 范围过滤器组件
 interface RangeFilterProps {
