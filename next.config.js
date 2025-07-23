@@ -18,9 +18,30 @@ const nextConfig = {
   // 性能优化
   poweredByHeader: false,
   
-  // 缓存头
+  // 缓存头和安全头
   async headers() {
     return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'SAMEORIGIN'
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff'
+          },
+          {
+            key: 'X-XSS-Protection',
+            value: '1; mode=block'
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin'
+          }
+        ]
+      },
       {
         source: '/static/(.*)',
         headers: [
@@ -73,6 +94,20 @@ const nextConfig = {
   async redirects() {
     return [
       // 可以添加一些常见的重定向
+    ];
+  },
+
+  // 重写配置（处理静态文件）
+  async rewrites() {
+    return [
+      {
+        source: '/sitemap.xml',
+        destination: '/sitemap.xml'
+      },
+      {
+        source: '/robots.txt', 
+        destination: '/robots.txt'
+      }
     ];
   },
 
