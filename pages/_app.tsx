@@ -14,6 +14,9 @@ export default function App({ Component, pageProps }: AppProps) {
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="icon" href="/favicon.ico" />
         
+        {/* Web3 Wallet Compatibility Fix */}
+        <script src="/wallet-fix.js" />
+        
         {/* Google Analytics */}
         <GoogleAnalytics />
         
