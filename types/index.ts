@@ -47,8 +47,8 @@ export interface Pool {
       url?: string;
     };
   };
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // 用户请求状态枚举

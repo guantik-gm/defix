@@ -61,7 +61,11 @@ export class DataLoader {
   private static async loadPoolsFromDirectory(dirPath: string): Promise<Pool[]> {
     try {
       const files = await fs.readdir(dirPath);
-      const mdFiles = files.filter(file => file.endsWith(SUPPORTED_EXTENSIONS.MARKDOWN));
+      const mdFiles = files.filter(file => 
+        file.endsWith(SUPPORTED_EXTENSIONS.MARKDOWN) && 
+        file !== '.md' && // 过滤掉空文件名
+        !file.startsWith('.') // 过滤掉隐藏文件
+      );
       
       const pools = await Promise.all(
         mdFiles.map(async (file) => {
@@ -85,9 +89,15 @@ export class DataLoader {
       const content = await fs.readFile(filePath, 'utf-8');
       const { data: frontmatter } = matter(content);
       
-      // 验证必要字段
-      if (!frontmatter.Protocol || !frontmatter.Type) {
-        throw new Error(`Invalid pool file: ${filePath} - missing required fields`);
+      // 验证必要字段，允许Protocol为null但Type不能为空
+      if (!frontmatter.Type) {
+        throw new Error(`Invalid pool file: ${filePath} - missing Type field`);
+      }
+      
+      // 如果Protocol为null，设置为文件名
+      if (!frontmatter.Protocol || frontmatter.Protocol === null) {
+        const fileName = path.basename(filePath, '.md');
+        frontmatter.Protocol = fileName.split(' ')[0] || 'Unknown';
       }
 
       const poolData = frontmatter as PoolFrontmatter;
@@ -126,8 +136,8 @@ export class DataLoader {
         danger: poolData.Danger,
         scenarios: poolData.Scenarios,
         reports: await this.checkReports(protocolName),
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
 
       return pool;

@@ -131,8 +131,8 @@ export default async function handler(
           bValue = riskOrder[b.risk as keyof typeof riskOrder] || 999;
           break;
         case 'createdAt':
-          aValue = a.createdAt.getTime();
-          bValue = b.createdAt.getTime();
+          aValue = new Date(a.createdAt).getTime();
+          bValue = new Date(b.createdAt).getTime();
           break;
         default: // name
           aValue = a.name.toLowerCase();
