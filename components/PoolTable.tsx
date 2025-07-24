@@ -123,7 +123,7 @@ export function PoolTable({ pools, isLoading }: PoolTableProps) {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-6 px-1 text-xs hover:bg-gray-100 min-w-8 touch-manipulation"
+                          className="h-6 px-1 text-xs text-muted-foreground hover:text-foreground hover:bg-gray-100 dark:hover:bg-gray-700 min-w-8 touch-manipulation"
                           onClick={() => toggleChainExpanded(pool.id)}
                         >
                           <ChevronUp className="w-3 h-3" />
@@ -142,7 +142,7 @@ export function PoolTable({ pools, isLoading }: PoolTableProps) {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-6 px-1 text-xs hover:bg-gray-100 min-w-8 touch-manipulation"
+                          className="h-6 px-1 text-xs text-muted-foreground hover:text-foreground hover:bg-gray-100 dark:hover:bg-gray-700 min-w-8 touch-manipulation"
                           onClick={() => toggleChainExpanded(pool.id)}
                         >
                           +{pool.chain.length - 2}
@@ -197,7 +197,7 @@ export function PoolTable({ pools, isLoading }: PoolTableProps) {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-6 px-1 text-xs hover:bg-gray-100 min-w-8 touch-manipulation"
+                          className="h-6 px-1 text-xs text-muted-foreground hover:text-foreground hover:bg-gray-100 dark:hover:bg-gray-700 min-w-8 touch-manipulation"
                           onClick={() => toggleMarketExpanded(pool.id)}
                         >
                           <ChevronUp className="w-3 h-3" />
@@ -216,7 +216,7 @@ export function PoolTable({ pools, isLoading }: PoolTableProps) {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-6 px-1 text-xs hover:bg-gray-100 min-w-8 touch-manipulation"
+                          className="h-6 px-1 text-xs text-muted-foreground hover:text-foreground hover:bg-gray-100 dark:hover:bg-gray-700 min-w-8 touch-manipulation"
                           onClick={() => toggleMarketExpanded(pool.id)}
                         >
                           +{pool.market.length - 2}
