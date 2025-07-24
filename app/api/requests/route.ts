@@ -1,24 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import { mockApiDelay } from '@/lib/mock-data';
-import { generateId } from '@/lib/utils';
-import { RequestType, RiskLevel, RequestStatus } from '@/types';
-
-// Supabase 配置（开发环境使用 mock 数据）
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-// 模拟存储用户请求（当 Supabase 未配置时使用）
-const mockRequests: any[] = [];
+import { submitPoolRequest, getAllRequests, isSupabaseConfigured } from '@/lib/supabase';
 
 export async function POST(request: NextRequest) {
   try {
-    // 模拟API延迟
-    await mockApiDelay(500);
-    
+    // 检查Supabase是否已配置
+    if (!isSupabaseConfigured) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Configuration error',
+          message: 'Supabase数据库未配置，暂时无法提交请求'
+        },
+        { status: 503 }
+      );
+    }
+
     const body = await request.json();
     const { 
-      type, 
       poolName, 
       protocolName, 
       officialWebsite,
@@ -55,60 +53,49 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    
-    // 创建新请求记录
-    const newRequest = {
-      id: generateId(),
-      type: type || RequestType.POOL_INCLUSION,
-      pool_name: poolName,
-      protocol_name: protocolName,
-      official_website: officialWebsite,
-      chain: Array.isArray(chain) ? chain : [chain],
-      token,
-      investment_type: investmentType,
-      expected_apr: expectedAPR,
-      risk_level: riskLevel || RiskLevel.MEDIUM,
-      contact_email: contactEmail,
-      additional_info: additionalInfo,
-      status: RequestStatus.PENDING,
-      priority: 'medium',
-      submitted_at: new Date().toISOString(),
-      processed_at: null,
-      notes: null,
+
+    // URL验证
+    try {
+      new URL(officialWebsite);
+    } catch {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Validation error',
+          message: '请提供有效的协议网站链接'
+        },
+        { status: 400 }
+      );
+    }
+
+    // 构建提交数据
+    const submitData = {
+      protocol_name: protocolName.trim(),
+      protocol_website: officialWebsite.trim(),
+      pool_type: `${poolName} - ${investmentType || 'Unknown'}`.trim(),
+      chain: Array.isArray(chain) ? chain.join(', ') : chain,
+      description: `收益池: ${poolName}\n代币: ${token || 'N/A'}\n预期APR: ${expectedAPR || 'N/A'}\n风险等级: ${riskLevel || 'N/A'}\n\n额外信息: ${additionalInfo || '无'}`.trim(),
+      submitter_contact: contactEmail.trim(),
     };
 
-    // 如果配置了 Supabase，存储到数据库
-    if (supabaseUrl && supabaseKey) {
-      try {
-        const supabase = createClient(supabaseUrl, supabaseKey);
-        
-        const { data, error } = await supabase
-          .from('user_requests')
-          .insert([newRequest])
-          .select();
+    // 提交到Supabase
+    const result = await submitPoolRequest(submitData);
 
-        if (error) {
-          console.error('Supabase error:', error);
-          // 如果 Supabase 失败，回退到 mock 存储
-          mockRequests.push(newRequest);
-        } else {
-          console.log('请求已存储到 Supabase:', data);
-        }
-      } catch (supabaseError) {
-        console.error('Supabase connection error:', supabaseError);
-        // 如果 Supabase 连接失败，回退到 mock 存储
-        mockRequests.push(newRequest);
-      }
-    } else {
-      // 使用 mock 存储
-      mockRequests.push(newRequest);
-      console.log('请求已存储到 mock 数据:', newRequest);
+    if (!result.success) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Database error',
+          message: result.error || '提交失败，请稍后重试'
+        },
+        { status: 500 }
+      );
     }
-    
+
     return NextResponse.json({
       success: true,
       data: {
-        requestId: newRequest.id,
+        requestId: result.data?.[0]?.id,
       },
       message: '请求提交成功，我们将在3-7个工作日内进行评估'
     });
@@ -128,17 +115,39 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   try {
-    // 模拟API延迟
-    await mockApiDelay(200);
+    // 检查Supabase是否已配置
+    if (!isSupabaseConfigured) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Configuration error',
+          message: 'Supabase数据库未配置，暂时无法获取请求列表'
+        },
+        { status: 503 }
+      );
+    }
+
+    // 获取所有请求（用于管理后台）
+    const result = await getAllRequests();
     
-    // 返回所有请求（仅用于开发调试）
+    if (!result.success) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Database error',
+          message: result.error || '获取请求失败'
+        },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json({
       success: true,
-      data: mockRequests
+      data: result.data
     });
     
   } catch (error) {
-    console.error('API Error:', error);
+    console.error('Get requests error:', error);
     return NextResponse.json(
       { 
         success: false, 

@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { mockPools, generateMockFilterOptions, mockApiDelay, paginatePools, searchPools } from '@/lib/mock-data';
+import { parsePools, generateFilterOptions, apiDelay } from '@/lib/file-data-parser';
 import { filterPools, sortPools } from '@/lib/data-parser';
 import { RiskLevel } from '@/types';
 
 export async function GET(request: NextRequest) {
   try {
     // 模拟API延迟
-    await mockApiDelay(300);
+    await apiDelay(300);
     
     const { searchParams } = new URL(request.url);
     
@@ -26,8 +26,11 @@ export async function GET(request: NextRequest) {
     const aprMin = searchParams.get('aprMin') ? parseFloat(searchParams.get('aprMin')!) : undefined;
     const aprMax = searchParams.get('aprMax') ? parseFloat(searchParams.get('aprMax')!) : undefined;
     
+    // 从文件系统获取真实数据
+    const allPools = await parsePools();
+    
     // 应用过滤器
-    let filteredPools = filterPools(mockPools, {
+    let filteredPools = filterPools(allPools, {
       search,
       chains: chains.length > 0 ? chains : undefined,
       risks: risks.length > 0 ? risks : undefined,
@@ -42,15 +45,21 @@ export async function GET(request: NextRequest) {
     filteredPools = sortPools(filteredPools, sortBy, sortOrder);
     
     // 应用分页
-    const paginatedResult = paginatePools(filteredPools, page, limit);
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedPools = filteredPools.slice(startIndex, endIndex);
     
     // 生成过滤器选项
-    const filters = generateMockFilterOptions();
+    const filters = await generateFilterOptions();
     
     return NextResponse.json({
       success: true,
       data: {
-        ...paginatedResult,
+        pools: paginatedPools,
+        total: filteredPools.length,
+        page,
+        limit,
+        totalPages: Math.ceil(filteredPools.length / limit),
         filters,
       }
     });
