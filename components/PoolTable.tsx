@@ -1,12 +1,12 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Pool, RiskLevel } from '@/types';
 import { formatAPRRange, getRiskLevelColor, getChainColor } from '@/lib/utils';
 import { Badge } from './ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Button } from './ui/button';
-import { ExternalLink, FileText, BarChart3 } from 'lucide-react';
+import { ExternalLink, FileText, BarChart3, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface PoolTableProps {
   pools: Pool[];
@@ -14,6 +14,36 @@ interface PoolTableProps {
 }
 
 export function PoolTable({ pools, isLoading }: PoolTableProps) {
+  // 管理每个池子的展开状态
+  const [expandedChains, setExpandedChains] = useState<Set<string>>(new Set());
+  const [expandedMarkets, setExpandedMarkets] = useState<Set<string>>(new Set());
+
+  // 切换链展开状态
+  const toggleChainExpanded = (poolId: string) => {
+    setExpandedChains(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(poolId)) {
+        newSet.delete(poolId);
+      } else {
+        newSet.add(poolId);
+      }
+      return newSet;
+    });
+  };
+
+  // 切换市场展开状态
+  const toggleMarketExpanded = (poolId: string) => {
+    setExpandedMarkets(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(poolId)) {
+        newSet.delete(poolId);
+      } else {
+        newSet.add(poolId);
+      }
+      return newSet;
+    });
+  };
+
   if (isLoading) {
     return <PoolTableSkeleton />;
   }
@@ -81,15 +111,45 @@ export function PoolTable({ pools, isLoading }: PoolTableProps) {
               
               <TableCell>
                 <div className="flex flex-wrap gap-1">
-                  {pool.chain.slice(0, 2).map((chain, index) => (
-                    <Badge key={index} className={`chain-tag text-xs ${getChainColor(chain)}`}>
-                      {chain}
-                    </Badge>
-                  ))}
-                  {pool.chain.length > 2 && (
-                    <Badge variant="outline" className="text-xs">
-                      +{pool.chain.length - 2}
-                    </Badge>
+                  {expandedChains.has(pool.id) ? (
+                    // 展开状态 - 显示所有链
+                    <>
+                      {pool.chain.map((chain, index) => (
+                        <Badge key={index} className={`chain-tag text-xs ${getChainColor(chain)}`}>
+                          {chain}
+                        </Badge>
+                      ))}
+                      {pool.chain.length > 2 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-1 text-xs hover:bg-gray-100 min-w-8 touch-manipulation"
+                          onClick={() => toggleChainExpanded(pool.id)}
+                        >
+                          <ChevronUp className="w-3 h-3" />
+                        </Button>
+                      )}
+                    </>
+                  ) : (
+                    // 收缩状态 - 只显示前2个
+                    <>
+                      {pool.chain.slice(0, 2).map((chain, index) => (
+                        <Badge key={index} className={`chain-tag text-xs ${getChainColor(chain)}`}>
+                          {chain}
+                        </Badge>
+                      ))}
+                      {pool.chain.length > 2 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-1 text-xs hover:bg-gray-100 min-w-8 touch-manipulation"
+                          onClick={() => toggleChainExpanded(pool.id)}
+                        >
+                          +{pool.chain.length - 2}
+                          <ChevronDown className="w-3 h-3 ml-1" />
+                        </Button>
+                      )}
+                    </>
                   )}
                 </div>
               </TableCell>
@@ -125,15 +185,45 @@ export function PoolTable({ pools, isLoading }: PoolTableProps) {
               
               <TableCell className="hidden sm:table-cell">
                 <div className="flex flex-wrap gap-1">
-                  {pool.market.slice(0, 2).map((market, index) => (
-                    <Badge key={index} variant="secondary" className="text-xs">
-                      {market}
-                    </Badge>
-                  ))}
-                  {pool.market.length > 2 && (
-                    <Badge variant="outline" className="text-xs">
-                      +{pool.market.length - 2}
-                    </Badge>
+                  {expandedMarkets.has(pool.id) ? (
+                    // 展开状态 - 显示所有市场
+                    <>
+                      {pool.market.map((market, index) => (
+                        <Badge key={index} variant="secondary" className="text-xs">
+                          {market}
+                        </Badge>
+                      ))}
+                      {pool.market.length > 2 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-1 text-xs hover:bg-gray-100 min-w-8 touch-manipulation"
+                          onClick={() => toggleMarketExpanded(pool.id)}
+                        >
+                          <ChevronUp className="w-3 h-3" />
+                        </Button>
+                      )}
+                    </>
+                  ) : (
+                    // 收缩状态 - 只显示前2个
+                    <>
+                      {pool.market.slice(0, 2).map((market, index) => (
+                        <Badge key={index} variant="secondary" className="text-xs">
+                          {market}
+                        </Badge>
+                      ))}
+                      {pool.market.length > 2 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-1 text-xs hover:bg-gray-100 min-w-8 touch-manipulation"
+                          onClick={() => toggleMarketExpanded(pool.id)}
+                        >
+                          +{pool.market.length - 2}
+                          <ChevronDown className="w-3 h-3 ml-1" />
+                        </Button>
+                      )}
+                    </>
                   )}
                 </div>
               </TableCell>
