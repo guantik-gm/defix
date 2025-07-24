@@ -1,5 +1,5 @@
 import matter from 'gray-matter';
-import { Pool, Protocol, RawPoolData, RawProtocolData, RiskLevel } from '@/types';
+import { Pool, Protocol, RawPoolData, RawProtocolData, RiskLevel, SortField, SortFieldType } from '@/types';
 import { extractProtocolName, normalizeArray, generateId } from './utils';
 
 // 解析Pool文档
@@ -150,43 +150,48 @@ export function generatePoolKeywords(pool: Pool): string {
   ].filter(Boolean).join(' ').toLowerCase();
 }
 
-// 排序函数
-export function sortPools(pools: Pool[], sortBy: string, sortOrder: 'asc' | 'desc' = 'asc'): Pool[] {
+// 获取字段值的函数
+function getFieldValue(pool: Pool, field: SortFieldType): any {
+  switch (field) {
+    case 'apr-high':
+      return pool.aprRange.high;
+    case 'apr-low':
+      return pool.aprRange.low;
+    case 'risk':
+      const riskOrder = { 
+        [RiskLevel.LOW]: 1, 
+        [RiskLevel.MEDIUM]: 2, 
+        [RiskLevel.HIGH]: 3, 
+        [RiskLevel.VERY_HIGH]: 4 
+      };
+      return riskOrder[pool.risk];
+    default:
+      return pool.name;
+  }
+}
+
+// 多字段排序函数
+export function sortPools(pools: Pool[], sorts: SortField[] = []): Pool[] {
+  if (sorts.length === 0) {
+    return pools; // 没有排序条件时返回原数组
+  }
+  
   const sorted = [...pools].sort((a, b) => {
-    let aValue: any;
-    let bValue: any;
-    
-    switch (sortBy) {
-      case 'name':
-        aValue = a.name;
-        bValue = b.name;
-        break;
-      case 'apr':
-        aValue = (a.aprRange.low + a.aprRange.high) / 2;
-        bValue = (b.aprRange.low + b.aprRange.high) / 2;
-        break;
-      case 'risk':
-        const riskOrder = { 
-          [RiskLevel.LOW]: 1, 
-          [RiskLevel.MEDIUM]: 2, 
-          [RiskLevel.HIGH]: 3, 
-          [RiskLevel.VERY_HIGH]: 4 
-        };
-        aValue = riskOrder[a.risk];
-        bValue = riskOrder[b.risk];
-        break;
-      case 'createdAt':
-        aValue = a.createdAt;
-        bValue = b.createdAt;
-        break;
-      default:
-        aValue = a.name;
-        bValue = b.name;
+    // 按照sorts数组中的顺序逐个比较字段
+    for (const { field, order } of sorts) {
+      const aValue = getFieldValue(a, field);
+      const bValue = getFieldValue(b, field);
+      
+      let result = 0;
+      if (aValue < bValue) result = -1;
+      else if (aValue > bValue) result = 1;
+      
+      if (result !== 0) {
+        return order === 'asc' ? result : -result;
+      }
     }
     
-    if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
-    if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
-    return 0;
+    return 0; // 所有字段都相等
   });
   
   return sorted;

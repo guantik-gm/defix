@@ -95,14 +95,22 @@ export function PoolTable({ pools, isLoading }: PoolTableProps) {
               </TableCell>
               
               <TableCell>
-                <Badge className={`text-xs ${getRiskLevelColor(pool.risk)}`}>
+                <div 
+                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors ${getRiskLevelColor(pool.risk)}`}
+                  style={pool.risk === '极高风险' ? {
+                    backgroundColor: '#dc2626', // red-600
+                    color: '#fef2f2', // red-50
+                    borderColor: '#b91c1c', // red-700
+                    borderWidth: '1px'
+                  } : undefined}
+                >
                   <span className="hidden sm:inline">{pool.risk}</span>
                   <span className="sm:hidden">
                     {pool.risk === '低风险' ? '低' : 
                      pool.risk === '中风险' ? '中' : 
                      pool.risk === '高风险' ? '高' : '极'}
                   </span>
-                </Badge>
+                </div>
               </TableCell>
               
               <TableCell>

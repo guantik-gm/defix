@@ -13,9 +13,11 @@ const riskMapping: Record<string, RiskLevel> = {
   '低风险': RiskLevel.LOW,
   '中风险': RiskLevel.MEDIUM,
   '高风险': RiskLevel.HIGH,
+  '极高风险': RiskLevel.VERY_HIGH,
   '低': RiskLevel.LOW,
   '中': RiskLevel.MEDIUM,
   '高': RiskLevel.HIGH,
+  '极高': RiskLevel.VERY_HIGH,
 };
 
 // 获取协议信息的缓存

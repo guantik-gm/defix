@@ -123,6 +123,15 @@ export interface PoolsResponse {
   filters: FilterOptions;
 }
 
+// 排序字段类型
+export type SortFieldType = 'apr-high' | 'apr-low' | 'risk';
+
+// 单个排序字段定义
+export interface SortField {
+  field: SortFieldType;
+  order: 'asc' | 'desc';
+}
+
 // 搜索和过滤参数
 export interface PoolsQuery {
   page?: number;
@@ -135,8 +144,7 @@ export interface PoolsQuery {
   market?: string[]; // 市场过滤
   aprMin?: number; // 最低APR过滤
   aprMax?: number; // 最高APR过滤
-  sortBy?: 'name' | 'apr' | 'risk' | 'createdAt';
-  sortOrder?: 'asc' | 'desc';
+  sorts?: SortField[]; // 多字段排序（替代 sortBy + sortOrder）
 }
 
 // 报告元数据

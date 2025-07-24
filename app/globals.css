@@ -76,21 +76,21 @@
   @apply border-b border-gray-100 hover:bg-gray-50 transition-colors;
 }
 
-/* 风险等级颜色 */
+/* 风险等级颜色 - 更新为与utils.ts一致 */
 .risk-low {
-  @apply bg-green-100 text-green-800;
+  @apply bg-green-100 text-green-800 border border-green-200;
 }
 
 .risk-medium {
-  @apply bg-yellow-100 text-yellow-800;
+  @apply bg-yellow-100 text-yellow-800 border border-yellow-200;
 }
 
 .risk-high {
-  @apply bg-orange-100 text-orange-800;
+  @apply bg-red-100 text-red-800 border border-red-200;
 }
 
 .risk-very-high {
-  @apply bg-red-100 text-red-800;
+  @apply bg-red-600 text-red-50 border border-red-700 font-semibold;
 }
 
 /* 链标签样式 */

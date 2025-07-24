@@ -31,15 +31,15 @@ export function formatDate(date: Date): string {
 export function getRiskLevelColor(risk: RiskLevel): string {
   switch (risk) {
     case RiskLevel.LOW:
-      return 'bg-green-100 text-green-800'
+      return 'bg-green-100 text-green-800 border border-green-200'
     case RiskLevel.MEDIUM:
-      return 'bg-yellow-100 text-yellow-800'
+      return 'bg-yellow-100 text-yellow-800 border border-yellow-200'
     case RiskLevel.HIGH:
-      return 'bg-orange-100 text-orange-800'
+      return 'bg-red-100 text-red-800 border border-red-200'
     case RiskLevel.VERY_HIGH:
-      return 'bg-red-100 text-red-800'
+      return 'bg-red-600 text-red-50 border border-red-700 font-semibold'
     default:
-      return 'bg-gray-100 text-gray-800'
+      return 'bg-gray-100 text-gray-800 border border-gray-200'
   }
 }
 

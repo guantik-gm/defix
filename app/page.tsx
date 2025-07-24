@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Pool, PoolsResponse, FilterOptions, RiskLevel } from '@/types';
+import { Pool, PoolsResponse, FilterOptions, RiskLevel, SortField, SortFieldType } from '@/types';
 import { PoolTable } from '@/components/PoolTable';
 import { SearchBar } from '@/components/SearchBar';
 import { FilterPanel } from '@/components/FilterPanel';
@@ -45,8 +45,7 @@ export default function HomePage() {
     markets: [],
     aprRange: { min: 0, max: 1 },
   });
-  const [sortBy, setSortBy] = useState<'name' | 'apr' | 'risk' | 'createdAt'>('name');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [sorts, setSorts] = useState<SortField[]>([]);
 
   // 获取收益池数据
   const fetchPools = useCallback(async (searchTerm: string, page: number) => {
@@ -55,12 +54,15 @@ export default function HomePage() {
       const params = new URLSearchParams({
         page: page.toString(),
         limit: pagination.limit.toString(),
-        sortBy,
-        sortOrder,
       });
 
       if (searchTerm) {
         params.set('search', searchTerm);
+      }
+
+      // 添加多字段排序参数
+      if (sorts.length > 0) {
+        params.set('sorts', JSON.stringify(sorts));
       }
 
       // 添加过滤器参数
@@ -105,7 +107,7 @@ export default function HomePage() {
     } finally {
       setIsLoading(false);
     }
-  }, [pagination.limit, sortBy, sortOrder, activeFilters]);
+  }, [pagination.limit, sorts, activeFilters]);
 
   // 防抖搜索
   const debouncedSearch = useCallback(
@@ -131,14 +133,40 @@ export default function HomePage() {
     fetchPools(search, page);
   };
 
-  // 排序处理
-  const handleSort = (field: typeof sortBy) => {
-    if (field === sortBy) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(field);
-      setSortOrder('asc');
-    }
+  // 添加或切换排序字段
+  const toggleSortField = (field: SortFieldType) => {
+    setSorts(currentSorts => {
+      const existingIndex = currentSorts.findIndex(s => s.field === field);
+      
+      if (existingIndex >= 0) {
+        // 字段已存在，切换排序方向
+        const updated = [...currentSorts];
+        updated[existingIndex] = {
+          ...updated[existingIndex],
+          order: updated[existingIndex].order === 'asc' ? 'desc' : 'asc'
+        };
+        return updated;
+      } else {
+        // 新字段，添加到排序列表（默认降序，因为通常用户想看最高的值）
+        return [...currentSorts, { field, order: 'desc' }];
+      }
+    });
+  };
+
+  // 移除排序字段
+  const removeSortField = (field: SortFieldType) => {
+    setSorts(currentSorts => currentSorts.filter(s => s.field !== field));
+  };
+
+  // 清空所有排序
+  const clearAllSorts = () => {
+    setSorts([]);
+  };
+
+  // 获取字段的排序状态
+  const getSortStatus = (field: SortFieldType) => {
+    const sort = sorts.find(s => s.field === field);
+    return sort ? { active: true, order: sort.order, index: sorts.indexOf(sort) + 1 } : { active: false };
   };
 
   // 过滤器处理
@@ -190,34 +218,81 @@ export default function HomePage() {
             <div className="button-group flex gap-2 w-full lg:w-auto">
               {/* 排序按钮 */}
               <div className="flex gap-1 flex-wrap">
+                {/* APR-High 排序 */}
                 <Button
-                  variant={sortBy === 'name' ? 'default' : 'outline'}
+                  variant={getSortStatus('apr-high').active ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => handleSort('name')}
-                  className="btn flex-1 sm:flex-none"
+                  onClick={() => toggleSortField('apr-high')}
+                  className="btn flex-1 sm:flex-none relative"
                 >
-                  <span className="hidden sm:inline">名称</span>
-                  <span className="sm:hidden">名</span>
-                  {sortBy === 'name' && (sortOrder === 'asc' ? <SortAsc className="ml-1 h-4 w-4" /> : <SortDesc className="ml-1 h-4 w-4" />)}
+                  <span className="hidden sm:inline">高收益</span>
+                  <span className="sm:hidden">高收</span>
+                  {getSortStatus('apr-high').active && (
+                    <>
+                      {getSortStatus('apr-high').order === 'asc' ? <SortAsc className="ml-1 h-4 w-4" /> : <SortDesc className="ml-1 h-4 w-4" />}
+                      {sorts.length > 1 && (
+                        <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center text-[10px]">
+                          {getSortStatus('apr-high').index}
+                        </span>
+                      )}
+                    </>
+                  )}
                 </Button>
+                
+                {/* APR-Low 排序 */}
                 <Button
-                  variant={sortBy === 'apr' ? 'default' : 'outline'}
+                  variant={getSortStatus('apr-low').active ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => handleSort('apr')}
-                  className="btn flex-1 sm:flex-none"
+                  onClick={() => toggleSortField('apr-low')}
+                  className="btn flex-1 sm:flex-none relative"
                 >
-                  APR {sortBy === 'apr' && (sortOrder === 'asc' ? <SortAsc className="ml-1 h-4 w-4" /> : <SortDesc className="ml-1 h-4 w-4" />)}
+                  <span className="hidden sm:inline">低收益</span>
+                  <span className="sm:hidden">低收</span>
+                  {getSortStatus('apr-low').active && (
+                    <>
+                      {getSortStatus('apr-low').order === 'asc' ? <SortAsc className="ml-1 h-4 w-4" /> : <SortDesc className="ml-1 h-4 w-4" />}
+                      {sorts.length > 1 && (
+                        <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center text-[10px]">
+                          {getSortStatus('apr-low').index}
+                        </span>
+                      )}
+                    </>
+                  )}
                 </Button>
+                
+                {/* 风险排序 */}
                 <Button
-                  variant={sortBy === 'risk' ? 'default' : 'outline'}
+                  variant={getSortStatus('risk').active ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => handleSort('risk')}
-                  className="btn flex-1 sm:flex-none"
+                  onClick={() => toggleSortField('risk')}
+                  className="btn flex-1 sm:flex-none relative"
                 >
                   <span className="hidden sm:inline">风险</span>
                   <span className="sm:hidden">险</span>
-                  {sortBy === 'risk' && (sortOrder === 'asc' ? <SortAsc className="ml-1 h-4 w-4" /> : <SortDesc className="ml-1 h-4 w-4" />)}
+                  {getSortStatus('risk').active && (
+                    <>
+                      {getSortStatus('risk').order === 'asc' ? <SortAsc className="ml-1 h-4 w-4" /> : <SortDesc className="ml-1 h-4 w-4" />}
+                      {sorts.length > 1 && (
+                        <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center text-[10px]">
+                          {getSortStatus('risk').index}
+                        </span>
+                      )}
+                    </>
+                  )}
                 </Button>
+                
+                {/* 清空排序按钮 */}
+                {sorts.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearAllSorts}
+                    className="btn flex-1 sm:flex-none text-gray-500 hover:text-gray-700"
+                  >
+                    <span className="hidden sm:inline">清空</span>
+                    <span className="sm:hidden">清</span>
+                  </Button>
+                )}
               </div>
 
               {/* 提交请求按钮 */}

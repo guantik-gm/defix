@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { parsePools, generateFilterOptions, apiDelay } from '@/lib/file-data-parser';
 import { filterPools, sortPools } from '@/lib/data-parser';
-import { RiskLevel } from '@/types';
+import { RiskLevel, SortField } from '@/types';
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,8 +14,18 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
     const search = searchParams.get('search') || '';
-    const sortBy = searchParams.get('sortBy') || 'name';
-    const sortOrder = (searchParams.get('sortOrder') || 'asc') as 'asc' | 'desc';
+    
+    // 解析多字段排序参数
+    let sorts: SortField[] = [];
+    const sortsParam = searchParams.get('sorts');
+    if (sortsParam) {
+      try {
+        sorts = JSON.parse(sortsParam);
+      } catch (error) {
+        console.error('Error parsing sorts parameter:', error);
+        sorts = [];
+      }
+    }
     
     // 解析过滤参数
     const chains = searchParams.get('chains') ? searchParams.get('chains')!.split(',').filter(Boolean) : [];
@@ -41,8 +51,8 @@ export async function GET(request: NextRequest) {
       aprMax,
     });
     
-    // 应用排序
-    filteredPools = sortPools(filteredPools, sortBy, sortOrder);
+    // 应用多字段排序
+    filteredPools = sortPools(filteredPools, sorts);
     
     // 应用分页
     const startIndex = (page - 1) * limit;

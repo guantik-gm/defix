@@ -14,10 +14,18 @@
 ---
 
 ## 版本信息
-- **文档版本**: v1.0.0
+- **文档版本**: v1.1.0
 - **创建日期**: 2025-01-23
+- **最后更新**: 2025-01-24
 - **设计者**: Claude AI Assistant
 - **审核状态**: 设计阶段
+
+## 更新日志
+### v1.1.0 (2025-01-24)
+- ✅ 新增多字段组合排序系统
+- ✅ 重构排序API接口设计
+- ✅ 更新用户手册排序功能说明
+- ✅ 优化极高风险标签颜色显示
 
 ---
 
@@ -165,6 +173,15 @@ enum RiskLevel {
   MEDIUM = "中风险", 
   HIGH = "高风险",
   VERY_HIGH = "极高风险"
+}
+
+// 排序字段类型
+type SortFieldType = 'apr-high' | 'apr-low' | 'risk';
+
+// 单个排序字段定义
+interface SortField {
+  field: SortFieldType;
+  order: 'asc' | 'desc';
 }
 
 // 用户请求数据模型
@@ -376,8 +393,7 @@ interface ApiRoutes {
       market?: string[];            // 市场过滤
       aprMin?: number;              // 最低APR过滤
       aprMax?: number;              // 最高APR过滤
-      sortBy?: 'name' | 'apr' | 'risk' | 'createdAt';
-      sortOrder?: 'asc' | 'desc';
+      sorts?: SortField[];          // 多字段组合排序（替代 sortBy + sortOrder）
     };
     response: {
       pools: Pool[];
@@ -481,8 +497,7 @@ export default async function handler(
       market,
       aprMin,
       aprMax,
-      sortBy = 'name',
-      sortOrder = 'asc'
+      sorts
     } = req.query;
 
     // 加载所有池数据
@@ -520,30 +535,54 @@ export default async function handler(
       });
     }
     
-    // 应用排序
-    filteredPools.sort((a, b) => {
-      let aValue, bValue;
-      
-      switch (sortBy) {
-        case 'apr':
-          aValue = (a.aprRange.low + a.aprRange.high) / 2;
-          bValue = (b.aprRange.low + b.aprRange.high) / 2;
-          break;
-        case 'risk':
-          const riskOrder = { '低风险': 1, '中风险': 2, '高风险': 3, '极高风险': 4 };
-          aValue = riskOrder[a.risk];
-          bValue = riskOrder[b.risk];
-          break;
-        default:
-          aValue = a.name;
-          bValue = b.name;
+    // 解析多字段排序参数
+    let sortFields: SortField[] = [];
+    if (sorts) {
+      try {
+        sortFields = typeof sorts === 'string' ? JSON.parse(sorts) : sorts;
+      } catch (error) {
+        console.error('Error parsing sorts parameter:', error);
+        sortFields = [];
       }
-      
-      if (sortOrder === 'desc') {
-        return aValue > bValue ? -1 : 1;
-      }
-      return aValue < bValue ? -1 : 1;
-    });
+    }
+    
+    // 应用多字段排序
+    if (sortFields.length > 0) {
+      filteredPools.sort((a, b) => {
+        // 按照sortFields数组中的顺序逐个比较字段
+        for (const { field, order } of sortFields) {
+          let aValue, bValue;
+          
+          switch (field) {
+            case 'apr-high':
+              aValue = a.aprRange.high;
+              bValue = b.aprRange.high;
+              break;
+            case 'apr-low':
+              aValue = a.aprRange.low;
+              bValue = b.aprRange.low;
+              break;
+            case 'risk':
+              const riskOrder = { '低风险': 1, '中风险': 2, '高风险': 3, '极高风险': 4 };
+              aValue = riskOrder[a.risk];
+              bValue = riskOrder[b.risk];
+              break;
+            default:
+              continue; // 跳过未知字段
+          }
+          
+          let result = 0;
+          if (aValue < bValue) result = -1;
+          else if (aValue > bValue) result = 1;
+          
+          if (result !== 0) {
+            return order === 'asc' ? result : -result;
+          }
+        }
+        
+        return 0; // 所有字段都相等
+      });
+    }
     
     // 应用分页
     const startIndex = (Number(page) - 1) * Number(limit);
@@ -2290,11 +2329,18 @@ const usePoolsData = (filters: FilterParams) => {
 4. **Token过滤**: 按特定Token类型筛选
 5. **APR范围**: 使用滑块设置期望的收益率范围
 
-**排序功能**
-- 按名称排序：字母顺序排列
-- 按APR排序：按收益率高低排列
-- 按风险排序：按风险等级排列
-- 按更新时间：按最新添加时间排列
+**排序功能** - 多字段组合排序系统
+- **高收益排序**：按APR最高值排序，适合寻找高收益机会
+- **低收益排序**：按APR最低值排序，评估收益下限风险
+- **风险排序**：按风险等级排序（低→中→高→极高）
+- **组合排序**：支持多字段组合，如"风险降序+高收益降序"
+- **排序优先级**：多字段时显示数字标识排序优先级
+- **一键清空**：可快速清除所有排序条件
+
+**常用排序组合**：
+- 高风险高收益策略：风险降序 + 高收益降序
+- 稳健投资策略：风险升序 + 低收益升序  
+- 收益优先策略：高收益降序 + 风险升序
 
 ### 8.1.3 查看报告
 
