@@ -11,7 +11,6 @@ Market:
   - 通用
 Underlying: 存款金库
 Danger: USDe 脱锚风险
-Remark: 
 Scenarios: 保本 U 本位理财
 ---
 

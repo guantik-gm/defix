@@ -11,6 +11,5 @@ Market:
   - 通用
 Underlying: 收益来自平台空投活动
 Danger: 
-Remark: 
 Scenarios: 保本币本位理财
 ---

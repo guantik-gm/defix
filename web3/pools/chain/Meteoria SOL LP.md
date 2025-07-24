@@ -14,6 +14,5 @@ Market:
   - 趋势下行
 Underlying: 币本位单边 LP 池赚取手续费
 Danger: 强势上涨行情中币本位无偿损失
-Remark: 
 Scenarios: 小仓位博一波高收益
 ---

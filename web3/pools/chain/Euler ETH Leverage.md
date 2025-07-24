@@ -14,7 +14,6 @@ Market:
   - 通用
 Underlying: 
 Danger: 
-Remark: 
 Scenarios:
 ---
 详见：[Euler USDT Leverage](Euler%20USDT%20Leverage.md)

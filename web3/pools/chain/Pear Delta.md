@@ -11,6 +11,5 @@ Market:
   - 通用
 Underlying: 合约资金费套利
 Danger: 
-Remark: 
 Scenarios:
 ---

@@ -11,6 +11,5 @@ Market:
   - 通用
 Underlying: Hype Delta 策略
 Danger: 
-Remark: 
 Scenarios:
 ---

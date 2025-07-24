@@ -11,7 +11,6 @@ Market:
   - 通用
 Underlying: 基金型投资
 Danger: 资金管理机构跑路
-Remark: 
 Scenarios: 保本 U 本位理财
 ---
 mEDGE

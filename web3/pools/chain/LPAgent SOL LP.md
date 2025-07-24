@@ -8,10 +8,12 @@ Token: SOL
 APR-Low: -1
 APR-High: 2
 Market:
-  - 通用
+  - 横盘
+  - 震荡向上
+  - 震荡向下
+  - 趋势上行
 Underlying: 
 Danger: 
-Remark: 
 Scenarios:
 ---
 

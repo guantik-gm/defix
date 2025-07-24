@@ -14,7 +14,6 @@ Market:
   - 通用
 Underlying: 存款金库
 Danger: 取款周期1天
-Remark: 
 Scenarios: 积分空投预期
 ---
 

@@ -11,6 +11,5 @@ Market:
   - 通用
 Underlying: 稳定币 LP
 Danger: 
-Remark: 
 Scenarios:
 ---

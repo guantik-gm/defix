@@ -11,7 +11,6 @@ Market:
   - 通用
 Underlying: 
 Danger: 
-Remark: 
 Scenarios:
 ---
-
+赎回有2%的手续费！

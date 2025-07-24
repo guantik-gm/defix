@@ -8,10 +8,11 @@ Token: USDC
 APR-Low: 0.2
 APR-High: 1.2
 Market:
-  - 通用
+  - 横盘
+  - 震荡向上
+  - 震荡向下
 Underlying: 
 Danger: 
-Remark: 
 Scenarios:
 ---
 

@@ -11,7 +11,6 @@ Market:
   - 通用
 Underlying: 存款金库
 Danger: 
-Remark: 
 Scenarios: 保本 U 本位理财
 ---
 

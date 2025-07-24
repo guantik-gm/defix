@@ -11,6 +11,6 @@ Market:
   - 通用
 Underlying: 
 Danger: 
-Remark: 
 Scenarios:
 ---
+套保 BERA，注意有潜在的汇率损失！

@@ -8,10 +8,11 @@ Token: Alpha
 APR-Low: -5
 APR-High: 10
 Market:
-  - 通用
+  - 趋势上行
+  - 震荡向上
+  - 牛市
 Underlying: 
 Danger: 
-Remark: 
 Scenarios:
 ---
-
+熊市或者下行市场可以逐步建仓

@@ -8,9 +8,10 @@ Token: TSLAx
 APR-Low: -0.5
 APR-High: 2
 Market:
-  - 通用
+  - 牛市
+  - 趋势上行
+  - 震荡向上
 Underlying: 
 Danger: 
-Remark: 
-Scenarios: 
+Scenarios:
 ---

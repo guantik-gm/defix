@@ -1,5 +1,5 @@
 ---
-Protocol: Kamino
+Protocol: 
 Type: Deposit
 Chain:
   - Solana
@@ -11,7 +11,6 @@ Market:
   - 通用
 Underlying: 
 Danger: 
-Remark: 
 Scenarios:
 ---
 
