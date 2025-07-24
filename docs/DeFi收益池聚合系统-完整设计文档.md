@@ -978,6 +978,145 @@ const ErrorBoundary: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 };
 ```
 
+## 4.5 报告系统技术实现
+
+### 4.5.1 文件处理架构
+
+**双格式支持策略**
+- **调研报告**：Markdown格式，适合文本阅读和SEO优化
+- **分析报告**：HTML格式，支持交互式图表和丰富的用户体验
+
+**文件存储结构**
+```
+web3/protocol/research/
+├── [nickname].md      # Markdown调研报告
+└── [nickname].html    # HTML分析报告
+```
+
+### 4.5.2 分析报告直接跳转设计
+
+**设计原则**
+- **用户体验优先**：一键直达完整交互式报告
+- **无中间页面**：避免不必要的嵌套和等待
+- **完整功能保留**：保持所有JavaScript交互功能
+
+**技术实现**
+
+```typescript
+// PoolTable.tsx - 分析报告按钮点击处理
+onClick={() => {
+  // 直接打开原始HTML文件，跳过中间页面
+  const slug = pool.reports.analysis?.url?.split('/').pop();
+  if (slug) {
+    window.open(`/api/reports/analysis/${slug}/raw`, '_blank');
+  }
+}}
+```
+
+**API端点设计**
+```typescript
+// /api/reports/analysis/[slug]/raw/route.ts
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { slug: string } }
+) {
+  const { slug } = params;
+  
+  // 优先查找研究目录中的HTML文件
+  const researchHtmlPath = path.join(process.cwd(), 'web3', 'protocol', 'research', `${slug}.html`);
+  
+  if (fs.existsSync(researchHtmlPath)) {
+    const content = fs.readFileSync(researchHtmlPath, 'utf8');
+    
+    // 直接返回原始HTML，保持所有交互功能
+    return new NextResponse(content, {
+      headers: {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control': 'public, max-age=3600',
+      },
+    });
+  }
+  
+  return new NextResponse('Report not found', { status: 404 });
+}
+```
+
+### 4.5.3 Markdown文件处理方案
+
+**调研报告渲染流程**
+1. **文件读取**：从`web3/protocol/research/[slug].md`读取文件
+2. **Frontmatter解析**：提取元数据（标题、协议、指标等）
+3. **Markdown转换**：使用remark-gfm处理表格语法
+4. **HTML输出**：转换为安全的HTML格式
+
+```typescript
+// /api/reports/research/[slug]/route.ts
+import { remark } from 'remark';
+import html from 'remark-html';
+import remarkGfm from 'remark-gfm';  // 表格支持
+
+// Markdown处理管道
+const processedContent = await remark()
+  .use(remarkGfm)  // 启用GitHub风格Markdown（表格支持）
+  .use(html, { sanitize: false })
+  .process(markdownContent);
+```
+
+**表格渲染优化**
+```css
+/* globals.css - 表格样式优化 */
+.prose table {
+  @apply w-full border-collapse border border-gray-300 my-6;
+}
+.prose table thead {
+  @apply bg-gray-50;
+}
+.prose table th {
+  @apply border border-gray-300 px-4 py-3 text-left font-semibold text-gray-900;
+}
+.prose table td {
+  @apply border border-gray-300 px-4 py-3 text-gray-800;
+}
+```
+
+### 4.5.4 HTML文件处理方案
+
+**完整交互保留策略**
+- **无内容过滤**：保持原始HTML的完整性
+- **JavaScript执行**：支持Chart.js等库的正常运行
+- **样式保持**：维持原有的CSS样式和布局
+- **新窗口打开**：在独立环境中运行，避免冲突
+
+**安全考虑**
+- **同源策略**：HTML文件通过API端点服务，符合同源策略
+- **缓存策略**：设置合理的缓存时间（1小时）
+- **错误处理**：提供友好的404和500错误处理
+
+**用户体验优化**
+- **加载性能**：直接服务原始文件，无额外处理开销
+- **响应速度**：静态文件服务，响应时间<100ms
+- **兼容性**：支持所有现代浏览器的完整功能
+
+### 4.5.5 报告系统工作流程
+
+**用户交互流程**
+```
+主页池表格 → 点击"查看分析" → 直接打开完整HTML报告
+     ↓
+无中间页面，一键到达目标内容
+```
+
+**技术数据流**
+```
+用户点击 → JavaScript提取slug → 构造raw API URL → 新窗口打开 → 服务器返回原始HTML → 浏览器渲染完整报告
+```
+
+**性能指标**
+- **首次加载时间**：<2秒
+- **交互响应时间**：<100ms
+- **完整功能可用**：Chart.js图表、动画、用户交互卡片
+- **移动端兼容**：响应式设计，支持触摸操作
+
 ---
 
 # 5. SEO优化策略
@@ -2165,9 +2304,10 @@ const usePoolsData = (filters: FilterParams) => {
 - 如显示"暂未发布"，表示该报告正在制作中
 
 **分析报告**  
-- 点击"查看分析"链接查看交互式HTML分析报告
-- 报告包含图表分析、数据可视化等丰富内容
-- 支持全屏浏览获得最佳体验
+- 点击"查看分析"链接**直接打开**完整交互式HTML分析报告
+- 报告包含Chart.js图表、动画效果、用户交互卡片等丰富内容
+- 在新标签页中以完整HTML格式呈现，保持所有JavaScript功能
+- **无中间页面**，一键获得完整交互体验
 
 ### 8.1.4 提交收录请求
 

@@ -1,0 +1,350 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222.2 84% 4.9%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222.2 84% 4.9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 84% 4.9%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 94.1%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* 自定义样式 */
+.container {
+  @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+/* 表格样式优化 */
+.table-container {
+  @apply overflow-x-auto shadow-sm border border-gray-200 rounded-lg;
+}
+
+.table-header {
+  @apply bg-gray-50 border-b border-gray-200;
+}
+
+.table-row {
+  @apply border-b border-gray-100 hover:bg-gray-50 transition-colors;
+}
+
+/* 风险等级颜色 */
+.risk-low {
+  @apply bg-green-100 text-green-800;
+}
+
+.risk-medium {
+  @apply bg-yellow-100 text-yellow-800;
+}
+
+.risk-high {
+  @apply bg-orange-100 text-orange-800;
+}
+
+.risk-very-high {
+  @apply bg-red-100 text-red-800;
+}
+
+/* 链标签样式 */
+.chain-tag {
+  @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800;
+}
+
+/* APR范围样式 */
+.apr-range {
+  @apply font-mono text-sm font-medium text-green-600;
+}
+
+/* 链接样式 */
+.report-link {
+  @apply text-blue-600 hover:text-blue-800 hover:underline transition-colors;
+}
+
+.report-link:hover {
+  @apply text-blue-800 underline;
+}
+
+/* 加载状态 */
+.loading-skeleton {
+  @apply animate-pulse bg-gray-200 rounded;
+}
+
+/* 自定义滑块样式 */
+input[type="range"] {
+  background: transparent;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-track {
+  @apply bg-gray-200 rounded-lg h-2;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  @apply appearance-none w-4 h-4 bg-blue-600 rounded-full cursor-pointer;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 1), 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  @apply bg-blue-700;
+}
+
+input[type="range"]::-moz-range-track {
+  @apply bg-gray-200 rounded-lg h-2 border-0;
+}
+
+input[type="range"]::-moz-range-thumb {
+  @apply w-4 h-4 bg-blue-600 rounded-full cursor-pointer border-0;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 1), 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+input[type="range"]::-moz-range-thumb:hover {
+  @apply bg-blue-700;
+}
+
+/* 过滤器面板样式 */
+.filter-panel {
+  @apply bg-white border border-gray-200 rounded-lg shadow-lg;
+  backdrop-filter: blur(8px);
+}
+
+/* 响应式设计优化 */
+
+/* 手机端优化 (小于 640px) */
+@media (max-width: 639px) {
+  .container {
+    @apply px-2;
+  }
+
+  .table-container {
+    @apply text-xs overflow-x-auto;
+    min-width: 640px; /* 保证表格最小宽度 */
+  }
+  
+  .hidden-mobile {
+    @apply hidden;
+  }
+
+  /* 移动端表格行优化 */
+  .table-row td {
+    @apply px-2 py-3;
+  }
+
+  /* 搜索和过滤区域优化 */
+  .search-filter-area {
+    @apply flex-col space-y-3;
+  }
+
+  /* 统计卡片优化 */
+  .stats-grid {
+    @apply grid-cols-2 gap-2;
+  }
+
+  /* 按钮组优化 */
+  .button-group {
+    @apply flex-col w-full space-y-2;
+  }
+
+  .button-group .btn {
+    @apply w-full justify-center;
+  }
+
+  /* 过滤器面板移动端优化 */
+  .filter-panel-mobile {
+    @apply fixed inset-x-0 bottom-0 top-auto w-full max-h-80 overflow-y-auto rounded-t-xl;
+    transform: translateY(100%);
+    transition: transform 0.3s ease-in-out;
+  }
+
+  .filter-panel-mobile.open {
+    transform: translateY(0);
+  }
+}
+
+/* 平板端优化 (640px - 1024px) */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .table-container {
+    @apply text-sm;
+  }
+
+  .stats-grid {
+    @apply grid-cols-4;
+  }
+
+  .search-filter-area {
+    @apply flex-row flex-wrap items-center justify-between;
+  }
+
+  /* 平板端过滤器优化 */
+  .filter-button-tablet {
+    @apply flex-shrink-0;
+  }
+}
+
+/* 桌面端优化 (大于 1024px) */
+@media (min-width: 1024px) {
+  .container {
+    @apply max-w-7xl;
+  }
+
+  .table-container {
+    @apply text-base;
+  }
+}
+
+/* 触摸设备优化 */
+@media (hover: none) and (pointer: coarse) {
+  .hover-effect {
+    @apply transform-none;
+  }
+
+  .table-row:hover {
+    @apply bg-transparent;
+  }
+
+  /* 增大可点击区域 */
+  .touch-target {
+    @apply min-h-12 flex items-center;
+  }
+
+  .report-link {
+    @apply py-2 px-3 -mx-3 -my-2;
+  }
+}
+
+/* 高分辨率屏幕优化 */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .crisp-text {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* 垂直空间有限的设备优化 */
+@media (max-height: 600px) and (orientation: landscape) {
+  .compact-spacing {
+    @apply py-2;
+  }
+
+  .filter-panel {
+    @apply max-h-96 overflow-y-auto;
+  }
+}
+
+/* 暗色模式适配 */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+  }
+}
+
+/* 减少动画偏好 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* 打印样式 */
+@media print {
+  .no-print {
+    @apply hidden;
+  }
+
+  .table-container {
+    @apply shadow-none border-0;
+  }
+
+  .container {
+    @apply max-w-none px-0;
+  }
+}
+
+/* Prose 表格样式优化 */
+.prose table {
+  @apply w-full border-collapse border border-gray-300 my-6;
+}
+
+.prose table thead {
+  @apply bg-gray-50;
+}
+
+.prose table th {
+  @apply border border-gray-300 px-4 py-3 text-left font-semibold text-gray-900;
+}
+
+.prose table td {
+  @apply border border-gray-300 px-4 py-3 text-gray-700;
+}
+
+.prose table tbody tr:nth-child(even) {
+  @apply bg-gray-50;
+}
+
+.prose table tbody tr:hover {
+  @apply bg-blue-50;
+}
+
+/* 响应式表格 */
+@media (max-width: 768px) {
+  .prose table {
+    @apply text-sm;
+  }
+  
+  .prose table th,
+  .prose table td {
+    @apply px-2 py-2;
+  }
+}
