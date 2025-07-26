@@ -8,7 +8,7 @@ import { FilterPanel } from '@/components/FilterPanel';
 import { Pagination } from '@/components/Pagination';
 import { Button } from '@/components/ui/button';
 import { WebsiteStructuredData } from '@/components/StructuredData';
-import { Plus, Filter, SortAsc, SortDesc } from 'lucide-react';
+import { Plus, Filter, SortAsc, SortDesc, X } from 'lucide-react';
 import { debounce } from '@/lib/utils';
 import Link from 'next/link';
 
@@ -186,10 +186,10 @@ export default function HomePage() {
         {/* 页面标题 */}
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            DeFi 收益池聚合平台
+            DeFi 收益池导航
           </h1>
           <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-            为 Web3 DeFi 玩家提供一站式收益策略信息，包含详细的调研报告和风险分析
+            探索优质 DeFi 收益机会
           </p>
         </div>
 
@@ -346,14 +346,27 @@ export default function HomePage() {
         {/* 页脚信息 */}
         <div className="mt-12 text-center text-gray-500 text-sm">
           <p>
-            数据来源于各协议官方和专业调研团队，仅供参考，投资需谨慎
+            数据由专用 DeFi Research Agent 智能聚合生成，结合协议官方信息与多维度分析，仅供参考，投资需谨慎
           </p>
-          <p className="mt-2">
-            如有问题或建议，请{' '}
-            <Link href="/request" className="text-blue-600 hover:underline">
-              提交反馈
+          <div className="mt-4 flex items-center justify-center gap-4">
+            <p>
+              如有问题或建议，请{' '}
+              <Link href="/request" className="text-blue-600 hover:underline">
+                提交反馈
+              </Link>
+            </p>
+            <span className="text-gray-300">|</span>
+            <Link 
+              href="https://x.com/GT_Chiang" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-gray-500 hover:text-gray-700 transition-colors"
+              title="关注我们的 X 账号"
+            >
+              <X className="w-4 h-4" />
+              <span className="text-xs">在 X 上联系</span>
             </Link>
-          </p>
+          </div>
         </div>
       </div>
     </div>
