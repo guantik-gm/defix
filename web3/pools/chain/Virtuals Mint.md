@@ -1,16 +1,30 @@
 ---
-Protocol: 
+Protocol: '[[Virtuals Protocol]]'
 Type: Mint
 Chain:
-  - Base
+- Base
 Risk: 中风险
 Token: USDT
 APR-Low: -0.5
 APR-High: 0.5
 Market:
-  - 通用
-Underlying: 
-Danger: 
-Scenarios:
+- 通用
 ---
+**Underlying**
 
+通过存入资产，参与 Virtuals Protocol 的生态活动，以获取其原生代币 VIRTUAL 的奖励。该协议旨在将 AI 代理和区块链结合，创造可以自主工作的“数字工人”。
+
+**Danger**
+
+- **智能合约风险**: 协议代码可能存在未被发现的漏洞。
+- **概念与市场风险**: “AI+区块链”是一个非常前沿和实验性的领域，协议的理念能否被市场接受并成功商业化，存在巨大的不确定性。
+- **代币价值波动**: VIRTUAL 代币的价格波动风险很高。
+
+**Scenarios**
+
+- **参与早期生态**: 适合对“AI+Crypto”叙事感兴趣，并愿意承担高风险以博取早期参与者回报的投资者。
+- **博取空投**: 通过与协议交互，获取未来的潜在空投奖励。
+
+**Remark**
+
+这是一个高度概念驱动的项目，其价值在很大程度上取决于其能否成功地将 AI 与区块链经济结合起来。投资风险很高。

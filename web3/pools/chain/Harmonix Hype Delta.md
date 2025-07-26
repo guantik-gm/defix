@@ -1,15 +1,30 @@
 ---
-Protocol: 
+Protocol: '[[Harmonix Finance]]'
 Type: Delta
 Chain:
-  - Arbiturm
+- Arbitrum
 Risk: 中风险
 Token: HYPE
 APR-Low: 0.1
 APR-High: 0.25
 Market:
-  - 通用
-Underlying: Hype Delta 策略
-Danger: 
-Scenarios:
+- 通用
 ---
+**Underlying**
+
+通过 Harmonix 的自动化策略库，将资金投入到其市场中性（Delta-Neutral）策略中。这些策略通常通过在衍生品交易所（如 Hyperliquid）上进行对冲，以剥离市场价格波动风险，专注于赚取资金费率、期权权利金等相对稳定的收益。
+
+**Danger**
+
+- **智能合约风险**: 协议代码可能存在未被发现的漏洞。
+- **策略失效风险**: 市场中性策略在极端市场行情下可能失效，或因交易滑点、执行延迟等问题导致亏损。
+- **平台风险**: 作为一个较新的协议，其长期稳健性、安全性和风控能力有待市场检验。
+
+**Scenarios**
+
+- **U本位稳定收益**: 适合希望在链上获取稳定、与市场涨跌无关的美元本位回报的投资者。
+- **自动化套利**: 将复杂的对冲套利策略交给协议的自动化金库来执行，节省个人操作的时间和精力。
+
+**Remark**
+
+Harmonix 旨在将复杂的对冲基金策略产品化、大众化，但投资者仍需理解其底层策略并非完全“无风险”。

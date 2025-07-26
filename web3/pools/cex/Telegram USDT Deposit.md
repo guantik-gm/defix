@@ -1,16 +1,30 @@
 ---
-Protocol: 
+Protocol: "[[Ethena]]"
 Type: Deposit
 Chain:
   - CEX
-Risk: 无风险
+Risk: 低风险
 Token: USDT
 APR-Low: 0.05
 APR-High: 0.2
 Market:
   - 通用
-Underlying: 存款金库
-Danger: USDe 脱锚风险
-Scenarios: 保本 U 本位理财
 ---
+**Underlying**
 
+该产品通过 Telegram 内置钱包，将用户的 USDT 兑换为 Ethena 协议的合成美元 USDe。其收益来源于 Ethena 的 Delta 中性对冲策略，即通过在中心化交易所持有现货 ETH 多头和等量的期货 ETH 空头，赚取资金费率和质押收益。
+
+**Danger**
+
+- **脱锚风险**: 核心风险。USDe 的稳定性依赖于其复杂的对冲策略。在市场极端情况下（如资金费率持续为负），可能导致 USDe 与美元脱钩。
+- **资金费率风险**: 收益主要来源是资金费率，如果费率转负，收益将大幅下降甚至为负。
+- **智能合约与平台风险**: 依赖 Ethena 的智能合约和其在各大交易所的仓位，存在合约漏洞和交易所对手方风险。
+
+**Scenarios**
+
+- **高风险稳定币挖矿**: 适合了解并愿意承担 USDe 背后复杂机制风险，以博取高额稳定币回报的资深用户。
+- **参与 TON 生态**: 作为在 TON 链上获取高收益的一种方式。
+
+**Remark**
+
+这并非一个简单的存款产品，其“高收益”背后是复杂的金融衍生品策略和多重风险。投资前必须深入理解 Ethena/USDe 的运作原理。

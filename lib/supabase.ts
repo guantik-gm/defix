@@ -18,12 +18,11 @@ export const supabase = isSupabaseConfigured
 // 用户请求提交的数据类型
 export interface SubmissionRequest {
   id?: string;
-  protocol_name: string;
-  protocol_website: string;
-  pool_type: string;
-  chain: string;
-  description: string;
-  submitter_contact: string;
+  type: 'protocol_inclusion' | 'data_correction' | 'other_feedback';
+  protocol_name?: string; // 协议收录时必填
+  official_website?: string; // 协议收录时必填
+  contact_email: string; // 必填
+  description?: string; // 数据纠错和其他反馈时必填
   status: 'pending' | 'in_review' | 'approved' | 'rejected';
   created_at?: string;
   updated_at?: string;
@@ -36,6 +35,21 @@ export async function submitPoolRequest(request: Omit<SubmissionRequest, 'id' | 
   }
 
   try {
+    // 验证必填字段
+    if (!request.contact_email) {
+      return { success: false, error: '联系邮箱是必填项' };
+    }
+
+    if (request.type === 'protocol_inclusion') {
+      if (!request.protocol_name || !request.official_website) {
+        return { success: false, error: '协议收录请求需要填写协议名称和官方网站' };
+      }
+    }
+
+    if ((request.type === 'data_correction' || request.type === 'other_feedback') && !request.description) {
+      return { success: false, error: '数据纠错和其他反馈需要填写问题描述' };
+    }
+
     const { data, error } = await supabase
       .from('pool_requests')
       .insert([

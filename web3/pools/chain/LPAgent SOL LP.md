@@ -1,19 +1,32 @@
 ---
-Protocol: 
+Protocol: '[[LP Agent]]'
 Type: LP
 Chain:
-  - Solana
+- Solana
 Risk: 高风险
 Token: SOL
 APR-Low: -1
 APR-High: 2
 Market:
-  - 横盘
-  - 震荡向上
-  - 震荡向下
-  - 趋势上行
-Underlying: 
-Danger: 
-Scenarios:
+- 横盘
+- 震荡向上
+- 震荡向下
+- 趋势上行
 ---
+**Underlying**
 
+LP Agent 是一个构建在 Meteora 之上的 AI 驱动的流动性管理工具。用户存入资产后，协议会利用 AI 分析市场数据，为用户在 Meteora 的流动性池中自动建立和管理仓位，以期获得最优的 LP 收益（交易费和平台奖励）。
+
+**Danger**
+
+- **无常损失 (IL)**: 核心风险。即使有 AI 辅助，LP 策略依然无法完全规避无常损失。
+- **AI策略失效风险**: AI 模型基于历史数据进行决策，在极端或前所未有的市场行情中可能做出错误判断，导致亏损。
+- **多层协议风险**: 风险叠加，需要同时信任 LP Agent 和其底层的 Meteora 协议的智能合约安全性。
+
+**Scenarios**
+
+- **自动化LP挖矿**: 适合希望借助 AI 工具来简化和优化流动性做市，但同时理解并愿意承担相应风险的投资者。
+
+**Remark**
+
+这是一个将 AI 与 DeFi 结合的创新尝试，但其有效性和安全性仍需长期市场检验。投资者应将其视为一种高风险的实验性投资。

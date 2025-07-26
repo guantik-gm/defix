@@ -95,7 +95,10 @@ export function PoolDetailDialog({ pool, isOpen, onClose, poolContent }: PoolDet
                 底层收益
               </h4>
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <p className="text-gray-700 text-sm">{pool.underlying}</p>
+                <div 
+                  className="text-gray-700 text-sm prose prose-sm max-w-none" 
+                  dangerouslySetInnerHTML={{ __html: pool.underlying }}
+                />
               </div>
             </div>
           )}
@@ -108,7 +111,10 @@ export function PoolDetailDialog({ pool, isOpen, onClose, poolContent }: PoolDet
                 风险提示
               </h4>
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                <p className="text-gray-700 text-sm">{pool.danger}</p>
+                <div 
+                  className="text-gray-700 text-sm prose prose-sm max-w-none" 
+                  dangerouslySetInnerHTML={{ __html: pool.danger }}
+                />
               </div>
             </div>
           )}
@@ -121,7 +127,26 @@ export function PoolDetailDialog({ pool, isOpen, onClose, poolContent }: PoolDet
                 适用场景
               </h4>
               <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                <p className="text-gray-700 text-sm">{pool.scenarios}</p>
+                <div 
+                  className="text-gray-700 text-sm prose prose-sm max-w-none" 
+                  dangerouslySetInnerHTML={{ __html: pool.scenarios }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* 备注说明 */}
+          {pool.remark && pool.remark.trim() !== '' && (
+            <div className="space-y-2">
+              <h4 className="font-semibold text-gray-900 flex items-center gap-2">
+                <FileText className="w-4 h-4 text-gray-500" />
+                备注说明
+              </h4>
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                <div 
+                  className="text-gray-700 text-sm prose prose-sm max-w-none" 
+                  dangerouslySetInnerHTML={{ __html: pool.remark }}
+                />
               </div>
             </div>
           )}

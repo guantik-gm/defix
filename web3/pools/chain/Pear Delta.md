@@ -1,15 +1,30 @@
 ---
 Protocol: "[[Pear Protocol]]"
-Type: Delta
+Type: TradeSpot
 Chain:
-  - Arbiturm
-Risk: 中风险
+  - Arbitrum
+Risk: 高风险
 Token: USDT
 APR-Low: 0.1
 APR-High: 0.25
 Market:
   - 通用
-Underlying: 合约资金费套利
-Danger: 
-Scenarios:
 ---
+**Underlying**
+
+Pear Protocol 是一个去中心化的配对交易协议。它允许用户一键式地同时做多一种资产并做空另一种资产，以对赌两种资产之间的相对表现（即价格的 spread）。例如，可以做多 SOL / 做空 ETH。
+
+**Danger**
+
+- **清算风险**: 核心风险。配对交易通常带有杠杆，如果两种资产的价差向不利方向扩大，可能导致仓位被清算。
+- **资金费率风险**: 持有空头仓位需要支付资金费，这会侵蚀利润。
+- **智能合约风险**: 协议代码可能存在未被发现的漏洞。
+
+**Scenarios**
+
+- **相对强弱交易**: 当你认为资产A将比资产B表现更好时，可以做多A/做空B，以赚取它们价格表现的差值。
+- **市场中性套利**: 可以构建复杂的市场中性策略，例如对冲同一生态系统中的不同资产，以赚取资金费率或微小价差。
+
+**Remark**
+
+Pear Protocol 将复杂的配对交易策略简化，但投资者需要对资产的相对价值有深刻的理解，并能管理好杠杆风险。

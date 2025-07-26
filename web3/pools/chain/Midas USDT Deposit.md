@@ -1,16 +1,30 @@
 ---
-Protocol: "[[keepgoing/web3/protocol/Midas|Midas]]"
+Protocol: '[[Midas]]'
 Type: Deposit
 Chain:
-  - Ethereum
-Risk: 无风险
+- Ethereum
+Risk: 低风险
 Token: USDT
 APR-Low: 0.05
 APR-High: 0.1
 Market:
-  - 通用
-Underlying: 基金型投资
-Danger: 资金管理机构跑路
-Scenarios: 保本 U 本位理财
+- 通用
 ---
+**Underlying**
+
+Midas 是一个将现实世界资产（RWA）代币化的协议。用户存入 USDT，协议会将其投资于链下的低风险资产，如美国国债（通过购买贝莱德的国债ETF）。用户获得的收益即来源于这些国债的利息。
+
+**Danger**
+
+- **智能合约风险**: 协议代码可能存在未被发现的漏洞。
+- **中心化/托管风险**: 协议需要通过中心化的实体来购买和托管现实世界的资产（如ETF），这引入了传统金融的对手方风险和操作风险。
+- **脱锚风险**: 协议发行的代币（如mTBILL）与底层资产（国债ETF）之间可能存在价格偏差。
+
+**Scenarios**
+
+- **合规的链上国债投资**: 适合寻求受监管、低风险、与加密市场波动无关的稳定收益的投资者。
+
+**Remark**
+
+Midas 旨在将传统金融中稳健的国债收益带到链上，为DeFi用户提供了一个新的资产类别。其合规性和透明度是其主要特点，但投资者也需理解其中心化托管带来的风险。
 mEDGE

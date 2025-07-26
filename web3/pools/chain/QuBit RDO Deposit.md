@@ -1,16 +1,30 @@
 ---
-Protocol: "[[keepgoing/web3/protocol/QuBit|QuBit]]"
+Protocol: '[[QuBit]]'
 Type: Deposit
 Chain:
-  - Optimism
+- Optimism
 Risk: 中风险
 Token: RDO
 APR-Low: 2
 APR-High: 3.8
 Market:
-  - 通用
-Underlying: 
-Danger: 
-Scenarios:
+- 通用
 ---
-合约套保
+**Underlying**
+
+将 RDO 代币存入 QuBit 协议的借贷池中，以赚取由借款人支付的利息。这是一个基础的去中心化借贷业务。
+
+**Danger**
+
+- **协议曾被盗用**: 核心风险。尽管协议目前在 Optimism 上运行，但其早期版本在 BNB 链上曾遭受过巨额黑客攻击。这依然是重要的风险考量点。
+- **智能合约风险**: 协议代码可能存在未被发现的漏洞。
+- **代币价格波动**: RDO 自身的价格波动可能会超过存款所获得的收益。
+
+**Scenarios**
+
+- **持币生息**: 适合持有 RDO 并希望获取额外收益的投资者。
+- **对冲挖矿**: 可以通过做空 RDO 合约来对冲价格波动风险，专注于赚取存款利息。
+
+**Remark**
+
+尽管官网显示了很高的 APY，但考虑到其历史安全事件，投资者在参与前应极度谨慎，并严格控制仓位。

@@ -1,6 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
+import { remark } from 'remark';
+import remarkHtml from 'remark-html';
 import { Pool, Protocol, RiskLevel } from '@/types';
 
 /**
@@ -69,6 +71,210 @@ export async function parseProtocols(): Promise<Protocol[]> {
 }
 
 /**
+ * 解析正文中的 Markdown 详情字段
+ * 使用标准 Markdown AST 解析，比正则表达式更可靠
+ */
+async function parseMarkdownDetails(body: string): Promise<{
+  underlying: string;
+  danger: string;
+  scenarios: string;
+  remark: string;
+}> {
+  const detailFields = ['Underlying', 'Danger', 'Scenarios', 'Remark'];
+  const details: any = {};
+  
+  try {
+    // 使用 remark 解析 Markdown 为 AST
+    const tree = remark().parse(body);
+    
+    // 遍历 AST 查找字段
+    for (const field of detailFields) {
+      const markdownContent = extractFieldContent(tree, field);
+      // 将Markdown内容转换为HTML
+      if (markdownContent.trim()) {
+        const htmlContent = await remark()
+          .use(remarkHtml, { sanitize: false })
+          .process(markdownContent);
+        details[field.toLowerCase()] = String(htmlContent).trim();
+      } else {
+        details[field.toLowerCase()] = '';
+      }
+    }
+  } catch (error) {
+    console.error('Markdown parsing error:', error);
+    // 降级到空值
+    for (const field of detailFields) {
+      details[field.toLowerCase()] = '';
+    }
+  }
+  
+  return {
+    underlying: details.underlying || '',
+    danger: details.danger || '',
+    scenarios: details.scenarios || '',
+    remark: details.remark || ''
+  };
+}
+
+/**
+ * 从 AST 中提取指定字段的内容，返回原始Markdown格式
+ */
+function extractFieldContent(tree: any, fieldName: string): string {
+  const nodes = tree.children;
+  let fieldStartIndex = -1;
+  
+  // 查找字段标题节点
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
+    if (node.type === 'paragraph' && node.children) {
+      // 检查是否包含 **字段名**
+      const hasFieldTitle = node.children.some((child: any) => 
+        child.type === 'strong' && 
+        child.children &&
+        child.children.some((grandchild: any) => 
+          grandchild.type === 'text' && grandchild.value === fieldName
+        )
+      );
+      
+      if (hasFieldTitle) {
+        fieldStartIndex = i;
+        break;
+      }
+    }
+  }
+  
+  if (fieldStartIndex === -1) {
+    return '';
+  }
+  
+  // 收集从字段标题后到下一个字段标题之间的所有内容
+  const contentNodes = [];
+  for (let i = fieldStartIndex + 1; i < nodes.length; i++) {
+    const node = nodes[i];
+    
+    // 检查是否遇到下一个字段标题
+    if (node.type === 'paragraph' && node.children) {
+      const isNextField = node.children.some((child: any) => 
+        child.type === 'strong' && 
+        child.children &&
+        child.children.some((grandchild: any) => 
+          grandchild.type === 'text' && 
+          ['Underlying', 'Danger', 'Scenarios', 'Remark'].includes(grandchild.value)
+        )
+      );
+      
+      if (isNextField) {
+        break;
+      }
+    }
+    
+    // 检查是否遇到分隔符
+    if (node.type === 'thematicBreak') {
+      break;
+    }
+    
+    contentNodes.push(node);
+  }
+  
+  // 将节点转换回Markdown格式
+  return contentNodes.map(node => nodeToMarkdown(node)).join('\n').trim();
+}
+
+/**
+ * 将 AST 节点转换为 Markdown 格式
+ */
+function nodeToMarkdown(node: any): string {
+  if (!node) return '';
+  
+  switch (node.type) {
+    case 'text':
+      return node.value || '';
+    
+    case 'paragraph':
+      return (node.children || []).map((child: any) => nodeToMarkdown(child)).join('');
+    
+    case 'strong':
+      return `**${(node.children || []).map((child: any) => nodeToMarkdown(child)).join('')}**`;
+    
+    case 'emphasis':
+      return `*${(node.children || []).map((child: any) => nodeToMarkdown(child)).join('')}*`;
+    
+    case 'link':
+      const text = (node.children || []).map((child: any) => nodeToMarkdown(child)).join('');
+      return `[${text}](${node.url || ''})`;
+    
+    case 'list':
+      return (node.children || []).map((item: any, index: number) => {
+        const itemText = nodeToMarkdown(item);
+        return node.ordered ? `${index + 1}. ${itemText}` : `- ${itemText}`;
+      }).join('\n');
+    
+    case 'listItem':
+      return (node.children || []).map((child: any) => nodeToMarkdown(child)).join('');
+    
+    case 'code':
+      return `\`\`\`\n${node.value || ''}\n\`\`\``;
+    
+    case 'inlineCode':
+      return `\`${node.value || ''}\``;
+    
+    case 'heading':
+      const level = '#'.repeat(node.depth || 1);
+      const headingText = (node.children || []).map((child: any) => nodeToMarkdown(child)).join('');
+      return `${level} ${headingText}`;
+    
+    case 'blockquote':
+      const quoteText = (node.children || []).map((child: any) => nodeToMarkdown(child)).join('\n');
+      return quoteText.split('\n').map((line: string) => `> ${line}`).join('\n');
+    
+    default:
+      if (node.children) {
+        return (node.children || []).map((child: any) => nodeToMarkdown(child)).join('');
+      }
+      return node.value || '';
+  }
+}
+
+/**
+ * 将 AST 节点转换为文本（保留用于其他用途）
+ */
+function nodeToText(node: any): string {
+  if (!node) return '';
+  
+  switch (node.type) {
+    case 'text':
+      return node.value || '';
+    
+    case 'paragraph':
+    case 'strong':
+    case 'emphasis':
+    case 'link':
+      return (node.children || []).map((child: any) => nodeToText(child)).join('');
+    
+    case 'list':
+      return (node.children || []).map((item: any, index: number) => {
+        const itemText = nodeToText(item);
+        return node.ordered ? `${index + 1}. ${itemText}` : `- ${itemText}`;
+      }).join('\n');
+    
+    case 'listItem':
+      return (node.children || []).map((child: any) => nodeToText(child)).join('');
+    
+    case 'code':
+      return `\`${node.value || ''}\``;
+    
+    case 'inlineCode':
+      return `\`${node.value || ''}\``;
+    
+    default:
+      if (node.children) {
+        return (node.children || []).map((child: any) => nodeToText(child)).join('');
+      }
+      return node.value || '';
+  }
+}
+
+/**
  * 模糊匹配协议名称
  */
 function findProtocolByFuzzyMatch(protocolName: string): Protocol | null {
@@ -77,7 +283,7 @@ function findProtocolByFuzzyMatch(protocolName: string): Protocol | null {
   const normalizedInput = protocolName.toLowerCase().replace(/\s+/g, '');
   
   // 遍历所有协议寻找匹配
-  for (const [key, protocol] of protocolsCache.entries()) {
+  for (const [key, protocol] of Array.from(protocolsCache.entries())) {
     const normalizedKey = key.toLowerCase().replace(/\s+/g, '');
     const normalizedNickname = protocol.nickname.toLowerCase().replace(/\s+/g, '');
     
@@ -137,6 +343,7 @@ export async function parsePools(): Promise<Pool[]> {
               console.info(`使用默认协议信息: ${protocolName} (来源: ${file})`);
             }
             protocol = {
+              id: protocolName.toLowerCase().replace(/\s+/g, '-'),
               name: protocolName,
               website: '',
               nickname: protocolName.toLowerCase().replace(/\s+/g, ''),
@@ -146,6 +353,18 @@ export async function parsePools(): Promise<Pool[]> {
         } else if (!protocolName) {
           // 如果没有协议名称，创建默认协议
           protocol = {
+            id: 'unknown-protocol',
+            name: 'Unknown Protocol',
+            website: '',
+            nickname: 'unknown',
+            description: ''
+          };
+        }
+
+        // 确保 protocol 不为 undefined
+        if (!protocol) {
+          protocol = {
+            id: 'unknown-protocol',
             name: 'Unknown Protocol',
             website: '',
             nickname: 'unknown',
@@ -171,6 +390,9 @@ export async function parsePools(): Promise<Pool[]> {
         const aprLow = parseFloat(data['APR-Low'] || '0');
         const aprHigh = parseFloat(data['APR-High'] || '0');
         
+        // 解析正文中的详情字段（新格式）
+        const markdownDetails = await parseMarkdownDetails(content);
+        
         // 检查报告文件是否存在
         const reportSlug = protocol.nickname || protocol.name.toLowerCase().replace(/\s+/g, '');
         const researchPath = path.join(process.cwd(), 'web3', 'protocol', 'research', `${reportSlug}.md`);
@@ -194,9 +416,10 @@ export async function parsePools(): Promise<Pool[]> {
             high: aprHigh,
           },
           market: markets,
-          underlying: data.Underlying || '',
-          danger: data.Danger || '',
-          scenarios: data.Scenarios || '',
+          underlying: markdownDetails.underlying || data.Underlying || '',
+          danger: markdownDetails.danger || data.Danger || '',
+          scenarios: markdownDetails.scenarios || data.Scenarios || '',
+          remark: markdownDetails.remark || data.Remark || '',
           reports: {
             research: {
               exists: fs.existsSync(researchPath),

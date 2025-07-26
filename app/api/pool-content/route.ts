@@ -2,6 +2,48 @@ import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 
+/**
+ * 过滤掉结构化字段内容，只保留附加说明等非结构化内容
+ */
+function filterNonStructuredContent(content: string): string {
+  const lines = content.split('\n');
+  const result: string[] = [];
+  let inStructuredField = false;
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    
+    // 检查是否是结构化字段标题
+    const isStructuredField = /^\*\*(Underlying|Danger|Scenarios|Remark)\*\*\s*$/.test(line);
+    
+    if (isStructuredField) {
+      inStructuredField = true;
+      continue;
+    }
+    
+    // 检查是否遇到分隔符（表示结构化内容结束）
+    if (line === '---' || line.startsWith('##') || line.startsWith('#')) {
+      inStructuredField = false;
+      result.push(lines[i]); // 保留分隔符或标题
+      continue;
+    }
+    
+    // 检查是否遇到下一个结构化字段（表示当前字段结束）
+    const isNextStructuredField = /^\*\*(Underlying|Danger|Scenarios|Remark)\*\*/.test(line);
+    if (isNextStructuredField) {
+      inStructuredField = true;
+      continue;
+    }
+    
+    // 如果不在结构化字段中，保留内容
+    if (!inStructuredField) {
+      result.push(lines[i]);
+    }
+  }
+  
+  return result.join('\n').trim();
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -88,10 +130,12 @@ export async function GET(request: NextRequest) {
     
     // 提取正文内容（frontmatter 之后的内容）
     if (frontmatterEnd > -1) {
-      fileContent = lines.slice(frontmatterEnd + 1).join('\n').trim();
+      const bodyContent = lines.slice(frontmatterEnd + 1).join('\n').trim();
+      // 过滤掉结构化字段内容，只保留附加说明
+      fileContent = filterNonStructuredContent(bodyContent);
     } else {
-      // 如果没有 frontmatter，返回整个文件内容
-      fileContent = rawContent.trim();
+      // 如果没有 frontmatter，过滤整个文件内容
+      fileContent = filterNonStructuredContent(rawContent.trim());
     }
 
     // 返回文件内容作为纯文本

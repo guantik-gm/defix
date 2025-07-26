@@ -17,25 +17,44 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const { 
-      poolName, 
+      type,
       protocolName, 
       officialWebsite,
-      chain,
-      token,
-      investmentType,
-      expectedAPR,
-      riskLevel,
       contactEmail,
-      additionalInfo
+      description
     } = body;
     
     // 验证必填字段
-    if (!poolName || !protocolName || !officialWebsite || !contactEmail || !chain?.length) {
+    if (!type || !contactEmail) {
       return NextResponse.json(
         {
           success: false,
           error: 'Validation error',
           message: '请填写所有必填字段'
+        },
+        { status: 400 }
+      );
+    }
+
+    // 验证协议收录的必填字段
+    if (type === 'protocol_inclusion' && (!protocolName || !officialWebsite)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Validation error',
+          message: '协议收录请求需要填写协议名称和官方网站'
+        },
+        { status: 400 }
+      );
+    }
+
+    // 验证数据纠错和其他反馈的必填字段
+    if ((type === 'data_correction' || type === 'other_feedback') && !description) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Validation error',
+          message: '数据纠错和其他反馈需要填写问题描述'
         },
         { status: 400 }
       );
@@ -54,28 +73,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // URL验证
-    try {
-      new URL(officialWebsite);
-    } catch {
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Validation error',
-          message: '请提供有效的协议网站链接'
-        },
-        { status: 400 }
-      );
+    // URL验证（仅对协议收录请求）
+    if (type === 'protocol_inclusion' && officialWebsite) {
+      try {
+        new URL(officialWebsite);
+      } catch {
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: 'Validation error',
+            message: '请提供有效的协议网站链接'
+          },
+          { status: 400 }
+        );
+      }
     }
 
     // 构建提交数据
     const submitData = {
-      protocol_name: protocolName.trim(),
-      protocol_website: officialWebsite.trim(),
-      pool_type: `${poolName} - ${investmentType || 'Unknown'}`.trim(),
-      chain: Array.isArray(chain) ? chain.join(', ') : chain,
-      description: `收益池: ${poolName}\n代币: ${token || 'N/A'}\n预期APR: ${expectedAPR || 'N/A'}\n风险等级: ${riskLevel || 'N/A'}\n\n额外信息: ${additionalInfo || '无'}`.trim(),
-      submitter_contact: contactEmail.trim(),
+      type: type.trim(),
+      protocol_name: protocolName?.trim() || null,
+      official_website: officialWebsite?.trim() || null,
+      contact_email: contactEmail.trim(),
+      description: description?.trim() || null,
     };
 
     // 提交到Supabase
@@ -96,8 +116,11 @@ export async function POST(request: NextRequest) {
       success: true,
       data: {
         requestId: result.data?.[0]?.id,
+        type: result.data?.[0]?.type,
       },
-      message: '请求提交成功，我们将在3-7个工作日内进行评估'
+      message: type === 'protocol_inclusion' 
+        ? '协议收录请求提交成功，我们将在3-7个工作日内进行评估'
+        : '反馈提交成功，我们将尽快处理您的问题'
     });
     
   } catch (error) {

@@ -129,9 +129,6 @@ export function PoolTable({ pools, isLoading }: PoolTableProps) {
                     {pool.name}
                     <Info className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-blue-500" />
                   </button>
-                  {pool.underlying && (
-                    <span className="text-xs text-gray-500 mt-1 hidden sm:block">{pool.underlying}</span>
-                  )}
                 </div>
               </TableCell>
               

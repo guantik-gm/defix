@@ -21,6 +21,12 @@ DeFi 收益池聚合系统是为 Web3 领域 DeFi 玩家设计的一站式收益
 - **API 路由**: 内置 API 支持，无需独立后端
 - **文件路由**: 自动路由生成，简化开发
 
+**前端渲染技术栈**:
+- **Tailwind CSS**: 原子化CSS框架，响应式设计
+- **@tailwindcss/typography**: Typography插件，支持prose样式
+- **HTML渲染**: dangerouslySetInnerHTML结合prose类实现Markdown内容显示
+- **TypeScript**: 类型安全，组件接口定义
+
 **数据存储策略**:
 - **文件系统**: 收益池和协议数据 (web3/ 目录)
 - **数据库**: 用户请求数据 (Supabase PostgreSQL)
@@ -64,16 +70,18 @@ graph TB
     end
     
     subgraph "数据层"
-        K[文件系统数据解析器]
+        K[AST-based Markdown解析器]
         L[Supabase数据库]
         M[内存缓存层]
+        N1[remark解析引擎]
+        N2[HTML渲染器]
     end
     
     subgraph "数据源"
-        N[web3/pools目录]
-        O[web3/protocol目录]
-        P[调研报告MD文件]
-        Q[分析报告HTML文件]
+        O1[web3/pools目录]
+        O2[web3/protocol目录]
+        O3[调研报告MD文件]
+        O4[分析报告HTML文件]
     end
     
     A --> D
@@ -87,23 +95,145 @@ graph TB
     G --> K
     G --> L
     K --> M
-    K --> N
-    K --> O
-    K --> P
-    K --> Q
+    K --> N1
+    K --> N2
+    K --> O1
+    K --> O2
+    K --> O3
+    K --> O4
 ```
 
 ### 数据流设计
 
+**Markdown解析流程**:
+```
+MD文件 → remark AST解析 → 字段内容提取 → Markdown→HTML转换 → 结构化数据 → 缓存层
+```
+
 **读取流程**:
 ```
-文件系统 → 数据解析器 → 缓存层 → API 路由 → 前端组件 → 用户界面
+文件系统 → AST-based解析器 → HTML渲染 → 缓存层 → API 路由 → 前端组件 → 用户界面
 ```
 
 **写入流程**:
 ```
 用户提交 → 表单验证 → API 路由 → Supabase 数据库 → 确认反馈
 ```
+
+**内容过滤流程** (附加说明字段):
+```
+MD文件 → 结构化字段识别 → 内容过滤 → 非结构化内容提取 → API返回
+```
+
+## 🔧 文件数据解析器架构
+
+### AST-based Markdown 解析系统
+
+系统采用现代化的 AST（抽象语法树）解析方案，取代传统的正则表达式方法，确保更高的解析准确性和可靠性。
+
+#### 核心技术栈
+- **remark**: 标准Markdown解析库，用于生成AST
+- **remark-html**: Markdown到HTML转换器，支持完整的HTML渲染
+- **gray-matter**: YAML frontmatter解析器
+
+#### 解析流程设计
+
+```typescript
+// 1. 文件读取和结构分离
+const { data, content } = matter(fileContent);
+
+// 2. AST 解析
+const tree = remark().parse(content);
+
+// 3. 字段内容提取
+function extractFieldContent(tree: any, fieldName: string): string {
+  // 遍历AST节点，查找 **字段名** 标记
+  // 收集字段内容直到下一个字段或分隔符
+  // 返回原始Markdown格式内容
+}
+
+// 4. Markdown到HTML转换
+const htmlContent = await remark()
+  .use(remarkHtml, { sanitize: false })
+  .process(markdownContent);
+
+// 5. 结构化数据生成
+const pool: Pool = {
+  underlying: htmlContent, // 渲染后的HTML
+  // ... 其他字段
+}
+```
+
+#### 关键特性
+
+**完整内容提取**:
+- 支持多行内容，包括列表、段落、链接等复杂结构
+- 正确处理嵌套的Markdown语法（粗体、斜体、代码块等）
+- 保持原始格式和语义
+
+**智能字段识别**:
+- 基于AST节点类型判断，避免正则表达式的局限性
+- 支持字段间的精确边界识别
+- 自动处理空行和格式变化
+
+**HTML渲染支持**:
+- 自动将Markdown语法转换为HTML标签
+- 保留所有格式信息（列表、粗体、链接等）
+- 前端可直接使用`dangerouslySetInnerHTML`或类似机制显示
+
+**前端集成方案**:
+```tsx
+// PoolDetailDialog组件中的HTML渲染实现
+<div 
+  className="prose prose-sm max-w-none text-gray-700 text-sm" 
+  dangerouslySetInnerHTML={{ __html: pool.underlying }}
+/>
+```
+
+**Typography样式集成**:
+- 使用`@tailwindcss/typography`插件提供prose样式
+- `prose-sm`控制文字大小，`max-w-none`避免宽度限制
+- 自动处理列表、标题、段落、链接的样式
+
+**错误处理机制**:
+- 提供正则表达式降级方案作为备份
+- 详细的错误日志和统计信息
+- 优雅处理格式异常的文档
+
+#### 内容过滤系统
+
+针对"附加说明"字段的智能过滤机制：
+
+```typescript
+function filterNonStructuredContent(content: string): string {
+  // 状态机模式识别结构化字段
+  let inStructuredField = false;
+  
+  // 逐行处理，过滤掉 **Underlying** 到 **Remark** 之间的内容
+  // 保留分隔符、标题和其他非结构化内容
+}
+```
+
+**过滤规则**:
+- 识别并移除所有结构化字段内容（**Underlying**, **Danger**, **Scenarios**, **Remark**）
+- 保留文档分隔符（`---`）和标题（`##`, `#`）
+- 保留结构化字段后的所有附加说明内容
+
+#### 性能优化策略
+
+**缓存机制**:
+```typescript
+// 协议信息缓存
+let protocolsCache: Map<string, Protocol> | null = null;
+
+// 解析结果缓存（内存）
+const parseCache = new Map<string, Pool>();
+```
+
+**批量处理**:
+- 并行解析多个文档
+- 异步I/O操作优化
+- 内存使用控制
 
 ## 📊 数据模型设计
 
@@ -175,11 +305,33 @@ APR-Low: 0.1
 APR-High: 0.25
 Market:
   - '通用'
-Underlying: '底层收益描述'
-Danger: '风险提示信息'
-Scenarios: '适用场景说明'
 ---
-文件正文内容（可选）
+
+**Underlying**
+
+底层收益机制的详细说明，支持完整的 Markdown 格式：
+- **列表项**: 支持无序和有序列表
+- **强调文本**: 支持粗体和斜体
+- **链接**: 支持内联和引用链接
+
+**Danger**
+
+风险分析和注意事项，支持多种 Markdown 格式。
+
+**Scenarios**
+
+- **场景一**: 详细的使用场景描述
+- **场景二**: 另一个使用场景
+
+**Remark**
+
+备注和补充说明信息。
+
+---
+
+## 其他附加说明
+
+这里可以添加更多非结构化的详细说明内容。
 ```
 
 **协议文件结构** (web3/protocol/\*.md):
@@ -227,7 +379,8 @@ GET /api/pool-content
 Query Parameters:
 - fileName: 收益池文件名
 
-Response: 文件正文内容 (text/plain)
+Response: 过滤后的非结构化内容 (text/plain)
+注: 自动过滤掉 **Underlying**, **Danger**, **Scenarios**, **Remark** 等结构化字段
 ```
 
 **过滤器选项 API**:
@@ -339,9 +492,23 @@ interface PoolDetailDialogProps {
 
 功能:
 - 收益池详细信息展示
-- 底层收益、风险提示、适用场景
-- 文件正文内容显示
-- 无障碍支持
+- HTML格式的底层收益、风险提示、适用场景、备注说明
+- 非结构化的文件正文内容显示
+- Typography样式支持和无障碍支持
+
+HTML渲染实现:
+// 支持Markdown转换后的HTML内容正确显示
+<div 
+  className="prose prose-sm max-w-none" 
+  dangerouslySetInnerHTML={{ __html: pool.underlying }}
+/>
+
+字段显示:
+- underlying: 底层收益机制 (蓝色背景)
+- danger: 风险提示信息 (黄色背景)  
+- scenarios: 适用场景说明 (绿色背景)
+- remark: 备注补充说明 (灰色背景)
+- poolContent: 附加说明内容 (紫色背景)
 ```
 
 **筛选器组件** (components/FilterPanel.tsx):
@@ -517,6 +684,22 @@ NEXT_PUBLIC_SITE_URL=https://defix.example.com
 
 ---
 
-**文档版本**: v2.0.0  
-**最后更新**: 2025-01-25  
+**文档版本**: v2.1.0  
+**最后更新**: 2025-07-26  
 **维护者**: Claude Code Assistant
+
+## 📝 更新日志
+
+**v2.1.0** (2025-07-26)
+- ✨ 新增：AST-based Markdown解析器架构设计
+- ✨ 新增：标准Markdown库技术栈说明
+- ✨ 新增：智能内容过滤系统设计
+- ✨ 新增：HTML渲染和前端集成方案
+- ✨ 新增：PoolDetailDialog组件HTML渲染实现说明
+- ✨ 新增：Typography插件集成和最佳实践
+- 🔧 优化：数据流程图更新，包含新的解析组件
+- 🔧 优化：前端组件设计说明，包含具体实现代码
+- 📚 文档：完善解析器性能优化和错误处理策略
+
+**v2.0.0** (2025-01-25)
+- 🎉 首次发布完整系统设计文档

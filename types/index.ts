@@ -38,6 +38,7 @@ export interface Pool {
   underlying?: string; // 底层资产
   danger?: string; // 风险描述
   scenarios?: string; // 应用场景
+  remark?: string; // 备注说明
   reports: {
     research?: {
       exists: boolean;
