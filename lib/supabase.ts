@@ -124,4 +124,54 @@ export async function updateRequestStatus(id: string, status: SubmissionRequest[
   }
 }
 
+// 删除请求（管理员用）
+export async function deleteRequest(id: string) {
+  if (!isSupabaseConfigured || !supabase) {
+    return { success: false, error: 'Supabase未配置，无法删除请求' };
+  }
+
+  try {
+    console.log('开始执行数据库删除操作，ID:', id);
+    
+    // 先检查记录是否存在
+    const { data: existingRecord, error: checkError } = await supabase
+      .from('pool_requests')
+      .select('id')
+      .eq('id', id)
+      .single();
+    
+    console.log('检查记录是否存在:', existingRecord, checkError);
+    
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('检查记录时出错:', checkError);
+      return { success: false, error: `检查记录失败: ${checkError.message}` };
+    }
+    
+    if (!existingRecord) {
+      console.log('记录不存在，ID:', id);
+      return { success: false, error: '要删除的记录不存在' };
+    }
+    
+    // 执行删除操作
+    const { data, error } = await supabase
+      .from('pool_requests')
+      .delete()
+      .eq('id', id)
+      .select();
+
+    console.log('删除操作结果:', { data, error });
+
+    if (error) {
+      console.error('Supabase删除错误:', error);
+      throw error;
+    }
+
+    console.log('删除成功，返回的数据:', data);
+    return { success: true, data };
+  } catch (error) {
+    console.error('删除请求时发生异常:', error);
+    return { success: false, error: error instanceof Error ? error.message : '删除请求失败' };
+  }
+}
+
 export default supabase;

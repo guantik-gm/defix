@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { submitPoolRequest, getAllRequests, updateRequestStatus, isSupabaseConfigured } from '@/lib/supabase';
+import { submitPoolRequest, getAllRequests, updateRequestStatus, deleteRequest, isSupabaseConfigured } from '@/lib/supabase';
 
 export async function POST(request: NextRequest) {
   try {
@@ -251,6 +251,68 @@ export async function PATCH(request: NextRequest) {
         success: false,
         error: 'Internal server error',
         message: '更新状态失败，请稍后重试'
+      },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    // 检查Supabase是否已配置
+    if (!isSupabaseConfigured) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Configuration error',
+          message: 'Supabase数据库未配置，暂时无法删除请求'
+        },
+        { status: 503 }
+      );
+    }
+
+    const body = await request.json();
+    const { id } = body;
+
+    // 验证必填字段
+    if (!id) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Validation error',
+          message: '请求ID是必填项'
+        },
+        { status: 400 }
+      );
+    }
+
+    // 删除请求
+    const result = await deleteRequest(id);
+
+    if (!result.success) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Database error',
+          message: result.error || '删除请求失败'
+        },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: result.data,
+      message: '请求删除成功'
+    });
+    
+  } catch (error) {
+    console.error('Delete request error:', error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Internal server error',
+        message: '删除请求失败，请稍后重试'
       },
       { status: 500 }
     );

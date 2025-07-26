@@ -12,23 +12,38 @@ function AdminAuth({ children }: { children: React.ReactNode }) {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
-
-  // 从环境变量获取管理员密码，提供默认值作为后备
-  const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'defix2024';
+  const [adminPassword, setAdminPassword] = useState('defix2024');
 
   useEffect(() => {
-    // 检查本地存储中是否有认证状态
-    const authStatus = localStorage.getItem('admin_authenticated');
-    if (authStatus === 'true') {
-      setIsAuthenticated(true);
-    }
-    setLoading(false);
+    // 获取管理员密码配置和检查认证状态
+    const initializeAuth = async () => {
+      try {
+        // 从 API 获取管理员密码
+        const response = await fetch('/api/admin/config');
+        const result = await response.json();
+        if (result.success) {
+          setAdminPassword(result.password);
+        }
+      } catch (error) {
+        console.error('Failed to get admin config:', error);
+        // 使用默认密码
+      }
+
+      // 检查本地存储中是否有认证状态
+      const authStatus = localStorage.getItem('admin_authenticated');
+      if (authStatus === 'true') {
+        setIsAuthenticated(true);
+      }
+      setLoading(false);
+    };
+
+    initializeAuth();
   }, []);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (password === ADMIN_PASSWORD) {
+    if (password === adminPassword) {
       setIsAuthenticated(true);
       localStorage.setItem('admin_authenticated', 'true');
       setError('');

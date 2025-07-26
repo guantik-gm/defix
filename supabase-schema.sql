@@ -35,6 +35,10 @@ FOR SELECT USING (true);
 CREATE POLICY "Allow update requests" ON pool_requests
 FOR UPDATE USING (true);
 
+-- 允许删除请求（仅管理员，这里暂时允许所有人删除）
+CREATE POLICY "Allow delete requests" ON pool_requests
+FOR DELETE USING (true);
+
 -- 添加触发器自动更新 updated_at 字段
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$

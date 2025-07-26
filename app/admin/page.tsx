@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Users, MessageSquare, Settings, BarChart3, ArrowLeft } from 'lucide-react';
+import { Users, MessageSquare, Settings, BarChart3, ArrowLeft, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
@@ -25,6 +25,17 @@ export default function AdminPage() {
 
   useEffect(() => {
     fetchStats();
+    
+    // 页面聚焦时自动刷新数据
+    const handleFocus = () => {
+      fetchStats();
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
   }, []);
 
   const fetchStats = async () => {
@@ -89,9 +100,21 @@ export default function AdminPage() {
           </Link>
           
           <div className="text-center mb-8">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
-              管理后台
-            </h1>
+            <div className="flex items-center justify-center gap-4 mb-4">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+                管理后台
+              </h1>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={fetchStats}
+                disabled={loading}
+                className="flex items-center gap-2"
+              >
+                <RotateCcw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                刷新
+              </Button>
+            </div>
             <p className="text-base sm:text-lg text-gray-600">
               管理用户请求和系统设置
             </p>

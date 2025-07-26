@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Eye, CheckCircle, XCircle, Clock, Filter, Search, Download } from 'lucide-react';
+import { ArrowLeft, Eye, CheckCircle, XCircle, Clock, Filter, Search, Download, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
@@ -45,6 +45,8 @@ export default function AdminRequestsPage() {
   const [search, setSearch] = useState('');
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
   const [updating, setUpdating] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   useEffect(() => {
     fetchRequests();
@@ -92,6 +94,42 @@ export default function AdminRequestsPage() {
       console.error('Failed to update request status:', error);
     } finally {
       setUpdating(null);
+    }
+  };
+
+  const deleteRequest = async (requestId: string) => {
+    setDeleting(requestId);
+    try {
+      console.log('开始删除请求:', requestId);
+      
+      const response = await fetch('/api/requests', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: requestId
+        }),
+      });
+
+      console.log('删除API响应状态:', response.status);
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log('删除API响应数据:', result);
+        
+        setRequests(prev => prev.filter(req => req.id !== requestId));
+        setDeleteConfirm(null);
+      } else {
+        const errorResult = await response.json();
+        console.error('删除失败 - 服务器响应:', errorResult);
+        alert(`删除失败: ${errorResult.message || '未知错误'}`);
+      }
+    } catch (error) {
+      console.error('删除请求时发生错误:', error);
+      alert('删除失败，请检查网络连接');
+    } finally {
+      setDeleting(null);
     }
   };
 
@@ -322,6 +360,16 @@ export default function AdminRequestsPage() {
                               </Button>
                             </>
                           )}
+                          
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setDeleteConfirm(request.id)}
+                            disabled={deleting === request.id}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                         </div>
                       </td>
                     </tr>
@@ -408,6 +456,47 @@ export default function AdminRequestsPage() {
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 删除确认对话框 */}
+        {deleteConfirm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg max-w-md w-full p-6">
+              <div className="flex items-center mb-4">
+                <div className="flex-shrink-0">
+                  <XCircle className="h-6 w-6 text-red-600" />
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-lg font-medium text-gray-900">
+                    确认删除
+                  </h3>
+                </div>
+              </div>
+              
+              <div className="mb-4">
+                <p className="text-sm text-gray-500">
+                  您确定要删除这个请求吗？此操作无法撤销。
+                </p>
+              </div>
+              
+              <div className="flex justify-end space-x-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setDeleteConfirm(null)}
+                  disabled={deleting === deleteConfirm}
+                >
+                  取消
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => deleteRequest(deleteConfirm)}
+                  disabled={deleting === deleteConfirm}
+                >
+                  {deleting === deleteConfirm ? '删除中...' : '确认删除'}
+                </Button>
               </div>
             </div>
           </div>
