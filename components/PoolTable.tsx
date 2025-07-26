@@ -6,7 +6,8 @@ import { formatAPRRange, getRiskLevelColor, getChainColor } from '@/lib/utils';
 import { Badge } from './ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Button } from './ui/button';
-import { ExternalLink, FileText, BarChart3, ChevronDown, ChevronUp } from 'lucide-react';
+import { ExternalLink, FileText, BarChart3, ChevronDown, ChevronUp, Info } from 'lucide-react';
+import { PoolDetailDialog } from './PoolDetailDialog';
 
 interface PoolTableProps {
   pools: Pool[];
@@ -17,6 +18,40 @@ export function PoolTable({ pools, isLoading }: PoolTableProps) {
   // 管理每个池子的展开状态
   const [expandedChains, setExpandedChains] = useState<Set<string>>(new Set());
   const [expandedMarkets, setExpandedMarkets] = useState<Set<string>>(new Set());
+  
+  // 管理弹窗状态
+  const [selectedPool, setSelectedPool] = useState<Pool | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [poolContent, setPoolContent] = useState<string>('');
+
+  // 点击收益池名称时打开弹窗
+  const handlePoolNameClick = async (pool: Pool) => {
+    setSelectedPool(pool);
+    setIsDialogOpen(true);
+    
+    // 尝试获取收益池文件内容
+    try {
+      // 构建文件路径，基于协议名称和类型
+      const fileName = `${pool.protocol.name} ${pool.type}.md`;
+      const response = await fetch(`/api/pool-content?fileName=${encodeURIComponent(fileName)}`);
+      if (response.ok) {
+        const content = await response.text();
+        setPoolContent(content);
+      } else {
+        setPoolContent('');
+      }
+    } catch (error) {
+      console.warn('无法获取收益池文件内容:', error);
+      setPoolContent('');
+    }
+  };
+
+  // 关闭弹窗
+  const handleCloseDialog = () => {
+    setIsDialogOpen(false);
+    setSelectedPool(null);
+    setPoolContent('');
+  };
 
   // 切换链展开状态
   const toggleChainExpanded = (poolId: string) => {
@@ -87,7 +122,13 @@ export function PoolTable({ pools, isLoading }: PoolTableProps) {
             <TableRow key={pool.id} className="table-row">
               <TableCell className="font-medium">
                 <div className="flex flex-col">
-                  <span className="font-semibold text-gray-900 text-sm sm:text-base">{pool.name}</span>
+                  <button
+                    onClick={() => handlePoolNameClick(pool)}
+                    className="font-semibold text-gray-900 text-sm sm:text-base hover:text-blue-600 hover:underline text-left transition-colors duration-200 flex items-center gap-1 group"
+                  >
+                    {pool.name}
+                    <Info className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-blue-500" />
+                  </button>
                   {pool.underlying && (
                     <span className="text-xs text-gray-500 mt-1 hidden sm:block">{pool.underlying}</span>
                   )}
@@ -288,6 +329,14 @@ export function PoolTable({ pools, isLoading }: PoolTableProps) {
           ))}
         </TableBody>
       </Table>
+      
+      {/* 收益池详情弹窗 */}
+      <PoolDetailDialog
+        pool={selectedPool}
+        isOpen={isDialogOpen}
+        onClose={handleCloseDialog}
+        poolContent={poolContent}
+      />
     </div>
   );
 }
