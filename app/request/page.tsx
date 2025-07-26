@@ -135,7 +135,7 @@ export default function RequestPage() {
               <div>
                 <h3 className="text-green-800 font-medium">提交成功！</h3>
                 <p className="text-green-700 text-sm mt-1">
-                  我们已收到您的请求，专业团队将在 3-7 个工作日内进行评估和调研。
+                  收录请求已进入处理队列，由于计算资源紧张，AI处理时间可能会有延迟，请关注邮箱通知。
                 </p>
               </div>
             </div>
