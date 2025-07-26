@@ -242,7 +242,7 @@ export default function RequestPage() {
                     <div className="ml-3">
                       <h3 className="text-blue-800 font-medium text-sm">DeFi Research Agent 智能调研</h3>
                       <p className="text-blue-700 text-sm mt-1">
-                        我们的 AI 智能代理将自动收集协议的详细信息，包括：代币经济学、安全审计、团队背景、技术架构等。
+                        我们的 AI 智能代理将自动收集协议的详细信息，包括：代币经济学、安全审计、团队背景、技术架构、投资机会等。
                       </p>
                     </div>
                   </div>
