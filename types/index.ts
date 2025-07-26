@@ -69,10 +69,9 @@ export interface UserRequest {
 }
 
 export enum RequestType {
-  POOL_INCLUSION = "pool_inclusion",
-  PROTOCOL_ANALYSIS = "protocol_analysis",
+  PROTOCOL_INCLUSION = "protocol_inclusion",
   DATA_CORRECTION = "data_correction",
-  OTHER = "other"
+  OTHER_FEEDBACK = "other_feedback"
 }
 
 export enum RequestStatus {

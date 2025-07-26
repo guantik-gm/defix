@@ -4,47 +4,25 @@ import React, { useState } from 'react';
 import { ArrowLeft, Send, Check, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-import { RequestType, RiskLevel } from '@/types';
+import { RequestType } from '@/types';
 
 interface FormData {
   type: RequestType;
-  poolName: string;
   protocolName: string;
   officialWebsite: string;
-  chain: string[];
-  token: string;
-  investmentType: string;
-  expectedAPR: string;
-  riskLevel: RiskLevel;
   contactEmail: string;
-  additionalInfo: string;
+  description?: string; // 仅用于数据纠错和其他反馈
 }
 
 const initialFormData: FormData = {
-  type: RequestType.POOL_INCLUSION,
-  poolName: '',
+  type: RequestType.PROTOCOL_INCLUSION,
   protocolName: '',
   officialWebsite: '',
-  chain: [],
-  token: '',
-  investmentType: '',
-  expectedAPR: '',
-  riskLevel: RiskLevel.MEDIUM,
   contactEmail: '',
-  additionalInfo: '',
+  description: '',
 };
 
-const availableChains = [
-  'Ethereum', 'BSC', 'Polygon', 'Arbitrum', 'Optimism', 
-  'Avalanche', 'Fantom', 'Solana', 'Base', 'Linea'
-];
-
-const investmentTypes = [
-  '流动性挖矿', '单币质押', '借贷协议', 'DEX交易', 
-  '合成资产', '保险协议', '衍生品', '跨链桥', '其他'
-];
 
 export default function RequestPage() {
   const [formData, setFormData] = useState<FormData>(initialFormData);
@@ -60,26 +38,20 @@ export default function RequestPage() {
     }));
   };
 
-  // 处理链选择
-  const toggleChain = (chain: string) => {
-    setFormData(prev => ({
-      ...prev,
-      chain: prev.chain.includes(chain)
-        ? prev.chain.filter(c => c !== chain)
-        : [...prev.chain, chain]
-    }));
-  };
 
   // 验证表单
   const validateForm = (): string[] => {
     const errors: string[] = [];
     
-    if (!formData.poolName.trim()) errors.push('收益池名称是必填项');
-    if (!formData.protocolName.trim()) errors.push('协议名称是必填项');
-    if (!formData.officialWebsite.trim()) errors.push('官方网站是必填项');
-    if (formData.chain.length === 0) errors.push('请至少选择一个区块链');
-    if (!formData.token.trim()) errors.push('Token是必填项');
-    if (!formData.investmentType.trim()) errors.push('投资类型是必填项');
+    if (formData.type === RequestType.PROTOCOL_INCLUSION) {
+      if (!formData.protocolName.trim()) errors.push('协议名称是必填项');
+      if (!formData.officialWebsite.trim()) errors.push('官方网站是必填项');
+    }
+    
+    if (formData.type === RequestType.DATA_CORRECTION || formData.type === RequestType.OTHER_FEEDBACK) {
+      if (!formData.description?.trim()) errors.push('问题描述是必填项');
+    }
+    
     if (!formData.contactEmail.trim()) errors.push('联系邮箱是必填项');
     
     // 邮箱格式验证
@@ -150,7 +122,7 @@ export default function RequestPage() {
               提交收录请求
             </h1>
             <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto px-4">
-              向我们推荐优质的 DeFi 收益池项目，我们的专业团队将进行调研分析
+              推荐优质的 DeFi 协议项目，我们的 DeFi Research Agent 将自动完成详细调研分析
             </p>
           </div>
         </div>
@@ -203,179 +175,140 @@ export default function RequestPage() {
                         : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 active:bg-gray-200'
                     }`}
                   >
-                    {type === RequestType.POOL_INCLUSION ? '收益池收录' : 
-                     type === RequestType.PROTOCOL_ANALYSIS ? '协议分析' : 
+                    {type === RequestType.PROTOCOL_INCLUSION ? '协议收录' : 
                      type === RequestType.DATA_CORRECTION ? '数据纠错' : '其他反馈'}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* 基本信息 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  收益池名称 *
-                </label>
-                <Input
-                  type="text"
-                  value={formData.poolName}
-                  onChange={(e) => handleInputChange('poolName', e.target.value)}
-                  placeholder="例如：Compound USDC"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  协议名称 *
-                </label>
-                <Input
-                  type="text"
-                  value={formData.protocolName}
-                  onChange={(e) => handleInputChange('protocolName', e.target.value)}
-                  placeholder="例如：Compound"
-                  required
-                />
-              </div>
-            </div>
-
-            {/* 官方网站 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                官方网站 *
-              </label>
-              <Input
-                type="url"
-                value={formData.officialWebsite}
-                onChange={(e) => handleInputChange('officialWebsite', e.target.value)}
-                placeholder="https://compound.finance"
-                required
-              />
-            </div>
-
-            {/* 区块链选择 */}
-            <div>
-              <label className="block text-base sm:text-sm font-medium text-gray-700 mb-3 sm:mb-2">
-                支持的区块链 *
-              </label>
-              <div className="grid grid-cols-3 sm:flex sm:flex-wrap gap-2">
-                {availableChains.map((chain) => (
-                  <button
-                    key={chain}
-                    type="button"
-                    onClick={() => toggleChain(chain)}
-                    className={`px-3 py-2 sm:py-1 text-sm rounded-lg sm:rounded-full border transition-colors touch-target ${
-                      formData.chain.includes(chain)
-                        ? 'bg-blue-600 text-white border-blue-600'
-                        : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 active:bg-gray-200'
-                    }`}
-                  >
-                    {chain}
-                  </button>
-                ))}
-              </div>
-              {formData.chain.length > 0 && (
-                <div className="mt-3 sm:mt-2 text-sm text-gray-600 bg-blue-50 p-2 rounded">
-                  已选择：{formData.chain.join(', ')}
+            {/* 协议收录表单 */}
+            {formData.type === RequestType.PROTOCOL_INCLUSION && (
+              <>
+                {/* 协议信息 */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      协议名称 *
+                    </label>
+                    <Input
+                      type="text"
+                      value={formData.protocolName}
+                      onChange={(e) => handleInputChange('protocolName', e.target.value)}
+                      placeholder="例如：Uniswap"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      官方网站 *
+                    </label>
+                    <Input
+                      type="url"
+                      value={formData.officialWebsite}
+                      onChange={(e) => handleInputChange('officialWebsite', e.target.value)}
+                      placeholder="https://uniswap.org"
+                      required
+                    />
+                  </div>
                 </div>
-              )}
-            </div>
 
-            {/* Token 和投资类型 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Token *
-                </label>
-                <Input
-                  type="text"
-                  value={formData.token}
-                  onChange={(e) => handleInputChange('token', e.target.value)}
-                  placeholder="例如：USDC、ETH、BTC"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  投资类型 *
-                </label>
-                <select
-                  value={formData.investmentType}
-                  onChange={(e) => handleInputChange('investmentType', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                >
-                  <option value="">请选择投资类型</option>
-                  {investmentTypes.map((type) => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
+                {/* 联系邮箱 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    联系邮箱 *
+                  </label>
+                  <Input
+                    type="email"
+                    value={formData.contactEmail}
+                    onChange={(e) => handleInputChange('contactEmail', e.target.value)}
+                    placeholder="your.email@example.com"
+                    required
+                  />
+                  <p className="text-sm text-gray-500 mt-1">
+                    我们将通过此邮箱与您联系，告知评估结果
+                  </p>
+                </div>
 
-            {/* APR 和风险等级 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  预期 APR
-                </label>
-                <Input
-                  type="text"
-                  value={formData.expectedAPR}
-                  onChange={(e) => handleInputChange('expectedAPR', e.target.value)}
-                  placeholder="例如：5-8%、10%+"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  风险等级评估
-                </label>
-                <select
-                  value={formData.riskLevel}
-                  onChange={(e) => handleInputChange('riskLevel', e.target.value as RiskLevel)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value={RiskLevel.LOW}>低风险</option>
-                  <option value={RiskLevel.MEDIUM}>中风险</option>
-                  <option value={RiskLevel.HIGH}>高风险</option>
-                  <option value={RiskLevel.VERY_HIGH}>极高风险</option>
-                </select>
-              </div>
-            </div>
+                {/* DeFi Research Agent 提示 */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0">
+                      <svg className="w-5 h-5 text-blue-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <h3 className="text-blue-800 font-medium text-sm">DeFi Research Agent 智能调研</h3>
+                      <p className="text-blue-700 text-sm mt-1">
+                        我们的 AI 智能代理将自动收集协议的详细信息，包括：代币经济学、安全审计、团队背景、技术架构等。
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
 
-            {/* 联系邮箱 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                联系邮箱 *
-              </label>
-              <Input
-                type="email"
-                value={formData.contactEmail}
-                onChange={(e) => handleInputChange('contactEmail', e.target.value)}
-                placeholder="your.email@example.com"
-                required
-              />
-              <p className="text-sm text-gray-500 mt-1">
-                我们将通过此邮箱与您联系，告知评估结果
-              </p>
-            </div>
+            {/* 数据纠错和其他反馈表单 */}
+            {(formData.type === RequestType.DATA_CORRECTION || formData.type === RequestType.OTHER_FEEDBACK) && (
+              <>
+                {/* X链接指引 */}
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0">
+                      <svg className="w-5 h-5 text-gray-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenovenRule" />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <h3 className="text-gray-800 font-medium text-sm">联系我们</h3>
+                      <p className="text-gray-700 text-sm mt-1">
+                        对于数据纠错和其他反馈，您也可以直接通过 X (Twitter) 联系我们：
+                        <a 
+                          href="https://x.com/defixplatform" 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:text-blue-700 font-medium ml-1"
+                        >
+                          @defixplatform
+                        </a>
+                      </p>
+                    </div>
+                  </div>
+                </div>
 
-            {/* 补充信息 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                补充信息
-              </label>
-              <textarea
-                value={formData.additionalInfo}
-                onChange={(e) => handleInputChange('additionalInfo', e.target.value)}
-                placeholder="请提供更多关于该项目的信息，如：特殊机制、创新点、团队背景等"
-                rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+                {/* 联系邮箱 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    联系邮箱 *
+                  </label>
+                  <Input
+                    type="email"
+                    value={formData.contactEmail}
+                    onChange={(e) => handleInputChange('contactEmail', e.target.value)}
+                    placeholder="your.email@example.com"
+                    required
+                  />
+                </div>
+
+                {/* 问题描述 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    问题描述 *
+                  </label>
+                  <textarea
+                    value={formData.description || ''}
+                    onChange={(e) => handleInputChange('description', e.target.value)}
+                    placeholder="请详细描述您发现的问题或想要反馈的内容"
+                    rows={4}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+              </>
+            )}
+
 
             {/* 提交按钮 */}
             <div className="flex justify-end pt-4">
@@ -388,8 +321,7 @@ export default function RequestPage() {
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                     提交中...
-                  </>
-                ) : (
+                  </>                ) : (
                   <>
                     <Send className="w-4 h-4 mr-2" />
                     提交请求
@@ -404,9 +336,9 @@ export default function RequestPage() {
         <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-4">
           <h3 className="text-blue-800 font-medium mb-2">审核流程说明</h3>
           <div className="text-blue-700 text-sm space-y-1">
-            <p>1. <strong>初步筛选</strong>：我们将在 1-2 个工作日内对项目进行初步评估</p>
-            <p>2. <strong>深度调研</strong>：通过初步筛选的项目将进入深度调研阶段（3-5个工作日）</p>
-            <p>3. <strong>报告发布</strong>：调研完成后将发布调研报告和分析报告</p>
+            <p>1. <strong>智能收集</strong>：DeFi Research Agent 将自动收集协议的详细信息</p>
+            <p>2. <strong>深度分析</strong>：AI 系统将进行全面的风险评估和技术分析</p>
+            <p>3. <strong>报告生成</strong>：自动生成调研报告和分析报告</p>
             <p>4. <strong>平台收录</strong>：符合标准的项目将正式收录到平台</p>
           </div>
         </div>
