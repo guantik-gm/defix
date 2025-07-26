@@ -366,6 +366,14 @@ export default function HomePage() {
               <X className="w-4 h-4" />
               <span className="text-xs">在 X 上联系</span>
             </Link>
+            <span className="text-gray-300">|</span>
+            <Link 
+              href="/admin" 
+              className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+              title="管理后台"
+            >
+              管理
+            </Link>
           </div>
         </div>
       </div>

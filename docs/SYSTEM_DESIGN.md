@@ -402,20 +402,41 @@ Response:
 ```
 POST /api/requests
 Body: {
-  "type": "pool_inclusion",
-  "poolName": string,
-  "protocolName": string,
-  "officialWebsite": string,
-  "chain": string[],
-  "description": string,
-  "userEmail": string
+  "type": "protocol_inclusion" | "data_correction" | "other_feedback",
+  "protocolName"?: string,        // 协议收录时必填
+  "officialWebsite"?: string,     // 协议收录时必填  
+  "contactEmail": string,         // 必填
+  "description"?: string          // 数据纠错和其他反馈时必填
 }
 
 Response:
 {
   "success": boolean,
   "message": string,
-  "requestId"?: string
+  "requestId"?: string,
+  "type"?: string
+}
+```
+
+**管理后台 API**:
+```
+GET /api/requests
+用途: 获取所有用户请求列表
+Response: {
+  "success": true,
+  "data": SubmissionRequest[]
+}
+
+PATCH /api/requests  
+Body: {
+  "id": string,
+  "status": "pending" | "in_review" | "approved" | "rejected"
+}
+用途: 更新请求状态
+Response: {
+  "success": boolean,
+  "message": string,
+  "data": SubmissionRequest
 }
 ```
 
@@ -457,10 +478,15 @@ app/
 ├── request/
 │   ├── layout.tsx (请求布局)
 │   └── page.tsx (提交请求)
+├── admin/
+│   ├── layout.tsx (管理员布局+认证)
+│   ├── page.tsx (管理后台主页)
+│   └── requests/
+│       └── page.tsx (请求管理页面)
 └── api/
     ├── pools/route.ts
     ├── filters/route.ts
-    ├── requests/route.ts
+    ├── requests/route.ts (GET、POST、PATCH)
     └── pool-content/route.ts
 ```
 
@@ -525,6 +551,104 @@ interface FilterPanelProps {
 - 过滤器重置
 - 响应式折叠
 ```
+
+## 🛠️ 管理后台架构设计
+
+### 管理后台功能模块
+
+**管理员认证模块** (app/admin/layout.tsx):
+```typescript
+interface AdminAuthProps {
+  children: React.ReactNode;
+}
+
+功能:
+- 简单密码验证 (默认: defix2024)
+- 本地存储会话状态
+- 登录/退出功能
+- 未认证时显示登录界面
+```
+
+**管理后台主页** (app/admin/page.tsx):
+```typescript
+interface AdminStats {
+  totalRequests: number;
+  pendingRequests: number;
+  protocolInclusions: number;
+  dataCorrections: number;
+  otherFeedback: number;
+}
+
+功能:
+- 请求统计概览
+- 系统状态监控
+- 快速操作入口
+- 仪表板界面
+```
+
+**请求管理页面** (app/admin/requests/page.tsx):
+```typescript
+interface Request {
+  id: string;
+  type: 'protocol_inclusion' | 'data_correction' | 'other_feedback';
+  protocol_name?: string;
+  official_website?: string;
+  contact_email: string;
+  description?: string;
+  status: 'pending' | 'in_review' | 'approved' | 'rejected';
+  created_at: string;
+  updated_at: string;
+}
+
+功能:
+- 请求列表展示和分页
+- 状态筛选 (全部/待处理/审核中/已通过/已拒绝)
+- 关键词搜索 (协议名称、邮箱、描述)
+- 状态管理 (pending → in_review → approved/rejected)
+- 请求详情查看弹窗
+- CSV 数据导出
+- 批量操作按钮
+```
+
+### 数据库设计
+
+**请求表结构** (Supabase PostgreSQL):
+```sql
+CREATE TABLE pool_requests (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  type VARCHAR(50) NOT NULL CHECK (type IN ('protocol_inclusion', 'data_correction', 'other_feedback')),
+  protocol_name VARCHAR(255),
+  official_website TEXT,
+  contact_email VARCHAR(255) NOT NULL,
+  description TEXT,
+  status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'in_review', 'approved', 'rejected')),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 索引优化
+CREATE INDEX idx_pool_requests_type ON pool_requests(type);
+CREATE INDEX idx_pool_requests_status ON pool_requests(status);
+CREATE INDEX idx_pool_requests_created_at ON pool_requests(created_at);
+```
+
+### 管理工作流程
+
+**请求处理流程**:
+```
+用户提交 → pending (待处理)
+          ↓
+管理员审核 → in_review (审核中) 
+          ↓
+最终决定 → approved (已通过) / rejected (已拒绝)
+```
+
+**管理操作**:
+- 查看请求详情
+- 更新请求状态
+- 添加处理备注 (预留功能)
+- 邮件通知用户 (预留功能)
+- 数据导出和分析
 
 ### 状态管理策略
 
@@ -607,9 +731,10 @@ export default function robots(): MetadataRoute.Robots {
 - SQL 注入防护
 
 ### 访问控制
-- 公开只读访问
-- 管理员功能预留
+- 公开只读访问 (收益池数据)
+- 管理员功能密码保护 (/admin 路径)
 - API 频率限制
+- 简单会话管理 (localStorage)
 
 ### 数据保护
 - 敏感信息加密
@@ -689,6 +814,16 @@ NEXT_PUBLIC_SITE_URL=https://defix.example.com
 **维护者**: Claude Code Assistant
 
 ## 📝 更新日志
+
+**v2.2.0** (2025-07-26)
+- ✨ 新增：管理后台架构设计
+- ✨ 新增：用户请求管理系统
+- ✨ 新增：简单身份认证模块
+- ✨ 新增：请求状态管理工作流程
+- ✨ 新增：Supabase数据库表结构设计
+- 🔧 优化：API接口扩展 (PATCH /api/requests)
+- 🔧 优化：安全策略更新，包含管理员访问控制
+- 📚 文档：完善管理后台组件设计和数据库架构
 
 **v2.1.0** (2025-07-26)
 - ✨ 新增：AST-based Markdown解析器架构设计

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { submitPoolRequest, getAllRequests, isSupabaseConfigured } from '@/lib/supabase';
+import { submitPoolRequest, getAllRequests, updateRequestStatus, isSupabaseConfigured } from '@/lib/supabase';
 
 export async function POST(request: NextRequest) {
   try {
@@ -176,6 +176,81 @@ export async function GET() {
         success: false, 
         error: 'Internal server error',
         message: '获取请求列表失败'
+      },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    // 检查Supabase是否已配置
+    if (!isSupabaseConfigured) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Configuration error',
+          message: 'Supabase数据库未配置，暂时无法更新请求状态'
+        },
+        { status: 503 }
+      );
+    }
+
+    const body = await request.json();
+    const { id, status } = body;
+
+    // 验证必填字段
+    if (!id || !status) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Validation error',
+          message: '请求ID和状态是必填项'
+        },
+        { status: 400 }
+      );
+    }
+
+    // 验证状态值
+    const validStatuses = ['pending', 'in_review', 'approved', 'rejected'];
+    if (!validStatuses.includes(status)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Validation error',
+          message: '无效的状态值'
+        },
+        { status: 400 }
+      );
+    }
+
+    // 更新请求状态
+    const result = await updateRequestStatus(id, status);
+
+    if (!result.success) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Database error',
+          message: result.error || '更新状态失败'
+        },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: result.data,
+      message: '状态更新成功'
+    });
+    
+  } catch (error) {
+    console.error('Update request status error:', error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Internal server error',
+        message: '更新状态失败，请稍后重试'
       },
       { status: 500 }
     );
