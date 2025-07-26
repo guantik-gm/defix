@@ -13,8 +13,8 @@ function AdminAuth({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
-  // 简单的管理员密码（实际使用中应该使用更安全的方式）
-  const ADMIN_PASSWORD = 'defix2024';
+  // 从环境变量获取管理员密码，提供默认值作为后备
+  const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'defix2024';
 
   useEffect(() => {
     // 检查本地存储中是否有认证状态
