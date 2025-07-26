@@ -108,7 +108,7 @@ export function PoolTable({ pools, isLoading }: PoolTableProps) {
             <TableHead className="min-w-[120px] sm:w-[140px]">协议</TableHead>
             <TableHead className="min-w-[60px] sm:w-[80px]">类型</TableHead>
             <TableHead className="min-w-[100px] sm:w-[120px]">所属链</TableHead>
-            <TableHead className="min-w-[70px] sm:w-[90px]">风险</TableHead>
+            <TableHead className="min-w-[80px] sm:w-[100px]">风险</TableHead>
             <TableHead className="min-w-[60px] sm:w-[80px]">Token</TableHead>
             <TableHead className="min-w-[100px] sm:w-[120px]">收益范围</TableHead>
             <TableHead className="min-w-[90px] sm:w-[110px] hidden sm:table-cell">适用市场</TableHead>
@@ -192,9 +192,9 @@ export function PoolTable({ pools, isLoading }: PoolTableProps) {
                 </div>
               </TableCell>
               
-              <TableCell>
+              <TableCell className="min-w-[80px]">
                 <div 
-                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors ${getRiskLevelColor(pool.risk)}`}
+                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors whitespace-nowrap ${getRiskLevelColor(pool.risk)}`}
                   style={pool.risk === '极高风险' ? {
                     backgroundColor: '#dc2626', // red-600
                     color: '#fef2f2', // red-50
