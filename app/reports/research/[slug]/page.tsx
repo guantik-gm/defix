@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, FileText, Calendar, ExternalLink } from 'lucide-react';
+import { ArrowLeft, FileText, Calendar, ExternalLink, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ArticleStructuredData, BreadcrumbsStructuredData } from '@/components/StructuredData';
 import Link from 'next/link';
@@ -17,39 +17,62 @@ interface ReportData {
   type: 'markdown' | 'html';
 }
 
+interface PairedReportInfo {
+  exists: boolean;
+  url: string | null;
+  title: string;
+  type: 'analysis' | 'research';
+}
+
 export default function ResearchReportPage({ params }: { params: { slug: string } }) {
   const [report, setReport] = useState<ReportData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [pairedReport, setPairedReport] = useState<PairedReportInfo | null>(null);
 
   useEffect(() => {
-    async function fetchReport() {
+    async function fetchData() {
       try {
         setIsLoading(true);
-        const response = await fetch(`/api/reports/research/${params.slug}`);
         
-        if (!response.ok) {
-          if (response.status === 404) {
+        // 并行获取报告内容和配对报告信息
+        const [reportResponse, pairedResponse] = await Promise.all([
+          fetch(`/api/reports/research/${params.slug}`),
+          fetch(`/api/reports/check/${params.slug}?type=research`)
+        ]);
+        
+        // 处理报告内容
+        if (!reportResponse.ok) {
+          if (reportResponse.status === 404) {
             notFound();
           }
           throw new Error('Failed to fetch report');
         }
 
-        const data = await response.json();
-        if (data.success) {
-          setReport(data.data);
+        const reportData = await reportResponse.json();
+        if (reportData.success) {
+          setReport(reportData.data);
         } else {
-          setError(data.message || 'Failed to load report');
+          setError(reportData.message || 'Failed to load report');
         }
+        
+        // 处理配对报告信息
+        if (pairedResponse.ok) {
+          const pairedData = await pairedResponse.json();
+          if (pairedData.success) {
+            setPairedReport(pairedData.data);
+          }
+        }
+        
       } catch (err) {
-        console.error('Error fetching report:', err);
+        console.error('Error fetching data:', err);
         setError('加载报告时出错');
       } finally {
         setIsLoading(false);
       }
     }
 
-    fetchReport();
+    fetchData();
   }, [params.slug]);
 
   if (isLoading) {
@@ -95,10 +118,19 @@ export default function ResearchReportPage({ params }: { params: { slug: string 
         <div className="container mx-auto px-4 py-8">
         {/* 导航栏 */}
         <div className="mb-6">
-          <Link href="/" className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 mb-4">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            返回首页
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-3 mb-4">
+            <Link href="/" className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              返回首页
+            </Link>
+            
+            {pairedReport?.exists && pairedReport.url && (
+              <Link href={pairedReport.url} className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-blue-600 text-white hover:bg-blue-700 h-10 px-4 py-2">
+                <BarChart3 className="w-4 h-4 mr-2" />
+                {pairedReport.title}
+              </Link>
+            )}
+          </div>
           
           <div className="bg-white rounded-lg shadow-sm border p-6">
             <div className="flex items-start justify-between mb-4">
