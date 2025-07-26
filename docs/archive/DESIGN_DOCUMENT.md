@@ -300,6 +300,67 @@ const columns = [
 ]
 ```
 
+### 收益池详情弹窗组件
+
+**设计目标**: 点击收益池名称时显示详细信息弹窗，提供更丰富的信息展示。
+
+```typescript
+// components/pool/PoolDetailDialog.tsx
+interface PoolDetailDialogProps {
+  pool: Pool | null                // 当前选中的收益池
+  isOpen: boolean                  // 弹窗开启状态
+  onClose: () => void              // 关闭弹窗回调
+  poolContent?: string             // 收益池文件的正文内容
+}
+```
+
+**弹窗信息展示区域**:
+
+1. **基本信息区域**:
+   - 收益池名称 + 风险等级标签
+   - 协议名称和类型
+   - 收益范围、Token类型
+   - 所属链和适用市场（Badge展示）
+
+2. **详细信息区域**（根据数据可用性动态显示）:
+   - 🔵 **底层收益** (underlying) - 蓝色信息框，描述收益来源
+   - ⚠️ **风险提示** (danger) - 橙色警告框，风险说明
+   - 🎯 **适用场景** (scenarios) - 绿色场景框，使用场景说明
+   - 📄 **附加说明** - 紫色信息框，显示收益池文件的正文内容
+
+3. **协议信息区域**:
+   - 协议详细信息
+   - 官网链接等
+
+**交互设计**:
+- 点击收益池名称触发弹窗
+- 悬停时显示蓝色链接效果和信息图标
+- 响应式设计，适配移动端
+- 点击遮罩或关闭按钮关闭弹窗
+
+**API集成**:
+```typescript
+// app/api/pool-content/route.ts
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url)
+  const fileName = searchParams.get('fileName')
+  
+  // 在 web3/pools/cex 和 web3/pools/chain 目录中搜索文件
+  // 解析 Markdown frontmatter，提取正文内容
+  // 支持智能文件匹配和模糊搜索
+  
+  return new NextResponse(fileContent, {
+    headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+  })
+}
+```
+
+**技术实现**:
+- 基于 `@radix-ui/react-dialog` 实现弹窗基础功能
+- 使用 Tailwind CSS 进行样式设计
+- 支持条件渲染，只显示有内容的信息区域
+- 异步加载收益池文件内容，优化用户体验
+
 ## 💾 收益池数据加载系统设计
 
 参考现有dashboard系统的核心逻辑，设计新的数据加载系统：
