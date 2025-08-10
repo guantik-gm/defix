@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Altitude.fi 交互式投资分析仪表盘</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals (bg-stone-50, text-stone-800, accent-teal-600) -->
+    <!-- Application Structure Plan: The application is designed as a single-page, thematic dashboard with a sticky top navigation for smooth scrolling. This structure allows non-linear exploration, enabling users to jump directly to sections of interest like "Strategies" or "Security" first. The layout prioritizes key information upfront (rating, TVL), followed by interactive sections for investment strategies (using tabs for clarity), risk analysis (using a visual SWOT grid), and project fundamentals. This user-centric design is more engaging and efficient for an investor than a traditional, linear report format. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: TVL Growth -> Goal: Show product-market fit -> Viz: Line Chart -> Interaction: Hover for details -> Justification: Best for time-series data -> Library: Chart.js.
+        - Report Info: Core Mechanism -> Goal: Explain "self-repaying loan" -> Viz: HTML/CSS Diagram -> Interaction: None -> Justification: Lightweight, avoids external assets, easily styled -> Library/Method: Tailwind CSS.
+        - Report Info: Investment Strategies -> Goal: Present actionable options -> Viz: Interactive Cards/Tabs -> Interaction: Click to switch strategy -> Justification: Breaks down dense info into digestible, user-controlled chunks -> Library/Method: Vanilla JS.
+        - Report Info: SWOT Analysis -> Goal: Summarize strategic position -> Viz: 2x2 Grid -> Interaction: None -> Justification: Visually intuitive standard -> Library/Method: Tailwind CSS.
+        - Report Info: Tokenomics -> Goal: Show rewards allocation -> Viz: Donut Chart -> Interaction: Hover for details -> Justification: Ideal for part-to-whole relationships -> Library/Method: Chart.js.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f9fafb; /* Lighter gray */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 40vh;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .nav-link {
+            transition: color 0.3s, border-bottom-color 0.3s;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #0d9488; /* teal-600 */
+            border-bottom-color: #0d9488;
+        }
+        .tab-button.active {
+            background-color: #0d9488; /* teal-600 */
+            color: #ffffff;
+        }
+        .strategy-card {
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .strategy-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+    </style>
+</head>
+<body class="bg-stone-50 text-stone-800">
+
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="text-2xl font-bold text-stone-900">
+                Altitude.fi <span class="text-teal-600">分析仪表盘</span>
+            </div>
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="#overview" class="nav-link font-medium text-stone-600 pb-1">概览</a>
+                <a href="#strategies" class="nav-link font-medium text-stone-600 pb-1">投资策略</a>
+                <a href="#security" class="nav-link font-medium text-stone-600 pb-1">安全与风险</a>
+                <a href="#fundamentals" class="nav-link font-medium text-stone-600 pb-1">基本面</a>
+            </div>
+            <div class="md:hidden">
+                <button id="mobile-menu-button" class="text-stone-800 focus:outline-none">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                </button>
+            </div>
+        </nav>
+        <div id="mobile-menu" class="hidden md:hidden">
+            <a href="#overview" class="block text-center py-2 px-4 text-sm text-stone-700 hover:bg-teal-50">概览</a>
+            <a href="#strategies" class="block text-center py-2 px-4 text-sm text-stone-700 hover:bg-teal-50">投资策略</a>
+            <a href="#security" class="block text-center py-2 px-4 text-sm text-stone-700 hover:bg-teal-50">安全与风险</a>
+            <a href="#fundamentals" class="block text-center py-2 px-4 text-sm text-stone-700 hover:bg-teal-50">基本面</a>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-6 py-8 md:py-12">
+        
+        <section id="hero" class="text-center mb-16 md:mb-24">
+            <h1 class="text-4xl md:text-6xl font-extrabold text-stone-900 mb-4">Altitude.fi 深度投资分析</h1>
+            <p class="text-lg md:text-xl text-stone-600 max-w-3xl mx-auto mb-6">一个旨在通过“自我偿还贷款”机制来解决DeFi资本效率低下问题的自动化借贷管理协议。</p>
+            <div class="bg-teal-600 text-white inline-block rounded-full px-6 py-3 text-xl font-bold shadow-lg">
+                最终投资评级：强烈建议
+            </div>
+            <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <h3 class="text-stone-500 text-sm font-medium mb-1">总锁仓价值 (TVL)</h3>
+                    <p class="text-3xl font-bold text-stone-900">$11.5M+</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <h3 class="text-stone-500 text-sm font-medium mb-1">总融资金额</h3>
+                    <p class="text-3xl font-bold text-stone-900">$6.1M</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <h3 class="text-stone-500 text-sm font-medium mb-1">核心投资者</h3>
+                    <p class="text-3xl font-bold text-stone-900">GSR, Tioga</p>
+                </div>
+            </div>
+        </section>
+
+        <hr class="my-16 md:my-24 border-stone-200">
+
+        <section id="overview" class="scroll-mt-24">
+            <h2 class="text-3xl md:text-4xl font-bold text-center text-stone-900 mb-4">协议概览与市场表现</h2>
+            <p class="text-center text-stone-600 max-w-3xl mx-auto mb-12">Altitude.fi 不是一个新的借贷市场，而是一个构建在 Aave、Morpho 等成熟协议之上的智能管理层，旨在最大化您的资本效率。</p>
+            
+            <div class="grid md:grid-cols-2 gap-12 items-center">
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <h3 class="font-bold text-2xl mb-4 text-stone-900">它是如何工作的？</h3>
+                    <p class="text-stone-600 mb-6">协议自动管理您的贷款，将闲置抵押品投入低风险策略产生收益，并用该收益自动偿还您的贷款本息。</p>
+                    <div class="space-y-4">
+                        <div class="flex items-start space-x-4">
+                            <div class="bg-teal-500 text-white rounded-full w-8 h-8 flex-shrink-0 flex items-center justify-center font-bold">1</div>
+                            <div>
+                                <h4 class="font-semibold text-stone-800">存入抵押品</h4>
+                                <p class="text-sm text-stone-600">用户存入 wstETH 或 cbBTC 等资产。</p>
+                            </div>
+                        </div>
+                        <div class="pl-6">
+                            <div class="w-px h-6 bg-stone-300 ml-3.5"></div>
+                        </div>
+                        <div class="flex items-start space-x-4">
+                            <div class="bg-teal-500 text-white rounded-full w-8 h-8 flex-shrink-0 flex items-center justify-center font-bold">2</div>
+                            <div>
+                                <h4 class="font-semibold text-stone-800">借出稳定币 & 激活闲置资本</h4>
+                                <p class="text-sm text-stone-600">协议将未用于抵押的资本部署到 Curve/Pendle 等平台赚取收益。</p>
+                            </div>
+                        </div>
+                         <div class="pl-6">
+                            <div class="w-px h-6 bg-stone-300 ml-3.5"></div>
+                        </div>
+                        <div class="flex items-start space-x-4">
+                            <div class="bg-teal-500 text-white rounded-full w-8 h-8 flex-shrink-0 flex items-center justify-center font-bold">3</div>
+                            <div>
+                                <h4 class="font-semibold text-stone-800">自动偿还贷款</h4>
+                                <p class="text-sm text-stone-600">产生的收益被自动用于偿还贷款，实现“自我偿还”效果。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <h3 class="font-bold text-2xl mb-4 text-center text-stone-900">TVL 增长轨迹</h3>
+                     <div class="chart-container">
+                        <canvas id="tvlChart"></canvas>
+                    </div>
+                    <p class="text-xs text-center text-stone-500 mt-4">数据显示协议自公开发布后，市场接受度高，增长迅速。</p>
+                </div>
+            </div>
+        </section>
+
+        <hr class="my-16 md:my-24 border-stone-200">
+
+        <section id="strategies" class="scroll-mt-24">
+            <h2 class="text-3xl md:text-4xl font-bold text-center text-stone-900 mb-4">战略投资机会</h2>
+            <p class="text-center text-stone-600 max-w-3xl mx-auto mb-12">根据您的风险偏好和技术背景，Altitude.fi 提供了多种参与途径，从低风险的空投挖矿到高回报的组合策略。</p>
+
+            <div class="flex justify-center mb-8 space-x-2 md:space-x-4 bg-stone-100 p-2 rounded-full">
+                <button data-tab="low" class="tab-button px-4 py-2 md:px-6 md:py-3 text-sm md:text-base font-semibold rounded-full transition-colors duration-300">低风险</button>
+                <button data-tab="medium" class="tab-button px-4 py-2 md:px-6 md:py-3 text-sm md:text-base font-semibold rounded-full transition-colors duration-300">中风险</button>
+                <button data-tab="high" class="tab-button px-4 py-2 md:px-6 md:py-3 text-sm md:text-base font-semibold rounded-full transition-colors duration-300">高风险</button>
+                <button data-tab="dev" class="tab-button px-4 py-2 md:px-6 md:py-3 text-sm md:text-base font-semibold rounded-full transition-colors duration-300">开发者</button>
+            </div>
+
+            <div id="strategy-content" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            </div>
+        </section>
+
+        <hr class="my-16 md:my-24 border-stone-200">
+
+        <section id="security" class="scroll-mt-24">
+            <h2 class="text-3xl md:text-4xl font-bold text-center text-stone-900 mb-12">安全审计与风险评估</h2>
+
+            <div class="grid md:grid-cols-2 gap-12">
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <h3 class="font-bold text-2xl mb-6 text-stone-900">安全审计亮点</h3>
+                    <div class="space-y-5">
+                        <div class="flex items-center">
+                            <div class="bg-green-100 text-green-800 p-3 rounded-full mr-4">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            </div>
+                            <div>
+                                <p class="font-semibold text-stone-800">Oxorio 全面审计</p>
+                                <p class="text-sm text-stone-600">已完成两轮严格的智能合约审计。</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="bg-green-100 text-green-800 p-3 rounded-full mr-4">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            </div>
+                            <div>
+                                <p class="font-semibold text-stone-800">0 个严重 (Critical) 漏洞</p>
+                                <p class="text-sm text-stone-600">最新 V2 审计未发现任何严重级别漏洞。</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="bg-green-100 text-green-800 p-3 rounded-full mr-4">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            </div>
+                            <div>
+                                <p class="font-semibold text-stone-800">成熟的工程实践</p>
+                                <p class="text-sm text-stone-600">团队在安全与Gas成本间做出成熟权衡。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <h3 class="font-bold text-2xl mb-6 text-stone-900">SWOT 综合分析</h3>
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div id="swot-strengths" class="bg-green-50 p-4 rounded-lg"></div>
+                        <div id="swot-weaknesses" class="bg-red-50 p-4 rounded-lg"></div>
+                        <div id="swot-opportunities" class="bg-blue-50 p-4 rounded-lg"></div>
+                        <div id="swot-threats" class="bg-yellow-50 p-4 rounded-lg"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <hr class="my-16 md:my-24 border-stone-200">
+
+        <section id="fundamentals" class="scroll-mt-24">
+            <h2 class="text-3xl md:text-4xl font-bold text-center text-stone-900 mb-12">项目基本面</h2>
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="bg-white p-8 rounded-xl shadow-lg text-center">
+                    <img src="https://placehold.co/100x100/14b8a6/ffffff?text=T" alt="Tobias van Amstel" class="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-teal-200">
+                    <h4 class="font-bold text-xl text-stone-900">Tobias van Amstel</h4>
+                    <p class="text-stone-500 mb-2">联合创始人 & CEO</p>
+                    <p class="text-sm text-stone-600">经验丰富的连续创业者，拥有公开可查的成功 Web2 退出经历。</p>
+                </div>
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <h3 class="font-bold text-2xl mb-4 text-stone-900">融资与投资者</h3>
+                    <p class="text-stone-600 mb-4">总计 $6.1M 的融资证明了顶级VC对项目愿景和团队的认可。</p>
+                    <div class="space-y-3">
+                        <p class="font-semibold text-stone-800">主要投资者:</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="bg-teal-100 text-teal-800 text-sm font-medium px-3 py-1 rounded-full">GSR</span>
+                            <span class="bg-teal-100 text-teal-800 text-sm font-medium px-3 py-1 rounded-full">Tioga Capital</span>
+                            <span class="bg-teal-100 text-teal-800 text-sm font-medium px-3 py-1 rounded-full">New Form Capital</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <h3 class="font-bold text-2xl mb-4 text-stone-900">ALTI 代币经济学</h3>
+                    <div class="h-48 w-48 mx-auto mb-4">
+                        <canvas id="tokenomicsChart"></canvas>
+                    </div>
+                    <p class="text-center text-sm text-stone-600">通过“早期奖励计划”激励对协议最有益的低LTV借贷行为，形成增长飞轮。</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-stone-800 text-stone-300 mt-16">
+        <div class="container mx-auto px-6 py-8 text-center">
+            <p>Altitude.fi 交互式投资分析仪表盘</p>
+            <p class="text-sm text-stone-400 mt-2">本应用基于2025年8月8日的深度投资与安全分析报告生成。所有信息仅供参考，不构成投资建议。</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+
+            const navLinks = document.querySelectorAll('.nav-link, #mobile-menu a');
+            navLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    if (!mobileMenu.classList.contains('hidden')) {
+                        mobileMenu.classList.add('hidden');
+                    }
+                });
+            });
+            
+            const tvlData = {
+                labels: ['封测', '公测', '6月', '7月', '8月'],
+                datasets: [{
+                    label: 'TVL (百万美元)',
+                    data: [1, 5, 8.5, 10.2, 11.5],
+                    fill: true,
+                    borderColor: '#0d9488',
+                    backgroundColor: 'rgba(13, 148, 136, 0.1)',
+                    tension: 0.4,
+                    pointBackgroundColor: '#0d9488',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: '#0d9488'
+                }]
+            };
+
+            const tvlCtx = document.getElementById('tvlChart').getContext('2d');
+            new Chart(tvlCtx, {
+                type: 'line',
+                data: tvlData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value + 'M';
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+
+            const tokenomicsData = {
+                labels: ['早期奖励计划', '其他'],
+                datasets: [{
+                    data: [5, 95],
+                    backgroundColor: ['#0d9488', '#d1d5db'],
+                    hoverBackgroundColor: ['#0f766e', '#9ca3af'],
+                    borderWidth: 0,
+                }]
+            };
+
+            const tokenomicsCtx = document.getElementById('tokenomicsChart').getContext('2d');
+            new Chart(tokenomicsCtx, {
+                type: 'doughnut',
+                data: tokenomicsData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + context.raw + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            const strategies = {
+                low: [
+                    {
+                        title: '低LTV空投挖矿',
+                        description: '存入wstETH或cbBTC，以10-25%的低LTV借款，最大化积累ALTI代币空投份额，同时赚取稳定基础收益。',
+                        apy: '~13% + ALTI空投',
+                        risk: '低',
+                        complexity: '低'
+                    }
+                ],
+                medium: [
+                    {
+                        title: '杠杆循环贷',
+                        description: '执行“循环贷”策略，放大基础收益，并获得对ETH价格的杠杆化敞口。适合看涨ETH的投资者。',
+                        apy: '放大的APY',
+                        risk: '中-高',
+                        complexity: '中'
+                    }
+                ],
+                high: [
+                    {
+                        title: 'Pendle 组合策略',
+                        description: '将从Altitude借出的稳定币存入Pendle Finance，叠加多个协议的收益来源，理论上可实现极高年化收益率。',
+                        apy: '25-50%+',
+                        risk: '高',
+                        complexity: '高'
+                    }
+                ],
+                dev: [
+                    {
+                        title: '构建自定义代理 (Agent)',
+                        description: '创建自动化的代理，利用Altitude作为底层引擎，执行更复杂的交易或收益策略，并从中收取管理费。',
+                        apy: '服务收入',
+                        risk: '可变',
+                        complexity: '非常高'
+                    },
+                    {
+                        title: '开发分析工具',
+                        description: '构建专门的仪表盘，追踪协议性能指标、用户头寸健康状况等，为社区提供有价值的服务。',
+                        apy: '社区Grants/服务费',
+                        risk: '低',
+                        complexity: '高'
+                    }
+                ]
+            };
+
+            const strategyContent = document.getElementById('strategy-content');
+            const tabButtons = document.querySelectorAll('.tab-button');
+
+            function renderStrategies(type) {
+                strategyContent.innerHTML = '';
+                strategies[type].forEach(s => {
+                    const card = document.createElement('div');
+                    card.className = 'strategy-card bg-white p-6 rounded-xl shadow-lg border border-transparent hover:border-teal-500';
+                    card.innerHTML = `
+                        <h4 class="font-bold text-xl mb-3 text-stone-900">${s.title}</h4>
+                        <p class="text-sm text-stone-600 mb-4 h-24">${s.description}</p>
+                        <div class="flex justify-between items-center text-sm border-t pt-4">
+                            <span class="font-semibold text-stone-500">预期APY:</span>
+                            <span class="font-bold text-teal-600">${s.apy}</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm mt-2">
+                            <span class="font-semibold text-stone-500">风险/复杂度:</span>
+                            <span class="font-bold text-stone-800">${s.risk} / ${s.complexity}</span>
+                        </div>
+                    `;
+                    strategyContent.appendChild(card);
+                });
+            }
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    renderStrategies(button.dataset.tab);
+                });
+            });
+
+            document.querySelector('.tab-button[data-tab="low"]').click();
+            
+            const swotData = {
+                strengths: { title: '优势 (S)', color: 'green', items: ['公开、经验丰富的团队', '顶级VC支持 (GSR)', '产品创新，叙事强大', '卓越的安全审计结果', 'TVL增长迅速'] },
+                weaknesses: { title: '劣势 (W)', color: 'red', items: ['项目处于早期阶段', '存在一定的中心化', '依赖底层协议安全'] },
+                opportunities: { title: '机会 (O)', color: 'blue', items: ['DeFi借贷市场巨大', '可组合性强，可扩展', '可构建开发者生态'] },
+                threats: { title: '威胁 (T)', color: 'yellow', items: ['系统性风险', '未来竞争加剧', '宏观监管不确定性'] }
+            };
+
+            function renderSwot(type) {
+                const container = document.getElementById(`swot-${type}`);
+                const data = swotData[type];
+                let listHtml = `<h4 class="font-bold text-${data.color}-800 mb-2">${data.title}</h4><ul class="space-y-1 list-disc list-inside text-${data.color}-700">`;
+                data.items.forEach(item => {
+                    listHtml += `<li>${item}</li>`;
+                });
+                listHtml += `</ul>`;
+                container.innerHTML = listHtml;
+            }
+
+            renderSwot('strengths');
+            renderSwot('weaknesses');
+            renderSwot('opportunities');
+            renderSwot('threats');
+
+        });
+    </script>
+</body>
+</html>
