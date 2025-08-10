@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pear Protocol ($PEAR) - 交互式投资分析报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Harmony (Slate/Amber Neutrals with Red for Warnings) -->
+    <!-- Application Structure Plan: Dashboard-style, single-page application with a top-down flow from summary to deep-dive details. A sticky navigation bar allows non-linear access to thematic sections (Summary, Protocol, Market, Risk, Strategies). This structure allows users to quickly grasp the key takeaways (the "Neutral" rating) and then explore areas of interest at their own pace, which is more engaging than a linear report format. -->
+    <!-- Visualization & Content Choices: Summary: Stat cards for quick facts. Protocol: HTML/CSS diagram for architecture visualization. Market: Chart.js Donut/Bar charts for tokenomics and competitor comparison. Risk: Interactive HTML quadrant for a focused view on SWOT elements, highlighting the missing audit. Strategies: Tabbed JS interface to segment advice for different user profiles. These choices prioritize interactivity and clarity over static text, using Chart.js for quantitative data and custom JS/CSS for qualitative concepts, aligning with the goal of making complex information digestible. CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+            color: #1e293b; /* slate-800 */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .nav-link {
+            transition: color 0.3s, border-color 0.3s;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #d97706; /* amber-600 */
+            border-bottom-color: #d97706;
+        }
+        .tab-button.active {
+            background-color: #f59e0b; /* amber-500 */
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Header & Navigation -->
+    <header class="bg-white/80 backdrop-blur-sm sticky top-0 z-50 shadow-sm">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-2xl font-bold text-slate-800">Pear Protocol</span>
+                </div>
+                <nav class="hidden md:flex space-x-8">
+                    <a href="#summary" class="nav-link text-gray-600 font-medium border-b-2 border-transparent pb-1">摘要</a>
+                    <a href="#protocol" class="nav-link text-gray-600 font-medium border-b-2 border-transparent pb-1">协议解析</a>
+                    <a href="#market" class="nav-link text-gray-600 font-medium border-b-2 border-transparent pb-1">市场与代币</a>
+                    <a href="#risk" class="nav-link text-gray-600 font-medium border-b-2 border-transparent pb-1">风险与机遇</a>
+                    <a href="#strategies" class="nav-link text-gray-600 font-medium border-b-2 border-transparent pb-1">投资策略</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+
+        <!-- Section 1: Investment Summary -->
+        <section id="summary" class="mb-16 scroll-mt-24">
+            <div class="text-center mb-12">
+                <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 mb-4">投资评估报告: Pear Protocol</h1>
+                <p class="text-lg text-slate-600 max-w-3xl mx-auto">一个针对去中心化杠杆配对交易的创新协议的全面分析。</p>
+            </div>
+
+            <div class="bg-white p-8 rounded-2xl shadow-lg border border-slate-200 text-center">
+                <h2 class="text-2xl font-bold text-slate-800 mb-2">最终投资评级</h2>
+                <p class="text-5xl font-extrabold text-amber-600 mb-4">中立 (Neutral)</p>
+                <p class="max-w-2xl mx-auto text-slate-600">
+                    Pear Protocol 以其创新的产品和专业的团队展示了巨大潜力，但面临着市场低迷、流动性不足以及关键安全信息缺失的严峻挑战。这是一个高风险、高潜在回报的早期项目，适合具备高风险承受能力的资深投资者。
+                </p>
+            </div>
+        </section>
+
+        <!-- Section 2: Protocol Deep Dive -->
+        <section id="protocol" class="mb-16 scroll-mt-24">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-slate-900">协议解析：简化链上配对交易</h2>
+                <p class="mt-4 text-lg text-slate-600">Pear Protocol 并非另一个通用交易所，而是一个专注于解决特定交易策略复杂性的智能聚合器。</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-8 items-center">
+                <div class="space-y-6">
+                    <div>
+                        <h3 class="text-xl font-bold mb-2">核心价值主张</h3>
+                        <p class="text-slate-600">传统DeFi中执行配对交易操作繁琐且资本效率低下。Pear 通过一键式体验和聚合流动性解决了这些痛点，让复杂的市场中性策略变得简单。</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-slate-200">
+                        <h4 class="font-semibold text-slate-800">ERC-721 代币化头寸</h4>
+                        <p class="text-slate-600 mt-2">每个交易头寸都被铸造成一个 NFT，这不仅简化了管理，更为DeFi的“货币乐高”组合性开启了无限可能，如头寸的借贷和二级市场交易。</p>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold mb-4 text-center">流动性聚合模型</h3>
+                    <div class="bg-white p-6 rounded-xl shadow-md border border-slate-200">
+                        <div class="flex flex-col items-center space-y-4">
+                            <div class="text-center font-medium">用户</div>
+                            <div class="w-0.5 h-8 bg-slate-300"></div>
+                            <div class="bg-amber-100 text-amber-800 font-bold p-4 rounded-lg w-full text-center">
+                                Pear Protocol (智能聚合层)
+                            </div>
+                            <div class="w-0.5 h-8 bg-slate-300"></div>
+                            <div class="w-full grid grid-cols-3 gap-2 text-center text-sm">
+                                <div class="bg-slate-100 p-3 rounded-lg">
+                                    <p class="font-semibold">GMX v2</p>
+                                    <p class="text-slate-500">隔离保证金</p>
+                                </div>
+                                <div class="bg-slate-100 p-3 rounded-lg">
+                                    <p class="font-semibold">Vertex</p>
+                                    <p class="text-slate-500">交叉保证金</p>
+                                </div>
+                                <div class="bg-slate-100 p-3 rounded-lg">
+                                    <p class="font-semibold">SYMMIO</p>
+                                    <p class="text-slate-500">意图驱动</p>
+                                </div>
+                            </div>
+                            <p class="text-xs text-slate-500 mt-2 text-center">Pear本身不持有流动性，而是智能地将交易路由到最优的底层协议。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Market & Token -->
+        <section id="market" class="mb-16 scroll-mt-24">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-slate-900">市场与代币经济学</h2>
+                <p class="mt-4 text-lg text-slate-600">协议的价值捕获与$PEAR代币的经济模型紧密相连。</p>
+            </div>
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-2xl shadow-lg border border-slate-200">
+                    <h3 class="text-xl font-bold text-center mb-4">$PEAR 代币分配</h3>
+                     <div class="chart-container h-72 md:h-96">
+                        <canvas id="tokenomicsChart"></canvas>
+                    </div>
+                </div>
+                 <div class="bg-white p-6 rounded-2xl shadow-lg border border-slate-200">
+                    <h3 class="text-xl font-bold text-center mb-4">竞争优势：可交易资产对数量</h3>
+                    <div class="chart-container h-72 md:h-96">
+                        <canvas id="competitorChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-8 bg-white p-6 rounded-2xl shadow-lg border border-slate-200">
+                <h3 class="text-xl font-bold mb-4">核心效用：真实收益 (Real Yield)</h3>
+                <p class="text-slate-600">
+                    $PEAR 代币最核心的价值在于质押后可分享协议净收入的 **80%**，并以 **USDC** 稳定币的形式支付。这为代币持有者提供了来自协议基本面的可持续现金流，是其经济模型最大的亮点。此外，质押者还可享受交易费用减免和参与协议治理。
+                </p>
+            </div>
+        </section>
+
+
+        <!-- Section 4: Risk & Opportunity -->
+        <section id="risk" class="mb-16 scroll-mt-24">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-slate-900">机遇与风险分析</h2>
+                <p class="mt-4 text-lg text-slate-600">机遇与挑战并存，清晰的风险认知是投资决策的关键。</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-8">
+                <!-- Opportunities -->
+                <div class="space-y-6">
+                    <div class="bg-green-50 border-2 border-green-200 p-6 rounded-2xl">
+                        <h3 class="text-2xl font-bold text-green-800 mb-3">机遇 (Opportunities)</h3>
+                        <ul class="space-y-4 text-green-700">
+                            <li class="flex items-start">
+                                <span class="text-green-500 mr-3 mt-1">✓</span>
+                                <div><strong>真实收益质押：</strong>协议若能重获交易量，80%的收入分成将为质押者带来可观的USDC收益。</div>
+                            </li>
+                             <li class="flex items-start">
+                                <span class="text-green-500 mr-3 mt-1">✓</span>
+                                <div><strong>市场 Beta 效应：</strong>作为衍生品协议，若加密市场进入牛市，其交易量和收入有望实现指数级增长。</div>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-green-500 mr-3 mt-1">✓</span>
+                                <div><strong>ERC-721 可组合性：</strong>为开发者提供了构建二次开发应用（如借贷、交易机器人）的机会。</div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <!-- Risks -->
+                <div class="space-y-6">
+                     <div class="bg-red-50 border-2 border-red-300 p-6 rounded-2xl">
+                        <h3 class="text-2xl font-bold text-red-800 mb-3">风险 (Risks)</h3>
+                        <ul class="space-y-4 text-red-700">
+                             <li class="flex items-start">
+                                <span class="text-red-500 mr-3 mt-1">✗</span>
+                                <div><strong>代币流动性与通胀：</strong>$PEAR在二级市场流动性差，且未来有大量代币解锁，存在巨大抛压风险。</div>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-red-500 mr-3 mt-1">✗</span>
+                                <div><strong>流动性来源风险：</strong>协议依赖GMX、Vertex等第三方平台，这些平台的任何安全或运营问题都将直接冲击Pear。</div>
+                            </li>
+                             <li class="flex items-start">
+                                <span class="text-red-500 mr-3 mt-1">✗</span>
+                                <div><strong>外部诈骗生态：</strong>项目周边存在大量钓鱼网站和虚假质押骗局，对投资者构成严重威胁。</div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+             <!-- Critical Risk -->
+            <div class="mt-8 bg-red-100 border-l-4 border-red-500 text-red-800 p-6 rounded-lg shadow-lg">
+                <h4 class="font-bold text-xl">⚠️ 最高级别风险：缺失的审计报告</h4>
+                <p class="mt-2">尽管协议声称已通过安全审计，但在本次研究中未能找到公开可验证的审计报告全文。这是极其严重的透明度问题和安全隐患。在项目方提供完整报告前，任何投资都应被视为极高风险。</p>
+            </div>
+        </section>
+
+
+        <!-- Section 5: Investment Strategies -->
+        <section id="strategies" class="scroll-mt-24">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-slate-900">可行投资策略</h2>
+                <p class="mt-4 text-lg text-slate-600">根据不同的风险偏好和技术背景，探索参与Pear生态的多种途径。</p>
+            </div>
+            
+            <div>
+                <div class="mb-6 flex justify-center border-b border-slate-200">
+                    <button data-tab="speculator" class="tab-button px-6 py-3 font-medium text-slate-600 rounded-t-lg transition">投机者</button>
+                    <button data-tab="yield-farmer" class="tab-button active px-6 py-3 font-medium text-slate-600 rounded-t-lg transition">收益猎人</button>
+                    <button data-tab="developer" class="tab-button px-6 py-3 font-medium text-slate-600 rounded-t-lg transition">开发者</button>
+                </div>
+
+                <div id="tab-content" class="space-y-6">
+                    <div data-content="speculator" class="hidden">
+                         <div class="bg-white p-6 rounded-xl border border-slate-200">
+                            <h4 class="font-semibold text-lg">策略：直接购买 $PEAR 代币</h4>
+                            <p class="text-slate-600 mt-2">押注协议未来成功和市场复苏带来的价格上涨。此策略简单直接，但风险极高，面临巨大的市场波动性和代币流动性风险。</p>
+                        </div>
+                    </div>
+                    <div data-content="yield-farmer">
+                         <div class="bg-white p-6 rounded-xl border border-slate-200">
+                            <h4 class="font-semibold text-lg">策略 1: 质押获取真实收益</h4>
+                            <p class="text-slate-600 mt-2">在低价位买入并质押$PEAR，以期在未来市场复苏时捕获因交易量激增而大幅提高的USDC收益。关注协议收入而非短期币价。</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl border border-slate-200">
+                            <h4 class="font-semibold text-lg">策略 2: 空投挖矿</h4>
+                            <p class="text-slate-600 mt-2">参与正在进行的第二季空投活动。通过完成交易量任务，以较低成本获取未来空投的代币。需要精确计算投入产出比。</p>
+                        </div>
+                         <div class="bg-white p-6 rounded-xl border border-slate-200">
+                            <h4 class="font-semibold text-lg">策略 3: 高级配对交易</h4>
+                            <p class="text-slate-600 mt-2">利用平台执行市场中性套利（如LST/ETH套利）、叙事驱动交易或资金费率套利等复杂策略，赚取Alpha收益。</p>
+                        </div>
+                    </div>
+                    <div data-content="developer" class="hidden">
+                        <div class="bg-white p-6 rounded-xl border border-slate-200">
+                            <h4 class="font-semibold text-lg">机会：释放ERC-721的可组合性</h4>
+                            <p class="text-slate-600 mt-2">基于Pear的ERC-721头寸NFT进行二次开发，构建全新的DeFi应用。潜力巨大，但需要强大的技术能力。</p>
+                            <ul class="list-disc list-inside mt-2 text-slate-600 space-y-1">
+                                <li>开发自动化交易机器人或代理 (Agent)。</li>
+                                <li>构建用于交易头寸NFT的二级市场。</li>
+                                <li>创建允许抵押头寸NFT的借贷协议。</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+    
+    <footer class="border-t border-slate-200 mt-16">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center text-slate-500">
+            <p>&copy; 2025 交互式投资分析。本报告仅供参考，不构成任何投资建议。</p>
+        </div>
+    </footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    const tokenomicsData = {
+        labels: ['团队', '投资者', '公募', '生态/社区激励', '流动性/财库', '未分配'],
+        datasets: [{
+            label: '代币分配',
+            data: [20, 15, 5, 30, 10, 20],
+            backgroundColor: [
+                '#38bdf8', // sky-400
+                '#fbbf24', // amber-400
+                '#34d399', // emerald-400
+                '#818cf8', // indigo-400
+                '#f87171', // red-400
+                '#a8a29e'  // stone-400
+            ],
+            borderColor: '#f8fafc',
+            borderWidth: 2,
+            hoverOffset: 4
+        }]
+    };
+
+    const competitorData = {
+        labels: ['Pear Protocol (通过SYMMIO)', 'GMX', 'dYdX', 'Vertex'],
+        datasets: [{
+            label: '可交易资产对数量',
+            data: [36000, 15, 50, 40],
+            backgroundColor: [
+                '#f59e0b', // amber-500
+                '#3b82f6', // blue-500
+                '#9333ea', // purple-600
+                '#10b981', // emerald-500
+            ],
+            borderColor: [
+                '#f59e0b',
+                '#3b82f6',
+                '#9333ea',
+                '#10b981',
+            ],
+            borderWidth: 1,
+            barThickness: 50,
+        }]
+    };
+
+    const chartOptions = (title) => ({
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    color: '#475569', // slate-600
+                    font: {
+                        family: "'Noto Sans SC', sans-serif",
+                    }
+                }
+            },
+            title: {
+                display: false,
+                text: title,
+                color: '#1e293b', // slate-800
+                font: {
+                    size: 16,
+                    family: "'Noto Sans SC', sans-serif",
+                }
+            },
+            tooltip: {
+                bodyFont: {
+                    family: "'Noto Sans SC', sans-serif",
+                },
+                titleFont: {
+                    family: "'Noto Sans SC', sans-serif",
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                     color: '#475569',
+                     font: {
+                        family: "'Noto Sans SC', sans-serif",
+                     }
+                },
+                grid: {
+                    color: '#e2e8f0' // slate-200
+                }
+            },
+            x: {
+                 ticks: {
+                    color: '#475569',
+                    font: {
+                        family: "'Noto Sans SC', sans-serif",
+                    }
+                },
+                grid: {
+                    display: false
+                }
+            }
+        }
+    });
+
+    const tokenomicsCtx = document.getElementById('tokenomicsChart');
+    if(tokenomicsCtx) {
+        new Chart(tokenomicsCtx, {
+            type: 'doughnut',
+            data: tokenomicsData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                     legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: '#475569',
+                            font: {
+                                family: "'Noto Sans SC', sans-serif",
+                            }
+                        }
+                    },
+                     tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed !== null) {
+                                    label += context.parsed + '%';
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    const competitorCtx = document.getElementById('competitorChart');
+    if(competitorCtx){
+        new Chart(competitorCtx, {
+            type: 'bar',
+            data: competitorData,
+            options: chartOptions('Competitor Analysis')
+        });
+    }
+
+    const tabs = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('[data-content]');
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const target = tab.getAttribute('data-tab');
+
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            
+            tabContents.forEach(content => {
+                if (content.getAttribute('data-content') === target) {
+                    content.classList.remove('hidden');
+                } else {
+                    content.classList.add('hidden');
+                }
+            });
+        });
+    });
+
+    const navLinks = document.querySelectorAll('.nav-link');
+    const sections = document.querySelectorAll('section');
+
+    const observerOptions = {
+        root: null,
+        rootMargin: '0px',
+        threshold: 0.4
+    };
+
+    const observer = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const id = entry.target.getAttribute('id');
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') === `#${id}`) {
+                        link.classList.add('active');
+                    }
+                });
+            }
+        });
+    }, observerOptions);
+
+    sections.forEach(section => {
+        observer.observe(section);
+    });
+    
+    navLinks.forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            document.querySelector(this.getAttribute('href')).scrollIntoView({
+                behavior: 'smooth'
+            });
+        });
+    });
+
+});
+</script>
+
+</body>
+</html>

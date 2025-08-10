@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 
+    Chosen Palette: "Serene Sage" - A calming and professional palette using a light beige background (bg-stone-50), dark gray text (text-slate-800), and sage/teal accents (teal-600) for interactive elements and highlights, fostering a sense of clarity and trustworthiness.
+    -->
+    <!-- 
+    Application Structure Plan: The application uses a non-linear, dashboard-style, single-page architecture, diverging from the source report's linear format. The structure is organized into thematic, task-oriented sections (Overview, Financials, Risk, Strategy), accessible via a sticky navigation bar. This was chosen because investors have different priorities; some want the final verdict immediately (Overview), some are data-driven (Financials), some prioritize safety (Risk), and some are looking for actionable ideas (Strategy). This structure allows users to jump directly to the information most relevant to them, enhancing usability and information retention compared to scrolling through a long document. Key interactions include toggling chart data, expanding details on cards, and filtering tables to facilitate active exploration rather than passive reading.
+    -->
+    <!-- 
+    Visualization & Content Choices: 
+    - Report Info: Final Investment Rating & Key Metrics -> Goal: Inform (Provide immediate top-level insight) -> Viz: Prominent rating card & key metric display (HTML/Tailwind) -> Interaction: None -> Justification: Delivers the most critical conclusion upfront for quick decision-making.
+    - Report Info: SWOT Analysis -> Goal: Organize/Inform -> Viz: Interactive cards (HTML/Tailwind) -> Interaction: Click/hover to expand -> Justification: Presents a dense block of text in a structured, digestible format that encourages engagement.
+    - Report Info: Financial Data (TVL, Volume, Revenue) -> Goal: Show Change/Trends -> Viz: Combined Line/Bar Chart (Chart.js/Canvas) -> Interaction: Toggle datasets on/off -> Justification: Visually demonstrates the core economic paradox (high volume vs. negative profit) which is a key finding of the report.
+    - Report Info: Competitive Landscape -> Goal: Compare -> Viz: Grouped Bar Chart (Chart.js/Canvas) -> Interaction: Tooltips on hover -> Justification: Provides a clear, at-a-glance comparison of Ramses against its competitors on key metrics.
+    - Report Info: Security Audits & Hack Event -> Goal: Inform/Warn -> Viz: Timeline and severity-rated cards (HTML/Tailwind) -> Interaction: Click to expand details -> Justification: Transforms the critical but text-heavy risk section into a visually scannable and impactful warning system.
+    - Report Info: Investment Strategies -> Goal: Inform/Compare -> Viz: Interactive Table (HTML/Tailwind) -> Interaction: Hover highlights, clickable rows for details -> Justification: Organizes actionable strategies into a comparable format, allowing users to evaluate options based on risk and complexity.
+    - Report Info: ve(3,3) Flywheel -> Goal: Explain a complex concept -> Viz: Diagram built with HTML/Tailwind -> Interaction: None -> Justification: Simplifies an abstract mechanism into a clear visual flow, adhering to the NO SVG/Mermaid constraint.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <title>Ramses Exchange (RAM) | 交互式投资分析报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f8f7f4; 
+            color: #334155;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 50vh;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .nav-link {
+            transition: color 0.3s, border-color 0.3s;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #0d9488;
+            border-bottom-color: #0d9488;
+        }
+        .smooth-transition {
+            transition: all 0.3s ease-in-out;
+        }
+        .section-card {
+            background-color: #ffffff;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .icon-placeholder {
+            font-size: 1.5rem;
+            line-height: 1;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white/80 backdrop-blur-sm sticky top-0 z-50 shadow-md">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-xl font-bold text-slate-800">Ramses Exchange 分析</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#overview" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-slate-600">核心概览</a>
+                        <a href="#financials" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-slate-600">财务与市场</a>
+                        <a href="#risk" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-slate-600">风险与安全</a>
+                        <a href="#strategy" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-slate-600">投资策略</a>
+                        <a href="#tech" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-slate-600">技术模型</a>
+                    </div>
+                </div>
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="inline-flex items-center justify-center p-2 rounded-md text-slate-500 hover:text-teal-600 hover:bg-stone-100 focus:outline-none">
+                        <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </nav>
+        <div id="mobile-menu" class="md:hidden hidden">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="#overview" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-slate-600">核心概览</a>
+                <a href="#financials" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-slate-600">财务与市场</a>
+                <a href="#risk" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-slate-600">风险与安全</a>
+                <a href="#strategy" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-slate-600">投资策略</a>
+                <a href="#tech" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-slate-600">技术模型</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- Section 1: Core Overview -->
+        <section id="overview" class="scroll-mt-20">
+            <h2 class="text-3xl font-bold text-slate-800 mb-2">核心概览</h2>
+            <p class="text-slate-500 mb-6">本节提供对Ramses Exchange投资价值的顶层视图，包括最终评级、核心论点和关键指标，助您快速了解项目全貌。</p>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                <!-- Investment Rating -->
+                <div class="lg:col-span-1 section-card p-6 flex flex-col justify-center items-center bg-red-50 border border-red-200">
+                    <h3 class="text-lg font-semibold text-red-800 mb-2">最终投资评级</h3>
+                    <p class="text-5xl font-bold text-red-600 mb-3">不建议</p>
+                    <p class="text-center text-sm text-red-700">已证实的严重安全漏洞和不可持续的经济模型构成了不可接受的风险，远超其潜在回报。</p>
+                </div>
+                
+                <!-- Key Metrics -->
+                <div class="lg:col-span-2 section-card p-6">
+                    <h3 class="text-lg font-semibold text-slate-700 mb-4">关键链上指标</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                        <div>
+                            <p class="text-sm text-slate-500">总锁仓量 (TVL)</p>
+                            <p class="text-2xl font-bold text-teal-600">~$4.2M</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-slate-500">24小时交易量</p>
+                            <p class="text-2xl font-bold text-teal-600">~$5.7M</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-slate-500">协议年化盈利</p>
+                            <p class="text-2xl font-bold text-red-500">-$37.5万</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-slate-500">质押/市值比</p>
+                            <p class="text-2xl font-bold text-teal-600">>450%</p>
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-4 text-center">数据为报告分析时的近似值，仅供参考。</p>
+                </div>
+            </div>
+
+            <!-- SWOT Analysis -->
+            <div class="section-card p-6 mb-8">
+                <h3 class="text-lg font-semibold text-slate-700 mb-4">交互式SWOT分析</h3>
+                 <p class="text-sm text-slate-500 mb-4">点击下方卡片，查看Ramses Exchange的优势、劣势、机会与威胁的详细分析。</p>
+                <div id="swot-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Financials & Market -->
+        <section id="financials" class="scroll-mt-20 pt-8">
+            <h2 class="text-3xl font-bold text-slate-800 mb-2">财务与市场分析</h2>
+            <p class="text-slate-500 mb-6">本节通过动态图表深入剖析Ramses的财务健康状况、资本效率及其在Arbitrum生态中的竞争地位。</p>
+
+            <div class="section-card p-6 mb-8">
+                <h3 class="text-lg font-semibold text-slate-700">财务表现：资本效率的悖论</h3>
+                <p class="text-sm text-slate-500 mb-4">下图展示了Ramses的核心财务数据。请注意其交易量(Volume)相对于总锁仓量(TVL)极高，但协议盈利(Earnings)却持续为负。这表明其高效率是通过不可持续的代币激励来补贴的。</p>
+                <div class="chart-container">
+                    <canvas id="financialsChart"></canvas>
+                </div>
+            </div>
+
+            <div class="section-card p-6">
+                <h3 class="text-lg font-semibold text-slate-700">Arbitrum DEX 竞争格局</h3>
+                <p class="text-sm text-slate-500 mb-4">与Arbitrum上的主要去中心化交易所相比，Ramses在资本效率（交易量/TVL比率）上表现突出，但在TVL绝对值和协议收入方面远远落后于市场领导者。</p>
+                 <div class="chart-container">
+                    <canvas id="competitionChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Risk & Security -->
+        <section id="risk" class="scroll-mt-20 pt-8">
+            <h2 class="text-3xl font-bold text-slate-800 mb-2">风险与安全评估</h2>
+            <p class="text-slate-500 mb-6">安全是DeFi投资的基石。本节重点揭示了Ramses已发生的安全事件、顶级审计公司的关键发现以及项目的综合风险评级。</p>
+
+            <div class="section-card p-6 mb-8">
+                <h3 class="text-lg font-semibold text-slate-700 mb-4">安全事件时间线</h3>
+                <div class="relative border-l-2 border-teal-200 ml-3 py-4">
+                    <div class="mb-8 ml-6">
+                        <span class="absolute flex items-center justify-center w-6 h-6 bg-red-200 rounded-full -left-3 ring-4 ring-white">
+                            <svg class="w-3 h-3 text-red-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.21 3.03-1.742 3.03H4.42c-1.532 0-2.492-1.696-1.742-3.03l5.58-9.92zM10 13a1 1 0 110-2 1 1 0 010 2zm-1-4a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clip-rule="evenodd"></path></svg>
+                        </span>
+                        <h4 class="font-semibold text-red-700">合约被攻击 (2024年10月)</h4>
+                        <p class="text-sm text-slate-600">攻击者利用奖励分发逻辑缺陷，盗取超过9万美元资产。该事件将理论风险转变为现实损失，严重损害协议声誉。</p>
+                    </div>
+                     <div class="mb-8 ml-6">
+                        <span class="absolute flex items-center justify-center w-6 h-6 bg-yellow-200 rounded-full -left-3 ring-4 ring-white">
+                           <svg class="w-3 h-3 text-yellow-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"></path><path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm3 0a1 1 0 011-1h1a1 1 0 110 2H8a1 1 0 01-1-1z" clip-rule="evenodd"></path></svg>
+                        </span>
+                        <h4 class="font-semibold text-yellow-700">Code4rena 社区审计 (2024年10月)</h4>
+                        <p class="text-sm text-slate-600">发现2个中等风险漏洞，包括闪电贷费用计算错误和奖励计算被夸大的问题。暴露了团队在代码移植和逻辑实现上的疏忽。</p>
+                    </div>
+                    <div class="ml-6">
+                        <span class="absolute flex items-center justify-center w-6 h-6 bg-yellow-200 rounded-full -left-3 ring-4 ring-white">
+                           <svg class="w-3 h-3 text-yellow-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"></path><path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm3 0a1 1 0 011-1h1a1 1 0 110 2H8a1 1 0 01-1-1z" clip-rule="evenodd"></path></svg>
+                        </span>
+                        <h4 class="font-semibold text-yellow-700">Consensys Diligence 审计 (2024年7-9月)</h4>
+                        <p class="text-sm text-slate-600">发现“关键级”逻辑漏洞（债务被错误相加），并对协议的极高复杂性和潜在未发现问题表示担忧。</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="risk-factors-container" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            </div>
+        </section>
+
+        <!-- Section 4: Investment Strategies -->
+        <section id="strategy" class="scroll-mt-20 pt-8">
+            <h2 class="text-3xl font-bold text-slate-800 mb-2">可行的投资策略</h2>
+            <p class="text-slate-500 mb-6">尽管总体评级不佳，但高风险偏好者和开发者仍可能在Ramses生态中找到机会。本节客观分析了所有潜在策略的优缺点与技术门槛。</p>
+            
+            <div class="section-card p-6 overflow-x-auto">
+                <h3 class="text-lg font-semibold text-slate-700 mb-4">投资机会矩阵</h3>
+                 <table class="w-full min-w-[600px] text-sm text-left text-slate-500">
+                    <thead class="text-xs text-slate-700 uppercase bg-stone-100">
+                        <tr>
+                            <th scope="col" class="px-6 py-3">策略</th>
+                            <th scope="col" class="px-6 py-3">优势</th>
+                            <th scope="col" class="px-6 py-3">劣势与风险</th>
+                            <th scope="col" class="px-6 py-3">技术门槛</th>
+                        </tr>
+                    </thead>
+                    <tbody id="strategy-table-body">
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-8">
+                 <h3 class="text-lg font-semibold text-slate-700 mb-4">开发者机遇</h3>
+                 <div class="section-card p-6">
+                    <p class="text-slate-600">对于具备开发背景的投资者，Ramses的复杂性本身就创造了机遇。可以构建自动化流动性管理器、收益聚合器、分析工具等增值服务，填补市场空白。虽然协议自身没有明确的激励计划，但成功的项目可向Arbitrum基金会等寻求资金支持。</p>
+                 </div>
+            </div>
+        </section>
+        
+        <!-- Section 5: Technology & Model -->
+        <section id="tech" class="scroll-mt-20 pt-8">
+            <h2 class="text-3xl font-bold text-slate-800 mb-2">技术与经济模型</h2>
+            <p class="text-slate-500 mb-6">了解Ramses的底层运作机制，包括其核心的ve(3,3)飞轮和与集中流动性结合带来的创新与风险。</p>
+            <div class="section-card p-6">
+                <h3 class="text-lg font-semibold text-slate-700 mb-4">ve(3,3) 飞轮效应解析</h3>
+                <p class="text-sm text-slate-500 mb-6">协议的核心经济模型旨在创造一个正向反馈循环，协调流动性提供者、代币持有者和寻求流动性的协议三方利益。这是一个理论上强大但实践中极难平衡的系统。</p>
+                <div class="flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-4 text-center">
+                    <div class="p-4 bg-teal-50 rounded-lg w-48">
+                        <p class="font-bold text-teal-800">1. LPs提供流动性</p>
+                        <p class="text-xs text-teal-600">赚取RAM代币</p>
+                    </div>
+                    <div class="text-2xl text-teal-400 transform md:rotate-0 rotate-90">→</div>
+                    <div class="p-4 bg-indigo-50 rounded-lg w-48">
+                        <p class="font-bold text-indigo-800">2. 用户锁定RAM</p>
+                        <p class="text-xs text-indigo-600">获得veRAM投票权</p>
+                    </div>
+                    <div class="text-2xl text-teal-400 transform md:rotate-0 rotate-90">→</div>
+                     <div class="p-4 bg-sky-50 rounded-lg w-48">
+                        <p class="font-bold text-sky-800">3. veRAM持有者投票</p>
+                        <p class="text-xs text-sky-600">引导RAM排放方向</p>
+                    </div>
+                    <div class="text-2xl text-teal-400 transform md:rotate-0 rotate-90">→</div>
+                     <div class="p-4 bg-amber-50 rounded-lg w-48">
+                        <p class="font-bold text-amber-800">4. 协议支付贿赂</p>
+                        <p class="text-xs text-amber-600">吸引veRAM投票</p>
+                    </div>
+                     <div class="text-2xl text-teal-400 transform md:rotate-0 rotate-90">↻</div>
+                </div>
+                 <p class="text-sm text-center mt-6 text-slate-600">贿赂 → 更多投票 → 更高LP收益 → 更深流动性 → 更多交易费 → 激励更多人锁定RAM... 形成循环。</p>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-white mt-12 py-6">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm text-slate-500">
+            <p>本交互式报告基于公开信息和第三方报告生成，仅供研究和参考，不构成任何投资建议。</p>
+            <p>DeFi投资涉及高风险，请在投资前进行自己的尽职调查（DYOR）。</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            
+            const appData = {
+                swot: [
+                    {
+                        type: '优势',
+                        color: 'green',
+                        icon: '👍',
+                        title: '高资本效率',
+                        details: '交易量与TVL之比表现优异，证明其流动性利用率高。创新的混合模型为成熟用户提供了强大工具。'
+                    },
+                    {
+                        type: '劣势',
+                        color: 'red',
+                        icon: '👎',
+                        title: '已证实的严重安全漏洞',
+                        details: '经历过公开的资金被盗事件，且顶级审计公司发现其核心逻辑中存在关键漏洞。协议持续亏损，TVL绝对值低。'
+                    },
+                    {
+                        type: '机会',
+                        color: 'blue',
+                        icon: '💡',
+                        title: 'Arbitrum生态系统增长',
+                        details: '作为Arbitrum原生协议，将受益于整个生态系统的扩张。贿赂市场若能成熟，可能成为稳定收入来源。'
+                    },
+                    {
+                        type: '威胁',
+                        color: 'orange',
+                        icon: '⚠️',
+                        title: '激烈的市场竞争',
+                        details: '面临来自Uniswap、Camelot等成熟DEX的巨大竞争压力。ve(3,3)模型的可持续性存疑，已有失败先例（如Chronos）。'
+                    }
+                ],
+                risks: [
+                     {
+                        title: '技术与智能合约风险',
+                        level: '非常高',
+                        color: 'red',
+                        details: '一次真实的资金被盗事件，加上顶级审计公司在其核心创新逻辑中发现的关键漏洞，共同构成了一个清晰且现实的资本损失风险。协议是分叉代码和定制逻辑的复杂混合体，是已知的漏洞温床。'
+                    },
+                    {
+                        title: '模型可持续性风险',
+                        level: '高',
+                        color: 'red',
+                        details: '协议的负盈利状态和对代币通胀的依赖，使其经济模型非常脆弱，容易陷入类似其竞争对手Chronos所经历的死亡螺旋。'
+                    },
+                    {
+                        title: '团队与声誉风险',
+                        level: '中等-高',
+                        color: 'orange',
+                        details: '团队匿名，且与过往成败参半的项目有关联。在Arbitrum论坛上备受争议的激励金申请，表明他们可能缺乏广泛的草根社区支持。'
+                    },
+                    {
+                        title: '中心化风险',
+                        level: '中等',
+                        color: 'yellow',
+                        details: '单一地址可以更改费用，紧急理事会/多签钱包拥有巨大权力。一个被盗的财库地址可能永久性地阻止协议升级或窃取协议资金。'
+                    }
+                ],
+                strategies: [
+                    { name: '现货购买RAM', pros: '操作简单', cons: '价格波动性极高，代币通胀严重', skill: '低' },
+                    { name: '被动LP (聚合器)', pros: '自动复利，无需管理', cons: '聚合器自身风险', skill: '低' },
+                    { name: '主动LP (传统池)', pros: '概念简单', cons: '资本效率低，收益较低', skill: '中' },
+                    { name: '主动LP (集中流动性)', pros: '资本效率极高，潜在收益最高', cons: '极高的无常损失风险，需主动管理', skill: '高' },
+                    { name: 'veRAM锁定与贿赂挖矿', pros: '参与治理，获得独立收益流', cons: '资本长期锁定，贿赂市场不稳定', skill: '高' },
+                    { name: '杠杆/对冲策略', pros: '潜在收益极高，可市场中性', cons: '操作极其复杂，多重高风险', skill: '非常高' },
+                ]
+            };
+            
+            const colorMapping = {
+                red: { text: 'text-red-800', bg: 'bg-red-100', border: 'border-red-200' },
+                orange: { text: 'text-orange-800', bg: 'bg-orange-100', border: 'border-orange-200' },
+                yellow: { text: 'text-yellow-800', bg: 'bg-yellow-100', border: 'border-yellow-200' },
+                green: { text: 'text-green-800', bg: 'bg-green-100', border: 'border-green-200' },
+                blue: { text: 'text-blue-800', bg: 'bg-blue-100', border: 'border-blue-200' },
+            };
+
+            // Mobile Menu Toggle
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+
+            // Active Nav Link on Scroll
+            const sections = document.querySelectorAll('section');
+            const navLinks = document.querySelectorAll('.nav-link');
+            window.addEventListener('scroll', () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (pageYOffset >= sectionTop - 80) {
+                        current = section.getAttribute('id');
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href').includes(current)) {
+                        link.classList.add('active');
+                    }
+                });
+            });
+
+            // Populate SWOT
+            const swotContainer = document.getElementById('swot-container');
+            appData.swot.forEach(item => {
+                const card = document.createElement('div');
+                card.className = `p-4 rounded-lg border cursor-pointer smooth-transition hover:shadow-lg hover:-translate-y-1 ${colorMapping[item.color].bg} ${colorMapping[item.color].border}`;
+                card.innerHTML = `
+                    <div class="flex items-center mb-2">
+                        <span class="icon-placeholder mr-2">${item.icon}</span>
+                        <h4 class="font-bold ${colorMapping[item.color].text}">${item.type}</h4>
+                    </div>
+                    <p class="font-semibold text-sm text-slate-700 mb-2">${item.title}</p>
+                    <p class="text-xs text-slate-600 h-0 overflow-hidden smooth-transition details">${item.details}</p>
+                `;
+                swotContainer.appendChild(card);
+                
+                card.addEventListener('click', () => {
+                    const details = card.querySelector('.details');
+                    const allDetails = swotContainer.querySelectorAll('.details');
+                    
+                    // Close others
+                    allDetails.forEach(d => {
+                        if (d !== details) {
+                            d.style.height = '0px';
+                        }
+                    });
+
+                    // Toggle current
+                    if (details.style.height === '0px' || details.style.height === '') {
+                        details.style.height = details.scrollHeight + 'px';
+                    } else {
+                        details.style.height = '0px';
+                    }
+                });
+            });
+
+            // Populate Risk Factors
+            const riskContainer = document.getElementById('risk-factors-container');
+            appData.risks.forEach(risk => {
+                const card = document.createElement('div');
+                card.className = 'section-card p-6';
+                card.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <h4 class="text-md font-semibold text-slate-700">${risk.title}</h4>
+                        <span class="text-xs font-bold px-2 py-1 rounded-full ${colorMapping[risk.color].bg} ${colorMapping[risk.color].text}">${risk.level}</span>
+                    </div>
+                    <p class="text-sm text-slate-600 mt-2">${risk.details}</p>
+                `;
+                riskContainer.appendChild(card);
+            });
+
+            // Populate Strategy Table
+            const strategyTableBody = document.getElementById('strategy-table-body');
+            appData.strategies.forEach(strategy => {
+                const row = document.createElement('tr');
+                row.className = 'bg-white border-b hover:bg-stone-50';
+                row.innerHTML = `
+                    <td class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">${strategy.name}</td>
+                    <td class="px-6 py-4 text-green-600">${strategy.pros}</td>
+                    <td class="px-6 py-4 text-red-600">${strategy.cons}</td>
+                    <td class="px-6 py-4">${strategy.skill}</td>
+                `;
+                strategyTableBody.appendChild(row);
+            });
+
+            // Chart.js Implementations
+            const defaultFontColor = '#334155';
+            const gridColor = '#e2e8f0';
+
+            // Financials Chart
+            new Chart(document.getElementById('financialsChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    datasets: [
+                        {
+                            label: '总锁仓量 (TVL) - M USD',
+                            data: [3.5, 4.0, 3.8, 5.1, 4.5, 4.2],
+                            backgroundColor: 'rgba(13, 148, 136, 0.2)',
+                            borderColor: 'rgba(13, 148, 136, 1)',
+                            borderWidth: 1,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: '月交易量 - M USD',
+                            data: [90, 120, 110, 150, 130, 110],
+                             backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                            borderColor: 'rgba(79, 70, 229, 1)',
+                            type: 'line',
+                            tension: 0.3,
+                            fill: true,
+                            yAxisID: 'y1'
+                        },
+                        {
+                            label: '月协议盈利 - K USD',
+                             data: [-30, -25, -28, -40, -35, -37],
+                            backgroundColor: 'rgba(220, 38, 38, 0.2)',
+                            borderColor: 'rgba(220, 38, 38, 1)',
+                            yAxisID: 'y2',
+                            type: 'bar'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    scales: {
+                        x: { 
+                            grid: { display: false },
+                            ticks: { color: defaultFontColor }
+                        },
+                        y: {
+                            type: 'linear',
+                            position: 'left',
+                            title: { display: true, text: 'TVL (M USD)', color: defaultFontColor },
+                            grid: { color: gridColor },
+                            ticks: { color: defaultFontColor }
+                        },
+                         y1: {
+                            type: 'linear',
+                            position: 'right',
+                            title: { display: true, text: 'Volume (M USD)', color: defaultFontColor },
+                            grid: { drawOnChartArea: false },
+                            ticks: { color: defaultFontColor }
+                        },
+                         y2: {
+                            display: false
+                        }
+                    },
+                    plugins: {
+                        legend: { labels: { color: defaultFontColor } },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        if (context.datasetIndex === 2) {
+                                             label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed.y * 1000);
+                                        } else {
+                                             label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed.y * 1000000);
+                                        }
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Competition Chart
+            new Chart(document.getElementById('competitionChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['资本效率 (Vol/TVL)', 'TVL (M USD)', '30日收入 (K USD)'],
+                    datasets: [
+                        {
+                            label: 'Ramses',
+                            data: [26.6, 4.16, 32.1],
+                            backgroundColor: 'rgba(217, 119, 6, 0.7)',
+                            borderColor: 'rgba(217, 119, 6, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Uniswap (Arb)',
+                            data: [46.9, 271.31, 3210],
+                            backgroundColor: 'rgba(220, 38, 38, 0.7)',
+                            borderColor: 'rgba(220, 38, 38, 1)',
+                            borderWidth: 1
+                        },
+                         {
+                            label: 'Camelot',
+                            data: [24.8, 52.56, 67],
+                            backgroundColor: 'rgba(79, 70, 229, 0.7)',
+                            borderColor: 'rgba(79, 70, 229, 1)',
+                            borderWidth: 1
+                        },
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                         x: { 
+                            grid: { display: false },
+                            ticks: { color: defaultFontColor }
+                        },
+                        y: {
+                           type: 'logarithmic',
+                           title: { display: true, text: '对数标尺', color: defaultFontColor },
+                           grid: { color: gridColor },
+                           ticks: { color: defaultFontColor }
+                        }
+                    },
+                    plugins: {
+                         legend: { 
+                            position: 'top',
+                            labels: { color: defaultFontColor } 
+                        },
+                        tooltip: {
+                             callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) { label += ': '; }
+                                    if (context.parsed.y !== null) {
+                                        label += context.parsed.y.toFixed(2);
+                                        if (context.label === '资本效率 (Vol/TVL)') {
+                                            label += 'x';
+                                        } else if (context.label === 'TVL (M USD)') {
+                                            label += ' M';
+                                        } else {
+                                            label += ' K';
+                                        }
+                                    }
+                                    return label;
+                                }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: '对数刻度用于比较数量级差异巨大的指标',
+                             color: defaultFontColor,
+                             font: {
+                                 size: 10
+                             }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>

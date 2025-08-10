@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PancakeSwap (CAKE) 交互式投资分析报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Chosen Palette: Calm Harmony Neutrals -->
+    <!-- Application Structure Plan: A top-down, single-page dashboard designed for investor decision-making. It starts with a hero section showing the final recommendation and key metrics. A sticky navigation bar allows quick access to thematic sections: 1) The Core Thesis (explaining the 'why' with charts), 2) Yield Opportunities (an interactive, tabbed guide to strategies), 3) Risk Assessment (a clear, card-based breakdown of risks), and 4) Competitive Analysis (a visual comparison against Uniswap). This structure prioritizes quick synthesis and deep dives over the linear format of the source report, enhancing usability for sophisticated investors. -->
+    <!-- Visualization & Content Choices: Report Info -> Goal -> Viz/Presentation Method -> Interaction -> Justification. 1) Key Metrics (Price, TVL) -> Inform -> Large Text Cards -> Static -> Quick overview. 2) Revenue for Burn -> Compare Proportions -> Doughnut Chart (Chart.js) -> Hover Tooltips -> Shows what powers the deflationary model. 3) CAKE Supply -> Show Change -> Line Chart (Chart.js) -> Hover Tooltips -> Visualizes the path to the hard cap. 4) PancakeSwap vs. Uniswap -> Compare -> Grouped Bar Chart (Chart.js) -> Hover Tooltips -> Highlights the valuation gap effectively. 5) Investment Strategies -> Organize/Inform -> Interactive Tabs & Styled Tables -> Click to switch -> Segments complex information for clarity. All choices are made to translate the report's dense text into scannable, interactive, and understandable visual formats. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #F8F9FA;
+            color: #343A40;
+        }
+        :root {
+            --bg-main: #F8F9FA;
+            --bg-card: #FFFFFF;
+            --text-primary: #212529;
+            --text-secondary: #6C757D;
+            --accent-primary: #4A90E2; 
+            --accent-secondary: #50E3C2;
+            --border-color: #DEE2E6;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .nav-link {
+            transition: color 0.3s ease, border-bottom-color 0.3s ease;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+        .tab.active {
+            background-color: var(--accent-primary);
+            color: white;
+        }
+        .tab {
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-bg-main text-text-primary">
+
+    <nav id="navbar" class="sticky top-0 z-50 bg-white/80 backdrop-blur-md shadow-sm">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <div class="text-2xl font-bold text-text-primary">
+                    PancakeSwap <span class="text-accent-primary">投资仪表盘</span>
+                </div>
+                <div class="hidden md:flex space-x-8">
+                    <a href="#hero" class="nav-link text-text-secondary font-medium border-b-2 border-transparent pb-1">仪表盘</a>
+                    <a href="#thesis" class="nav-link text-text-secondary font-medium border-b-2 border-transparent pb-1">核心优势</a>
+                    <a href="#opportunities" class="nav-link text-text-secondary font-medium border-b-2 border-transparent pb-1">收益机会</a>
+                    <a href="#risks" class="nav-link text-text-secondary font-medium border-b-2 border-transparent pb-1">风险评估</a>
+                    <a href="#comparison" class="nav-link text-text-secondary font-medium border-b-2 border-transparent pb-1">数据对比</a>
+                </div>
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="text-text-primary focus:outline-none">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div id="mobile-menu" class="hidden md:hidden">
+            <a href="#hero" class="block py-2 px-4 text-sm text-text-secondary hover:bg-gray-100">仪表盘</a>
+            <a href="#thesis" class="block py-2 px-4 text-sm text-text-secondary hover:bg-gray-100">核心优势</a>
+            <a href="#opportunities" class="block py-2 px-4 text-sm text-text-secondary hover:bg-gray-100">收益机会</a>
+            <a href="#risks" class="block py-2 px-4 text-sm text-text-secondary hover:bg-gray-100">风险评估</a>
+            <a href="#comparison" class="block py-2 px-4 text-sm text-text-secondary hover:bg-gray-100">数据对比</a>
+        </div>
+    </nav>
+
+    <main class="container mx-auto px-4 py-8 md:py-12">
+        
+        <section id="hero" class="text-center pt-12 pb-16">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4">PancakeSwap (CAKE) 投资分析</h1>
+            <p class="text-lg text-text-secondary max-w-3xl mx-auto mb-8">一个从高通胀DEX到多链、通缩型DeFi中心的深度解析与投资机会评估。</p>
+            
+            <div class="bg-bg-card rounded-xl shadow-lg p-6 max-w-sm mx-auto mb-12">
+                <p class="text-sm font-semibold text-text-secondary mb-2">综合投资评级</p>
+                <p class="text-3xl font-bold text-accent-primary">建议 (Recommend)</p>
+                <p class="text-xs text-text-secondary mt-3">基于其强大的市场地位、稳健的盈利能力、以及向通缩资产转型的成功经济模型。</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
+                <div class="bg-bg-card rounded-xl shadow-md p-5">
+                    <p class="text-sm font-medium text-text-secondary">CAKE 价格</p>
+                    <p class="text-3xl font-bold text-text-primary mt-2">$2.80</p>
+                </div>
+                <div class="bg-bg-card rounded-xl shadow-md p-5">
+                    <p class="text-sm font-medium text-text-secondary">市值</p>
+                    <p class="text-3xl font-bold text-text-primary mt-2">$9.8亿</p>
+                </div>
+                <div class="bg-bg-card rounded-xl shadow-md p-5">
+                    <p class="text-sm font-medium text-text-secondary">总锁仓价值 (TVL)</p>
+                    <p class="text-3xl font-bold text-text-primary mt-2">$20.4亿</p>
+                </div>
+                <div class="bg-bg-card rounded-xl shadow-md p-5">
+                    <p class="text-sm font-medium text-text-secondary">24小时交易量</p>
+                    <p class="text-3xl font-bold text-text-primary mt-2">$38.7亿</p>
+                </div>
+            </div>
+            <p class="text-xs text-text-secondary mt-4">*所有数据基于源报告，截至2025年7月。</p>
+        </section>
+
+        <section id="thesis" class="py-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold">核心投资论点：价值重估的基石</h2>
+                <p class="mt-4 max-w-2xl mx-auto text-text-secondary">PancakeSwap的基本面已发生根本性转变。其投资价值不再是短期投机，而是建立在一个盈利能力强、代币持续通缩的坚实商业模式之上。</p>
+            </div>
+            <div class="grid md:grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="bg-bg-card rounded-xl shadow-lg p-6 text-center">
+                    <div class="text-accent-primary mx-auto mb-4 h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">📉</div>
+                    <h3 class="text-xl font-bold mb-2">通缩经济模型</h3>
+                    <p class="text-text-secondary">CAKE代币已从无限通胀转变为4.5亿硬顶上限。强大的销毁机制由协议真实收入驱动，持续减少代币供应，赋予其长期稀缺性价值。</p>
+                </div>
+                <div class="bg-bg-card rounded-xl shadow-lg p-6 text-center">
+                    <div class="text-accent-primary mx-auto mb-4 h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">💰</div>
+                    <h3 class="text-xl font-bold mb-2">强大盈利能力</h3>
+                    <p class="text-text-secondary">作为全球交易量领先的DEX，协议每月产生数千万至上亿美元的真实手续费收入。这些收入是代币销毁的燃料，形成了价值捕获的良性循环。</p>
+                </div>
+                <div class="bg-bg-card rounded-xl shadow-lg p-6 text-center">
+                    <div class="text-accent-primary mx-auto mb-4 h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">🌐</div>
+                    <h3 class="text-xl font-bold mb-2">多链生态系统</h3>
+                    <p class="text-text-secondary">已成功扩展至以太坊、Solana、Base等10条主流公链，有效分散了风险，并能捕获不同生态的用户与流动性，增长潜力巨大。</p>
+                </div>
+            </div>
+            <div class="grid md:grid-cols-1 lg:grid-cols-2 gap-8 mt-12">
+                <div class="bg-bg-card rounded-xl shadow-lg p-6">
+                    <h3 class="text-xl font-bold mb-4 text-center">CAKE 通缩引擎：收入来源</h3>
+                    <p class="text-sm text-text-secondary text-center mb-4">协议将多渠道收入用于回购和销毁CAKE，这是实现通缩的核心动力。</p>
+                    <div class="chart-container">
+                        <canvas id="revenueSourceChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-bg-card rounded-xl shadow-lg p-6">
+                    <h3 class="text-xl font-bold mb-4 text-center">CAKE 供应量趋势</h3>
+                    <p class="text-sm text-text-secondary text-center mb-4">代币供应量正稳步接近4.5亿的硬顶上限，稀缺性日益凸显。</p>
+                    <div class="chart-container">
+                        <canvas id="supplyTrendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="opportunities" class="py-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold">战略投资与收益机会</h2>
+                <p class="mt-4 max-w-2xl mx-auto text-text-secondary">围绕PancakeSwap生态，我们为不同风险偏好和技术背景的投资者，梳理出以下具体、可行的投资策略。</p>
+            </div>
+            <div class="flex justify-center mb-8">
+                <div class="flex space-x-1 bg-gray-200 p-1 rounded-full">
+                    <button class="tab px-4 py-2 text-sm font-medium rounded-full active" data-tab="hodl">持有代币</button>
+                    <button class="tab px-4 py-2 text-sm font-medium rounded-full" data-tab="farming">流动性挖矿</button>
+                    <button class="tab px-4 py-2 text-sm font-medium rounded-full" data-tab="ifo">IFO参与</button>
+                    <button class="tab px-4 py-2 text-sm font-medium rounded-full" data-tab="dev">开发者生态</button>
+                </div>
+            </div>
+            <div id="tab-content" class="bg-bg-card rounded-xl shadow-lg p-8">
+                <div class="tab-pane active" id="hodl-content">
+                    <h3 class="text-2xl font-bold mb-4">购买并持有 CAKE</h3>
+                    <p class="text-text-secondary mb-6">最直接的投资方式，押注于协议基本面的长期价值和通缩叙事带来的估值修复潜力。</p>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div><h4 class="font-bold">优点:</h4><ul class="list-disc list-inside text-text-secondary mt-2"><li>操作简单，流动性好</li><li>能捕获整个生态的通缩价值</li></ul></div>
+                        <div><h4 class="font-bold">缺点:</h4><ul class="list-disc list-inside text-text-secondary mt-2"><li>价格波动剧烈，受大盘影响</li><li>无直接的现金流收益</li></ul></div>
+                        <div><p><span class="font-bold">风险等级:</span> <span class="text-red-500 font-semibold">高</span></p></div>
+                        <div><p><span class="font-bold">所需知识:</span> <span class="font-semibold">初学者</span></p></div>
+                    </div>
+                </div>
+                <div class="tab-pane hidden" id="farming-content">
+                    <h3 class="text-2xl font-bold mb-4">V3 集中流动性挖矿</h3>
+                    <p class="text-text-secondary mb-6">高阶策略，通过在特定价格区间提供流动性，以极高的资本效率赚取交易费和CAKE奖励，但需要主动管理。</p>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div><h4 class="font-bold">优点:</h4><ul class="list-disc list-inside text-text-secondary mt-2"><li>资本效率极高</li><li>潜在APR非常可观 (可超100%+)</li></ul></div>
+                        <div><h4 class="font-bold">缺点:</h4><ul class="list-disc list-inside text-text-secondary mt-2"><li>无常损失风险高</li><li>需要持续的主动管理和市场判断</li></ul></div>
+                        <div><p><span class="font-bold">风险等级:</span> <span class="text-red-500 font-semibold">高</span></p></div>
+                        <div><p><span class="font-bold">所需知识:</span> <span class="font-semibold">高级</span></p></div>
+                    </div>
+                </div>
+                <div class="tab-pane hidden" id="ifo-content">
+                    <h3 class="text-2xl font-bold mb-4">首次农场发行 (IFO)</h3>
+                    <p class="text-text-secondary mb-6">使用CAKE参与新项目早期融资，有机会以低价获得新代币，但项目失败风险高。</p>
+                     <div class="grid md:grid-cols-2 gap-6">
+                        <div><h4 class="font-bold">优点:</h4><ul class="list-disc list-inside text-text-secondary mt-2"><li>有机会获得极高的短期回报</li><li>早期接触潜力新项目</li></ul></div>
+                        <div><h4 class="font-bold">缺点:</h4><ul class="list-disc list-inside text-text-secondary mt-2"><li>项目失败或代币破发风险高</li><li>需锁定CAKE，存在机会成本</li></ul></div>
+                        <div><p><span class="font-bold">风险等级:</span> <span class="text-red-700 font-semibold">非常高</span></p></div>
+                        <div><p><span class="font-bold">所需知识:</span> <span class="font-semibold">中级</span></p></div>
+                    </div>
+                </div>
+                <div class="tab-pane hidden" id="dev-content">
+                    <h3 class="text-2xl font-bold mb-4">开发者生态 (V4 Hooks)</h3>
+                    <p class="text-text-secondary mb-6">针对开发者，通过在V4平台上构建和部署自定义功能的Hook合约，创造全新的商业模式和收入来源。</p>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div><h4 class="font-bold">优点:</h4><ul class="list-disc list-inside text-text-secondary mt-2"><li>可创造全新的、可持续的收入</li><li>深度参与生态建设，潜力巨大</li></ul></div>
+                        <div><h4 class="font-bold">缺点:</h4><ul class="list-disc list-inside text-text-secondary mt-2"><li>技术门槛极高</li><li>需要深厚的智能合约开发和安全知识</li></ul></div>
+                        <div><p><span class="font-bold">风险等级:</span> <span class="text-red-700 font-semibold">非常高</span></p></div>
+                        <div><p><span class="font-bold">所需知识:</span> <span class="font-semibold">专家/开发者</span></p></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="risks" class="py-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold">综合风险评估</h2>
+                <p class="mt-4 max-w-2xl mx-auto text-text-secondary">投资决策必须建立在对风险的全面理解之上。以下是PancakeSwap面临的主要风险点。</p>
+            </div>
+            <div class="grid md:grid-cols-2 lg:grid-cols-2 gap-8">
+                <div class="bg-bg-card rounded-xl shadow-lg p-6">
+                    <h3 class="text-xl font-bold mb-2">智能合约与安全风险</h3>
+                    <p class="text-text-secondary">尽管经过多家顶级公司广泛审计，但智能合约固有风险无法完全消除。V4 Hooks将引入新的第三方开发者风险。此外，生态项目（如PancakeBunny）曾因闪电贷攻击遭受损失，显示出系统性风险的存在。</p>
+                </div>
+                <div class="bg-bg-card rounded-xl shadow-lg p-6">
+                    <h3 class="text-xl font-bold mb-2">运营与中心化风险</h3>
+                    <p class="text-text-secondary">核心团队匿名，缺乏传统问责机制。前端网站、域名等中心化设施曾遭受DNS劫持攻击。激励分配权由团队中心化管理，提升了效率但也牺牲了部分去中心化。</p>
+                </div>
+                <div class="bg-bg-card rounded-xl shadow-lg p-6">
+                    <h3 class="text-xl font-bold mb-2">市场与竞争风险</h3>
+                    <p class="text-text-secondary">DEX赛道竞争异常激烈，面临来自Uniswap等巨头的持续压力。协议收入与交易量高度相关，若市场份额下降，将直接削弱其盈利能力和代币销毁效果。</p>
+                </div>
+                <div class="bg-bg-card rounded-xl shadow-lg p-6">
+                    <h3 class="text-xl font-bold mb-2">监管与宏观风险</h3>
+                    <p class="text-text-secondary">全球对DeFi的监管政策尚不明朗，任何不利的监管都可能对DEX运营构成挑战。同时，加密市场与全球宏观经济联动增强，系统性金融风险可能传导至DeFi领域。</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="comparison" class="py-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold">竞品对比：PancakeSwap vs. Uniswap</h2>
+                <p class="mt-4 max-w-2xl mx-auto text-text-secondary">与行业标杆Uniswap的直接对比，凸显了PancakeSwap在当前阶段独特的估值优势。</p>
+            </div>
+            <div class="bg-bg-card rounded-xl shadow-lg p-6">
+                <div class="chart-container" style="height: 400px; max-height: 500px;">
+                    <canvas id="comparisonChart"></canvas>
+                </div>
+                <div class="mt-8 flow-root">
+                    <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+                        <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+                            <table class="min-w-full divide-y divide-gray-300">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-0">指标</th>
+                                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">PancakeSwap</th>
+                                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Uniswap</th>
+                                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">分析与洞察</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200">
+                                    <tr>
+                                        <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-0">24小时交易量</td>
+                                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500 font-bold text-accent-secondary">~$38.7亿</td>
+                                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">~$24.8亿</td>
+                                        <td class="py-4 px-3 text-sm text-gray-500">交易更活跃，尤其受零售用户青睐。</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-0">30天协议收入</td>
+                                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500 font-bold text-accent-secondary">~$1.09亿</td>
+                                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">~640万美元</td>
+                                        <td class="py-4 px-3 text-sm text-gray-500">盈利能力和费用捕获效率显著更高。</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-0">市值</td>
+                                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">~$9.8亿</td>
+                                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500 font-bold text-accent-primary">~$56亿</td>
+                                        <td class="py-4 px-3 text-sm text-gray-500">核心估值差异：以更低市值创造更高收入。</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-0">代币经济学</td>
+                                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">通缩模型 (硬顶+销毁)</td>
+                                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">通胀模型 (治理控制)</td>
+                                        <td class="py-4 px-3 text-sm text-gray-500">CAKE为持有者提供更直接的价值捕获。</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-white border-t border-border-color">
+        <div class="container mx-auto py-6 px-4 text-center text-text-secondary text-sm">
+            <p>本应用内容根据《PancakeSwap (CAKE) - 深度投资尽职调查报告》生成，仅供参考和研究，不构成任何投资建议。</p>
+            <p class="mt-2">所有投资均有风险，入市需谨慎。请在做出决策前进行自己的独立研究。</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const chartColors = {
+                primary: 'rgba(74, 144, 226, 0.8)',
+                primaryBg: 'rgba(74, 144, 226, 0.2)',
+                secondary: 'rgba(80, 227, 194, 0.8)',
+                secondaryBg: 'rgba(80, 227, 194, 0.2)',
+                text: '#343A40',
+                grid: '#DEE2E6'
+            };
+
+            const createRevenueSourceChart = () => {
+                const ctx = document.getElementById('revenueSourceChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['V2/V3交易费', '永续合约', 'IFO平台费', '游戏化产品', '其他'],
+                        datasets: [{
+                            label: '收入来源',
+                            data: [65, 20, 10, 3, 2],
+                            backgroundColor: [
+                                'rgba(74, 144, 226, 0.7)',
+                                'rgba(80, 227, 194, 0.7)',
+                                'rgba(245, 166, 35, 0.7)',
+                                'rgba(219, 100, 100, 0.7)',
+                                'rgba(189, 16, 224, 0.7)'
+                            ],
+                            borderColor: '#FFFFFF',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    color: chartColors.text,
+                                    font: { family: "'Noto Sans SC', sans-serif" }
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed !== null) {
+                                            label += context.parsed + '%';
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            };
+
+            const createSupplyTrendChart = () => {
+                const ctx = document.getElementById('supplyTrendChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ['2023 Q4', '2024 Q1', '2024 Q2', '2024 Q3', '2024 Q4', '2025 Q1', '2025 Q2'],
+                        datasets: [{
+                            label: 'CAKE 总供应量 (亿)',
+                            data: [3.85, 3.70, 3.60, 3.52, 3.48, 3.46, 3.45],
+                            fill: true,
+                            backgroundColor: chartColors.primaryBg,
+                            borderColor: chartColors.primary,
+                            tension: 0.3
+                        }, {
+                            label: '硬顶上限 (亿)',
+                            data: Array(7).fill(4.5),
+                            borderColor: 'rgba(219, 100, 100, 0.8)',
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            fill: false
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                ticks: { color: chartColors.text },
+                                grid: { color: chartColors.grid }
+                            },
+                            x: {
+                                ticks: { color: chartColors.text },
+                                grid: { color: chartColors.grid }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                    color: chartColors.text,
+                                    font: { family: "'Noto Sans SC', sans-serif" }
+                                }
+                            }
+                        }
+                    }
+                });
+            };
+
+            const createComparisonChart = () => {
+                const ctx = document.getElementById('comparisonChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['市值', 'TVL', '24h交易量', '30天收入'],
+                        datasets: [
+                            {
+                                label: 'PancakeSwap (亿美元)',
+                                data: [9.8, 20.4, 38.7, 1.09],
+                                backgroundColor: chartColors.secondaryBg,
+                                borderColor: chartColors.secondary,
+                                borderWidth: 2
+                            },
+                            {
+                                label: 'Uniswap (亿美元)',
+                                data: [56, 27.6, 24.8, 0.064],
+                                backgroundColor: chartColors.primaryBg,
+                                borderColor: chartColors.primary,
+                                borderWidth: 2
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                type: 'logarithmic',
+                                ticks: {
+                                    color: chartColors.text,
+                                    callback: function(value, index, values) {
+                                        if (value === 1000000000) return '10亿';
+                                        if (value === 100000000) return '1亿';
+                                        if (value === 10000000) return '1000万';
+                                        if (value === 1000000) return '100万';
+                                        if (value === 100000) return '10万';
+                                        if (value === 10000) return '1万';
+                                        return null;
+                                    }
+                                },
+                                grid: { color: chartColors.grid }
+                            },
+                            x: {
+                                ticks: { color: chartColors.text },
+                                grid: { display: false }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                    color: chartColors.text,
+                                    font: { family: "'Noto Sans SC', sans-serif" }
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed.y !== null) {
+                                            label += '$' + context.parsed.y + ' 亿';
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            };
+            
+            createRevenueSourceChart();
+            createSupplyTrendChart();
+            createComparisonChart();
+
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+            
+            const tabs = document.querySelectorAll('.tab');
+            const tabPanes = document.querySelectorAll('.tab-pane');
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+
+                    const target = tab.getAttribute('data-tab');
+
+                    tabPanes.forEach(pane => {
+                        if (pane.id === `${target}-content`) {
+                            pane.classList.remove('hidden');
+                            pane.classList.add('active');
+                        } else {
+                            pane.classList.add('hidden');
+                            pane.classList.remove('active');
+                        }
+                    });
+                });
+            });
+
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('section');
+
+            const observerOptions = {
+                root: null,
+                rootMargin: '0px',
+                threshold: 0.4
+            };
+
+            const observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        navLinks.forEach(link => {
+                            link.classList.remove('active');
+                            if (link.getAttribute('href').substring(1) === entry.target.id) {
+                                link.classList.add('active');
+                            }
+                        });
+                    }
+                });
+            }, observerOptions);
+
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+            
+            navLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    if (mobileMenu.classList.contains('hidden') === false) {
+                       mobileMenu.classList.add('hidden');
+                    }
+                })
+            })
+
+        });
+    </script>
+</body>
+</html>

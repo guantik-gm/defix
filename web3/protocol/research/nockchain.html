@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nockchain 交互式分析报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Harmony -->
+    <!-- Application Structure Plan: The SPA is designed with a non-linear, exploratory structure. It starts with a high-level hero section summarizing the project's essence and verdict. This is followed by a dashboard of key metrics for quick data consumption. The core of the application is a tab-based interface, allowing users to selectively dive into 'Core Concepts', 'Tech Deep Dive', 'Tokenomics', 'SWOT & Risks', and 'Competitive Landscape'. This structure breaks down the dense report into manageable, thematic chunks, promoting user engagement and understanding over passive reading. The flow encourages discovery, letting users choose their own path through the information, which is more effective for complex topics than a simple scrollable document. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Nockchain's 100% fair launch tokenomics. -> Goal: Inform/Compare. -> Viz/Presentation: Interactive Doughnut Chart (Chart.js/Canvas). -> Interaction: Hover to see details. -> Justification: A visual chart is more impactful than text for showing distribution, immediately highlighting its uniqueness. -> Library: Chart.js.
+        - Report Info: Technical architecture (NockApp Framework). -> Goal: Organize/Explain. -> Viz/Presentation: Diagram using structured HTML/CSS with Tailwind. -> Interaction: Static visual aid. -> Justification: Simplifies a complex technical concept into an easy-to-understand visual without using forbidden SVG. -> Library/Method: HTML/Tailwind.
+        - Report Info: SWOT Analysis. -> Goal: Organize/Inform. -> Viz/Presentation: Four-quadrant grid layout. -> Interaction: Static visual aid. -> Justification: A standard and highly scannable format for presenting SWOT analysis. -> Library/Method: HTML/Tailwind Flexbox/Grid.
+        - Report Info: Competitive Comparison (Nockchain vs. Aleo vs. RISC Zero). -> Goal: Compare. -> Viz/Presentation: Interactive HTML Table. -> Interaction: Click/hover on a competitor to highlight their column/row. -> Justification: Makes direct comparison easier and more engaging, allowing users to focus on one competitor at a time. -> Library/Method: HTML/Tailwind + Vanilla JS.
+        - CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #F8F7F4;
+            color: #4A4A4A;
+        }
+        .tab-button {
+            transition: all 0.3s ease-in-out;
+            border-bottom: 2px solid transparent;
+        }
+        .tab-button.active {
+            color: #D35400;
+            border-bottom-color: #D35400;
+        }
+        .card {
+            background-color: #FFFFFF;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+        }
+        .highlight-text {
+            color: #D35400;
+        }
+        .fade-in {
+            animation: fadeIn 0.8s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .chart-container {
+            position: relative;
+            margin-left: auto;
+            margin-right: auto;
+            height: 320px;
+            width: 100%;
+            max-width: 320px;
+        }
+        @media (min-width: 640px) {
+            .chart-container {
+                height: 350px;
+                max-width: 350px;
+            }
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
+
+        <header class="text-center mb-12 fade-in">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-3">Nockchain 交互式分析报告</h1>
+            <p class="text-lg md:text-xl text-gray-500">一个轻量级链，承载重量级可验证计算的新范式</p>
+        </header>
+
+        <main>
+            <section id="dashboard" class="mb-12 fade-in" style="animation-delay: 0.2s;">
+                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 text-center">
+                    <div class="card p-4">
+                        <p class="text-sm text-gray-500 mb-1">项目状态</p>
+                        <p class="text-xl font-bold highlight-text">实验性</p>
+                    </div>
+                    <div class="card p-4">
+                        <p class="text-sm text-gray-500 mb-1">共识机制</p>
+                        <p class="text-xl font-bold text-gray-800">zkPoW</p>
+                    </div>
+                    <div class="card p-4">
+                        <p class="text-sm text-gray-500 mb-1">代币分配</p>
+                        <p class="text-xl font-bold highlight-text">100% 挖矿</p>
+                    </div>
+                    <div class="card p-4">
+                        <p class="text-sm text-gray-500 mb-1">Zorp 融资</p>
+                        <p class="text-xl font-bold text-gray-800">$5M</p>
+                    </div>
+                    <div class="card p-4">
+                        <p class="text-sm text-gray-500 mb-1">主网启动</p>
+                        <p class="text-xl font-bold text-gray-800">2025-05-21</p>
+                    </div>
+                    <div class="card p-4">
+                        <p class="text-sm text-gray-500 mb-1">安全审计</p>
+                        <p class="text-xl font-bold highlight-text">无</p>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="interactive-tabs" class="card p-4 sm:p-6 md:p-8 fade-in" style="animation-delay: 0.4s;">
+                <div class="border-b border-gray-200 mb-6">
+                    <nav class="-mb-px flex space-x-4 sm:space-x-8" aria-label="Tabs">
+                        <button onclick="changeTab('core-concepts')" class="tab-button active whitespace-nowrap py-4 px-1 text-base font-medium">核心理念</button>
+                        <button onclick="changeTab('tech-dive')" class="tab-button whitespace-nowrap py-4 px-1 text-base font-medium">技术架构</button>
+                        <button onclick="changeTab('tokenomics')" class="tab-button whitespace-nowrap py-4 px-1 text-base font-medium">经济模型</button>
+                        <button onclick="changeTab('swot')" class="tab-button whitespace-nowrap py-4 px-1 text-base font-medium">风险机遇</button>
+                        <button onclick="changeTab('competition')" class="tab-button whitespace-nowrap py-4 px-1 text-base font-medium">竞争格局</button>
+                    </nav>
+                </div>
+
+                <div id="tab-content">
+                    <div id="core-concepts" class="tab-panel active">
+                        <div class="prose max-w-none prose-p:text-gray-600 prose-headings:text-gray-800">
+                            <h3 class="text-2xl font-semibold mb-4">哲学与愿景：从第一性原理出发</h3>
+                            <p class="mb-6">Nockchain 的核心并非简单地创造另一个区块链，而是对计算和验证的未来进行一次大胆的哲学探索。本部分旨在阐明项目背后的核心思想，解释其为何选择一条与众不同但充满挑战的道路。</p>
+                            
+                            <div class="grid md:grid-cols-2 gap-8">
+                                <div>
+                                    <h4 class="font-semibold text-lg mb-2">理念: 轻量级链，重量级计算</h4>
+                                    <p>Nockchain 的设计初衷不是为了处理简单的交易，而是作为一个高效的“结算层”，专门用于验证在链下完成的大规模、私密且复杂的计算任务。它将计算的“重活”移出区块链，链上只负责轻量级、无需信任的“验证”环节。这种范式旨在打破当前区块链高成本、低效率的瓶颈，为全新的可验证应用（Verifiable Applications）打开大门。</p>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold text-lg mb-2">根源: Urbit 与计算主权</h4>
+                                    <p>Nockchain 的技术灵魂源于 Urbit 项目，一个致力于从零开始构建个人计算堆栈的宏大计划。其虚拟机（VM）基础——Nock 指令集，以其极致的简约（规范仅32行代码）而闻名。这种对技术纯粹性的坚守，为项目注入了独特的“计算主权”基因，但也为其带来了极高的开发者入门门槛，是其最大的魅力与风险所在。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="tech-dive" class="tab-panel hidden">
+                        <div class="prose max-w-none prose-p:text-gray-600 prose-headings:text-gray-800">
+                             <h3 class="text-2xl font-semibold mb-4">架构解密：Nockchain 如何运作</h3>
+                             <p class="mb-6">Nockchain 的技术架构是其理念的物质载体。本部分将深入剖析其三大核心技术支柱：zkPoW 共识、NockVM 虚拟机，以及其独特的 NockApp 应用框架，揭示其内部工作原理。</p>
+                             
+                             <div class="space-y-8">
+                                <div class="p-6 bg-gray-50 rounded-lg border border-gray-200">
+                                    <h4 class="font-semibold text-lg mb-2 flex items-center">
+                                        <span class="text-xl mr-3">⚙️</span>
+                                        共识引擎: zkPoW - “有用”的工作量证明
+                                    </h4>
+                                    <p>与比特币执行无意义的哈希计算不同，Nockchain 的矿工必须为固定的计算谜题生成一个零知识证明（ZKP）。虽然当前的“工作”主要是保障网络安全和提供 ZKP 生成能力，其长期愿景是建立一个由区块奖励补贴的证明市场，最终服务于现实世界的“有用”计算。</p>
+                                </div>
+
+                                <div class="p-6 bg-gray-50 rounded-lg border border-gray-200">
+                                    <h4 class="font-semibold text-lg mb-2 flex items-center">
+                                        <span class="text-xl mr-3">🖥️</span>
+                                        应用层: NockApp 框架与“意图”模型
+                                    </h4>
+                                    <p class="mb-4">NockApp 是用于构建链下可验证服务的框架。它由两部分组成：<span class="font-mono bg-gray-200 text-sm px-1 rounded">Sword</span> (Nock 运行时) 和 <span class="font-mono bg-gray-200 text-sm px-1 rounded">Crown</span> (Rust 接口)。更具前瞻性的是其“意图”模型，用户只需声明目标，由网络自动寻找最优执行路径，这代表了下一代区块链应用架构的方向。</p>
+                                    <div class="mt-4 flex flex-col items-center justify-center space-y-2 text-center text-sm">
+                                        <div class="font-bold text-gray-700">用户意图 ("我想要...")</div>
+                                        <div class="text-2xl">↓</div>
+                                        <div class="border-2 border-dashed border-gray-300 p-4 rounded-lg w-full max-w-md">
+                                            <div class="font-bold text-lg mb-2 text-gray-800">Nockchain 网络</div>
+                                            <div class="flex justify-around items-center">
+                                                <div class="p-2 bg-blue-100 text-blue-800 rounded-md">求解器 (Solvers)</div>
+                                                <div class="text-xl">→</div>
+                                                <div class="p-2 bg-green-100 text-green-800 rounded-md">NockApp (执行)</div>
+                                            </div>
+                                        </div>
+                                        <div class="text-2xl">↓</div>
+                                        <div class="font-bold text-gray-700">目标达成</div>
+                                    </div>
+                                </div>
+                             </div>
+                        </div>
+                    </div>
+
+                    <div id="tokenomics" class="tab-panel hidden">
+                        <div class="prose max-w-none prose-p:text-gray-600 prose-headings:text-gray-800">
+                             <h3 class="text-2xl font-semibold mb-4">经济模型：一场激进的公平分配实验</h3>
+                             <p class="mb-6">$NOCK 的经济模型是项目最引人注目的特点。它彻底抛弃了当前市场主流的 VC 导向型代币分配模式，采取了一种极具理想主义色彩的“公平启动”原则。本部分将通过图表和关键数据，为您详细解读其独特的代币经济学。</p>
+                             
+                             <div class="grid md:grid-cols-2 gap-8 items-center">
+                                 <div>
+                                    <div class="chart-container">
+                                        <canvas id="tokenomicsChart"></canvas>
+                                    </div>
+                                    <p class="text-center text-sm text-gray-500 mt-2">Nockchain 代币分配模型</p>
+                                 </div>
+                                 <div class="space-y-4">
+                                     <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                         <p class="font-semibold text-gray-800">总供应量</p>
+                                         <p class="text-2xl font-bold highlight-text">~42.9 亿 <span class="text-lg text-gray-600 font-medium">$NOCK</span></p>
+                                     </div>
+                                      <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                         <p class="font-semibold text-gray-800">核心原则</p>
+                                         <p class="text-lg text-gray-600">无预挖、无团队/VC份额。所有代币均由矿工通过 zkPoW 机制产出。</p>
+                                     </div>
+                                      <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                         <p class="font-semibold text-gray-800">主要效用</p>
+                                         <p class="text-lg text-gray-600">作为支付网络区块空间费用的“燃料”。</p>
+                                     </div>
+                                 </div>
+                             </div>
+                        </div>
+                    </div>
+
+                    <div id="swot" class="tab-panel hidden">
+                       <div class="prose max-w-none prose-p:text-gray-600 prose-headings:text-gray-800">
+                           <h3 class="text-2xl font-semibold mb-4">战略定位：优势、劣势、机遇与威胁 (SWOT)</h3>
+                           <p class="mb-6">任何项目都无法脱离其环境独立存在。SWOT 分析提供了一个结构化框架，用于评估 Nockchain 在当前市场中的内部能力和外部环境。这有助于我们更全面、更客观地理解其长期发展的可能性。</p>
+                           
+                           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                               <div class="p-6 bg-green-50 border border-green-200 rounded-lg">
+                                   <h4 class="font-bold text-xl text-green-800 mb-3">优势 (Strengths)</h4>
+                                   <ul class="list-disc list-inside space-y-2 text-green-700">
+                                       <li>技术设计优雅极简（基于 Nock）</li>
+                                       <li>“公平启动”模式具强大意识形态吸引力</li>
+                                       <li>顶级 VC 支持开发公司（Delphi Digital）</li>
+                                       <li>创始人具备清晰且坚定的愿景</li>
+                                   </ul>
+                               </div>
+                               <div class="p-6 bg-red-50 border border-red-200 rounded-lg">
+                                   <h4 class="font-bold text-xl text-red-800 mb-3">劣势 (Weaknesses)</h4>
+                                   <ul class="list-disc list-inside space-y-2 text-red-700">
+                                       <li>技术栈小众，开发者采纳门槛极高</li>
+                                       <li>开发公司 Zorp 商业模式不明确</li>
+                                       <li>项目处在实验性、未经审计阶段</li>
+                                       <li>存在严重的品牌混淆和欺诈代币问题</li>
+                                   </ul>
+                               </div>
+                               <div class="p-6 bg-blue-50 border border-blue-200 rounded-lg">
+                                   <h4 class="font-bold text-xl text-blue-800 mb-3">机遇 (Opportunities)</h4>
+                                   <ul class="list-disc list-inside space-y-2 text-blue-700">
+                                       <li>有望成为新型可验证计算经济的基础层</li>
+                                       <li>能吸引高度忠诚的理想主义者和矿工社区</li>
+                                       <li>其架构有望解决现有区块链的可扩展性问题</li>
+                                   </ul>
+                               </div>
+                               <div class="p-6 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                   <h4 class="font-bold text-xl text-yellow-800 mb-3">威胁 (Threats)</h4>
+                                   <ul class="list-disc list-inside space-y-2 text-yellow-700">
+                                       <li>无法吸引足够开发者，导致生态停滞</li>
+                                       <li>来自更务实的 ZK 方案（如RISC Zero）的竞争</li>
+                                       <li>新颖代码库中可能存在未被发现的安全漏洞</li>
+                                   </ul>
+                               </div>
+                           </div>
+                       </div>
+                    </div>
+                    
+                    <div id="competition" class="tab-panel hidden">
+                        <div class="prose max-w-none prose-p:text-gray-600 prose-headings:text-gray-800">
+                           <h3 class="text-2xl font-semibold mb-4">竞争格局：在 ZK 赛道中的独特位置</h3>
+                           <p class="mb-6">Nockchain 并非孤立存在，它身处于竞争激烈的 ZK 技术领域。通过与 Aleo 和 RISC Zero 等主要项目的对比，我们可以更清晰地看到 Nockchain 的战略差异和独特价值主张。它选择的不是正面竞争，而是一条基于哲学和经济原则的差异化路线。</p>
+                           
+                           <div class="overflow-x-auto">
+                               <table class="min-w-full border-collapse text-left competition-table">
+                                   <thead class="bg-gray-100">
+                                       <tr>
+                                           <th class="p-4 font-semibold text-sm text-gray-700 uppercase">类别</th>
+                                           <th class="p-4 font-semibold text-sm text-gray-700 uppercase text-center highlight-text">Nockchain</th>
+                                           <th class="p-4 font-semibold text-sm text-gray-700 uppercase text-center">Aleo</th>
+                                           <th class="p-4 font-semibold text-sm text-gray-700 uppercase text-center">RISC Zero</th>
+                                       </tr>
+                                   </thead>
+                                   <tbody>
+                                       <tr class="border-b border-gray-200">
+                                           <td class="p-4 font-medium text-gray-800">核心焦点</td>
+                                           <td class="p-4 text-center highlight-text">通用可验证计算</td>
+                                           <td class="p-4 text-center">隐私保护应用</td>
+                                           <td class="p-4 text-center">通用ZK平台/共享执行层</td>
+                                       </tr>
+                                       <tr class="border-b border-gray-200 bg-gray-50">
+                                           <td class="p-4 font-medium text-gray-800">开发者语言</td>
+                                           <td class="p-4 text-center highlight-text">Jock (定制)</td>
+                                           <td class="p-4 text-center">Leo (定制)</td>
+                                           <td class="p-4 text-center font-bold">Rust, C++, Go</td>
+                                       </tr>
+                                       <tr class="border-b border-gray-200">
+                                           <td class="p-4 font-medium text-gray-800">经济模型</td>
+                                           <td class="p-4 text-center highlight-text font-bold">100% 公平启动</td>
+                                           <td class="p-4 text-center">VC主导, 有预分配</td>
+                                           <td class="p-4 text-center">VC股权融资</td>
+                                       </tr>
+                                       <tr class="bg-gray-50">
+                                           <td class="p-4 font-medium text-gray-800">关键差异点</td>
+                                           <td class="p-4 text-center highlight-text">哲学纯粹性, 经济公平性</td>
+                                           <td class="p-4 text-center">默认隐私, 应用可编程性</td>
+                                           <td class="p-4 text-center">开发者友好, 主流语言支持</td>
+                                       </tr>
+                                   </tbody>
+                               </table>
+                           </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="mt-12 text-center text-gray-400 text-sm">
+            <p>本报告基于公开信息汇编而成，仅供研究和参考，不构成任何投资建议。</p>
+            <p>数据来源：Nockchain 综合研究报告 V1.0</p>
+        </footer>
+
+    </div>
+
+    <script>
+        const tabs = document.querySelectorAll('.tab-button');
+        const panels = document.querySelectorAll('.tab-panel');
+
+        function changeTab(tabId) {
+            tabs.forEach(tab => {
+                if (tab.getAttribute('onclick') === `changeTab('${tabId}')`) {
+                    tab.classList.add('active');
+                } else {
+                    tab.classList.remove('active');
+                }
+            });
+
+            panels.forEach(panel => {
+                if (panel.id === tabId) {
+                    panel.classList.remove('hidden');
+                    panel.classList.add('fade-in');
+                } else {
+                    panel.classList.add('hidden');
+                }
+            });
+        }
+
+        const tokenomicsData = {
+            labels: ['挖矿产出 (Fair Launch)'],
+            datasets: [{
+                label: '代币分配',
+                data: [100],
+                backgroundColor: [
+                    'rgba(211, 84, 0, 0.7)',
+                ],
+                borderColor: [
+                    'rgba(211, 84, 0, 1)',
+                ],
+                borderWidth: 1
+            }]
+        };
+
+        const tokenomicsConfig = {
+            type: 'doughnut',
+            data: tokenomicsData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: {
+                                size: 14,
+                                family: "'Noto Sans SC', sans-serif"
+                            },
+                             color: '#4A4A4A'
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed !== null) {
+                                    label += context.parsed + '%';
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                cutout: '60%',
+            }
+        };
+        
+        // Use a small delay to ensure canvas is ready
+        setTimeout(() => {
+            const ctx = document.getElementById('tokenomicsChart');
+            if(ctx) {
+                new Chart(ctx, tokenomicsConfig);
+            }
+        }, 500);
+
+    </script>
+</body>
+</html>

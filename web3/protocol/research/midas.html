@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Midas 互动式投资分析仪表盘</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Slate & Emerald -->
+    <!-- Application Structure Plan: A single-page dashboard structure is chosen over a linear report format to enhance user engagement and facilitate non-linear information discovery. The structure consists of a main navigation bar for direct access to key sections: 1. **Dashboard Overview**: Provides an immediate summary with key metrics and the final investment rating. 2. **Product Explorer**: An interactive, card-based section allowing users to filter and view details of each mToken, promoting active exploration. 3. **Interactive Risk Analysis**: A clickable visual diagram to dissect the complex, multi-layered counterparty risks, making abstract concepts tangible. 4. **Opportunity Guide**: A task-oriented, tabbed interface presenting investment strategies for different user profiles. 5. **Competitive Landscape**: A visual comparison using a dynamic chart and feature toggles. This user-centric, hub-and-spoke model is superior for usability as it empowers users to navigate directly to the information that aligns with their specific goals and interests, rather than forcing them through a sequential read. -->
+    <!-- Visualization & Content Choices: 1. **Key Metrics (TVL/Users)**: Displayed as large, dynamic numbers (HTML/CSS) for quick information absorption. Goal: Inform. 2. **mToken Products**: Interactive cards (HTML/CSS/JS) update a detail panel. This organizes complex product information effectively. Goal: Organize/Inform. 3. **Risk Network Diagram**: A clickable flowchart built with HTML/CSS/JS to visualize complex relationships. Goal: Relationships/Explain. 4. **Investment Opportunities Table**: A tabbed layout (HTML/CSS/JS) to segment strategies by user type. Goal: Organize/Compare. 5. **Competitor TVL Chart**: A Bar Chart (Chart.js/Canvas) is the ideal choice for comparing discrete quantitative values across entities. Goal: Compare. 6. **Competitor Feature Comparison**: Interactive buttons (HTML/CSS/JS) toggle textual information, allowing for focused, side-by-side analysis. Goal: Compare. This selection adheres to the NO SVG/Mermaid constraint and focuses on interactive elements that directly support the application's user-centric design. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { font-family: 'Noto Sans SC', sans-serif; background-color: #f8fafc; }
+        .chart-container { position: relative; width: 100%; max-width: 800px; margin-left: auto; margin-right: auto; height: 400px; max-height: 50vh; }
+        .section-hidden { display: none; }
+        .nav-item { transition: all 0.2s ease-in-out; }
+        .nav-item.active { color: #059669; border-bottom-color: #059669; }
+        .nav-item:not(.active) { border-bottom-color: transparent; }
+        .risk-node { transition: all 0.2s ease-in-out; cursor: pointer; }
+        .risk-node:hover { transform: scale(1.05); box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .product-card.active { border-color: #10b981; box-shadow: 0 0 0 2px #10b981; }
+        .opportunity-tab.active { background-color: #059669; color: white; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-40 shadow-sm">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-lg">M</div>
+                    <h1 class="text-xl font-bold text-slate-800">Midas 投资分析</h1>
+                </div>
+                <nav class="hidden md:flex items-center space-x-6">
+                    <a href="#overview" class="nav-item border-b-2 py-2 text-sm font-medium text-slate-600 hover:text-emerald-600 active">仪表盘</a>
+                    <a href="#products" class="nav-item border-b-2 py-2 text-sm font-medium text-slate-600 hover:text-emerald-600">产品矩阵</a>
+                    <a href="#risks" class="nav-item border-b-2 py-2 text-sm font-medium text-slate-600 hover:text-emerald-600">风险剖析</a>
+                    <a href="#opportunities" class="nav-item border-b-2 py-2 text-sm font-medium text-slate-600 hover:text-emerald-600">投资机会</a>
+                    <a href="#competitors" class="nav-item border-b-2 py-2 text-sm font-medium text-slate-600 hover:text-emerald-600">竞品分析</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-4 md:p-8">
+        
+        <!-- Section: Overview -->
+        <section id="overview" class="space-y-8">
+            <div class="text-center">
+                <h2 class="text-3xl font-bold text-slate-900 sm:text-4xl">投资评估仪表盘</h2>
+                <p class="mt-4 text-lg text-slate-600">Midas.app: 连接合规现实世界资产 (RWA) 与 DeFi 的桥梁</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-xl shadow-md border border-slate-200 text-center">
+                    <h3 class="text-sm font-medium text-slate-500">总锁定价值 (TVL)</h3>
+                    <p class="text-4xl font-bold text-emerald-600 mt-2">$1.86 亿</p>
+                    <p class="text-xs text-slate-400 mt-1">来源: DeFiLlama</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md border border-slate-200 text-center">
+                    <h3 class="text-sm font-medium text-slate-500">周活跃地址数</h3>
+                    <p class="text-4xl font-bold text-emerald-600 mt-2">445</p>
+                    <p class="text-xs text-slate-400 mt-1">RWA 赛道排名第二</p>
+                </div>
+                 <div class="bg-white p-6 rounded-xl shadow-md border border-slate-200 text-center">
+                    <h3 class="text-sm font-medium text-slate-500">最终投资评级</h3>
+                    <p class="text-4xl font-bold text-emerald-600 mt-2">建议</p>
+                    <p class="text-xs text-slate-400 mt-1">适合理解风险的成熟投资者</p>
+                </div>
+            </div>
+
+            <div class="bg-white p-8 rounded-xl shadow-lg border border-slate-200">
+                <h3 class="text-xl font-bold text-slate-900">核心投资论点</h3>
+                <p class="mt-4 text-slate-700 leading-relaxed">Midas 代表了 RWA 赛道中一条独特的、以 **欧洲市场合规** 为基石、以 **DeFi 可组合性** 为驱动力的发展路径。它在现实世界的法律框架内，最大限度地利用区块链技术来提高传统金融产品的效率、透明度和可及性。其核心投资价值在于，它成功地将传统金融世界所看重的 **信任与合规性**，与去中心化金融世界所追求的 **效率与创新性** 结合了起来。对于相信 RWA 是下一个重要叙事，并认为合规是机构和大规模采用前提的投资者来说，Midas 提供了一个逻辑自洽且执行力强的投资标的。</p>
+                <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-emerald-50 p-4 rounded-lg">
+                        <h4 class="font-bold text-emerald-800">核心优势 🟢</h4>
+                        <ul class="mt-2 list-disc list-inside text-sm text-emerald-700 space-y-1">
+                            <li>强大的欧洲监管护城河</li>
+                            <li>经验丰富的复合型团队</li>
+                            <li>高质量的机构合作伙伴 (如 BlackRock)</li>
+                            <li>创新的 DeFi 可组合性 (如 Morpho)</li>
+                            <li>清晰的战略定位与前瞻性 (AI 合作)</li>
+                        </ul>
+                    </div>
+                    <div class="bg-amber-50 p-4 rounded-lg">
+                        <h4 class="font-bold text-amber-800">核心风险 🟡</h4>
+                        <ul class="mt-2 list-disc list-inside text-sm text-amber-700 space-y-1">
+                            <li>高度的中心化风险 (管理员权限)</li>
+                            <li>复杂的交易对手风险网络</li>
+                            <li>复杂的法律结构风险 (次级债权)</li>
+                            <li>项目仍处早期，社区共识待建</li>
+                            <li>市场增长受限于司法管辖区</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Products -->
+        <section id="products" class="section-hidden space-y-8">
+            <div class="text-center">
+                <h2 class="text-3xl font-bold text-slate-900 sm:text-4xl">产品矩阵：流动性收益代币 (LYT)</h2>
+                <p class="mt-4 text-lg text-slate-600">点击下方卡片，探索 Midas 提供的多样化 RWA 产品。</p>
+            </div>
+            <div class="flex flex-wrap justify-center gap-4" id="product-selector">
+            </div>
+            <div id="product-details" class="bg-white p-8 rounded-xl shadow-lg border border-slate-200 min-h-[300px] transition-all duration-300">
+            </div>
+        </section>
+
+        <!-- Section: Risks -->
+        <section id="risks" class="section-hidden space-y-8">
+            <div class="text-center">
+                <h2 class="text-3xl font-bold text-slate-900 sm:text-4xl">交互式风险剖析</h2>
+                <p class="mt-4 text-lg text-slate-600">Midas 的风险是多层次的。点击下方关系图中的节点，深入了解每一层风险。</p>
+            </div>
+            <div class="lg:flex lg:space-x-8">
+                <div class="lg:w-1/2">
+                    <div class="bg-white p-6 rounded-xl shadow-md border border-slate-200">
+                        <h3 class="text-lg font-bold text-center text-slate-800 mb-4">风险关系图</h3>
+                        <div class="space-y-4">
+                            <div class="risk-node text-center p-4 rounded-lg border-2 border-slate-300 bg-slate-50" data-risk="investor">
+                                <span class="font-bold">您 (投资者)</span>
+                            </div>
+                            <div class="flex justify-center"><div class="h-6 w-px bg-slate-300"></div></div>
+                            <div class="risk-node text-center p-4 rounded-lg border-2 border-emerald-300 bg-emerald-50" data-risk="midas">
+                                <span class="font-bold">Midas 平台</span>
+                                <p class="text-xs text-slate-500">发行方 & 技术提供商</p>
+                            </div>
+                            <div class="flex justify-center"><div class="h-6 w-px bg-slate-300"></div></div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="risk-node text-center p-4 rounded-lg border-2 border-amber-300 bg-amber-50" data-risk="partners">
+                                    <span class="font-bold">资产管理伙伴</span>
+                                    <p class="text-xs text-slate-500">Fasanara, Edge Capital 等</p>
+                                </div>
+                                <div class="risk-node text-center p-4 rounded-lg border-2 border-sky-300 bg-sky-50" data-risk="custodian">
+                                    <span class="font-bold">托管 & DeFi</span>
+                                    <p class="text-xs text-slate-500">Maerki Baumann, Morpho 等</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="risk-details" class="lg:w-1/2 mt-8 lg:mt-0 bg-white p-8 rounded-xl shadow-lg border border-slate-200">
+                    <!-- Details will be populated here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Opportunities -->
+        <section id="opportunities" class="section-hidden space-y-8">
+            <div class="text-center">
+                <h2 class="text-3xl font-bold text-slate-900 sm:text-4xl">投资机会与策略</h2>
+                <p class="mt-4 text-lg text-slate-600">根据您的风险偏好和技术背景，选择适合您的参与方式。</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
+                <div class="flex border-b border-slate-200">
+                    <button class="opportunity-tab flex-1 p-4 text-sm font-medium text-slate-600 hover:bg-slate-50 active" data-opportunity="passive">被动收益</button>
+                    <button class="opportunity-tab flex-1 p-4 text-sm font-medium text-slate-600 hover:bg-slate-50" data-opportunity="advanced">高阶 DeFi</button>
+                    <button class="opportunity-tab flex-1 p-4 text-sm font-medium text-slate-600 hover:bg-slate-50" data-opportunity="early">早期参与</button>
+                    <button class="opportunity-tab flex-1 p-4 text-sm font-medium text-slate-600 hover:bg-slate-50" data-opportunity="developer">生态共建</button>
+                </div>
+                <div id="opportunity-details" class="p-8">
+                     <!-- Details will be populated here -->
+                </div>
+            </div>
+             <div class="bg-white p-8 rounded-xl shadow-lg border border-slate-200">
+                 <h3 class="text-xl font-bold text-slate-900 mb-4">投资机会综合对比</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-slate-500">
+                        <thead class="text-xs text-slate-700 uppercase bg-slate-100">
+                            <tr>
+                                <th scope="col" class="px-6 py-3">机会类型</th>
+                                <th scope="col" class="px-6 py-3">目标投资者</th>
+                                <th scope="col" class="px-6 py-3">预期收益/APY</th>
+                                <th scope="col" class="px-6 py-3">核心风险</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="bg-white border-b">
+                                <td class="px-6 py-4 font-medium text-slate-900">被动收益 (mTBILL)</td>
+                                <td class="px-6 py-4">风险规避型</td>
+                                <td class="px-6 py-4 font-semibold text-emerald-600">~4.06%</td>
+                                <td class="px-6 py-4">平台/托管行交易对手风险</td>
+                            </tr>
+                            <tr class="bg-slate-50 border-b">
+                                <td class="px-6 py-4 font-medium text-slate-900">高阶 DeFi (杠杆挖矿)</td>
+                                <td class="px-6 py-4">成熟 DeFi 投资者</td>
+                                <td class="px-6 py-4 font-semibold text-emerald-600">高 (可变)</td>
+                                <td class="px-6 py-4">清算风险, 智能合约风险</td>
+                            </tr>
+                            <tr class="bg-white border-b">
+                                <td class="px-6 py-4 font-medium text-slate-900">早期参与 (空投)</td>
+                                <td class="px-6 py-4">所有用户</td>
+                                <td class="px-6 py-4 font-semibold text-emerald-600">不确定</td>
+                                <td class="px-6 py-4">时间成本, 不发币风险</td>
+                            </tr>
+                             <tr class="bg-slate-50">
+                                <td class="px-6 py-4 font-medium text-slate-900">生态共建 (开发)</td>
+                                <td class="px-6 py-4">开发者</td>
+                                <td class="px-6 py-4 font-semibold text-emerald-600">极高 (可变)</td>
+                                <td class="px-6 py-4">开发成本, 市场竞争</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Competitors -->
+        <section id="competitors" class="section-hidden space-y-8">
+            <div class="text-center">
+                <h2 class="text-3xl font-bold text-slate-900 sm:text-4xl">竞争格局分析</h2>
+                <p class="mt-4 text-lg text-slate-600">Midas 在 RWA 赛道中的市场地位如何？</p>
+            </div>
+            <div class="bg-white p-8 rounded-xl shadow-lg border border-slate-200">
+                <h3 class="text-xl font-bold text-slate-900 mb-2">主流 RWA 协议 TVL 对比</h3>
+                <p class="text-sm text-slate-500 mb-6">Midas 在 TVL 规模上与头部项目存在差距，但在细分市场通过差异化策略竞争。</p>
+                <div class="chart-container">
+                    <canvas id="competitorChart"></canvas>
+                </div>
+            </div>
+            <div class="bg-white p-8 rounded-xl shadow-lg border border-slate-200">
+                <h3 class="text-xl font-bold text-slate-900 mb-4">差异化优势分析</h3>
+                <p class="text-sm text-slate-500 mb-6">面对 Ondo Finance 等强大对手，Midas 凭借欧洲合规和深度 DeFi 集成开辟了独特的市场空间。</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="border border-emerald-200 bg-emerald-50 p-6 rounded-lg">
+                        <h4 class="font-bold text-emerald-800">欧洲零售市场合规准入</h4>
+                        <p class="mt-2 text-sm text-emerald-700">通过欧盟招股说明书，向散户提供无最低投资门槛的产品，这是与主要面向合格投资者的 Ondo 的核心区别。</p>
+                    </div>
+                     <div class="border border-emerald-200 bg-emerald-50 p-6 rounded-lg">
+                        <h4 class="font-bold text-emerald-800">深度 DeFi 可组合性</h4>
+                        <p class="mt-2 text-sm text-emerald-700">将 RWA 代币打造为 DeFi 世界的基础“积木”，通过与 Morpho 的整合和激励，鼓励主动的链上活动，而非静态持有。</p>
+                    </div>
+                     <div class="border border-emerald-200 bg-emerald-50 p-6 rounded-lg">
+                        <h4 class="font-bold text-emerald-800">无治理代币的灵活性</h4>
+                        <p class="mt-2 text-sm text-emerald-700">项目早期，中心化团队能够快速决策和灵活调整战略，特别是在应对复杂的监管和机构合作时。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-center py-8">
+        <p class="text-sm text-slate-500">本应用根据提供的投资报告生成，仅供参考，不构成任何投资建议。</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            const sections = document.querySelectorAll('main > section');
+            const navItems = document.querySelectorAll('header nav a');
+
+            const productData = {
+                mtbill: {
+                    name: "mTBILL",
+                    apy: "≈4.06%",
+                    description: "追踪短期美国国库券收益的代币化凭证。其底层资产主要为 BlackRock 管理的短期美国国债 ETF，为投资者提供了一个在链上获取接近“无风险利率”的稳定收益渠道。",
+                    partners: "BlackRock, SuperState",
+                    riskLevel: "低",
+                    color: "sky"
+                },
+                mfone: {
+                    name: "mF-ONE",
+                    apy: "≈9.85%",
+                    description: "追踪由机构资产管理公司 Fasanara Capital 运营的 F-ONE 策略。这是一个投资于私人信贷、应收账款等多元化资产的基金。目前仅对合格投资者开放。",
+                    partners: "Fasanara Capital",
+                    riskLevel: "高",
+                    color: "amber"
+                },
+                medge: {
+                    name: "mEDGE",
+                    apy: "≈8.50%",
+                    description: "与市场中性对冲基金 Edge Capital 合作推出的稳定币策略代币。采用 delta 中性基差交易策略，旨在提供与市场方向无关的收益。",
+                    partners: "Edge Capital",
+                    riskLevel: "中",
+                    color: "indigo"
+                },
+                mbtc: {
+                    name: "mBTC",
+                    apy: "BTC 计价",
+                    description: "旨在为持有者提供以 BTC 计价的收益，满足了加密原生投资者在熊市中增持比特币的需求。与传统包装 BTC 赚取稳定币收益的模式不同。",
+                    partners: "领先的主要经纪商",
+                    riskLevel: "中",
+                    color: "orange"
+                }
+            };
+            
+            const riskDetailsData = {
+                investor: {
+                    title: "您作为投资者面临的最终风险",
+                    content: "作为投资者，您位于整个风险链的末端。Midas 平台的任何一层风险，无论是技术、法律、交易对手还是市场风险，最终都可能传导至您的投资。您购买的是一种复杂的结构化金融产品，其安全性依赖于整个生态系统所有参与者的稳健运作。因此，在投资前进行全面的尽职调查至关重要。",
+                    color: "slate"
+                },
+                midas: {
+                    title: "Midas 平台风险 (发行方 & 技术)",
+                    content: "这是核心的中心化风险所在。Hacken 的审计报告揭示，尽管代码质量高，但团队保留了强大的管理员权限，例如 **可以单方面销毁用户代币**。这虽然可能是为了满足现实世界的法律要求（如执行制裁），但它从根本上违背了 DeFi 的“资产所有权不可剥夺”原则。对 Midas 的投资在很大程度上是对其团队审慎、负责地使用这些权限的信任投票。",
+                    color: "emerald"
+                },
+                partners: {
+                    title: "资产管理伙伴风险 (业绩 & 信用)",
+                    content: "每个 mToken 的收益和风险都直接与其背后的资产管理伙伴挂钩。例如，投资 mF-ONE 的风险与 Fasanara Capital 的投资表现和信用状况直接相关。如果 Fasanara 的私人信贷基金出现大规模违约，mF-ONE 的净值将受严重影响。投资者需要对每个产品的管理人进行独立的尽职调查。",
+                    color: "amber"
+                },
+                custodian: {
+                    title: "托管行 & DeFi 协议风险",
+                    content: "这是一个双重风险：1. **传统金融对手方风险**: 底层资产由瑞士的 Maerki Baumann & Co. AG 银行托管。该银行的任何运营或财务问题都可能影响资产安全。 2. **DeFi 协议风险**: 将 mTokens 用于 Morpho 等 DeFi 协议会引入新的智能合约风险。如果 Morpho 协议被攻击，作为抵押品的 mTBILL 可能会遭受损失。",
+                    color: "sky"
+                }
+            };
+
+            const opportunityData = {
+                 passive: {
+                    title: "被动收益：稳健投资者的选择",
+                    content: `
+                        <p class="text-slate-600 mb-4">这是最直接、最简单的参与方式，适合寻求稳定、被动链上收益的投资者。您可以根据自身的风险承受能力，选择不同的 mToken 产品。</p>
+                        <div class="space-y-4">
+                            <div class="p-4 border rounded-lg bg-slate-50">
+                                <h4 class="font-bold text-slate-800">低风险稳定收益 (mTBILL)</h4>
+                                <p class="text-sm text-slate-600 mt-1">购买并持有 mTBILL 代币，其价值与短期美国国库券 ETF 挂钩，提供约 4.06% 的 APY。适合希望将资金停泊在比稳定币收益更高、风险极低的合规资产上的风险规避型投资者。</p>
+                            </div>
+                            <div class="p-4 border rounded-lg bg-slate-50">
+                                <h4 class="font-bold text-slate-800">中高风险多元化收益 (mF-ONE, mEDGE 等)</h4>
+                                <p class="text-sm text-slate-600 mt-1">这些代币的收益来源于背后专业资管伙伴执行的更复杂的策略 (如私人信贷、市场中性交易)，提供约 8.50% - 9.85% 的 APY。适合能承受更高风险、寻求超越国债收益的投资者 (可能存在合格投资者门槛)。</p>
+                            </div>
+                        </div>
+                    `
+                },
+                advanced: {
+                    title: "高阶 DeFi：杠杆和对冲收益农场",
+                    content: `
+                        <p class="text-slate-600 mb-4">对于熟悉 DeFi 操作的成熟投资者，mTBILL 可以作为高效的“乐高积木”，在 Morpho 等协议中构建高收益策略。mTBILL 在 Morpho 上的清算 LTV 高达 96.5%，极大地提高了资本效率。</p>
+                        <h4 class="font-bold text-slate-800 mb-2">策略构想：杠杆收益农场</h4>
+                        <div class="text-sm text-slate-600 p-4 border rounded-lg bg-slate-50 space-y-2">
+                           <p>1. <strong>买入 mTBILL</strong> &rarr; 开始赚取 ~4.06% 基础国债收益。</p>
+                           <p>2. <strong>存入 Morpho</strong> &rarr; 将 mTBILL 作为高质量抵押品。</p>
+                           <p>3. <strong>借出 USDC</strong> &rarr; 利用高 LTV 借出稳定币。</p>
+                           <p>4. <strong>循环再投资</strong> &rarr; 将借出的 USDC 换成更多 mTBILL，重复存入，放大收益。</p>
+                        </div>
+                        <div class="mt-4 p-4 border border-amber-300 bg-amber-50 rounded-lg">
+                           <h5 class="font-bold text-amber-800">核心风险提醒</h5>
+                           <p class="text-sm text-amber-700 mt-1">该策略的核心风险是<strong>清算风险</strong>。尽管 mTBILL 价格稳定，但利率波动或轻微脱钩都可能导致头寸被清算。同时，您也承担着 Midas 和 Morpho 双方的智能合约风险。</p>
+                        </div>
+                    `
+                },
+                early: {
+                    title: "早期参与：空投和生态系统激励",
+                    content: `
+                        <p class="text-slate-600 mb-4">参与项目早期的空投和激励活动，是低成本获取未来潜在价值的有效途径。考虑到 Midas 目前没有治理代币，但其性质强烈暗示了未来走向去中心化治理的可能性，早期交互至关重要。</p>
+                        <div class="space-y-4">
+                            <div class="p-4 border rounded-lg bg-slate-50">
+                                <h4 class="font-bold text-slate-800">Telegram Bot 空投</h4>
+                                <p class="text-sm text-slate-600 mt-1">Midas 正在进行一个基于 Telegram Bot 的空投活动，用户可以通过完成社交任务赚取“GM”代币。这些代币很可能在未来与 Midas 的治理代币挂钩。</p>
+                            </div>
+                            <div class="p-4 border rounded-lg bg-slate-50">
+                                <h4 class="font-bold text-slate-800">DeFi 协议激励</h4>
+                                <p class="text-sm text-slate-600 mt-1">在 Morpho 等协议中使用 Midas 代币的用户可以获得额外的流动性激励（如 MORPHO 代币）。这不仅能增加收益，还能在链上留下深度交互记录，可能增加未来空投权重。</p>
+                            </div>
+                        </div>
+                    `
+                },
+                 developer: {
+                    title: "生态共建：开发者的前沿机会",
+                    content: `
+                         <p class="text-slate-600 mb-4">对于具备开发背景的投资者，Midas 提供了超越单纯金融投资的参与机会，即成为其生态系统的建设者，创造主动收入流。</p>
+                        <div class="space-y-4">
+                            <div class="p-4 border rounded-lg bg-slate-50">
+                                <h4 class="font-bold text-slate-800">利用现有基础设施 (API/SDK)</h4>
+                                <p class="text-sm text-slate-600 mt-1">利用 Midas 和 Morpho 提供的 API/SDK，您可以构建第三方的分析仪表盘、头寸管理工具或自动化策略机器人。</p>
+                            </div>
+                            <div class="p-4 border rounded-lg bg-slate-50">
+                                <h4 class="font-bold text-slate-800">探索前沿机会 (与 0G 合作)</h4>
+                                <p class="text-sm text-slate-600 mt-1">Midas 与 AI 区块链 0G 的战略合作打开了全新的想象空间。开发者可以利用 Midas 的 RWA 作为基础，结合 0G 的 AI 计算能力，创造全新的 DeFi 应用，例如：</p>
+                                <ul class="list-disc list-inside text-sm text-slate-600 mt-2 ml-4">
+                                    <li><strong>智能金库 (Smart Vaults)</strong>: 根据 AI 信号自动调整资产配置或杠杆率。</li>
+                                    <li><strong>自动化代理 (Agents)</strong>: 代表用户执行复杂策略并进行风险管理。</li>
+                                </ul>
+                            </div>
+                        </div>
+                    `
+                }
+            }
+            
+            function showSection(id) {
+                sections.forEach(section => {
+                    if (section.id === id) {
+                        section.classList.remove('section-hidden');
+                    } else {
+                        section.classList.add('section-hidden');
+                    }
+                });
+                navItems.forEach(item => {
+                    if (item.getAttribute('href') === `#${id}`) {
+                        item.classList.add('active');
+                    } else {
+                        item.classList.remove('active');
+                    }
+                });
+                window.scrollTo(0, 0);
+            }
+
+            navItems.forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const sectionId = item.getAttribute('href').substring(1);
+                    showSection(sectionId);
+                    history.pushState(null, '', `?section=${sectionId}`);
+                });
+            });
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const initialSection = urlParams.get('section') || 'overview';
+            showSection(initialSection);
+
+            const productSelector = document.getElementById('product-selector');
+            const productDetailsContainer = document.getElementById('product-details');
+
+            function displayProductDetails(productId) {
+                const product = productData[productId];
+                productDetailsContainer.innerHTML = `
+                    <div class="flex flex-col md:flex-row gap-8">
+                        <div class="md:w-1/3 text-center">
+                            <h3 class="text-3xl font-bold text-${product.color}-600">${product.name}</h3>
+                            <p class="mt-2 text-lg font-semibold text-slate-700">预期 APY</p>
+                            <p class="text-5xl font-bold text-slate-900">${product.apy}</p>
+                            <div class="mt-4 inline-block px-4 py-1.5 text-sm font-medium text-${product.color}-800 bg-${product.color}-100 rounded-full">
+                                风险等级: ${product.riskLevel}
+                            </div>
+                        </div>
+                        <div class="md:w-2/3">
+                            <h4 class="text-lg font-bold text-slate-800">产品描述</h4>
+                            <p class="mt-2 text-slate-600">${product.description}</p>
+                            <h4 class="mt-4 text-lg font-bold text-slate-800">主要合作伙伴</h4>
+                            <p class="mt-2 text-slate-600">${product.partners}</p>
+                        </div>
+                    </div>
+                `;
+
+                document.querySelectorAll('.product-card').forEach(card => {
+                    card.classList.remove('active');
+                    if (card.dataset.product === productId) {
+                        card.classList.add('active');
+                    }
+                });
+            }
+
+            Object.keys(productData).forEach(key => {
+                const product = productData[key];
+                const card = document.createElement('button');
+                card.className = `product-card p-4 rounded-lg border-2 border-transparent hover:border-${product.color}-500 transition-all duration-200 bg-white shadow-sm w-32 text-center`;
+                card.dataset.product = key;
+                card.innerHTML = `
+                    <div class="text-2xl font-bold text-${product.color}-600">${product.name}</div>
+                    <div class="text-xs text-slate-500 mt-1">${product.riskLevel}风险</div>
+                `;
+                card.addEventListener('click', () => displayProductDetails(key));
+                productSelector.appendChild(card);
+            });
+            
+            displayProductDetails('mtbill');
+
+            const riskNodes = document.querySelectorAll('.risk-node');
+            const riskDetailsContainer = document.getElementById('risk-details');
+
+            function displayRiskDetails(riskId) {
+                const details = riskDetailsData[riskId];
+                riskDetailsContainer.innerHTML = `
+                    <h3 class="text-xl font-bold text-${details.color}-800 bg-${details.color}-100 p-3 rounded-lg">${details.title}</h3>
+                    <p class="mt-4 text-slate-700 leading-relaxed">${details.content.replace(/\*\*(.*?)\*\*/g, '<strong class="text-slate-900">$1</strong>')}</p>
+                `;
+                 riskNodes.forEach(node => {
+                    if (node.dataset.risk === riskId) {
+                        node.classList.add('ring-2', `ring-${details.color}-500`);
+                    } else {
+                        node.classList.remove('ring-2');
+                        Object.keys(riskDetailsData).forEach(k => node.classList.remove(`ring-${riskDetailsData[k].color}-500`));
+                    }
+                });
+            }
+
+            riskNodes.forEach(node => {
+                node.addEventListener('click', () => displayRiskDetails(node.dataset.risk));
+            });
+
+            displayRiskDetails('midas');
+
+
+            const opportunityTabs = document.querySelectorAll('.opportunity-tab');
+            const opportunityDetailsContainer = document.getElementById('opportunity-details');
+            
+            function displayOpportunityDetails(opportunityId) {
+                opportunityDetailsContainer.innerHTML = opportunityData[opportunityId].content;
+                opportunityTabs.forEach(tab => {
+                    tab.classList.remove('active');
+                    if (tab.dataset.opportunity === opportunityId) {
+                        tab.classList.add('active');
+                    }
+                });
+            }
+
+            opportunityTabs.forEach(tab => {
+                tab.addEventListener('click', () => displayOpportunityDetails(tab.dataset.opportunity));
+            });
+
+            displayOpportunityDetails('passive');
+
+            const competitorChartCtx = document.getElementById('competitorChart').getContext('2d');
+            new Chart(competitorChartCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Ondo Finance', 'Franklin Templeton (BENJI)', 'Centrifuge', 'Midas'],
+                    datasets: [{
+                        label: '总锁定价值 (TVL) - 亿美元',
+                        data: [13.9, 7.98, 4.47, 1.86],
+                        backgroundColor: [
+                            'rgba(59, 130, 246, 0.6)',
+                            'rgba(16, 185, 129, 0.6)',
+                            'rgba(139, 92, 246, 0.6)',
+                            'rgba(239, 68, 68, 0.6)'
+                        ],
+                        borderColor: [
+                            'rgba(59, 130, 246, 1)',
+                            'rgba(16, 185, 129, 1)',
+                            'rgba(139, 92, 246, 1)',
+                            'rgba(239, 68, 68, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'TVL (亿美元)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += '$' + context.parsed.y + ' 亿';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+        });
+    </script>
+</body>
+</html>

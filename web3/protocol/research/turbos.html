@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Turbos Finance - 交互式投资分析报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Chosen Palette: Calm Finance -->
+    <!-- Application Structure Plan: A tab-based single-page application designed for guided investor decision-making. The structure prioritizes clarity and actionability over mirroring the source report's linear format. The flow is: 1. Dashboard (Key metrics & final verdict upfront), 2. Deep Dive (Project fundamentals, tech, team), 3. Market Data (Visual performance analysis), 4. Risk Analysis (Focused view on critical risks like tokenomics), and 5. Investment Strategies (Interactive, actionable guide). This structure allows users to quickly grasp the conclusion, then explore details based on their interests, which is a more effective UX for complex financial analysis. -->
+    <!-- Visualization & Content Choices: 
+        - Key Metrics (Dashboard): Goal: Inform. Method: Styled HTML cards. Justification: Quick, scannable overview of the project's health.
+        - Investment Rating (Dashboard): Goal: Inform. Method: Color-coded HTML components. Justification: Immediately communicates the final assessment.
+        - Tokenomics (Risk Analysis): Goal: Warn. Method: Chart.js Doughnut Chart. Justification: Visually powerful way to highlight the 50% unknown token allocation, a major risk factor. Library: Chart.js.
+        - Competitor Comparison (Market Data): Goal: Compare. Method: Chart.js Bar Chart. Justification: Effectively visualizes Turbos' key strength - its high Volume-to-TVL ratio compared to rivals. Library: Chart.js.
+        - Security Timeline (Risk Analysis): Goal: Organize. Method: Styled HTML/CSS vertical timeline. Justification: Clearly presents historical events and the team's response, building a narrative of their security maturity.
+        - Investment Strategies (Strategies Section): Goal: Guide Action. Method: Interactive HTML tabs. Justification: Transforms a static table into an engaging component, allowing users to focus on one strategy at a time.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+            background-color: #f8f9fa;
+            color: #212529;
+        }
+        .tab-active {
+            border-color: #0d6efd;
+            color: #0d6efd;
+            background-color: #e7f1ff;
+        }
+        .tab-inactive {
+            border-color: transparent;
+            color: #6c757d;
+        }
+        .content-section {
+            display: none;
+        }
+        .content-section.active {
+            display: block;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .strategy-tab-active {
+            background-color: #198754;
+            color: white;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="container mx-auto p-4 md:p-8">
+        
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-800">Turbos Finance 投资分析报告</h1>
+            <p class="text-gray-600 mt-2">一个交互式的深度尽职调查仪表盘</p>
+        </header>
+
+        <nav class="mb-8 bg-white rounded-lg shadow-sm p-2 flex flex-wrap justify-center gap-2">
+            <button data-tab="dashboard" class="nav-tab tab-active text-sm md:text-base font-medium py-2 px-4 rounded-md border-b-2 transition-colors duration-300">仪表盘</button>
+            <button data-tab="deep-dive" class="nav-tab tab-inactive text-sm md:text-base font-medium py-2 px-4 rounded-md border-b-2 transition-colors duration-300">项目深度</button>
+            <button data-tab="market-data" class="nav-tab tab-inactive text-sm md:text-base font-medium py-2 px-4 rounded-md border-b-2 transition-colors duration-300">市场与数据</button>
+            <button data-tab="risk-analysis" class="nav-tab tab-inactive text-sm md:text-base font-medium py-2 px-4 rounded-md border-b-2 transition-colors duration-300">风险分析</button>
+            <button data-tab="investment-strategies" class="nav-tab tab-inactive text-sm md:text-base font-medium py-2 px-4 rounded-md border-b-2 transition-colors duration-300">投资策略</button>
+        </nav>
+
+        <main>
+            <section id="dashboard" class="content-section active">
+                <div class="bg-white p-6 rounded-lg shadow-md animate-fade-in">
+                    <h2 class="text-2xl font-bold mb-4">分析概要与投资评级</h2>
+                    <p class="text-gray-700 mb-6">本节提供对 Turbos Finance 的核心评估结论和关键数据指标。我们的目标是让您在60秒内了解该项目的基本面、优势、核心风险以及最终的投资建议，为您的决策提供一个高层级的指引。</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-center">
+                        <div class="bg-blue-50 p-4 rounded-lg">
+                            <p class="text-sm text-blue-700 font-semibold">总锁仓价值 (TVL)</p>
+                            <p class="text-2xl font-bold text-blue-900">$21.57 M</p>
+                        </div>
+                        <div class="bg-green-50 p-4 rounded-lg">
+                            <p class="text-sm text-green-700 font-semibold">24小时交易量</p>
+                            <p class="text-2xl font-bold text-green-900">~$24 M</p>
+                        </div>
+                        <div class="bg-purple-50 p-4 rounded-lg">
+                            <p class="text-sm text-purple-700 font-semibold">流通市值</p>
+                            <p class="text-2xl font-bold text-purple-900">~$8 M</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div class="border border-green-200 bg-green-50 p-4 rounded-lg">
+                            <h3 class="text-lg font-semibold text-green-800 mb-2 flex items-center">
+                                <span class="text-2xl mr-2">👍</span> 核心优势 (Pros)
+                            </h3>
+                            <ul class="list-disc list-inside text-green-700 space-y-1">
+                                <li>顶级机构背书 (Mysten Labs, Jump Crypto)</li>
+                                <li>卓越的资本效率 (交易量/TVL > 1)</li>
+                                <li>领先的技术创新 (自动化金库)</li>
+                                <li>成熟的安全应急响应能力</li>
+                            </ul>
+                        </div>
+                        <div class="border border-red-200 bg-red-50 p-4 rounded-lg">
+                            <h3 class="text-lg font-semibold text-red-800 mb-2 flex items-center">
+                                <span class="text-2xl mr-2">👎</span> 核心风险 (Cons)
+                            </h3>
+                            <ul class="list-disc list-inside text-red-700 space-y-1">
+                                <li>代币经济学极不透明 (50%分配未知)</li>
+                                <li>团队/投资者代币无公开锁仓计划</li>
+                                <li>早期曾发生安全事件</li>
+                                <li>协议收入数据不公开</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="text-xl font-bold mb-3">最终投资评级</h3>
+                        <div class="space-y-3">
+                            <div class="p-4 rounded-lg border-l-4 border-green-500 bg-gray-50">
+                                <p class="font-bold text-green-700">开发者参与：强烈建议</p>
+                                <p class="text-sm text-gray-600">利用SDK构建套利机器人或策略金库，是风险最低、潜在回报最高的Alpha策略。</p>
+                            </div>
+                            <div class="p-4 rounded-lg border-l-4 border-blue-500 bg-gray-50">
+                                <p class="font-bold text-blue-700">收益耕作 (LP)：建议</p>
+                                <p class="text-sm text-gray-600">直接分享协议高交易量带来的费用收入，自动化金库降低了参与门槛。</p>
+                            </div>
+                            <div class="p-4 rounded-lg border-l-4 border-yellow-500 bg-gray-50">
+                                <p class="font-bold text-yellow-700">直接购买代币 ($TURBOS)：中立</p>
+                                <p class="text-sm text-gray-600">由于代币经济学存在巨大不确定性，潜在抛压风险极高，不适合稳健型投资者。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="deep-dive" class="content-section">
+                <div class="bg-white p-6 rounded-lg shadow-md animate-fade-in">
+                    <h2 class="text-2xl font-bold mb-4">项目深度剖析</h2>
+                    <p class="text-gray-700 mb-6">本节将深入探讨 Turbos Finance 的核心价值。我们将解析其技术创新、产品矩阵，并介绍其背后的强大团队与顶级投资者。理解这些基本面是评估其长期潜力的关键。</p>
+                    
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="text-xl font-semibold mb-2 text-gray-800">技术与创新</h3>
+                            <p class="text-gray-600 mb-3">Turbos 的核心是构建于 Sui 区块链之上的**集中流动性做市商 (CLMM)**。与传统 AMM 不同，它允许流动性提供者将资金集中在特定价格区间，从而极大地提高了资本效率。其关键创新包括：</p>
+                            <ul class="list-disc list-inside space-y-2 text-gray-700">
+                                <li><strong>自动化复盘金库</strong>：为普通用户解决了 CLMM 的复杂性问题，实现“一键式”流动性挖矿，并自动复投收益。</li>
+                                <li><strong>隔离头寸模型</strong>：为每个LP提供独立的资金管理，增强了对价格操纵和抢跑攻击的防护。</li>
+                                <li><strong>与Sui深度集成</strong>：利用 Sui 的对象模型和可编程交易块 (PTBs) 特性，实现了低 Gas、高效率的复杂交易，优化了用户体验。</li>
+                                <li><strong>智能路由</strong>：Sui 上首创，简化了跨链资产的兑换流程，提升了资本流入效率。</li>
+                            </ul>
+                        </div>
+
+                        <div>
+                            <h3 class="text-xl font-semibold mb-2 text-gray-800">团队与投资者</h3>
+                            <p class="text-gray-600 mb-3">一个项目的成败，人是关键。Turbos 由 **Ted Shao** 领导，并获得了加密领域最顶级的战略支持，这为其信誉和资源提供了坚实保障。</p>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="bg-gray-100 p-4 rounded-lg">
+                                    <h4 class="font-bold">Mysten Labs</h4>
+                                    <p class="text-sm text-gray-600">Sui 区块链的缔造者。他们的投资意味着 Turbos 是 Sui 生态的“亲儿子”，能获得最直接的技术和生态支持。</p>
+                                </div>
+                                <div class="bg-gray-100 p-4 rounded-lg">
+                                    <h4 class="font-bold">Jump Crypto</h4>
+                                    <p class="text-sm text-gray-600">全球顶级的量化交易和做市商。他们的参与确保了协议在启动初期的流动性深度，并验证了其交易架构的潜力。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="market-data" class="content-section">
+                <div class="bg-white p-6 rounded-lg shadow-md animate-fade-in">
+                    <h2 class="text-2xl font-bold mb-4">市场表现与数据对比</h2>
+                    <p class="text-gray-700 mb-6">数据是检验项目实力的试金石。本节将通过图表直观展示 Turbos 的市场表现，并将其与主要竞争对手进行对比。我们将重点关注其独特的资本效率优势，这是其核心竞争力的体现。</p>
+
+                    <div class="mb-8">
+                        <h3 class="text-xl font-semibold text-center mb-2">资本效率对比 (交易量 vs TVL)</h3>
+                        <p class="text-center text-sm text-gray-600 mb-4">下图清晰地展示了 Turbos 的核心优势：以相对较小的TVL（总锁仓价值）撬动了极高的交易量，其“交易量/TVL”比率远超竞争对手，证明了其CLMM模型的卓越效率。</p>
+                        <div class="chart-container">
+                            <canvas id="competitorChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h3 class="text-xl font-semibold text-center mb-2">生态系统角色</h3>
+                        <p class="text-center text-sm text-gray-600 mb-4">Turbos 在 Sui 生态中推行一种双轨策略，既是服务于核心资产的精密DeFi基础设施，也是拥抱高风险投机（如Meme币）的交易中心。这种策略旨在通过高频交易的费用收入反哺核心流动性，形成增长飞轮。</p>
+                         <div class="flex justify-center items-center space-x-4 p-4 bg-gray-50 rounded-lg">
+                            <div class="text-center">
+                                <p class="text-2xl">🏦</p>
+                                <p class="font-semibold">核心基础设施</p>
+                                <p class="text-xs text-gray-500">SUI/USDC流动性</p>
+                            </div>
+                            <div class="text-5xl font-thin text-gray-300">+</div>
+                            <div class="text-center">
+                                <p class="text-2xl">🚀</p>
+                                <p class="font-semibold">Degen & Meme 中心</p>
+                                <p class="text-xs text-gray-500">高频交易费用</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="risk-analysis" class="content-section">
+                <div class="bg-white p-6 rounded-lg shadow-md animate-fade-in">
+                    <h2 class="text-2xl font-bold mb-4 text-red-600">关键风险分析</h2>
+                    <p class="text-gray-700 mb-6">识别和理解风险是成功投资的前提。本节将聚焦于 Turbos Finance 面临的最严峻挑战：极其不透明的代币经济学和历史安全事件。这些是任何潜在投资者都必须严肃评估的因素。</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div>
+                            <h3 class="text-xl font-semibold text-center mb-2">代币经济学：一个巨大的“黑箱”</h3>
+                            <p class="text-center text-sm text-gray-600 mb-4">下图揭示了 $TURBOS 代币分配的核心问题。高达50%的代币用途未公开，且团队/投资人份额无锁仓计划。这构成了无法预测的巨大潜在抛压，是投资该代币的最大风险。</p>
+                            <div class="chart-container h-64 md:h-72">
+                                <canvas id="tokenomicsChart"></canvas>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-semibold text-center mb-2">安全事件时间轴</h3>
+                            <p class="text-center text-sm text-gray-600 mb-4">Turbos 的安全记录喜忧参半。虽然早期出现过漏洞，但其在应对全行业危机时表现出的主动性和透明度，展示了其安全文化的成熟。</p>
+                            <div class="relative border-l-2 border-gray-200 pl-6 space-y-8">
+                                <div class="relative">
+                                    <div class="absolute -left-[35px] top-1 h-4 w-4 rounded-full bg-red-500"></div>
+                                    <p class="font-semibold">2023年7月: Multiswap 事件 (负面)</p>
+                                    <p class="text-sm text-gray-600">团队主动发现并修复了一个逻辑漏洞，但暴露出上线初期代码存在缺陷。</p>
+                                </div>
+                                <div class="relative">
+                                    <div class="absolute -left-[35px] top-1 h-4 w-4 rounded-full bg-green-500"></div>
+                                    <p class="font-semibold">2025年5月: 应对 Cetus 漏洞 (正面)</p>
+                                    <p class="text-sm text-gray-600">在竞争对手遭攻击后，团队迅速、主动地联系多方审计进行交叉验证，并向社区透明沟通，表现出高度的责任感和成熟的应急能力。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="investment-strategies" class="content-section">
+                <div class="bg-white p-6 rounded-lg shadow-md animate-fade-in">
+                    <h2 class="text-2xl font-bold mb-4">可行性投资策略</h2>
+                    <p class="text-gray-700 mb-6">本节为不同类型的投资者提供了具体、可操作的参与策略。我们分析了从直接购买代币到利用技术优势进行开发的各种路径，并评估了其潜在收益与风险。请点击下方标签以探索每个策略的详情。</p>
+                    
+                    <div class="flex flex-wrap gap-2 mb-6">
+                        <button class="strategy-tab strategy-tab-active p-3 rounded-lg text-sm font-medium transition" data-strategy="developer">开发者参与</button>
+                        <button class="strategy-tab bg-gray-200 text-gray-700 p-3 rounded-lg text-sm font-medium transition" data-strategy="lp">收益耕作 (LP)</button>
+                        <button class="strategy-tab bg-gray-200 text-gray-700 p-3 rounded-lg text-sm font-medium transition" data-strategy="token">直接购买代币</button>
+                    </div>
+
+                    <div id="strategy-content" class="border-t pt-6">
+                        <div class="strategy-details" id="developer-content">
+                            <h3 class="text-xl font-bold text-green-700">策略：开发者参与 (强烈建议)</h3>
+                            <p class="my-2 text-gray-600">对于具备开发背景的投资者，这是获取超额回报 (Alpha) 的最佳途径。通过利用官方SDK，您可以将技术优势转化为经济收益，同时规避代币本身的经济模型风险。</p>
+                            <div class="space-y-3 mt-4">
+                                <div class="p-3 bg-gray-50 rounded-lg">
+                                    <p class="font-semibold">1. 构建套利机器人</p>
+                                    <p class="text-sm text-gray-600">监控 Turbos 与其他DEX/CEX的价差，自动执行买低卖高。这不仅能盈利，还能帮助市场提高效率。</p>
+                                </div>
+                                <div class="p-3 bg-gray-50 rounded-lg">
+                                    <p class="font-semibold">2. 开发定制化策略金库</p>
+                                    <p class="text-sm text-gray-600">在 Turbos 基础之上，开发基于波动率等信号的更高级流动性管理策略，并打包成产品服务其他用户。</p>
+                                </div>
+                                <div class="p-3 bg-gray-50 rounded-lg">
+                                    <p class="font-semibold">3. 创建数据分析工具</p>
+                                    <p class="text-sm text-gray-600">为LP提供精确的无常损失计算、最优价格区间预测等高级数据服务，这类工具在DeFi领域需求旺盛。</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="strategy-details hidden" id="lp-content">
+                            <h3 class="text-xl font-bold text-blue-700">策略：收益耕作 (建议)</h3>
+                            <p class="my-2 text-gray-600">这是直接从协议活动中获利的核心方式，风险回报比相对均衡。您可以分享协议高交易量带来的费用，并获得额外的代币激励。</p>
+                            <div class="grid md:grid-cols-2 gap-4 mt-4">
+                                <div>
+                                    <h4 class="font-semibold">高 APR 机会</h4>
+                                    <ul class="list-disc list-inside text-sm text-gray-600 mt-2">
+                                        <li><strong>SUI/USDC 池:</strong> 历史APR高达 137% - 276%，收益来自交易费 + SUI激励 + TURBOS激励。风险是无常损失。</li>
+                                        <li><strong>稳定币池 (USDT/USDC):</strong> APR约21%，无常损失风险极低，适合保守型投资者。</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold">高级玩法</h4>
+                                     <ul class="list-disc list-inside text-sm text-gray-600 mt-2">
+                                        <li><strong>自动化金库:</strong> “一键式”参与，协议自动管理头寸和复投，极大降低操作门槛。</li>
+                                        <li><strong>杠杆挖矿 (专家):</strong> 在借贷平台抵押SUI借出USDC，再组合成LP。可放大收益，但有极高的清算风险。</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="strategy-details hidden" id="token-content">
+                            <h3 class="text-xl font-bold text-yellow-700">策略：直接购买代币 (中立)</h3>
+                            <p class="my-2 text-gray-600">这是风险最高的策略，本质上是对团队执行力、Sui生态爆发以及代币经济学最终得以改善的综合性押注。</p>
+                             <div class="grid md:grid-cols-2 gap-4 mt-4">
+                                <div>
+                                    <h4 class="font-semibold text-green-700">看涨理由 (Upside)</h4>
+                                    <p class="text-sm text-gray-600 mt-2">如果协议获得巨大成功，原生代币将是最大受益者，可能带来高倍数的回报。</p>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold text-red-700">看跌理由 (Downside)</h4>
+                                    <p class="text-sm text-gray-600 mt-2">50%的未知代币分配和缺失的锁仓计划，如同悬在价格上方的“达摩克利斯之剑”，可能导致协议成功与代币表现脱钩。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+        
+        <footer class="text-center mt-12 text-sm text-gray-500">
+            <p>本报告基于公开信息生成，仅供研究参考，不构成任何投资建议。</p>
+            <p>数据截止至 2025年7月。请始终进行自己的研究 (DYOR)。</p>
+        </footer>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const navTabs = document.querySelectorAll('.nav-tab');
+    const contentSections = document.querySelectorAll('.content-section');
+    const strategyTabs = document.querySelectorAll('.strategy-tab');
+    const strategyDetails = document.querySelectorAll('.strategy-details');
+
+    navTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            navTabs.forEach(t => {
+                t.classList.remove('tab-active');
+                t.classList.add('tab-inactive');
+            });
+            tab.classList.add('tab-active');
+            tab.classList.remove('tab-inactive');
+
+            contentSections.forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(tab.dataset.tab).classList.add('active');
+        });
+    });
+
+    strategyTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            strategyTabs.forEach(t => {
+                t.classList.remove('strategy-tab-active', 'bg-gray-200', 'text-gray-700');
+                t.classList.add('bg-gray-200', 'text-gray-700');
+            });
+            tab.classList.add('strategy-tab-active');
+            tab.classList.remove('bg-gray-200', 'text-gray-700');
+
+            strategyDetails.forEach(detail => {
+                detail.classList.add('hidden');
+            });
+            document.getElementById(tab.dataset.strategy + '-content').classList.remove('hidden');
+        });
+    });
+
+    function createTokenomicsChart() {
+        const ctx = document.getElementById('tokenomicsChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['未披露用途', '团队', '私募投资者', '财库', '市场营销'],
+                datasets: [{
+                    data: [50, 18, 15, 12, 5],
+                    backgroundColor: [
+                        '#ef4444', // Red for unknown
+                        '#f97316', // Orange
+                        '#eab308', // Yellow
+                        '#22c55e', // Green
+                        '#3b82f6'  // Blue
+                    ],
+                    borderColor: '#f8f9fa',
+                    borderWidth: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.label}: ${context.raw}%`;
+                            }
+                        }
+                    },
+                    title: {
+                        display: false
+                    }
+                },
+                cutout: '60%'
+            }
+        });
+    }
+
+    function createCompetitorChart() {
+        const ctx = document.getElementById('competitorChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Turbos', 'Cetus', 'Kriya', 'Aftermath'],
+                datasets: [
+                {
+                    label: '总锁仓价值 (TVL) in M USD',
+                    data: [21.57, 108, 15, 25], // Example data
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1,
+                    yAxisID: 'y',
+                },
+                {
+                    label: '24h 交易量 in M USD',
+                    data: [24, 30, 5, 8], // Example data
+                    backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1,
+                    yAxisID: 'y',
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: '金额 (百万美元)'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                         mode: 'index',
+                         intersect: false
+                    }
+                }
+            }
+        });
+    }
+
+    createTokenomicsChart();
+    createCompetitorChart();
+});
+</script>
+
+</body>
+</html>

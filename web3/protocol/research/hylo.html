@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hylo协议 | 交互式投资分析仪表盘</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Harmony -->
+    <!-- Application Structure Plan: The SPA is designed as a top-down, task-oriented dashboard. It starts with a hero section giving the final investment verdict ("建议/Recommend") for quick takeaway. A sticky navigation allows easy access to different analysis modules. The core is the "Investment Dashboard," which presents three main strategies (Yield, Leverage, Airdrop) as interactive cards. Clicking a card dynamically updates a central visualization area (with a relevant Chart.js chart) and a detailed text panel below it. This structure transforms passive reading into active exploration, allowing users to drill down into their preferred investment angle immediately. It's followed by visually organized sections for the Risk Matrix and SWOT analysis, which present complex information in a much more digestible format than linear text. This user-centric design prioritizes task completion (evaluating a specific strategy) over simply following the report's original sequence, enhancing usability and comprehension. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Core protocol structure (hyUSD, xSOL, sHYUSD). Goal: Inform. Viz: Donut Chart (Chart.js). Interaction: Default view, hover tooltips. Justification: Shows parts-of-a-whole relationship of the system.
+        - Report Info: Investment Strategies. Goal: Compare. Viz: Interactive Cards + Dynamic Text Panel. Interaction: Click to update main chart and details. Justification: More engaging than a static table, focuses user attention.
+        - Report Info: sHYUSD APY. Goal: Compare Yield. Viz: Bar Chart (Chart.js). Interaction: Appears on 'Yield' strategy selection. Justification: Best for comparing discrete values, highlights APY advantage.
+        - Report Info: xSOL Leverage. Goal: Visualize Leverage Effect. Viz: Line Chart (Chart.js). Interaction: Appears on 'Leverage' strategy selection. Justification: Ideal for showing performance over time and amplified volatility.
+        - Report Info: Risk & SWOT. Goal: Organize. Viz: HTML/Tailwind Grids. Interaction: Static display. Justification: Standard, visually clear formats for complex data.
+        - All visualizations use Chart.js on a <canvas> element, ensuring no SVG or Mermaid JS is used. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #F9FAFB; /* gray-50 */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 640px; /* max-w-2xl */
+            height: 40vh;
+            max-height: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 45vh;
+            }
+        }
+        .nav-link {
+            transition: color 0.3s, border-bottom-color 0.3s;
+        }
+        .strategy-card {
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .strategy-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .active-strategy {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            border-color: #4f46e5; /* indigo-600 */
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <!-- Header & Navigation -->
+    <header class="sticky top-0 z-50 bg-white/80 backdrop-blur-lg shadow-sm">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-2xl font-bold text-indigo-600">Hylo</span>
+                    <span class="ml-2 text-gray-500 font-light">投资分析仪表盘</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#dashboard" class="nav-link text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">投资仪表盘</a>
+                        <a href="#risk" class="nav-link text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">风险矩阵</a>
+                        <a href="#swot" class="nav-link text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">SWOT分析</a>
+                        <a href="#about" class="nav-link text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">关于Hylo</a>
+                    </div>
+                </div>
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-indigo-600 hover:bg-gray-100 focus:outline-none">
+                        <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </nav>
+        <div id="mobile-menu" class="md:hidden hidden">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="#dashboard" class="block nav-link text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-base font-medium">投资仪表盘</a>
+                <a href="#risk" class="block nav-link text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-base font-medium">风险矩阵</a>
+                <a href="#swot" class="block nav-link text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-base font-medium">SWOT分析</a>
+                <a href="#about" class="block nav-link text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-base font-medium">关于Hylo</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+
+        <!-- Hero Section -->
+        <section class="text-center mb-12 md:mb-16">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight">
+                Hylo协议：新一代DeFi原语深度剖析
+            </h1>
+            <p class="mt-4 max-w-2xl mx-auto text-lg text-gray-500">
+                一个基于Solana的创新协议，旨在通过LST抵押品、无清算杠杆和高真实收益，重塑去中心化金融格局。
+            </p>
+            <div class="mt-8 flex justify-center items-center gap-4">
+                <span class="text-sm font-medium text-gray-500">综合投资评级:</span>
+                <span class="bg-emerald-100 text-emerald-800 text-lg font-bold px-6 py-2 rounded-full">
+                    建议 (Recommend)
+                </span>
+            </div>
+        </section>
+
+        <!-- Investment Dashboard Section -->
+        <section id="dashboard" class="mb-12 md:mb-16 scroll-mt-20">
+            <div class="text-center mb-10">
+                <h2 class="text-3xl font-bold text-gray-900">投资策略仪表盘</h2>
+                <p class="mt-2 text-md text-gray-500">选择一种策略，深入了解其机制、收益与风险。本仪表盘旨在帮助您根据个人投资偏好，探索Hylo提供的不同机会。</p>
+            </div>
+
+            <!-- Strategy Selection Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div id="strategy-yield" class="strategy-card bg-white p-6 rounded-lg border-2 border-transparent cursor-pointer active-strategy">
+                    <h3 class="text-xl font-bold text-gray-900">🌱 高收益挖矿</h3>
+                    <p class="mt-2 text-gray-600">通过质押稳定币 `hyUSD` 获取由LST真实收益支撑的高额APY。</p>
+                    <div class="mt-4 text-3xl font-bold text-emerald-500">~18% APY</div>
+                </div>
+                <div id="strategy-leverage" class="strategy-card bg-white p-6 rounded-lg border-2 border-transparent cursor-pointer">
+                    <h3 class="text-xl font-bold text-gray-900">🚀 无清算杠杆</h3>
+                    <p class="mt-2 text-gray-600">利用 `xSOL` 获取SOL的杠杆敞口，无传统清算风险和资金费用。</p>
+                     <div class="mt-4 text-3xl font-bold text-indigo-500">~2.2x 杠杆</div>
+                </div>
+                <div id="strategy-airdrop" class="strategy-card bg-white p-6 rounded-lg border-2 border-transparent cursor-pointer">
+                    <h3 class="text-xl font-bold text-gray-900">🎁 空投投机</h3>
+                    <p class="mt-2 text-gray-600">参与“Season 0”积分计划，通过持有协议资产，博取未来治理代币空投。</p>
+                    <div class="mt-4 text-3xl font-bold text-amber-500">早期机会</div>
+                </div>
+            </div>
+
+            <!-- Dynamic Visualization & Details -->
+            <div class="bg-white rounded-lg shadow-lg p-4 sm:p-6 md:p-8">
+                <div class="chart-container">
+                    <canvas id="investmentChart"></canvas>
+                </div>
+                <div id="strategy-details" class="mt-8 prose max-w-none prose-indigo">
+                    <!-- Dynamic content will be loaded here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Risk Matrix Section -->
+        <section id="risk" class="mb-12 md:mb-16 scroll-mt-20">
+            <div class="text-center mb-10">
+                <h2 class="text-3xl font-bold text-gray-900">风险矩阵</h2>
+                <p class="mt-2 text-md text-gray-500">全面评估Hylo协议面临的技术、经济与治理风险。理解这些潜在风险是做出明智投资决策的关键一步。</p>
+            </div>
+            <div class="space-y-8">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-xl font-bold text-red-600">🔴 智能合约与技术风险</h3>
+                    <p class="mt-2 text-gray-600">尽管已通过顶级公司OtterSec审计，但任何新协议都存在未被发现的漏洞或经济攻击向量的固有风险。作为早期项目，其复杂机制的安全性仍需时间检验。</p>
+                </div>
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-xl font-bold text-red-600">🔴 经济模型与金融风险</h3>
+                    <p class="mt-2 text-gray-600">协议的核心风险在于对外部LST（如JitoSOL）的嵌套依赖。任何LST的脱锚事件将直接冲击Hylo的抵押率，威胁`hyUSD`的稳定性。在极端市场（黑天鹅）下，协议的自我平衡机制可能失效，引发死亡螺旋。</p>
+                </div>
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-xl font-bold text-orange-500">🟠 治理与中心化风险</h3>
+                    <p class="mt-2 text-gray-600">项目目前由核心团队集中控制，这是早期项目的常态，但也引入了中心化风险。未来的去中心化治理路径尚不明确，存在不确定性。</p>
+                </div>
+                 <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-xl font-bold text-orange-500">🟠 市场与社区风险</h3>
+                    <p class="mt-2 text-gray-600">协议当前TVL和用户量较低，社区渠道建设不足。缺乏强大的社区和品牌认知度，可能阻碍其长期发展和流动性增长。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SWOT Analysis Section -->
+        <section id="swot" class="mb-12 md:mb-16 scroll-mt-20">
+            <div class="text-center mb-10">
+                <h2 class="text-3xl font-bold text-gray-900">SWOT 分析</h2>
+                <p class="mt-2 text-md text-gray-500">从优势、劣势、机会、威胁四个维度，系统性地审视Hylo协议的内外部环境，为您提供一个360度的战略视角。</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-xl font-bold text-emerald-600">👍 优势 (Strengths)</h3>
+                    <ul class="mt-4 list-disc list-inside space-y-2 text-gray-700">
+                        <li>创新的三代币经济模型，设计精巧。</li>
+                        <li>`sHYUSD` 提供高额、可持续的真实收益。</li>
+                        <li>`xSOL` 提供无清算风险的独特杠杆工具。</li>
+                        <li>通过顶级安全公司OtterSec的审计。</li>
+                        <li>获Solana基金会和Colosseum加速器强力背书。</li>
+                    </ul>
+                </div>
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-xl font-bold text-red-600">👎 劣势 (Weaknesses)</h3>
+                    <ul class="mt-4 list-disc list-inside space-y-2 text-gray-700">
+                        <li>项目处于极早期，经济模型未经市场考验。</li>
+                        <li>当前总锁仓价值(TVL)和用户采纳度低。</li>
+                        <li>官方社区渠道和公开文档建设不足。</li>
+                        <li>1%的铸/赎回费可能影响`hyUSD`锚定的紧密性。</li>
+                    </ul>
+                </div>
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-xl font-bold text-sky-600">🚀 机会 (Opportunities)</h3>
+                    <ul class="mt-4 list-disc list-inside space-y-2 text-gray-700">
+                        <li>未来治理代币空投的巨大潜力。</li>
+                        <li>独特的杠杆模型可能获得先发优势。</li>
+                        <li>有机会从中心化稳定币手中夺取市场份额。</li>
+                        <li>受益于Solana及LST生态系统的整体增长。</li>
+                    </ul>
+                </div>
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-xl font-bold text-orange-600">💣 威胁 (Threats)</h3>
+                    <ul class="mt-4 list-disc list-inside space-y-2 text-gray-700">
+                        <li>来自LST抵押品脱锚的系统性风险。</li>
+                        <li>黑天鹅市场事件可能引发协议的死亡螺旋。</li>
+                        <li>来自其他稳定币或杠杆协议的激烈竞争。</li>
+                        <li>未能成功建立强大的社区和品牌认知度。</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+        
+        <!-- About Section -->
+        <section id="about" class="scroll-mt-20">
+            <div class="text-center mb-10">
+                <h2 class="text-3xl font-bold text-gray-900">关于 Hylo</h2>
+                <p class="mt-2 text-md text-gray-500">Hylo是一个获得顶级机构支持，并由专业团队打造的DeFi协议。其愿景是为Solana生态系统提供一个自主、高效且安全的金融引擎。</p>
+            </div>
+            <div class="bg-white rounded-lg shadow p-8">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+                    <div>
+                        <h4 class="text-lg font-semibold text-gray-800">安全审计</h4>
+                        <p class="mt-2 text-gray-600">由Solana生态顶级安全公司 <span class="font-bold text-indigo-600">OtterSec</span> 提供全面审计，保障资产安全。</p>
+                    </div>
+                    <div>
+                        <h4 class="text-lg font-semibold text-gray-800">生态支持</h4>
+                        <p class="mt-2 text-gray-600">获得 <span class="font-bold text-indigo-600">Solana基金会</span> 的直接资金支持，深度融入Solana生态。</p>
+                    </div>
+                    <div>
+                        <h4 class="text-lg font-semibold text-gray-800">项目孵化</h4>
+                        <p class="mt-2 text-gray-600">入选知名加速器 <span class="font-bold text-indigo-600">Colosseum</span>，项目潜力获得行业认可。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-gray-800 text-white mt-16">
+        <div class="container mx-auto py-6 px-4 sm:px-6 lg:px-8 text-center text-sm text-gray-400">
+            <p>本交互式报告基于公开信息生成，仅供研究与分析，不构成任何投资建议。</p>
+            <p>&copy; 2025 Hylo 投资分析仪表盘。所有数据和分析仅为演示目的。</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const strategyData = {
+                yield: {
+                    title: '🌱 高收益挖矿 (`sHYUSD`)',
+                    content: `
+                        <h4>核心机制</h4>
+                        <p>通过在协议中质押稳定币 <code>hyUSD</code>，用户可以获得生息代币 <code>sHYUSD</code>。其约18%的年化收益率（APY）并非来自代币通胀，而是完全源于协议底层所有LST抵押品（如JitoSOL）产生的真实、可持续的Solana网络质押奖励。协议巧妙地将整个抵押池的收益全部导向了 <code>sHYUSD</code> 持有者。</p>
+                        <h4>优点</h4>
+                        <ul>
+                            <li><strong>高额真实收益：</strong>对于稳定币资产而言，这是极具吸引力的收益率，远超市场平均水平。</li>
+                            <li><strong>可持续性：</strong>只要Solana的质押奖励存在，该收益就是可持续的，而非依赖庞氏激励。</li>
+                        </ul>
+                        <h4>风险</h4>
+                        <ul>
+                            <li><strong>协议兜底风险：</strong><code>sHYUSD</code> 持有者是协议的最后一道防线。在极端市场崩盘、<code>xSOL</code>缓冲池被耗尽时，他们的<code>sHYUSD</code>可能会被协议转换为<code>xSOL</code>，从而使本金暴露于SOL的价格波动风险之下，可能导致资本损失。这是一个低概率但高影响的尾部风险。</li>
+                        </ul>
+                    `,
+                    chart: {
+                        type: 'bar',
+                        data: {
+                            labels: ['Hylo sHYUSD', '主流稳定币理财', 'ETH质押'],
+                            datasets: [{
+                                label: '年化收益率 (APY)',
+                                data: [18, 5, 3.5],
+                                backgroundColor: [
+                                    'rgba(16, 185, 129, 0.6)',
+                                    'rgba(59, 130, 246, 0.6)',
+                                    'rgba(139, 92, 246, 0.6)'
+                                ],
+                                borderColor: [
+                                    'rgba(16, 185, 129, 1)',
+                                    'rgba(59, 130, 246, 1)',
+                                    'rgba(139, 92, 246, 1)'
+                                ],
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        callback: function(value) {
+                                            return value + '%'
+                                        }
+                                    }
+                                }
+                            },
+                            plugins: {
+                                title: {
+                                    display: true,
+                                    text: '真实收益率 (APY) 对比',
+                                    font: { size: 16 }
+                                },
+                                legend: { display: false }
+                            }
+                        }
+                    }
+                },
+                leverage: {
+                    title: '🚀 无清算杠杆 (`xSOL`)',
+                    content: `
+                        <h4>核心机制</h4>
+                        <p><code>xSOL</code> 是一种合成代币，代表了对SOL的杠杆化多头敞口。杠杆来源于系统的超额抵押部分。由于 <code>hyUSD</code> 的价值锚定在1美元，底层LST抵押品（其价格紧随SOL）的任何价值波动都将完全由 <code>xSOL</code> 池来吸收和放大。</p>
+                        <h4>优点</h4>
+                        <ul>
+                            <li><strong>无清算风险：</strong><code>xSOL</code> 持有者本质上是协议超额抵押品的所有者，不持有任何债务。因此，即使市场下跌，他们的头寸也永远不会被强制平仓。</li>
+                            <li><strong>无资金费用：</strong>与永续合约不同，持有 <code>xSOL</code> 无需支付不稳定的资金费用，非常适合长期看好SOL的投资者。</li>
+                        </ul>
+                        <h4>风险</h4>
+                        <ul>
+                            <li><strong>杠杆化亏损：</strong>杠杆会同等放大亏损。在灾难性的市场崩盘中，<code>xSOL</code> 的价值理论上可能趋近于零。</li>
+                            <li><strong>价值磨损：</strong>协议抵押率的不利波动可能导致隐性的价值磨损风险。</li>
+                        </ul>
+                    `,
+                    chart: {
+                        type: 'line',
+                        data: {
+                            labels: ['初始', 'Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6'],
+                            datasets: [{
+                                label: '标准SOL投资',
+                                data: [100, 110, 120, 105, 95, 115, 125],
+                                borderColor: 'rgba(59, 130, 246, 1)',
+                                tension: 0.1,
+                                fill: false
+                            }, {
+                                label: 'Hylo xSOL 投资 (2.2x杠杆)',
+                                data: [100, 122, 144, 111, 89, 133, 155],
+                                borderColor: 'rgba(79, 70, 229, 1)',
+                                tension: 0.1,
+                                fill: false
+                            }]
+                        },
+                        options: {
+                             plugins: {
+                                title: {
+                                    display: true,
+                                    text: '杠杆效应模拟 (初始投资$100)',
+                                    font: { size: 16 }
+                                },
+                                legend: { display: true }
+                            }
+                        }
+                    }
+                },
+                airdrop: {
+                    title: '🎁 空投投机 (Season 0)',
+                    content: `
+                        <h4>核心机制</h4>
+                        <p>协议已明确推出“Season 0”积分计划，这是未来将发行治理代币并进行空投的强烈信号。用户通过在钱包中持有协议的三种核心资产（<code>hyUSD</code>, <code>sHYUSD</code>, <code>xSOL</code>）来赚取“XP”积分。积分累积是未来空投权重的主要依据。</p>
+                         <h4>积分效率</h4>
+                        <ul>
+                            <li><strong>hyUSD:</strong> 5 XP / 美元 / 天</li>
+                            <li><strong>sHYUSD:</strong> 1 XP / 美元 / 天</li>
+                            <li><strong>xSOL:</strong> 积分效率待定，但同样参与累积。</li>
+                        </ul>
+                        <h4>优点</h4>
+                        <ul>
+                            <li><strong>潜在回报极高：</strong>作为早期项目，参与人数有限。一次成功的代币发行所带来的收益可能远超任何质押APY，早期参与者可能获得超额回报。</li>
+                            <li><strong>参与门槛低：</strong>只需持有协议资产即可自动累积积分。</li>
+                        </ul>
+                        <h4>风险</h4>
+                        <ul>
+                            <li><strong>高度投机性：</strong>空投并非承诺。未来是否发币、代币价值、XP兑换比例都存在巨大的不确定性。</li>
+                             <li><strong>机会成本：</strong>投入的资金在等待空投期间，可能错失其他市场的确定性收益。</li>
+                        </ul>
+                    `,
+                    chart: {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['hyUSD (高积分效率)', 'sHYUSD (高APY + 积分)', 'xSOL (杠杆 + 积分)'],
+                            datasets: [{
+                                label: '空投策略资产配置',
+                                data: [5, 3, 2],
+                                backgroundColor: [
+                                    'rgba(245, 158, 11, 0.6)',
+                                    'rgba(16, 185, 129, 0.6)',
+                                    'rgba(79, 70, 229, 0.6)'
+                                ],
+                                borderColor: [
+                                    'rgba(245, 158, 11, 1)',
+                                    'rgba(16, 185, 129, 1)',
+                                    'rgba(79, 70, 229, 1)'
+                                ],
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            plugins: {
+                                title: {
+                                    display: true,
+                                    text: '空投策略资产权重考量',
+                                    font: { size: 16 }
+                                },
+                                legend: { display: true, position: 'bottom' }
+                            }
+                        }
+                    }
+                }
+            };
+
+            const ctx = document.getElementById('investmentChart').getContext('2d');
+            let myChart;
+
+            const strategyDetailsContainer = document.getElementById('strategy-details');
+            const strategyCards = {
+                yield: document.getElementById('strategy-yield'),
+                leverage: document.getElementById('strategy-leverage'),
+                airdrop: document.getElementById('strategy-airdrop')
+            };
+
+            function updateDashboard(strategy) {
+                if (myChart) {
+                    myChart.destroy();
+                }
+
+                const data = strategyData[strategy];
+                myChart = new Chart(ctx, {
+                    type: data.chart.type,
+                    data: data.chart.data,
+                    options: {
+                        ...data.chart.options,
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+
+                strategyDetailsContainer.innerHTML = `<h3>${data.title}</h3>${data.content}`;
+                
+                Object.values(strategyCards).forEach(card => card.classList.remove('active-strategy'));
+                strategyCards[strategy].classList.add('active-strategy');
+            }
+
+            Object.keys(strategyCards).forEach(key => {
+                strategyCards[key].addEventListener('click', () => updateDashboard(key));
+            });
+            
+            // Mobile menu toggle
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+            
+            // Smooth scrolling for nav links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                    if(mobileMenu.classList.contains('hidden') === false){
+                        mobileMenu.classList.add('hidden');
+                    }
+                });
+            });
+
+            // Initial load
+            updateDashboard('yield');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Harvest Finance (FARM) - 交互式投资分析报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Neutral -->
+    <!-- Application Structure Plan: The application is designed as a top-down, single-page dashboard. This structure facilitates a natural decision-making flow for an investor: 1. Start with the final verdict and key live metrics for an immediate snapshot. 2. Present the core "Investment Thesis" with an interactive Pro/Con toggle to quickly grasp the central argument. 3. Detail the "Risks & Security" via a visual timeline and interactive cards, addressing the project's most significant historical challenge. 4. Showcase actionable "Opportunities" with filterable strategies and a data-driven APY chart, allowing users to find relevant paths based on their profile. 5. Provide market context with a "Competitive Analysis" chart. This non-linear, thematic structure is more usable than a simple report-to-webpage conversion, as it guides exploration based on investor priorities (thesis -> risk -> opportunity -> comparison). -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Final Rating & Key Metrics -> Goal: Inform -> Viz: Prominent text display -> Justification: Immediate high-level summary.
+        - Report Info: SWOT Analysis -> Goal: Compare -> Viz: Interactive Tabs (HTML/CSS/JS) -> Interaction: Click to toggle between Strengths/Weaknesses -> Justification: Breaks down the core investment thesis into a digestible, balanced view.
+        - Report Info: Project History (Hack, Audits, Pivot) -> Goal: Show Change -> Viz: Vertical Timeline (HTML/CSS) -> Interaction: Hover effects -> Justification: Visually narrates the "turnaround story" which is central to the thesis.
+        - Report Info: Investment Strategies (Vaults, Staking, etc.) -> Goal: Organize/Inform -> Viz: Filterable Cards (HTML/CSS/JS) & Bar Chart (Chart.js) -> Interaction: Click filters (Passive/Active) to show relevant cards; hover chart for APY details -> Justification: Allows users to self-select actionable information based on their profile and see potential returns visually.
+        - Report Info: Competitor Data (TVL, Market Cap) -> Goal: Compare -> Viz: Grouped Bar Chart (Chart.js) -> Interaction: Hover tooltips -> Justification: Provides crucial market context and visualizes Harvest's position against rivals.
+        - Library/Method: Chart.js for all charts, custom HTML/CSS/JS for other interactive elements.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f8f7f4;
+            color: #3d3d3d;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 400px;
+            max-height: 50vh;
+        }
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 300px;
+                max-height: 60vh;
+            }
+        }
+        .nav-link {
+            transition: color 0.3s, border-bottom-color 0.3s;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #c8a876;
+            border-bottom-color: #c8a876;
+        }
+        .strategy-card {
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .strategy-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .pill {
+            background-color: #e5e0d7;
+            color: #8c7a5e;
+        }
+        .pill-green {
+            background-color: #d4e9d7;
+            color: #3b8750;
+        }
+        .pill-red {
+            background-color: #f5dadd;
+            color: #a53c44;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -31px;
+            top: 5px;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background-color: #e5e0d7;
+            border: 4px solid #f8f7f4;
+        }
+        .timeline-item:hover::before {
+            background-color: #c8a876;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-40 shadow-sm">
+        <nav class="container mx-auto px-6 py-3">
+            <div class="flex items-center justify-between">
+                <div class="text-xl font-bold text-gray-800">Harvest Finance (FARM)</div>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#overview" class="nav-link border-b-2 border-transparent pb-1">总览</a>
+                    <a href="#thesis" class="nav-link border-b-2 border-transparent pb-1">投资论点</a>
+                    <a href="#risk" class="nav-link border-b-2 border-transparent pb-1">风险与安全</a>
+                    <a href="#opportunities" class="nav-link border-b-2 border-transparent pb-1">机会与策略</a>
+                    <a href="#comparison" class="nav-link border-b-2 border-transparent pb-1">数据对比</a>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-6 py-8 md:py-12">
+
+        <section id="overview" class="text-center mb-16 md:mb-24 scroll-mt-20">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4">Harvest Finance (FARM)</h1>
+            <p class="text-lg text-gray-600 mb-6 max-w-3xl mx-auto">一份全面的投资分析与战略机遇报告</p>
+            <div class="bg-white p-6 rounded-xl shadow-lg inline-block">
+                <p class="text-gray-500 text-sm mb-2">最终投资评级</p>
+                <p class="text-2xl font-bold text-[#c8a876]">建议 <span class="text-lg font-normal text-gray-700">(针对高风险偏好投资者)</span></p>
+            </div>
+
+            <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+                <div class="bg-white p-5 rounded-xl shadow-md text-center">
+                    <p class="text-sm text-gray-500">总锁定价值 (TVL)</p>
+                    <p class="text-2xl font-bold" id="tvl-value">$41.66 M</p>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow-md text-center">
+                    <p class="text-sm text-gray-500">市值</p>
+                    <p class="text-2xl font-bold" id="marketcap-value">$20.17 M</p>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow-md text-center">
+                    <p class="text-sm text-gray-500">市值 / TVL 比率</p>
+                    <p class="text-2xl font-bold" id="ratio-value">0.48</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="thesis" class="mb-16 md:mb-24 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center mb-4">核心投资论点</h2>
+            <p class="text-lg text-gray-600 text-center max-w-3xl mx-auto mb-12">对“困境反转”的高风险投机：市场是否过度计入了历史风险，而低估了其在安全加固和 L2 战略转型后的重生潜力？</p>
+            
+            <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-6 md:p-8">
+                <div class="flex justify-center border-b border-gray-200 mb-6">
+                    <button id="show-strengths" class="thesis-tab active px-6 py-3 text-lg font-medium">优势 (Strengths)</button>
+                    <button id="show-weaknesses" class="thesis-tab px-6 py-3 text-lg font-medium text-gray-500">劣势 (Weaknesses)</button>
+                </div>
+                <div id="strengths-content">
+                    <ul class="space-y-4">
+                        <li class="flex items-start">
+                            <span class="pill-green text-sm font-bold rounded-full px-3 py-1 mr-4 mt-1">代币经济学</span>
+                            <p class="text-gray-700">公平启动，无预挖，供应总量固定且几近全流通，通胀压力极小。</p>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="pill-green text-sm font-bold rounded-full px-3 py-1 mr-4 mt-1">安全性</span>
+                            <p class="text-gray-700">经历实战考验，在2020年攻击后进行了大量顶级安全公司审计，显著增强了代码的安全性。</p>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="pill-green text-sm font-bold rounded-full px-3 py-1 mr-4 mt-1">战略清晰</span>
+                            <p class="text-gray-700">明确将重心转向 Base、Arbitrum 等高增长潜力的 L2 生态，寻求新的产品市场契合点。</p>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="pill-green text-sm font-bold rounded-full px-3 py-1 mr-4 mt-1">开发活跃</span>
+                            <p class="text-gray-700">代码库和路线图显示项目仍在积极创新，计划推出杠杆、期权等更复杂的产品。</p>
+                        </li>
+                    </ul>
+                </div>
+                <div id="weaknesses-content" class="hidden">
+                    <ul class="space-y-4">
+                        <li class="flex items-start">
+                            <span class="pill-red text-sm font-bold rounded-full px-3 py-1 mr-4 mt-1">团队匿名</span>
+                            <p class="text-gray-700">创始团队匿名，这是DeFi领域的普遍风险，在极端情况下缺乏法律追索权。</p>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="pill-red text-sm font-bold rounded-full px-3 py-1 mr-4 mt-1">声誉受损</span>
+                            <p class="text-gray-700">2020年的黑客攻击事件对项目声誉造成了持久性损害，TVL至今仍未恢复。</p>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="pill-red text-sm font-bold rounded-full px-3 py-1 mr-4 mt-1">市场竞争</span>
+                            <p class="text-gray-700">与Yearn、Beefy等行业巨头相比，在TVL和品牌认知度上处于明显劣势。</p>
+                        </li>
+                         <li class="flex items-start">
+                            <span class="pill-red text-sm font-bold rounded-full px-3 py-1 mr-4 mt-1">规模过小</span>
+                            <p class="text-gray-700">TVL和市场份额远低于竞争对手，限制了协议收入和对大资金的吸引力。</p>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="risk" class="mb-16 md:mb-24 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center mb-4">风险与安全演进</h2>
+            <p class="text-lg text-gray-600 text-center max-w-3xl mx-auto mb-12">从一次代价高昂的“工程失误”到成为一个“过度审计”的协议，Harvest的演进是其投资故事的核心。</p>
+            <div class="max-w-2xl mx-auto">
+                <div class="relative border-l-2 border-gray-200 pl-8 space-y-12">
+                    <div class="timeline-item">
+                        <h3 class="font-bold text-lg">项目启动 (2020年9月)</h3>
+                        <p class="text-gray-600">在“DeFi之夏”高潮期推出，以“公平启动”模式迅速吸引了大量关注和资金，TVL突破10亿美元。</p>
+                    </div>
+                    <div class="timeline-item">
+                        <h3 class="font-bold text-lg text-red-600">闪电贷攻击 (2020年10月)</h3>
+                        <p class="text-gray-600">因价格预言机被操控，遭受闪电贷攻击，损失约3130万美元。TVL和币价暴跌，项目声誉遭受重创。</p>
+                    </div>
+                    <div class="timeline-item">
+                        <h3 class="font-bold text-lg text-green-700">密集审计期 (2020-2021)</h3>
+                        <p class="text-gray-600">团队委托Haechi, PeckShield, CertiK, LeastAuthority等多家顶级公司进行全面审计，系统性修复安全漏洞，特别是针对闪电贷风险。</p>
+                    </div>
+                    <div class="timeline-item">
+                        <h3 class="font-bold text-lg">引入时间锁 (2021年至今)</h3>
+                        <p class="text-gray-600">实施12小时时间锁机制，任何重大策略变更都需提前公示，为用户提供安全撤离窗口，防止管理员作恶。</p>
+                    </div>
+                    <div class="timeline-item">
+                        <h3 class="font-bold text-lg text-blue-600">战略转向 L2 (2023年至今)</h3>
+                        <p class="text-gray-600">将业务重心全面转向Base和Arbitrum等低成本L2网络，寻求新的增长曲线，TVL在Base链上实现显著增长。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="opportunities" class="mb-16 md:mb-24 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center mb-4">机会与投资策略</h2>
+            <p class="text-lg text-gray-600 text-center max-w-3xl mx-auto mb-12">从被动收益到主动创造，Harvest为不同类型的投资者提供了多样化的参与路径。</p>
+            
+            <div class="text-center mb-8">
+                <button data-filter="all" class="strategy-filter active bg-[#c8a876] text-white font-bold py-2 px-4 rounded-full mr-2 mb-2">全部</button>
+                <button data-filter="passive" class="strategy-filter bg-white text-gray-700 font-bold py-2 px-4 rounded-full mr-2 mb-2">被动收益</button>
+                <button data-filter="active" class="strategy-filter bg-white text-gray-700 font-bold py-2 px-4 rounded-full mr-2 mb-2">主动策略</button>
+                <button data-filter="developer" class="strategy-filter bg-white text-gray-700 font-bold py-2 px-4 rounded-full mb-2">开发者</button>
+            </div>
+
+            <div id="strategy-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            </div>
+
+            <div class="mt-16">
+                <h3 class="text-2xl font-bold text-center mb-8">L2 机枪池潜在 APY 展示</h3>
+                <div class="chart-container bg-white p-4 rounded-xl shadow-lg">
+                    <canvas id="apyChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section id="comparison" class="scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center mb-4">竞争格局对比</h2>
+            <p class="text-lg text-gray-600 text-center max-w-3xl mx-auto mb-12">与行业领先者相比，Harvest的规模虽小，但其估值和战略专注度揭示了不同的投资逻辑。</p>
+            <div class="chart-container bg-white p-4 rounded-xl shadow-lg">
+                <canvas id="comparisonChart"></canvas>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-white mt-16 md:mt-24">
+        <div class="container mx-auto px-6 py-6 text-center text-gray-500">
+            <p>&copy; 2024 交互式投资分析报告。所有数据均来源于公开报告，仅供参考，不构成投资建议。</p>
+            <p class="text-sm mt-2">数据来源: DeFi Llama, CoinMarketCap, Harvest Finance 官方文档及社区提案。</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            
+            const strategiesData = [
+                {
+                    category: 'passive',
+                    title: 'L2 高收益机枪池',
+                    description: '将单币资产或LP代币存入Base/Arbitrum上的机枪池，享受自动复利，是参与生态最直接的方式。',
+                    risk: '中',
+                    apy: '25% - 55%+',
+                    skills: '被动'
+                },
+                {
+                    category: 'active',
+                    title: 'FARM 代币质押',
+                    description: '购买并质押FARM代币，以分享协议的部分费用收入，其价值与协议TVL和盈利能力强相关。',
+                    risk: '高',
+                    apy: '动态变化',
+                    skills: '主动管理'
+                },
+                {
+                    category: 'active',
+                    title: '杠杆收益耕作',
+                    description: '（功能待上线）通过在Aave等平台抵押借贷，放大在机枪池中的头寸以倍增APY。',
+                    risk: '极高',
+                    apy: 'APY的倍数',
+                    skills: '专家级'
+                },
+                {
+                    category: 'active',
+                    title: 'Delta 中性对冲',
+                    description: '（需自行构建）组合LP挖矿和做空永续合约，对冲价格风险，赚取交易费、挖矿奖励和资金费率。',
+                    risk: '高',
+                    apy: '5% - 20%+',
+                    skills: '专家级'
+                },
+                {
+                    category: 'developer',
+                    title: '创建新策略',
+                    description: '作为开发者，为协议设计并部署新的收益策略，成功后可从该策略产生的业绩费中获得分成。',
+                    risk: '高',
+                    apy: '依赖策略表现',
+                    skills: '开发者'
+                },
+                {
+                    category: 'developer',
+                    title: '直接贡献代码',
+                    description: '项目团队在Discord非常活跃，为社区开发者的贡献提供FARM奖励，可直接参与项目建设。',
+                    risk: '低',
+                    apy: 'FARM奖励',
+                    skills: '开发者'
+                }
+            ];
+
+            const strategyGrid = document.getElementById('strategy-grid');
+
+            function renderStrategies(filter = 'all') {
+                strategyGrid.innerHTML = '';
+                const filteredStrategies = filter === 'all' 
+                    ? strategiesData 
+                    : strategiesData.filter(s => s.category === filter);
+
+                filteredStrategies.forEach(s => {
+                    const card = document.createElement('div');
+                    card.className = 'strategy-card bg-white rounded-xl shadow-md p-6 flex flex-col';
+                    card.innerHTML = `
+                        <h4 class="text-xl font-bold mb-2">${s.title}</h4>
+                        <p class="text-gray-600 flex-grow mb-4">${s.description}</p>
+                        <div class="mt-auto pt-4 border-t border-gray-100 flex justify-between items-center text-sm">
+                            <div>
+                                <span class="font-bold">风险:</span>
+                                <span class="pill ${s.risk === '极高' || s.risk === '高' ? 'pill-red' : 'pill-green'} px-2 py-1 rounded-full">${s.risk}</span>
+                            </div>
+                            <div>
+                                <span class="font-bold">技能:</span>
+                                <span class="pill px-2 py-1 rounded-full">${s.skills}</span>
+                            </div>
+                        </div>
+                    `;
+                    strategyGrid.appendChild(card);
+                });
+            }
+
+            renderStrategies();
+
+            const strategyFilters = document.querySelectorAll('.strategy-filter');
+            strategyFilters.forEach(button => {
+                button.addEventListener('click', () => {
+                    strategyFilters.forEach(btn => {
+                        btn.classList.remove('active', 'bg-[#c8a876]', 'text-white');
+                        btn.classList.add('bg-white', 'text-gray-700');
+                    });
+                    button.classList.add('active', 'bg-[#c8a876]', 'text-white');
+                    button.classList.remove('bg-white', 'text-gray-700');
+                    renderStrategies(button.dataset.filter);
+                });
+            });
+
+            const thesisTabs = document.querySelectorAll('.thesis-tab');
+            const strengthsContent = document.getElementById('strengths-content');
+            const weaknessesContent = document.getElementById('weaknesses-content');
+
+            thesisTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    thesisTabs.forEach(t => {
+                        t.classList.remove('active', 'text-gray-800');
+                        t.classList.add('text-gray-500');
+                    });
+                    tab.classList.add('active', 'text-gray-800');
+                    tab.classList.remove('text-gray-500');
+
+                    if (tab.id === 'show-strengths') {
+                        strengthsContent.classList.remove('hidden');
+                        weaknessesContent.classList.add('hidden');
+                    } else {
+                        strengthsContent.classList.add('hidden');
+                        weaknessesContent.classList.remove('hidden');
+                    }
+                });
+            });
+
+            const apyChartCtx = document.getElementById('apyChart').getContext('2d');
+            new Chart(apyChartCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['USDC.e (Arb)', 'ETH (Arb)', 'WBTC (Arb)', 'xGRAIL (Arb)', 'wstETH (Arb)'],
+                    datasets: [{
+                        label: '目标 APY (%)',
+                        data: [54.08, 33.42, 25.60, 35, 35],
+                        backgroundColor: 'rgba(200, 168, 118, 0.6)',
+                        borderColor: 'rgba(200, 168, 118, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `目标 APY: ${context.raw}%`;
+                                }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Arbitrum 激励计划目标 APY',
+                            font: { size: 16 }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'APY (%)'
+                            }
+                        }
+                    }
+                }
+            });
+
+            const comparisonChartCtx = document.getElementById('comparisonChart').getContext('2d');
+            new Chart(comparisonChartCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Harvest Finance', 'Yearn Finance', 'Beefy Finance'],
+                    datasets: [
+                        {
+                            label: '总锁定价值 (TVL) (百万美元)',
+                            data: [41.66, 467, 317],
+                            backgroundColor: 'rgba(140, 122, 94, 0.6)',
+                            borderColor: 'rgba(140, 122, 94, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: '市值 (百万美元)',
+                            data: [20.17, 205, 25.74],
+                            backgroundColor: 'rgba(200, 168, 118, 0.6)',
+                            borderColor: 'rgba(200, 168, 118, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '关键指标对比 (单位：百万美元)',
+                            font: { size: 16 }
+                        },
+                         tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += '$' + context.parsed.y + 'M';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            type: 'logarithmic',
+                            title: {
+                                display: true,
+                                text: '金额 (对数坐标)'
+                            }
+                        }
+                    }
+                }
+            });
+
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('section');
+
+            window.addEventListener('scroll', () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (pageYOffset >= sectionTop - 100) {
+                        current = section.getAttribute('id');
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href').includes(current)) {
+                        link.classList.add('active');
+                    }
+                });
+            });
+            
+            navLinks.forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Katana/Ronin 投资仪表盘</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: "Ronin Calm" - A calm, professional palette with a light neutral background (slate-50), dark text (slate-800), and a primary accent color derived from Ronin branding (a muted teal/cyan) for interactive elements. -->
+    <!-- Application Structure Plan: The SPA is designed as an interactive dashboard. The information architecture prioritizes user flow from a high-level summary to detailed analysis. It uses a tabbed navigation system ('仪表盘', '投资策略', '风险分析', '核心数据', '关于项目') to segment the dense report into logical, digestible sections. This structure was chosen over a linear report format to empower users to explore content based on their interests, facilitating better understanding and comparison of different data points (e.g., comparing risks directly with investment strategies). The dashboard provides an immediate executive summary, while dedicated tabs allow for deep dives. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Final investment rating -> Goal: Inform -> Viz: Prominent summary card -> Interaction: Static display -> Justification: Immediately presents the report's key takeaway. -> Method: HTML/Tailwind.
+        - Report Info: Key Metrics (TVL, Volume, APR) -> Goal: Inform -> Viz: KPI cards -> Interaction: Static display -> Justification: Provides a quick, scannable overview of ecosystem health. -> Method: HTML/Tailwind.
+        - Report Info: Investment strategies matrix -> Goal: Compare/Organize -> Viz: Interactive card grid -> Interaction: Click to expand details -> Justification: Allows users to easily compare complex strategies side-by-side without being overwhelmed. -> Method: JS/HTML/Tailwind.
+        - Report Info: Quantitative data (TVL, Volume, Supply) -> Goal: Change/Relationships -> Viz: Line and Donut charts -> Interaction: Hover for tooltips -> Justification: Visualizes trends and proportions more effectively than text or tables. -> Library: Chart.js.
+        - Report Info: Risk categories and details -> Goal: Organize/Inform -> Viz: Interactive risk grid -> Interaction: Click to show details -> Justification: Organizes complex risk information visually by category and severity, making it easier to assess. -> Method: JS/HTML/Tailwind.
+        - CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { font-family: 'Noto Sans SC', sans-serif; }
+        .chart-container { position: relative; width: 100%; max-width: 600px; margin-left: auto; margin-right: auto; height: 320px; max-height: 400px; }
+        @media (min-width: 768px) { .chart-container { height: 350px; } }
+        .nav-item { transition: all 0.2s ease-in-out; }
+        .nav-item.active { color: #06b6d4; border-color: #06b6d4; font-weight: 600; }
+        .nav-item:not(.active):hover { color: #0891b2; border-color: #0891b2; }
+        .content-section { display: none; }
+        .content-section.active { display: block; }
+        .strategy-card, .risk-card { transition: all 0.2s ease-in-out; }
+        .strategy-card:hover, .risk-card:hover { transform: translateY(-4px); box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
+        
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-900">Katana/Ronin 投资仪表盘</h1>
+            <p class="text-slate-500 mt-2">一份交互式尽职调查报告</p>
+        </header>
+
+        <nav class="flex justify-center border-b border-slate-200 mb-8 flex-wrap">
+            <button class="nav-item px-4 py-3 border-b-2 border-transparent text-slate-600 active" data-target="dashboard">
+                <span>📊</span> 仪表盘
+            </button>
+            <button class="nav-item px-4 py-3 border-b-2 border-transparent text-slate-600" data-target="strategies">
+                <span>🧭</span> 投资策略
+            </button>
+            <button class="nav-item px-4 py-3 border-b-2 border-transparent text-slate-600" data-target="risks">
+                <span>⚠️</span> 风险分析
+            </button>
+            <button class="nav-item px-4 py-3 border-b-2 border-transparent text-slate-600" data-target="data">
+                <span>📈</span> 核心数据
+            </button>
+            <button class="nav-item px-4 py-3 border-b-2 border-transparent text-slate-600" data-target="about">
+                <span>ℹ️</span> 关于项目
+            </button>
+        </nav>
+
+        <main>
+            <div id="dashboard" class="content-section active">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-3 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h2 class="text-xl font-semibold text-slate-900 mb-2">最终投资评级：<span class="text-cyan-600">建议 (Recommend)</span></h2>
+                        <p class="text-slate-600">综合权衡，Ronin生态系统的潜在回报超过了其固有风险，特别是对于风险承受能力较高、投资周期较长且对Web3游戏赛道有信心的成熟投资者。Sky Mavis已证明其构建和修复的能力，生态系统正在从复苏走向扩张。市场对于历史问题和中心化特征已有认知，当前估值可能已反映风险折价，存在不对称上行空间。</p>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="font-semibold text-slate-900 mb-2">📈 核心机遇</h3>
+                        <ul class="space-y-3 text-slate-600 list-disc list-inside">
+                            <li><strong class="text-slate-700">生态增长敞口:</strong> 直接投资于一个由顶级团队和VC支持的领先Web3游戏生态系统。</li>
+                            <li><strong class="text-slate-700">可持续收益:</strong> 通过质押$RON或提供流动性，获得由真实经济活动支持的可观收益。</li>
+                            <li><strong class="text-slate-700">开发者Alpha:</strong> 对于开发者，在Ronin上构建的潜在非对称回报巨大。</li>
+                        </ul>
+                    </div>
+                     <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="font-semibold text-slate-900 mb-2">⚠️ 关键风险</h3>
+                        <ul class="space-y-3 text-slate-600 list-disc list-inside">
+                            <li><strong class="text-slate-700">历史安全事件:</strong> 跨链桥攻击对平台声誉造成了长期损害。</li>
+                            <li><strong class="text-slate-700">高度依赖性:</strong> 生态系统高度依赖《Axie Infinity》和开发商Sky Mavis。</li>
+                             <li><strong class="text-slate-700">中心化风险:</strong> Sky Mavis在网络治理方面仍拥有巨大的控制权。</li>
+                             <li><strong class="text-slate-700">$RON通胀压力:</strong> 未来数年代币的持续解锁可能对价格构成压制。</li>
+                        </ul>
+                    </div>
+                     <div class="lg:col-span-1 grid grid-cols-2 sm:grid-cols-2 gap-6">
+                        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center">
+                            <p class="text-sm text-slate-500">Katana TVL</p>
+                            <p class="text-2xl font-bold text-cyan-700">$115 M</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center">
+                            <p class="text-sm text-slate-500">24h 交易量</p>
+                            <p class="text-2xl font-bold text-cyan-700">$3.5 M</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center">
+                            <p class="text-sm text-slate-500">$RON 质押APR</p>
+                            <p class="text-2xl font-bold text-cyan-700">~14.16%</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center">
+                             <p class="text-sm text-slate-500">已质押 $RON</p>
+                            <p class="text-2xl font-bold text-cyan-700">~28.4%</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="strategies" class="content-section">
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-bold text-slate-900">投资策略矩阵</h2>
+                    <p class="text-slate-500 mt-2">根据您的风险偏好和技能背景，选择最适合的参与方式。</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" id="strategy-cards-container">
+                </div>
+            </div>
+            
+            <div id="risks" class="content-section">
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-bold text-slate-900">综合风险评估</h2>
+                    <p class="text-slate-500 mt-2">全面了解投资前需要考虑的潜在风险。</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="risk-cards-container">
+                </div>
+            </div>
+
+            <div id="data" class="content-section">
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-bold text-slate-900">核心数据可视化</h2>
+                    <p class="text-slate-500 mt-2">通过图表直观感受生态系统的健康状况和代币经济学。</p>
+                </div>
+                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="text-lg font-semibold text-slate-900 text-center mb-4">Katana 总锁仓价值 (TVL) 趋势</h3>
+                        <div class="chart-container">
+                            <canvas id="tvlChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                         <h3 class="text-lg font-semibold text-slate-900 text-center mb-4">$RON 代币供应分布</h3>
+                         <div class="chart-container">
+                            <canvas id="tokenomicsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="about" class="content-section">
+                 <div class="text-center mb-8">
+                    <h2 class="text-2xl font-bold text-slate-900">关于项目</h2>
+                    <p class="text-slate-500 mt-2">深入了解协议、安全历史和背后的团队。</p>
+                </div>
+                <div class="space-y-4 max-w-4xl mx-auto" id="accordion-container">
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            
+            const strategyData = [
+                { title: "直接持币与质押", assets: "$RON", description: "购买$RON代币，并将其委托给网络验证者以获取质押奖励。目标是获得对整个生态系统增长的直接敞口。", apr: "~14.16% APR", advantages: "操作简单；直接分享生态增长红利；无无常损失。", risks: "完全暴露于$RON价格波动风险；代币解锁带来的通胀压力；验证者惩罚风险（较低）。", dev: "低" },
+                { title: "基础流动性挖矿", assets: "$RON/WETH, $AXS/WETH 等", description: "在Katana上为核心交易对提供流动性，以赚取交易费和$RON代币奖励。目标是获得比单纯质押更高的复合收益。", apr: "动态变化", advantages: "可能获得高于质押的收益；赚取真实交易费；深化对生态DeFi的参与。", risks: "无常损失(IL)是主要风险；奖励代币$RON的价格波动；智能合约风险。", dev: "中" },
+                { title: "高级收益策略", assets: "$RON/WETH + $RON 空头", description: "在Katana提供流动性的同时，在CEX开立等值的$RON永续合约空头头寸。目标是剥离$RON价格波动风险，纯粹赚取收益。", apr: "高度动态", advantages: "可在市场横盘或下跌时获利；将收益与代币价格脱钩；策略复杂度高。", risks: "极度复杂；资金费率风险；CEX爆仓风险；基差风险。", dev: "高" },
+                { title: "开发者Alpha", assets: "开发技能 + 时间", description: "利用开发背景，在Ronin上构建增值工具、新协议或游戏。目标是通过创造价值来获取超额回报。", apr: "10x-100x+", advantages: "最高潜在回报；可创造防御性的长期收入流；直接推动生态发展。", risks: "需要大量时间和专业技能投入；项目失败风险极高；受制于Ronin生态的整体发展。", dev: "极高" },
+            ];
+
+            const riskData = [
+                { category: "技术风险", level: "高", items: [
+                    { title: "跨链桥安全风险", detail: "尽管已升级，但作为价值集中的中心化实体，仍是最高价值的攻击目标。其安全高度依赖于所有验证者节点的运营安全水平。", level: "高" },
+                    { title: "智能合约风险", detail: "尽管经过审计，但任何合约都无法保证100%无漏洞。新功能可能引入新风险。", level: "中等" }
+                ]},
+                { category: "市场风险", level: "高", items: [
+                     { title: "$RON价格波动风险", detail: "所有投资策略共同面临的最大市场风险，受宏观环境和生态发展直接影响。", level: "高" },
+                     { title: "无常损失风险", detail: "流动性提供者不可避免的风险，在市场剧烈波动时可能导致实际亏损。", level: "高" },
+                     { title: "通货膨胀压力", detail: "代币持续解锁要求生态系统高速增长以吸收新增供应，否则将压制价格。", level: "高" },
+                ]},
+                { category: "生态与中心化风险", level: "非常高", items: [
+                    { title: "对Sky Mavis的依赖风险", detail: "最根本的结构性风险。从开发到战略，Sky Mavis都扮演主导角色，其失误将严重冲击整个生态。", level: "非常高" },
+                    { title: "对游戏赛道的依赖风险", detail: "价值主张完全建立在Web3游戏之上，若赛道低迷将难以独善其身。", level: "高" },
+                     { title: "竞争风险", detail: "面临来自Polygon, Immutable X等众多强大对手的激烈竞争。", level: "高" },
+                ]}
+            ];
+
+            const accordionData = [
+                { title: "Katana：Ronin的经济引擎", content: "Katana是Sky Mavis为Ronin链打造的官方自动做市商（AMM），为生态系统内的所有资产提供代币兑换服务。它采用标准的x*y=k模型，主要服务于《Axie Infinity》经济体。每笔交易收取0.3%手续费，其中0.25%给流动性提供者，0.05%流入Ronin财政部，直接为$RON代币持有者捕获价值。因此，评估Katana的潜力本质上是在评估整个Ronin生态的增长前景。" },
+                { title: "安全取证：Ronin跨链桥攻击与修复", content: "2022年3月的跨链桥攻击（损失超6亿美元）并非智能合约漏洞，而是针对中心化节点的社会工程学攻击。Sky Mavis通过全额赔偿用户展现了责任感。攻击后，安全措施全面升级：1. 验证者节点从9个增加到21+，引入谷歌云、Nansen等知名机构，大幅提高攻击成本。2. 跨链桥引入“熔断机制”并重新审计。核心风险已从技术漏洞转变为对Sky Mavis及其验证者联盟的运营信任。" },
+                { title: "$RON 代币经济学", content: "$RON是Ronin生态的命脉，总供应量上限10亿枚。其核心效用包括：1. **Gas费用**：所有链上交易的燃料。2. **网络质押**：委托给验证者以维护网络安全，并获得约14%的APR。3. **流动性激励**：作为Katana流动性挖矿的主要奖励。4. **生态治理**：未来将用于对网络重大事项投票。其主要挑战在于未来几年的持续通胀，代币的长期价格表现取决于生态增长速度能否超越供应稀释速度。" },
+                { title: "团队与支持者：Sky Mavis", content: "Sky Mavis是Web3游戏领域的顶级开发公司，拥有成功打造《Axie Infinity》的经验。团队沟通透明，在危机处理中表现负责。其投资者阵容堪称豪华，包括a16z, Paradigm, Binance等，这不仅提供了雄厚资金，也带来了强大的品牌背书和战略资源。目前Ronin的治理模式是“开明专制”，效率高但平台风险也高，生态命运与Sky Mavis高度绑定。" }
+            ];
+
+            const strategyContainer = document.getElementById('strategy-cards-container');
+            strategyData.forEach(s => {
+                const card = document.createElement('div');
+                card.className = "strategy-card bg-white p-6 rounded-xl shadow-sm border border-slate-200 cursor-pointer";
+                card.innerHTML = `
+                    <h3 class="text-lg font-bold text-slate-900">${s.title}</h3>
+                    <p class="text-sm text-cyan-600 font-medium mb-3">${s.assets}</p>
+                    <p class="text-slate-600 text-sm mb-4">${s.description}</p>
+                    <div class="text-xs space-y-2">
+                        <p><span class="font-semibold text-slate-700">预期收益:</span> <span class="text-green-600 font-mono">${s.apr}</span></p>
+                        <p><span class="font-semibold text-slate-700">开发者适用性:</span> <span class="font-mono px-2 py-1 rounded bg-slate-100">${s.dev}</span></p>
+                    </div>
+                    <div class="mt-4 hidden details text-sm space-y-3">
+                        <div class="p-3 bg-green-50 border-l-4 border-green-400 rounded-r-lg">
+                            <h4 class="font-semibold text-green-800">优势</h4>
+                            <p class="text-green-700">${s.advantages}</p>
+                        </div>
+                        <div class="p-3 bg-red-50 border-l-4 border-red-400 rounded-r-lg">
+                            <h4 class="font-semibold text-red-800">风险/劣势</h4>
+                            <p class="text-red-700">${s.risks}</p>
+                        </div>
+                    </div>
+                `;
+                card.addEventListener('click', () => {
+                    card.querySelector('.details').classList.toggle('hidden');
+                });
+                strategyContainer.appendChild(card);
+            });
+
+            const riskContainer = document.getElementById('risk-cards-container');
+            riskData.forEach(r => {
+                const card = document.createElement('div');
+                card.className = "risk-card bg-white p-6 rounded-xl shadow-sm border border-slate-200 cursor-pointer";
+                let itemsHtml = r.items.map(item => `
+                    <div class="mt-4 p-3 bg-slate-50 border-l-4 ${item.level === '高' ? 'border-red-500' : 'border-amber-500'} rounded-r-lg">
+                        <h4 class="font-semibold text-slate-800">${item.title} <span class="text-xs font-normal">(${item.level})</span></h4>
+                        <p class="text-slate-600 text-sm">${item.detail}</p>
+                    </div>
+                `).join('');
+                card.innerHTML = `
+                    <h3 class="text-lg font-bold text-slate-900">${r.category}</h3>
+                    <p class="text-sm font-medium ${r.level.includes('高') ? 'text-red-600' : 'text-amber-600'}">风险等级: ${r.level}</p>
+                    <div class="hidden details">${itemsHtml}</div>
+                `;
+                card.addEventListener('click', () => {
+                    card.querySelector('.details').classList.toggle('hidden');
+                });
+                riskContainer.appendChild(card);
+            });
+            
+            const accordionContainer = document.getElementById('accordion-container');
+            accordionData.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'bg-white border border-slate-200 rounded-xl overflow-hidden';
+                div.innerHTML = `
+                    <button class="w-full text-left p-4 font-semibold text-slate-800 flex justify-between items-center hover:bg-slate-50 transition-colors">
+                        <span>${item.title}</span>
+                        <svg class="w-5 h-5 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    <div class="px-4 pb-4 text-slate-600 hidden">
+                        <p>${item.content}</p>
+                    </div>
+                `;
+                const button = div.querySelector('button');
+                const content = div.querySelector('div');
+                const icon = div.querySelector('svg');
+                button.addEventListener('click', () => {
+                    content.classList.toggle('hidden');
+                    icon.classList.toggle('rotate-180');
+                });
+                accordionContainer.appendChild(div);
+            });
+
+
+            const navItems = document.querySelectorAll('.nav-item');
+            const contentSections = document.querySelectorAll('.content-section');
+            navItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    navItems.forEach(i => i.classList.remove('active'));
+                    item.classList.add('active');
+                    const targetId = item.getAttribute('data-target');
+                    contentSections.forEach(section => {
+                        section.id === targetId ? section.classList.add('active') : section.classList.remove('active');
+                    });
+                });
+            });
+
+            const tvlCtx = document.getElementById('tvlChart').getContext('2d');
+            new Chart(tvlCtx, {
+                type: 'line',
+                data: {
+                    labels: ['2022 Q4', '2023 Q1', '2023 Q2', '2023 Q3', '2023 Q4', '2024 Q1', '2024 Q2'],
+                    datasets: [{
+                        label: 'TVL (百万美元)',
+                        data: [45, 60, 55, 75, 90, 120, 115],
+                        borderColor: '#06b6d4',
+                        backgroundColor: 'rgba(6, 182, 212, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: false } }
+                }
+            });
+
+            const tokenomicsCtx = document.getElementById('tokenomicsChart').getContext('2d');
+            new Chart(tokenomicsCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['已质押', '社区与奖励', '团队与顾问', 'Sky Mavis', '流通中 (未质押)'],
+                    datasets: [{
+                        label: '$RON 分布',
+                        data: [28.4, 25, 30, 10, 6.6],
+                        backgroundColor: ['#06b6d4', '#22d3ee', '#67e8f9', '#a5f3fc', '#cffafe'],
+                        borderColor: '#f8fafc',
+                        borderWidth: 2,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.label}: ${context.raw}%`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>

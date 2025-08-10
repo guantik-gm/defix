@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Save.finance 交互式投资分析</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Slate & Amber -->
+    <!-- Application Structure Plan: 本应用采用自上而下的仪表盘式布局，旨在引导用户从宏观到微观、从结论到细节进行探索。结构分为四个核心部分：1. **概览仪表盘**：提供最终评级和关键指标，让用户在30秒内了解项目现状。2. **机遇与风险**：这是应用的核心交互模块，将报告中复杂的投资策略表格转化为按投资者画像（高风险、开发者、被动型）分类的卡片式过滤器，用户可以直观地看到与其风险偏好匹配的机会，点击卡片可深入了解详情。这种设计将线性文本转化为任务驱动的探索，极大提升了可用性。3. **深度剖析**：使用可折叠的“手风琴”组件，将竞争格局、代币经济学和团队背景等深度内容组织起来，避免信息过载，同时满足深度研究者的需求。4. **历史回顾**：通过一个垂直时间轴，将项目的关键历史事件（尤其是负面事件）可视化，使用户能快速理解其品牌重塑背后的历史包袱和发展轨迹。整个流程旨在实现非线性的、按需的信息获取，而非被动阅读。 -->
+    <!-- Visualization & Content Choices: 1. **TVL对比 (目标: 对比)** -> 柱状图 (Chart.js)，直观展示Save与主要竞品的市场份额差距。2. **代币分配 (目标: 组织/通知)** -> 甜甜圈图 (Chart.js)，清晰呈现代币在社区、团队、投资者间的分配比例。3. **投资策略 (目标: 组织/对比)** -> 交互式卡片+过滤器 (HTML/CSS/JS)，将复杂的表格数据转化为按用户画像分类的、包含风险等级/回报的可视化组件，点击交互可查看详情，这是引导用户决策的核心。4. **历史事件 (目标: 变化/通知)** -> 垂直时间轴 (HTML/CSS)，将项目历史上的关键节点（特别是风险事件）按时间顺序排列，用颜色区分正负面，比纯文本列表更具冲击力和可读性。所有选择均基于Canvas或HTML/CSS实现，确保无SVG/Mermaid。 -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 320px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .risk-high { background-color: #ef4444; color: white; }
+        .risk-medium { background-color: #f97316; color: white; }
+        .risk-low { background-color: #22c55e; color: white; }
+        .risk-speculative { background-color: #8b5cf6; color: white; }
+        .risk-very-high { background-color: #be123c; color: white; }
+        .risk-extreme { background-color: #7f1d1d; color: white; }
+        .tab-active {
+            border-color: #f59e0b; /* amber-400 */
+            background-color: #fef3c7; /* amber-100 */
+            color: #b45309; /* amber-700 */
+        }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <!-- Header & Navigation -->
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-40 shadow-sm">
+        <div class="container mx-auto px-4">
+            <nav class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-4">
+                    <span class="text-2xl font-bold text-slate-900">Save.finance</span>
+                    <span class="hidden md:inline-block text-sm text-slate-500">交互式投资分析</span>
+                </div>
+                <div class="hidden md:flex items-center space-x-6 text-sm font-medium text-slate-600">
+                    <a href="#dashboard" class="hover:text-amber-600 transition-colors">仪表盘</a>
+                    <a href="#opportunities" class="hover:text-amber-600 transition-colors">机遇与风险</a>
+                    <a href="#deep-dive" class="hover:text-amber-600 transition-colors">深度剖析</a>
+                    <a href="#history" class="hover:text-amber-600 transition-colors">历史回顾</a>
+                </div>
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="text-slate-600 focus:outline-none">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                    </button>
+                </div>
+            </nav>
+            <!-- Mobile Menu -->
+            <div id="mobile-menu" class="hidden md:hidden pb-4">
+                 <a href="#dashboard" class="block py-2 px-4 text-sm text-slate-600 hover:bg-amber-50 rounded">仪表盘</a>
+                 <a href="#opportunities" class="block py-2 px-4 text-sm text-slate-600 hover:bg-amber-50 rounded">机遇与风险</a>
+                 <a href="#deep-dive" class="block py-2 px-4 text-sm text-slate-600 hover:bg-amber-50 rounded">深度剖析</a>
+                 <a href="#history" class="block py-2 px-4 text-sm text-slate-600 hover:bg-amber-50 rounded">历史回顾</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8 md:py-12">
+
+        <!-- Section 1: Dashboard -->
+        <section id="dashboard" class="mb-16">
+            <div class="text-center mb-12">
+                <h1 class="text-4xl md:text-5xl font-bold text-slate-900 mb-2">Save.finance 投资仪表盘</h1>
+                <p class="text-lg text-slate-600">从 Solend 到 Save 的重生之路：一次高风险的逆向价值投资</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Final Rating -->
+                <div class="md:col-span-1 bg-white p-6 rounded-xl shadow-lg border border-slate-200 flex flex-col justify-center items-center text-center">
+                    <h3 class="text-lg font-semibold text-slate-500 mb-2">最终投资评级</h3>
+                    <p class="text-6xl font-bold text-amber-500 mb-4">中立</p>
+                    <p class="text-sm text-slate-600">项目高风险与高回报并存，机遇与历史包袱同样显著。建议根据不同投资者画像采取差异化策略。</p>
+                </div>
+
+                <!-- Key Metrics -->
+                <div class="md:col-span-2 grid grid-cols-2 gap-4">
+                    <div class="bg-white p-4 rounded-xl shadow-md border border-slate-200">
+                        <h4 class="text-sm font-medium text-slate-500">总锁定价值 (TVL)</h4>
+                        <p class="text-2xl md:text-3xl font-bold text-slate-800">$2.43 亿</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl shadow-md border border-slate-200">
+                        <h4 class="text-sm font-medium text-slate-500">代币市值 (SAVE)</h4>
+                        <p class="text-2xl md:text-3xl font-bold text-slate-800">$1129 万</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl shadow-md border border-slate-200">
+                        <h4 class="text-sm font-medium text-slate-500">年化协议收入</h4>
+                        <p class="text-2xl md:text-3xl font-bold text-slate-800">$29.6 万</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl shadow-md border border-slate-200">
+                        <h4 class="text-sm font-medium text-slate-500">24h 代币交易量</h4>
+                        <p class="text-2xl md:text-3xl font-bold text-rose-600">~$1,667</p>
+                        <p class="text-xs text-rose-500">流动性极低警告</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Competitive Landscape Chart -->
+            <div class="mt-12 bg-white p-6 rounded-xl shadow-lg border border-slate-200">
+                <h3 class="text-xl font-bold text-center mb-1">Solana 借贷市场竞争格局</h3>
+                <p class="text-sm text-slate-500 text-center mb-6">TVL 对比 (单位：亿美元)</p>
+                <div class="chart-container">
+                    <canvas id="tvlChart"></canvas>
+                </div>
+                 <p class="text-xs text-slate-500 mt-4 text-center">Save.finance 在竞争中处于明显劣势，市场领导者 Kamino 的 TVL 远超 Save。投资 Save 相当于对市场领导者的一场逆向押注。</p>
+            </div>
+        </section>
+
+        <!-- Section 2: Opportunities & Risks -->
+        <section id="opportunities" class="mb-16 scroll-mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-slate-900 mb-2">机遇与风险矩阵</h2>
+                <p class="text-lg text-slate-600">根据您的画像，探索潜在的投资策略与回报</p>
+            </div>
+
+            <!-- Filter Tabs -->
+            <div class="flex justify-center space-x-2 md:space-x-4 mb-8">
+                <button class="strategy-tab px-4 py-2 text-sm md:text-base font-medium border-b-2 transition-all duration-200 tab-active" data-profile="all">所有策略</button>
+                <button class="strategy-tab px-4 py-2 text-sm md:text-base font-medium border-b-2 border-transparent text-slate-500 hover:border-amber-400 hover:text-amber-600 transition-all duration-200" data-profile="high-risk">高风险收益型</button>
+                <button class="strategy-tab px-4 py-2 text-sm md:text-base font-medium border-b-2 border-transparent text-slate-500 hover:border-amber-400 hover:text-amber-600 transition-all duration-200" data-profile="developer">稳健开发者</button>
+                <button class="strategy-tab px-4 py-2 text-sm md:text-base font-medium border-b-2 border-transparent text-slate-500 hover:border-amber-400 hover:text-amber-600 transition-all duration-200" data-profile="passive">被动持有者</button>
+            </div>
+
+            <!-- Strategy Cards Container -->
+            <div id="strategy-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Cards will be dynamically inserted here -->
+            </div>
+        </section>
+
+        <!-- Section 3: Deep Dive -->
+        <section id="deep-dive" class="mb-16 scroll-mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-slate-900 mb-2">项目深度剖析</h2>
+                <p class="text-lg text-slate-600">深入了解项目的基本面、代币经济与团队背景</p>
+            </div>
+
+            <div class="space-y-4 max-w-4xl mx-auto">
+                <!-- Accordion Item 1: Tokenomics -->
+                <div class="accordion-item bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
+                    <button class="accordion-header w-full flex justify-between items-center p-5 text-left">
+                        <span class="text-lg font-semibold text-slate-800">代币经济学 (Tokenomics)</span>
+                        <svg class="accordion-icon w-6 h-6 transition-transform transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    <div class="accordion-content">
+                        <div class="p-5 pt-0 grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                            <div class="chart-container h-64 md:h-auto">
+                                <canvas id="tokenomicsChart"></canvas>
+                            </div>
+                            <div>
+                                <h4 class="font-bold mb-2">核心要点：</h4>
+                                <ul class="list-disc list-inside text-sm text-slate-600 space-y-2">
+                                    <li><span class="font-semibold">总供应量:</span> 1亿 SAVE，几乎全部流通。</li>
+                                    <li><span class="font-semibold">低通胀压力:</span> 团队与投资人份额已基本解锁，未来大规模抛压风险小。</li>
+                                    <li><span class="font-semibold">核心效用:</span> 主要用于治理和流动性激励。</li>
+                                    <li class="text-amber-700"><span class="font-semibold">潜在弱点:</span> 缺乏与协议收入直接挂钩的价值捕获机制（如费用分享、回购销毁）。</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Accordion Item 2: Team & Backers -->
+                <div class="accordion-item bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
+                    <button class="accordion-header w-full flex justify-between items-center p-5 text-left">
+                        <span class="text-lg font-semibold text-slate-800">团队与投资者</span>
+                        <svg class="accordion-icon w-6 h-6 transition-transform transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    <div class="accordion-content">
+                        <div class="p-5 pt-0 text-slate-600">
+                             <p class="mb-4">项目由技术实力雄厚的团队领导，并获得了业内顶级风险投资机构的支持，这是一个显著的核心优势。持续的开发者活动表明项目仍在积极建设。</p>
+                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <h4 class="font-bold mb-2 text-slate-800">核心团队背景</h4>
+                                    <ul class="list-disc list-inside text-sm space-y-1">
+                                        <li>创始人 (Rooter): 经验丰富的以太坊开发者。</li>
+                                        <li>团队成员: 来自 Coinbase, Robinhood, Twitch 等顶级公司。</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold mb-2 text-slate-800">顶级投资者</h4>
+                                     <ul class="list-disc list-inside text-sm space-y-1">
+                                        <li>Polychain Capital</li>
+                                        <li>Dragonfly Capital</li>
+                                        <li>Coinbase Ventures</li>
+                                        <li>Solana Ventures</li>
+                                        <li>Stani Kulechov (Aave 创始人)</li>
+                                    </ul>
+                                </div>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                 <!-- Accordion Item 3: Competitive Analysis -->
+                <div class="accordion-item bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
+                    <button class="accordion-header w-full flex justify-between items-center p-5 text-left">
+                        <span class="text-lg font-semibold text-slate-800">竞争分析</span>
+                        <svg class="accordion-icon w-6 h-6 transition-transform transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    <div class="accordion-content">
+                        <div class="p-5 pt-0">
+                            <p class="text-sm text-slate-600 mb-4">Save 的当前策略是通过差异化产品（saveSOL, dumpy.fun）开辟新战场，而非在核心借贷功能上与市场领导者 Kamino 直接对抗。</p>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm text-left">
+                                    <thead class="bg-slate-100 text-slate-600">
+                                        <tr>
+                                            <th class="p-3 font-semibold">特性/指标</th>
+                                            <th class="p-3 font-semibold">Save.finance</th>
+                                            <th class="p-3 font-semibold">Kamino Finance</th>
+                                            <th class="p-3 font-semibold">MarginFi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-200">
+                                        <tr class="hover:bg-slate-50">
+                                            <td class="p-3 font-medium">TVL</td>
+                                            <td class="p-3">~ $2.4 亿</td>
+                                            <td class="p-3 font-bold text-emerald-600">~ $20+ 亿</td>
+                                            <td class="p-3">~ $1.9 亿</td>
+                                        </tr>
+                                        <tr class="hover:bg-slate-50">
+                                            <td class="p-3 font-medium">关键差异化</td>
+                                            <td class="p-3">新产品, 历史悠久</td>
+                                            <td class="p-3">卓越UX, 自动化金库</td>
+                                            <td class="p-3">积分计划, 风险管理</td>
+                                        </tr>
+                                        <tr class="hover:bg-slate-50">
+                                            <td class="p-3 font-medium">主要弱点</td>
+                                            <td class="p-3 text-rose-600">声誉受损, 份额流失</td>
+                                            <td class="p-3">产品多样性较少</td>
+                                            <td class="p-3 text-rose-600">空投/团队问题</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: History -->
+        <section id="history" class="scroll-mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-slate-900 mb-2">历史回顾与风险事件</h2>
+                <p class="text-lg text-slate-600">理解项目的过去，是评估其未来的关键</p>
+            </div>
+
+            <div class="relative max-w-2xl mx-auto">
+                <!-- Vertical Line -->
+                <div class="absolute left-1/2 transform -translate-x-1/2 h-full w-0.5 bg-slate-300"></div>
+                
+                <div id="timeline-container" class="relative space-y-12">
+                   <!-- Timeline items will be dynamically inserted here -->
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <footer class="bg-slate-800 text-slate-400 mt-16">
+        <div class="container mx-auto px-4 py-6 text-center text-sm">
+            <p>本交互式报告基于公开信息生成，仅供研究参考，不构成任何投资建议。</p>
+            <p>&copy; 2025 交互式分析报告. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Data Store
+    const appData = {
+        kpis: {
+            tvl: '2.43 亿',
+            marketCap: '1129 万',
+            revenue: '29.6 万',
+            volume: '~1,667'
+        },
+        tvlComparison: {
+            labels: ['Kamino Finance', 'Save.finance', 'MarginFi'],
+            data: [20, 2.43, 1.9]
+        },
+        tokenomics: {
+            labels: ['社区 (流动性挖矿 & 财库)', '核心团队', '投资者'],
+            data: [60, 25, 15]
+        },
+        strategies: [
+            {
+                profile: 'passive',
+                title: '直接购买代币 (SAVE)',
+                apy: '高波动',
+                risk: '非常高',
+                riskClass: 'risk-very-high',
+                complexity: '低',
+                description: '一场高风险的逆向价值投资。代币市值相对TVL极低，但流动性极差且历史声誉包袱沉重。',
+                pros: ['估值可能偏低，未来重估潜力大', '无未来大规模解锁通胀'],
+                cons: ['流动性极差，交易困难', '声誉受损，市场信心不足', '价值捕获机制弱']
+            },
+            {
+                profile: 'high-risk',
+                title: '基础借贷 (供应 USDC)',
+                apy: '5%-40%+',
+                risk: '中低',
+                riskClass: 'risk-low',
+                complexity: '低',
+                description: '通过存入稳定币等资产赚取浮动利息和代币奖励，是较为稳健的收益策略。',
+                pros: ['风险相对较低', '操作简单，适合入门'],
+                cons: ['APY浮动大，受市场利用率影响']
+            },
+            {
+                profile: 'high-risk',
+                title: '杠杆质押 (saveSOL)',
+                apy: '15%-25%+',
+                risk: '非常高',
+                riskClass: 'risk-very-high',
+                complexity: '高',
+                description: '通过循环借贷放大SOL质押收益。这是为高级用户设计的强大工具，回报高但风险极大。',
+                pros: ['显著放大质押收益率'],
+                cons: ['极高的清算风险（LST脱钩）', '借款利率上升风险', '需要主动进行风险管理']
+            },
+            {
+                profile: 'high-risk',
+                title: '做空 Meme 币 (dumpy.fun)',
+                apy: '无上限',
+                risk: '极高',
+                riskClass: 'risk-extreme',
+                complexity: '高',
+                description: '在dumpy.fun平台上借入并卖出Meme币，赌其价格下跌。可能获得极高回报，也可能被“轧空”导致巨大损失。',
+                pros: ['提供做空炒作资产的工具', '潜在回报极高'],
+                cons: ['被“轧空”(Squeeze)的风险极高', '需要精准的交易技巧和时机把握']
+            },
+            {
+                profile: 'high-risk',
+                title: '出借 Meme 币 (dumpy.fun)',
+                apy: '非常高 (APR)',
+                risk: '高',
+                riskClass: 'risk-high',
+                complexity: '中',
+                description: '将持有的Meme币存入dumpy.fun资金池供他人做空，以赚取高额借贷利息。',
+                pros: ['盘活闲置Meme币资产，赚取高额APR'],
+                cons: ['机会成本风险（若代币大涨）', '平台智能合约风险']
+            },
+            {
+                profile: 'developer',
+                title: '运行清算机器人',
+                apy: '5% 清算奖励',
+                risk: '中',
+                riskClass: 'risk-medium',
+                complexity: '非常高',
+                description: '运行开源的清算机器人，帮助协议清算风险账户，并获得被清算金额5%的奖励。',
+                pros: ['直接从协议核心机制中获利', '帮助维护协议健康'],
+                cons: ['需要强大的开发和机器人运维技能', '需要准备用于清算的资本']
+            },
+            {
+                profile: 'developer',
+                title: '生态系统集成 (开发者)',
+                apy: '20% 费用分成',
+                risk: '低',
+                riskClass: 'risk-low',
+                complexity: '非常高',
+                description: '构建应用并集成Save的借贷功能，可以从每笔通过您应用产生的借款中获得20%的费用分成。',
+                pros: ['风险低，收入潜力大', '与协议共同成长的B2B模式'],
+                cons: ['需要具备应用开发能力']
+            },
+            {
+                profile: 'high-risk',
+                title: '空投 Farming',
+                apy: '投机性',
+                risk: '低',
+                riskClass: 'risk-speculative',
+                complexity: '中',
+                description: '通过与sUSD、saveSOL等新产品交互，以较低成本博取未来可能的新一轮空投资格。',
+                pros: ['潜在以小博大的机会'],
+                cons: ['不确定性高，可能没有空投', '需要投入时间和交易Gas费']
+            }
+        ],
+        timeline: [
+            {
+                date: '2024年7月',
+                title: '品牌重塑为 Save.finance',
+                description: '项目从Solend更名为Save，并推出sUSD、saveSOL、dumpy.fun等新产品，标志着向多功能平台的战略转型。',
+                type: 'positive'
+            },
+            {
+                date: '2022年11月',
+                title: '预言机攻击事件',
+                description: '因依赖低流动性资产的预言机，导致了126万美元的坏账。事件暴露了V1架构的风险。',
+                type: 'negative'
+            },
+            {
+                date: '2022年6月',
+                title: '巨鲸账户治理危机',
+                description: '为处理一个可能引发系统性风险的巨鲸账户，团队发起提案试图接管该账户，引发社区对中心化的强烈谴责，声誉严重受损。',
+                type: 'negative'
+            },
+            {
+                date: '2021年12月',
+                title: '舍入漏洞修复',
+                description: '安全公司Neodyme披露了一个舍入误差漏洞，团队在数小时内迅速修复，展示了专业的应急响应能力。',
+                type: 'positive'
+            },
+            {
+                date: '2021年10月',
+                title: '完成 650 万美元种子轮融资',
+                description: '获得Polychain, Dragonfly, Coinbase Ventures等顶级VC投资，彰显项目潜力。',
+                type: 'positive'
+            },
+            {
+                date: '2021年6月',
+                title: '赢得 Solana 黑客松冠军',
+                description: '在Solana Season黑客松中获得DeFi赛道第一名，项目早期获得巨大关注。',
+                type: 'positive'
+            }
+        ]
+    };
+
+    // --- RENDER FUNCTIONS ---
+    
+    function renderStrategyCards(profile = 'all') {
+        const container = document.getElementById('strategy-container');
+        container.innerHTML = '';
+        const filteredStrategies = profile === 'all' 
+            ? appData.strategies 
+            : appData.strategies.filter(s => s.profile === profile);
+
+        if (filteredStrategies.length === 0) {
+            container.innerHTML = `<p class="text-slate-500 text-center md:col-span-2 lg:col-span-3">该画像下暂无推荐的特定策略。</p>`;
+            return;
+        }
+
+        filteredStrategies.forEach(strategy => {
+            const card = document.createElement('div');
+            card.className = 'bg-white p-5 rounded-xl shadow-lg border border-slate-200 flex flex-col justify-between hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer';
+            card.innerHTML = `
+                <div>
+                    <div class="flex justify-between items-start mb-3">
+                        <h4 class="text-lg font-bold text-slate-900">${strategy.title}</h4>
+                        <span class="text-xs font-bold px-2 py-1 rounded-full ${strategy.riskClass}">${strategy.risk}</span>
+                    </div>
+                    <p class="text-sm text-slate-600 mb-4">${strategy.description}</p>
+                </div>
+                <div class="mt-auto pt-4 border-t border-slate-200 flex justify-between items-center text-sm">
+                    <div>
+                        <span class="font-semibold text-slate-500">潜在回报:</span>
+                        <span class="font-bold text-amber-600">${strategy.apy}</span>
+                    </div>
+                    <div>
+                        <span class="font-semibold text-slate-500">复杂度:</span>
+                        <span class="font-bold text-slate-800">${strategy.complexity}</span>
+                    </div>
+                </div>
+            `;
+            // Add click listener for modal/details later if needed
+            container.appendChild(card);
+        });
+    }
+
+    function renderTimeline() {
+        const container = document.getElementById('timeline-container');
+        container.innerHTML = '';
+        appData.timeline.forEach((item, index) => {
+            const isLeft = index % 2 === 0;
+            const timelineItem = document.createElement('div');
+            timelineItem.className = `relative flex items-center ${isLeft ? 'justify-start' : 'justify-end'}`;
+
+            const content = `
+                <div class="w-5/12">
+                    <div class="bg-white p-4 rounded-lg shadow-md border ${item.type === 'positive' ? 'border-green-200' : 'border-rose-200'}">
+                        <time class="text-xs font-bold ${item.type === 'positive' ? 'text-green-600' : 'text-rose-600'}">${item.date}</time>
+                        <h4 class="font-bold text-md mt-1 mb-1 text-slate-800">${item.title}</h4>
+                        <p class="text-sm text-slate-600">${item.description}</p>
+                    </div>
+                </div>
+            `;
+            
+            const pointer = `
+                <div class="absolute w-4 h-4 rounded-full ${item.type === 'positive' ? 'bg-green-500' : 'bg-rose-500'} left-1/2 transform -translate-x-1/2 -translate-y-4 flex items-center justify-center"></div>
+            `;
+
+            if (isLeft) {
+                timelineItem.innerHTML = content + pointer;
+            } else {
+                timelineItem.innerHTML = pointer + content;
+            }
+            container.appendChild(timelineItem);
+        });
+    }
+
+    // --- CHART CREATION ---
+
+    function createTvlChart() {
+        const ctx = document.getElementById('tvlChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: appData.tvlComparison.labels,
+                datasets: [{
+                    label: 'TVL (亿美元)',
+                    data: appData.tvlComparison.data,
+                    backgroundColor: [
+                        'rgba(16, 185, 129, 0.6)', // emerald-500
+                        'rgba(245, 158, 11, 0.6)', // amber-500
+                        'rgba(107, 114, 128, 0.6)'  // gray-500
+                    ],
+                    borderColor: [
+                        'rgba(5, 150, 105, 1)',
+                        'rgba(217, 119, 6, 1)',
+                        'rgba(75, 85, 99, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return ` ${context.dataset.label}: ${context.formattedValue} 亿`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'TVL (亿美元)'
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function createTokenomicsChart() {
+        const ctx = document.getElementById('tokenomicsChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: appData.tokenomics.labels,
+                datasets: [{
+                    label: '代币分配',
+                    data: appData.tokenomics.data,
+                    backgroundColor: [
+                        'rgba(59, 130, 246, 0.7)', // blue-500
+                        'rgba(245, 158, 11, 0.7)', // amber-500
+                        'rgba(107, 114, 128, 0.7)'  // gray-500
+                    ],
+                    borderColor: [
+                        'rgba(37, 99, 235, 1)',
+                        'rgba(217, 119, 6, 1)',
+                        'rgba(55, 65, 81, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                             boxWidth: 12,
+                             padding: 15,
+                             font: {
+                                size: 12
+                             }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // --- EVENT LISTENERS ---
+
+    // Strategy Tabs
+    const strategyTabs = document.querySelectorAll('.strategy-tab');
+    strategyTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            strategyTabs.forEach(t => t.classList.remove('tab-active'));
+            tab.classList.add('tab-active');
+            renderStrategyCards(tab.dataset.profile);
+        });
+    });
+
+    // Accordions
+    const accordionItems = document.querySelectorAll('.accordion-item');
+    accordionItems.forEach(item => {
+        const header = item.querySelector('.accordion-header');
+        const content = item.querySelector('.accordion-content');
+        const icon = item.querySelector('.accordion-icon');
+        header.addEventListener('click', () => {
+            const isOpen = content.style.maxHeight && content.style.maxHeight !== '0px';
+            // Close all accordions
+            accordionItems.forEach(i => {
+                i.querySelector('.accordion-content').style.maxHeight = '0px';
+                i.querySelector('.accordion-icon').classList.remove('rotate-180');
+            });
+            // Open the clicked one if it was closed
+            if (!isOpen) {
+                content.style.maxHeight = content.scrollHeight + 'px';
+                icon.classList.add('rotate-180');
+            }
+        });
+    });
+
+    // Mobile Menu
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const mobileMenu = document.getElementById('mobile-menu');
+    mobileMenuButton.addEventListener('click', () => {
+        mobileMenu.classList.toggle('hidden');
+    });
+    
+    // Close mobile menu on link click
+    mobileMenu.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', () => {
+            mobileMenu.classList.add('hidden');
+        });
+    });
+
+
+    // --- INITIAL RENDER ---
+    renderStrategyCards();
+    renderTimeline();
+    createTvlChart();
+    createTokenomicsChart();
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ICN Protocol 交互式投资分析报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutral Harmony -->
+    <!-- Application Structure Plan: A non-linear, thematic single-page application designed around the core investment decision (the "Trust Paradox"). The structure starts with a high-level summary (Hero and Thesis), then allows users to self-direct their exploration via a tabbed "Deep Dive" section covering Technology, Tokenomics, and Competitive Landscape. This is followed by detailed tables for Investment Opportunities. This user-centric flow is chosen over a linear report structure to enhance engagement and allow users to quickly access information relevant to their specific interests (e.g., a developer might jump to 'Technology', while a financial analyst might focus on 'Tokenomics'). -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Final Rating, Key Metrics -> Goal: Inform, Establish Credibility -> Viz: Prominent Text, Styled Cards -> Interaction: Static -> Justification: Immediately present the report's conclusion and key data points.
+        - Report Info: Strengths vs. Risks -> Goal: Compare, Frame Decision -> Viz: Two-column "Bull vs. Bear" layout -> Interaction: Static -> Justification: Visually represents the core investment conflict ("Trust Paradox") for quick comprehension.
+        - Report Info: Token Allocation -> Goal: Show Proportions -> Viz: Donut Chart (Chart.js Canvas) -> Interaction: Hover Tooltips -> Justification: Standard, effective way to show parts-of-a-whole distribution.
+        - Report Info: Technology Stack (3 Layers) -> Goal: Organize, Explain -> Viz: Custom HTML/CSS Diagram -> Interaction: Click-to-reveal details -> Justification: Lightweight, responsive, and more interactive than a static image for explaining a conceptual model. NO SVG/Mermaid.
+        - Report Info: Competitor & Investment Opportunity Tables -> Goal: Compare, Organize -> Viz: HTML Tables -> Interaction: JS-powered sorting -> Justification: Allows users to re-organize data based on their own criteria (e.g., risk level), making it a more powerful analysis tool.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #F8F7F4;
+            color: #374151;
+        }
+        .chart-container {
+            position: relative;
+            margin: auto;
+            height: 350px;
+            max-height: 400px;
+            width: 100%;
+            max-width: 400px;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .nav-button-active {
+            background-color: #1E40AF;
+            color: white;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .nav-button {
+            transition: all 0.3s ease;
+        }
+        .content-section {
+            display: none;
+        }
+        .content-section.active {
+            display: block;
+        }
+        .tech-diagram-card {
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .tech-diagram-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-50 bg-white/80 backdrop-blur-lg shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-800">ICN Protocol 投资分析</h1>
+            <a href="#investment-strategy" class="hidden sm:inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">查看投资策略</a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+
+        <!-- Hero Section -->
+        <section class="text-center mb-16">
+            <span class="inline-block bg-amber-100 text-amber-800 text-sm font-semibold px-4 py-1 rounded-full mb-4">DePIN 赛道潜力股</span>
+            <h2 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Impossible Cloud Network (ICN)</h2>
+            <p class="text-xl text-gray-600 max-w-3xl mx-auto">一个精英团队与“黑盒”技术之间的豪赌：挑战AWS的去中心化云，机遇与风险并存。</p>
+            
+            <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-4xl mx-auto">
+                <div class="glass-card p-4 rounded-xl text-center">
+                    <p class="text-sm text-gray-500">最终投资评级</p>
+                    <p class="text-2xl font-bold text-amber-600">中立 (Neutral)</p>
+                </div>
+                <div class="glass-card p-4 rounded-xl text-center">
+                    <p class="text-sm text-gray-500">私募轮估值 (FDV)</p>
+                    <p class="text-2xl font-bold text-gray-800">$4.7 亿</p>
+                </div>
+                <div class="glass-card p-4 rounded-xl text-center">
+                    <p class="text-sm text-gray-500">已验证年收入 (ARR)</p>
+                    <p class="text-2xl font-bold text-gray-800">$700 万</p>
+                </div>
+                <div class="glass-card p-4 rounded-xl text-center">
+                    <p class="text-sm text-gray-500">已披露融资额</p>
+                    <p class="text-2xl font-bold text-gray-800">$3400 万</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Investment Thesis: Bull vs Bear -->
+        <section class="mb-16">
+            <div class="bg-white p-6 md:p-8 rounded-2xl shadow-lg">
+                <h3 class="text-2xl font-bold text-center mb-2">核心投资论点：信任的悖论</h3>
+                <p class="text-center text-gray-600 mb-8">投资ICN的决策核心，在于如何权衡其世界级的团队声誉与当前阶段的技术不透明性。这是一个典型的“投人”与“投码”之间的抉择。</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Bull Case -->
+                    <div class="bg-green-50 border-2 border-green-200 p-6 rounded-xl">
+                        <h4 class="text-xl font-bold text-green-800 mb-4 flex items-center">
+                            <span class="text-2xl mr-2">🐂</span> 看涨理由 (Bull Case)
+                        </h4>
+                        <ul id="bull-points" class="space-y-3 text-green-900">
+                            <!-- JS will populate this -->
+                        </ul>
+                    </div>
+                    <!-- Bear Case -->
+                    <div class="bg-red-50 border-2 border-red-200 p-6 rounded-xl">
+                        <h4 class="text-xl font-bold text-red-800 mb-4 flex items-center">
+                           <span class="text-2xl mr-2">🐻</span> 看跌理由 (Bear Case)
+                        </h4>
+                        <ul id="bear-points" class="space-y-3 text-red-900">
+                            <!-- JS will populate this -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Deep Dive Section -->
+        <section class="mb-16">
+             <div class="text-center mb-8">
+                 <h3 class="text-3xl font-bold">深度剖析</h3>
+                 <p class="text-gray-600 mt-2">点击下方标签，深入了解项目的技术、经济模型与竞争格局。</p>
+            </div>
+            <div class="flex justify-center flex-wrap gap-2 md:gap-4 mb-8" id="nav-buttons">
+                <button data-target="tech" class="nav-button px-6 py-2 rounded-full font-semibold text-gray-700 bg-white shadow-sm hover:bg-gray-100">项目解析</button>
+                <button data-target="tokenomics" class="nav-button px-6 py-2 rounded-full font-semibold text-gray-700 bg-white shadow-sm hover:bg-gray-100">代币经济学</button>
+                <button data-target="competition" class="nav-button px-6 py-2 rounded-full font-semibold text-gray-700 bg-white shadow-sm hover:bg-gray-100">竞争格局</button>
+            </div>
+
+            <div id="content-container" class="bg-white p-6 md:p-8 rounded-2xl shadow-lg min-h-[400px]">
+                <!-- Tech Section -->
+                <div id="tech" class="content-section">
+                    <h4 class="text-xl font-bold mb-4">技术架构：三层生态与双节点模型</h4>
+                    <p class="text-gray-600 mb-6">ICN通过一个分层的、职责明确的架构来平衡去中心化与企业级服务质量。点击下方卡片查看各层级与节点的详细职责。</p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                        <div class="tech-diagram-card p-4 border rounded-lg bg-gray-50" onclick="showTechDetail('layer-app')">
+                            <span class="text-3xl">📱</span>
+                            <h5 class="font-bold mt-2">应用/服务层</h5>
+                            <p class="text-sm text-gray-500">面向用户的最终产品</p>
+                        </div>
+                        <div class="tech-diagram-card p-4 border rounded-lg bg-gray-50" onclick="showTechDetail('layer-protocol')">
+                             <span class="text-3xl">📜</span>
+                            <h5 class="font-bold mt-2">协议层</h5>
+                            <p class="text-sm text-gray-500">网络的大脑与协调中心</p>
+                        </div>
+                        <div class="tech-diagram-card p-4 border rounded-lg bg-gray-50" onclick="showTechDetail('layer-hardware')">
+                             <span class="text-3xl">💽</span>
+                            <h5 class="font-bold mt-2">硬件/资源层</h5>
+                            <p class="text-sm text-gray-500">物理基础设施的基础</p>
+                        </div>
+                    </div>
+                    <div id="tech-detail-display" class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg text-blue-900 hidden"></div>
+                </div>
+
+                <!-- Tokenomics Section -->
+                <div id="tokenomics" class="content-section">
+                     <h4 class="text-xl font-bold mb-4 text-center">ICNT 代币经济学</h4>
+                     <p class="text-gray-600 mb-6 text-center">总供应量固定为7亿枚，旨在通过多种核心功能捕获网络价值。</p>
+                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                        <div class="chart-container">
+                            <canvas id="tokenomicsChart"></canvas>
+                        </div>
+                        <div>
+                             <h5 class="font-bold text-lg mb-3">核心代币功用:</h5>
+                             <ul id="token-utility-list" class="space-y-2">
+                                 <!-- JS will populate this -->
+                             </ul>
+                        </div>
+                     </div>
+                </div>
+
+                <!-- Competition Section -->
+                <div id="competition" class="content-section">
+                    <h4 class="text-xl font-bold mb-4">DePIN 竞争格局</h4>
+                    <p class="text-gray-600 mb-6">ICN的核心优势在于其独特的“Web2.5”商业模式，而非纯粹的技术范式创新。下表对比了其与主流DePIN项目的关键差异。</p>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-gray-500">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3">项目</th>
+                                    <th scope="col" class="px-6 py-3">核心业务</th>
+                                    <th scope="col" class="px-6 py-3">优势</th>
+                                    <th scope="col" class="px-6 py-3">劣势</th>
+                                </tr>
+                            </thead>
+                            <tbody id="competition-table-body">
+                                <!-- JS will populate this -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Investment Opportunities -->
+        <section id="investment-strategy" class="mb-16">
+            <div class="text-center mb-8">
+                <h3 class="text-3xl font-bold">投资机会与策略矩阵</h3>
+                <p class="text-gray-600 mt-2">ICN提供了从低到高的多层次参与路径。请根据自身情况评估最适合的策略。</p>
+                <div class="flex justify-center items-center mt-4 text-sm">
+                    <span class="mr-2">排序方式:</span>
+                     <button id="sort-by-risk" class="bg-white border border-gray-300 px-3 py-1 rounded-md hover:bg-gray-100 transition">风险等级</button>
+                </div>
+            </div>
+            <div class="overflow-x-auto bg-white p-6 rounded-2xl shadow-lg">
+                <table class="w-full text-sm text-left text-gray-500">
+                    <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3">投资路径</th>
+                            <th class="px-4 py-3">优点</th>
+                            <th class="px-4 py-3">缺点</th>
+                            <th class="px-4 py-3">技术门槛</th>
+                            <th class="px-4 py-3">风险等级</th>
+                        </tr>
+                    </thead>
+                    <tbody id="investment-table-body">
+                         <!-- JS will populate this -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        
+        <!-- Final Verdict -->
+        <section>
+             <div class="text-center mb-8">
+                <h3 class="text-3xl font-bold">最终结论与分级投资建议</h3>
+                <p class="text-gray-600 mt-2">基于全面的分析，我们给出“中立”评级，并为不同风险偏好的投资者提供以下具体建议。</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-xl shadow-md border-t-4 border-gray-400">
+                    <h4 class="font-bold text-lg">风险偏好较低 (不建议)</h4>
+                    <p class="text-gray-600 mt-2">建议保持观望。在项目发布第三方安全审计报告和开源核心代码前，不建议投入资金。安全与透明是投资的基石。</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md border-t-4 border-amber-500">
+                    <h4 class="font-bold text-lg">风险偏好中等 (中立)</h4>
+                    <p class="text-gray-600 mt-2">可考虑以小额仓位 (如投资组合的1-3%) 参与ICNT质押。这是在风险可控下，捕获潜在APY和生态发展红利的均衡策略。</p>
+                </div>
+                 <div class="bg-white p-6 rounded-xl shadow-md border-t-4 border-blue-600">
+                    <h4 class="font-bold text-lg">高风险偏好/开发者 (建议)</h4>
+                    <p class="text-gray-600 mt-2">采取“质押+生态参与”双重策略。利用S3 API构建MVP，积极参与社区，争取获得Grant或早期贡献者奖励，以小博大。</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+    
+    <footer class="text-center py-8 text-gray-500 text-sm">
+        <p>本报告内容仅供参考，不构成任何投资建议。市场有风险，投资需谨慎。</p>
+        <p>数据来源于公开信息，最后更新于2025年7月。</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // --- DATA STORE ---
+            const reportData = {
+                bullPoints: [
+                    "<strong>精英团队与顶级背书:</strong> 由成功企业家Dr. Kai Wawrzinek领导，获诺基亚旗下NGP Capital、Protocol Labs等顶级VC支持。",
+                    "<strong>创新的商业模式:</strong> “先商业，后协议”的Web2.5路径，已实现700万美元年收入，并将法币收入用于回购代币，提供价值支撑。",
+                    "<strong>企业级定位与市场牵引力:</strong> 专注企业客户，兼容S3标准，已获超1000家客户及主流企业方案集成。",
+                    "<strong>强大的市场运作能力:</strong> 上线即登陆多家一线交易所，展现卓越的资源整合与市场营销能力。"
+                ],
+                bearPoints: [
+                    "<strong><span class='text-red-600'>透明度严重缺失 (最致命弱点):</span></strong> 缺乏公开的第三方安全审计，核心代码闭源，项目呈“黑盒”状态，违背Web3开放精神。",
+                    "<strong>高度中心化的现状:</strong> 治理、代码、运营均高度依赖基金会与关联公司，“去中心化”更多是未来承诺。",
+                    "<strong>高估值与解锁压力:</strong> 4.7亿美元私募估值，早期投资者与团队持仓成本极低，未来1-3年面临巨大潜在抛压。",
+                    "<strong>激烈的市场竞争:</strong> 需同时与AWS等Web2巨头和Filecoin等Web3项目竞争。"
+                ],
+                techDetails: {
+                    'layer-app': {
+                        title: '📱 应用/服务层 (Application/Service Layer)',
+                        description: '这是直接面向最终用户和开发者的层次。构建者(Builders)在此层利用底层资源，开发和交付创新的云服务，如S3兼容存储、数据库服务、AI推理等，形成一个可组合的“云服务乐高”。'
+                    },
+                    'layer-protocol': {
+                        title: '📜 协议层 (Protocol Layer)',
+                        description: '这是网络的大脑和协调中心。ICN协议在此运行，通过经济机制、资源分配算法和去中心化治理来管理整个网络。核心组件是HyperNodes，它们作为SLA预言机，负责监督和验证硬件层的服务质量。'
+                    },
+                    'layer-hardware': {
+                        title: '💽 硬件/资源层 (Hardware/Resource Layer)',
+                        description: '这是整个网络的基础，由全球分布的硬件提供商(HPs)组成。他们贡献企业级的数据中心硬件（存储、计算、网络），这些资源在网络中被抽象为ScalerNodes。'
+                    }
+                },
+                tokenomics: {
+                    labels: ['团队', '投资者', '节点销售', '合作伙伴基金', '生态基金', '奖励储备', '其他'],
+                    data: [22.1, 21.5, 20.0, 11.0, 10.0, 10.0, 5.4],
+                    utilities: [
+                        { icon: '🛡️', text: '<strong>质押抵押:</strong> 硬件提供商需质押ICNT作为服务质量保证金。' },
+                        { icon: '💳', text: '<strong>服务支付:</strong> 开发者使用ICNT支付网络资源费用。' },
+                        { icon: '🏆', text: '<strong>激励奖励:</strong> 协议使用ICNT奖励网络贡献者 (节点运营商)。' },
+                        { icon: '🗳️', text: '<strong>去中心化治理:</strong> 未来代币持有者将拥有协议的投票权。' }
+                    ]
+                },
+                competitors: [
+                    { name: 'ICN Protocol', business: '整合性云服务', strength: '强大的Web2商业背景，已验证的收入模式', weakness: '透明度低，早期中心化程度高' },
+                    { name: 'Filecoin', business: '去中心化存储', strength: '最大的去中心化存储网络，生态成熟', weakness: '存储成本较高，检索市场不成熟' },
+                    { name: 'Arweave', business: '永久性去中心化存储', strength: '“一次付费，永久存储”的独特模式', weakness: '存储成本极高，不适合高频读写' },
+                    { name: 'Akash Network', business: '去中心化计算(CPU/GPU)', strength: '成本远低于中心化云，社区驱动', weakness: '配套服务依赖其他方案，稳定性不均' },
+                    { name: 'Render Network', business: '去中心化GPU渲染', strength: '专注3D渲染垂直领域，社区庞大', weakness: '应用场景相对单一' }
+                ],
+                investmentOpportunities: [
+                    { path: '购买并持有代币', pros: '操作简单，流动性好', cons: '无额外收益，风险高', tech: '低', risk: 3, riskLabel: '高' },
+                    { path: 'ICNT质押', pros: '在持有基础上获得额外收益(APY)', cons: '有锁仓期，收益率动态变化', tech: '低', risk: 2, riskLabel: '中' },
+                    { path: '高级DeFi策略(预期)', pros: '潜在收益率可能远高于质押', cons: '合约风险高，操作复杂', tech: '中', risk: 4, riskLabel: '极高' },
+                    { path: '运营HyperNode', pros: '获稳定协议奖励，深度参与', cons: '需购买许可，技术门槛高', tech: '高', risk: 2, riskLabel: '中' },
+                    { path: '运营ScalerNode(机构级)', pros: '潜在回报最高', cons: '资本投入巨大，门槛极高', tech: '极高', risk: 3, riskLabel: '高' },
+                    { path: '生态系统开发', pros: '可能捕获巨大的非对称回报', cons: '机会不确定，回报周期长', tech: '高', risk: 2, riskLabel: '中' },
+                ]
+            };
+            
+            // --- RENDER FUNCTIONS ---
+            function populateList(elementId, data) {
+                const list = document.getElementById(elementId);
+                if(list) {
+                    list.innerHTML = data.map(item => `<li>${item}</li>`).join('');
+                }
+            }
+
+            function populateTokenUtilities() {
+                const list = document.getElementById('token-utility-list');
+                if(list) {
+                    list.innerHTML = reportData.tokenomics.utilities.map(item => 
+                        `<li class="flex items-start"><span class="mr-3 text-xl">${item.icon}</span><span>${item.text}</span></li>`
+                    ).join('');
+                }
+            }
+            
+            function renderTable(elementId, data, renderRow) {
+                const tbody = document.getElementById(elementId);
+                if (tbody) {
+                    tbody.innerHTML = data.map(renderRow).join('');
+                }
+            }
+
+            // --- INITIALIZATION ---
+            
+            // Populate Bull and Bear points
+            populateList('bull-points', reportData.bullPoints);
+            populateList('bear-points', reportData.bearPoints);
+
+            // Populate Token Utilities
+            populateTokenUtilities();
+            
+            // Render Competitors Table
+            renderTable('competition-table-body', reportData.competitors, (c) => `
+                <tr class="bg-white border-b hover:bg-gray-50">
+                    <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">${c.name}</th>
+                    <td class="px-6 py-4">${c.business}</td>
+                    <td class="px-6 py-4">${c.strength}</td>
+                    <td class="px-6 py-4">${c.weakness}</td>
+                </tr>
+            `);
+            
+            // Render Investment Opportunities Table
+            const renderInvestmentRow = (opp) => `
+                <tr class="bg-white border-b hover:bg-gray-50" data-risk="${opp.risk}">
+                    <td class="px-4 py-4 font-medium text-gray-900">${opp.path}</td>
+                    <td class="px-4 py-4 text-green-700">${opp.pros}</td>
+                    <td class="px-4 py-4 text-red-700">${opp.cons}</td>
+                    <td class="px-4 py-4">${opp.tech}</td>
+                    <td class="px-4 py-4 font-semibold">${opp.riskLabel}</td>
+                </tr>
+            `;
+            renderTable('investment-table-body', reportData.investmentOpportunities, renderInvestmentRow);
+
+            // Chart.js Initialization
+            const ctx = document.getElementById('tokenomicsChart');
+            if (ctx) {
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: reportData.tokenomics.labels,
+                        datasets: [{
+                            label: 'ICNT 分配比例',
+                            data: reportData.tokenomics.data,
+                            backgroundColor: [
+                                'rgba(54, 162, 235, 0.8)', 'rgba(255, 99, 132, 0.8)',
+                                'rgba(255, 206, 86, 0.8)', 'rgba(75, 192, 192, 0.8)',
+                                'rgba(153, 102, 255, 0.8)','rgba(255, 159, 64, 0.8)',
+                                'rgba(201, 203, 207, 0.8)'
+                            ],
+                            borderColor: 'rgba(255, 255, 255, 0.7)',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    font: {
+                                        family: "'Noto Sans SC', sans-serif"
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed !== null) {
+                                            label += context.parsed + '%';
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // --- INTERACTIVITY ---
+            
+            // Navigation Tabs
+            const navButtons = document.getElementById('nav-buttons');
+            const contentContainer = document.getElementById('content-container');
+            const sections = contentContainer.querySelectorAll('.content-section');
+
+            const activateSection = (targetId) => {
+                navButtons.querySelectorAll('button').forEach(btn => {
+                    btn.classList.toggle('nav-button-active', btn.dataset.target === targetId);
+                });
+                sections.forEach(section => {
+                    section.classList.toggle('active', section.id === targetId);
+                    if (section.id === targetId) {
+                         section.classList.add('fade-in');
+                    } else {
+                         section.classList.remove('fade-in');
+                    }
+                });
+            };
+
+            navButtons.addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON') {
+                    activateSection(e.target.dataset.target);
+                }
+            });
+            
+            // Activate the first tab by default
+            activateSection('tech');
+            
+            // Tech Diagram Detail View
+            const techDetailDisplay = document.getElementById('tech-detail-display');
+            window.showTechDetail = function(detailId) {
+                const detail = reportData.techDetails[detailId];
+                if (detail) {
+                    techDetailDisplay.innerHTML = `<h5 class="font-bold">${detail.title}</h5><p class="mt-2 text-sm">${detail.description}</p>`;
+                    techDetailDisplay.classList.remove('hidden');
+                    techDetailDisplay.classList.add('fade-in');
+                }
+            }
+            
+            // Sort Investment Table
+            const sortButton = document.getElementById('sort-by-risk');
+            let sortAscending = true;
+            sortButton.addEventListener('click', () => {
+                const sortedData = [...reportData.investmentOpportunities].sort((a, b) => {
+                    return sortAscending ? a.risk - b.risk : b.risk - a.risk;
+                });
+                sortAscending = !sortAscending;
+                sortButton.textContent = `风险等级 ${sortAscending ? '↑' : '↓'}`;
+                renderTable('investment-table-body', sortedData, renderInvestmentRow);
+            });
+        });
+    </script>
+</body>
+</html>

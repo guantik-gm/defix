@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Theoriq AI ($THQ) - 交互式投资仪表板</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: DeFi Slate -->
+    <!-- Application Structure Plan: A single-page dashboard design is chosen for its directness and ease of use, which is ideal for busy investors. The structure is thematic rather than linear, breaking down the dense report into digestible, interactive modules: 1. Overview (for a quick verdict), 2. Risk Assessment (to highlight critical issues first), 3. Investment Strategies (actionable part), 4. Project Deep Dive (for fundamentals), 5. Market & Tokenomics (for valuation context), and 6. Team (for credibility). This user-centric flow allows users to access information based on their priorities (e.g., risk-first or opportunity-first) rather than following the report's order, thus enhancing usability and decision-making speed. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Final Investment Rating -> Goal: Immediate Verdict -> Viz: Prominent summary card with color-coded rating -> Interaction: None, for clarity -> Justification: Provides the report's conclusion upfront.
+        - Report Info: Key Risks (especially audit) -> Goal: Highlight Critical Dangers -> Viz: Color-coded alert cards (Red for critical) -> Interaction: Hover for detail -> Justification: Visually prioritizes the most severe investment risks.
+        - Report Info: Token Allocation -> Goal: Show Ownership Structure -> Viz: Donut Chart (Chart.js) -> Interaction: Hover/Click on segments -> Justification: Intuitive way to visualize proportions and potential sell pressure.
+        - Report Info: Competitive Valuation -> Goal: Compare Market Position -> Viz: Bar Chart (Chart.js) -> Interaction: Hover for exact values -> Justification: Easiest way to compare valuation metrics against peers.
+        - Report Info: Investment Opportunities -> Goal: Compare Actionable Choices -> Viz: Interactive HTML Table -> Interaction: Clickable rows to expand details -> Justification: Organizes complex options clearly, allowing users to drill down into what interests them.
+        - Report Info: AI Agent Workflow -> Goal: Explain Core Tech Simply -> Viz: HTML/CSS Flexbox Diagram -> Interaction: Static -> Justification: Simplifies a complex process into a visual flow without using forbidden SVG/Mermaid.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 320px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 380px;
+            }
+        }
+        .nav-link {
+            transition: color 0.3s, border-bottom-color 0.3s;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #4f46e5; /* indigo-600 */
+            border-bottom-color: #4f46e5;
+        }
+        .card-hover-effect {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card-hover-effect:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .risk-card-critical {
+            border-left: 5px solid #ef4444; /* red-500 */
+            background-color: #fef2f2; /* red-50 */
+        }
+        .risk-card-high {
+            border-left: 5px solid #f97316; /* orange-500 */
+            background-color: #fff7ed; /* orange-50 */
+        }
+        .risk-card-medium {
+            border-left: 5px solid #f59e0b; /* amber-500 */
+            background-color: #fffbeb; /* amber-50 */
+        }
+        .strategy-row {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .strategy-row:hover {
+            background-color: #f1f5f9; /* slate-100 */
+        }
+        .details-row {
+            display: none;
+            background-color: #f8fafc; /* slate-50 */
+        }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <!-- Header & Navigation -->
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-xl font-bold text-indigo-600">Theoriq AI</span>
+                    <span class="ml-2 text-sm font-medium text-slate-500">$THQ 投资分析</span>
+                </div>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#overview" class="nav-link text-slate-600 font-medium border-b-2 border-transparent pb-1">概览</a>
+                    <a href="#risk" class="nav-link text-slate-600 font-medium border-b-2 border-transparent pb-1">风险评估</a>
+                    <a href="#strategy" class="nav-link text-slate-600 font-medium border-b-2 border-transparent pb-1">投资策略</a>
+                    <a href="#project" class="nav-link text-slate-600 font-medium border-b-2 border-transparent pb-1">项目解析</a>
+                    <a href="#market" class="nav-link text-slate-600 font-medium border-b-2 border-transparent pb-1">市场与代币</a>
+                    <a href="#team" class="nav-link text-slate-600 font-medium border-b-2 border-transparent pb-1">团队与支持</a>
+                </div>
+                 <div class="md:hidden">
+                    <select id="mobile-nav" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                        <option value="#overview">概览</option>
+                        <option value="#risk">风险评估</option>
+                        <option value="#strategy">投资策略</option>
+                        <option value="#project">项目解析</option>
+                        <option value="#market">市场与代币</option>
+                        <option value="#team">团队与支持</option>
+                    </select>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+
+        <!-- Section 1: Overview -->
+        <section id="overview" class="mb-16 scroll-mt-24">
+            <h2 class="text-3xl font-bold mb-2 text-slate-900">投资概览与评级</h2>
+            <p class="text-lg text-slate-600 mb-8">本节提供对Theoriq AI项目的核心投资论点、SWOT分析和最终投资评级的快速概览，助您在60秒内把握项目全貌。</p>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Investment Rating -->
+                <div class="lg:col-span-1 bg-white p-6 rounded-xl shadow-lg border border-slate-200 flex flex-col justify-center items-center card-hover-effect">
+                    <h3 class="text-lg font-semibold text-slate-700 mb-2">最终投资评级</h3>
+                    <div class="bg-amber-100 text-amber-800 text-4xl font-bold px-8 py-4 rounded-lg my-4">
+                        中立
+                    </div>
+                    <p class="text-center text-slate-600 text-sm">评级平衡了项目巨大的增长潜力与当前阶段存在的致命风险（如缺乏审计）。对高风险偏好者，可视为投机性“建议”。</p>
+                </div>
+
+                <!-- Core Thesis -->
+                <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-lg border border-slate-200 card-hover-effect">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4">核心投资论点</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <h4 class="font-semibold text-green-600 flex items-center">
+                                <span class="text-2xl mr-2">👍</span> 优势 (Upside)
+                            </h4>
+                            <p class="text-slate-600 ml-8">典型的高风险、高回报投资。由前谷歌/高盛精英组成的世界级团队，并获NVIDIA等顶级风投支持。项目精准切入AI+DeFi热门赛道，愿景宏大，估值相对同赛道已上线项目有巨大想象空间。</p>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-red-600 flex items-center">
+                                <span class="text-2xl mr-2">👎</span> 风险 (Downside)
+                            </h4>
+                            <p class="text-slate-600 ml-8">存在<strong class="text-red-700">致命缺陷</strong>：缺乏公开的第三方安全审计报告。市场充斥诈骗代币，易造成投资者混淆。作为早期项目，执行风险和技术不确定性极高。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SWOT Analysis -->
+                <div class="lg:col-span-3 bg-white p-6 rounded-xl shadow-lg border border-slate-200 mt-4 card-hover-effect">
+                     <h3 class="text-xl font-bold text-slate-800 mb-4 text-center">SWOT 分析</h3>
+                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-green-50 p-4 rounded-lg">
+                            <h4 class="font-bold text-green-800">优势 (Strengths)</h4>
+                            <ul class="list-disc list-inside text-slate-700 mt-2 space-y-1">
+                                <li>宏大愿景，切入AI+DeFi热门叙事</li>
+                                <li>顶级团队（前谷歌/高盛）与强大投资者（NVIDIA, Hack VC）</li>
+                                <li>清晰的代币经济学与价值捕获模型</li>
+                            </ul>
+                        </div>
+                        <div class="bg-red-50 p-4 rounded-lg">
+                            <h4 class="font-bold text-red-800">劣势 (Weaknesses)</h4>
+                            <ul class="list-disc list-inside text-slate-700 mt-2 space-y-1">
+                                <li class="font-bold">致命缺陷：无公开安全审计报告</li>
+                                <li>市场混乱，诈骗代币横行</li>
+                                <li>技术模型未经大规模验证</li>
+                            </ul>
+                        </div>
+                        <div class="bg-sky-50 p-4 rounded-lg">
+                            <h4 class="font-bold text-sky-800">机会 (Opportunities)</h4>
+                            <ul class="list-disc list-inside text-slate-700 mt-2 space-y-1">
+                                <li>与竞争对手相比，存在巨大估值套利空间</li>
+                                <li>有望实现高收益的DeFi自动化，吸引TVL</li>
+                                <li>强大的社区激励计划，有望快速增长</li>
+                            </ul>
+                        </div>
+                        <div class="bg-amber-50 p-4 rounded-lg">
+                            <h4 class="font-bold text-amber-800">威胁 (Threats)</h4>
+                            <ul class="list-disc list-inside text-slate-700 mt-2 space-y-1">
+                                <li>AI+Crypto赛道竞争激烈</li>
+                                <li>宏观市场下行风险</li>
+                                <li>潜在的AI与加密货币监管风险</li>
+                            </ul>
+                        </div>
+                     </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Risk Assessment -->
+        <section id="risk" class="mb-16 scroll-mt-24">
+            <h2 class="text-3xl font-bold mb-2 text-slate-900">综合风险评估</h2>
+            <p class="text-lg text-slate-600 mb-8">投资前必须清醒认识项目的多维度风险。以下风险按严重性排序，请务必重点关注标记为“关键”的风险项。</p>
+            <div class="space-y-4">
+                <div class="p-5 rounded-lg risk-card-critical card-hover-effect">
+                    <div class="flex items-center">
+                        <span class="text-2xl mr-4">🚨</span>
+                        <div>
+                            <h3 class="text-lg font-bold text-red-800">安全风险 (关键级别)</h3>
+                            <p class="text-red-700"><strong>最严重的红灯警告：缺乏公开的第三方安全审计。</strong> 对于一个旨在管理用户资金的DeFi协议，这是不可接受的。协议的复杂性也创造了巨大的潜在攻击面。</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-5 rounded-lg risk-card-critical card-hover-effect">
+                    <div class="flex items-center">
+                        <span class="text-2xl mr-4">💸</span>
+                        <div>
+                            <h3 class="text-lg font-bold text-red-800">市场风险 (关键级别)</h3>
+                            <p class="text-red-700"><strong>代币混淆与诈骗：</strong> 市场已出现大量同名诈骗代币，极易导致投资者资金全部损失。官方代币 `$THQ` 尚未发行。</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-5 rounded-lg risk-card-high card-hover-effect">
+                     <div class="flex items-center">
+                        <span class="text-2xl mr-4">⚔️</span>
+                        <div>
+                            <h3 class="text-lg font-bold text-orange-800">竞争风险 (高)</h3>
+                            <p class="text-orange-700">AI x Crypto赛道竞争激烈，已建立的项目如Bittensor和ASI联盟拥有显著的先发优势、更大的社区和更高的市值。</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-5 rounded-lg risk-card-medium card-hover-effect">
+                    <div class="flex items-center">
+                        <span class="text-2xl mr-4">⚙️</span>
+                        <div>
+                            <h3 class="text-lg font-bold text-amber-800">执行与采纳风险 (中-高)</h3>
+                            <p class="text-amber-700">项目仍处主网前阶段，存在延期风险。最终能否实现产品与市场的契合（Product-Market Fit），吸引到足够的用户和TVL，是其成败关键。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Investment Strategy -->
+        <section id="strategy" class="mb-16 scroll-mt-24">
+            <h2 class="text-3xl font-bold mb-2 text-slate-900">可执行的投资策略</h2>
+            <p class="text-lg text-slate-600 mb-8">本节提供所有潜在投资和参与途径的详细对比分析。点击表格行可查看更多细节和操作建议。</p>
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-slate-200">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-slate-500">
+                        <thead class="text-xs text-slate-700 uppercase bg-slate-100">
+                            <tr>
+                                <th scope="col" class="px-6 py-3">投资机会</th>
+                                <th scope="col" class="px-6 py-3">风险等级</th>
+                                <th scope="col" class="px-6 py-3">资本/技能要求</th>
+                                <th scope="col" class="px-6 py-3 hidden md:table-cell">核心优势</th>
+                            </tr>
+                        </thead>
+                        <tbody id="strategy-table">
+                            <tr class="strategy-row border-b">
+                                <td class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">空投 Farming</td>
+                                <td class="px-6 py-4"><span class="bg-green-100 text-green-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded-full">低</span></td>
+                                <td class="px-6 py-4">低资本 / 低-中技能</td>
+                                <td class="px-6 py-4 hidden md:table-cell">非对称回报，时间换收益</td>
+                            </tr>
+                            <tr class="details-row border-b"><td colspan="4" class="p-4 text-slate-600"><strong>操作指南：</strong>积极参与 Kaito "Top Yappers" 和 Zealy PoE 等官方社区活动，通过完成社交任务、内容创作等积累经验值(XP)，以换取未来空投份额。这是当前阶段风险最低的参与方式。</td></tr>
+                            
+                            <tr class="strategy-row border-b">
+                                <td class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">IDO 参与</td>
+                                <td class="px-6 py-4"><span class="bg-red-100 text-red-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded-full">高</span></td>
+                                <td class="px-6 py-4">中-高资本 / 中技能</td>
+                                <td class="px-6 py-4 hidden md:table-cell">可能获得高额初始回报</td>
+                            </tr>
+                            <tr class="details-row border-b"><td colspan="4" class="p-4 text-slate-600"><strong>操作指南：</strong>关注 Kaito Launchpad 上的公募信息。通常需要持有或质押平台币才能参与。风险高，但可能以最低价格入场。</td></tr>
+
+                            <tr class="strategy-row border-b">
+                                <td class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">二级市场代币购买</td>
+                                <td class="px-6 py-4"><span class="bg-red-100 text-red-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded-full">高</span></td>
+                                <td class="px-6 py-4">低-高资本 / 低技能</td>
+                                <td class="px-6 py-4 hidden md:table-cell">流动性好，直接参与</td>
+                            </tr>
+                            <tr class="details-row border-b"><td colspan="4" class="p-4 text-slate-600"><strong>操作指南：</strong>在官方代币 `$THQ` 上线交易所后进行购买。需注意早期抛压和高波动性。<strong>务必确认是官方代币，谨防诈骗。</strong></td></tr>
+
+                            <tr class="strategy-row border-b">
+                                <td class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">质押与锁定</td>
+                                <td class="px-6 py-4"><span class="bg-amber-100 text-amber-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded-full">中</span></td>
+                                <td class="px-6 py-4">中-高资本 / 低技能</td>
+                                <td class="px-6 py-4 hidden md:table-cell">获取协议收入分成</td>
+                            </tr>
+                            <tr class="details-row border-b"><td colspan="4" class="p-4 text-slate-600"><strong>操作指南：</strong>主网上线后，质押 `$THQ` 代币以获取网络释放的代币和协议费用分成。这是长线看好项目并获取稳定收益的方式。存在智能合约风险。</td></tr>
+
+                            <tr class="strategy-row border-b">
+                                <td class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">自动化LP (AlphaSwarm)</td>
+                                <td class="px-6 py-4"><span class="bg-purple-100 text-purple-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded-full">非常高</span></td>
+                                <td class="px-6 py-4">中-高资本 / 低技能</td>
+                                <td class="px-6 py-4 hidden md:table-cell">理论上可获超额收益</td>
+                            </tr>
+                            <tr class="details-row border-b"><td colspan="4" class="p-4 text-slate-600"><strong>操作指南：</strong>使用 Theoriq 的 AI 代理人自主管理和优化流动性仓位。<strong>警告：在多份审计报告公布前，应严格避免此操作，智能合约风险极高。</strong></td></tr>
+                            
+                            <tr class="strategy-row">
+                                <td class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">生态系统开发</td>
+                                <td class="px-6 py-4"><span class="bg-red-100 text-red-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded-full">高</span></td>
+                                <td class="px-6 py-4">低资本 / 高技能</td>
+                                <td class="px-6 py-4 hidden md:table-cell">潜在的创业级回报</td>
+                            </tr>
+                            <tr class="details-row"><td colspan="4" class="p-4 text-slate-600"><strong>操作指南：</strong>(面向开发者) 使用官方 SDK 构建专门的 AI 代理人并在 Infinity Hub 上商业化。这是一条直接创造价值并可能获得无上限回报的路径，但需要专业技术。</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Project Deep Dive -->
+        <section id="project" class="mb-16 scroll-mt-24">
+            <h2 class="text-3xl font-bold mb-2 text-slate-900">项目深度解析</h2>
+            <p class="text-lg text-slate-600 mb-8">本节深入探讨Theoriq AI的核心愿景、技术架构和产品生态，帮助您理解其底层运作逻辑和长期潜力。</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Vision -->
+                <div class="bg-white p-6 rounded-xl shadow-lg border border-slate-200 card-hover-effect">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4">DeFAI 革命：代理人经济</h3>
+                    <p class="text-slate-600 space-y-3">
+                        Theoriq 将 "DeFAI" 定义为 DeFi 的下一次进化，通过整合自主 AI 代理人实现金融活动的自动化与智能化。
+                        其核心愿景是构建一个去中心化的“代理人经济”，通过协调成群的、专业的 AI 代理人来执行复杂的链上金融任务，从而解决当前 DeFi 领域效率低下和操作复杂等问题。
+                    </p>
+                </div>
+                <!-- Products -->
+                <div class="bg-white p-6 rounded-xl shadow-lg border border-slate-200 card-hover-effect">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4">核心产品生态</h3>
+                    <ul class="space-y-3 text-slate-600">
+                        <li><strong>Alpha 协议:</strong> 整个生态的核心，AI 代理人的“操作系统”。</li>
+                        <li><strong>AlphaSwarm:</strong> 首个旗舰应用，专注于自主LP和收益优化。</li>
+                        <li><strong>Infinity Hub & Studio:</strong> AI 代理人的市场和无代码构建器。</li>
+                        <li><strong>开发者 SDK:</strong> 用于集成第三方代理人的工具包。</li>
+                    </ul>
+                </div>
+                <!-- Tech Architecture -->
+                <div class="md:col-span-2 bg-white p-6 rounded-xl shadow-lg border border-slate-200 card-hover-effect">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4 text-center">AI 代理人蜂群运作机制</h3>
+                    <p class="text-center text-slate-600 mb-6">以链上流动性供应（OLP）为例，展示其多代理人协作架构。</p>
+                    <div class="flex flex-col md:flex-row justify-around items-center space-y-4 md:space-y-0 md:space-x-4">
+                        <div class="text-center p-4 bg-slate-100 rounded-lg w-full md:w-1/4">
+                            <div class="text-4xl">📡</div>
+                            <h4 class="font-bold mt-2">观察者代理</h4>
+                            <p class="text-xs text-slate-500">实时消费链上数据</p>
+                        </div>
+                        <div class="text-2xl text-slate-400 font-mono">&rarr;</div>
+                        <div class="text-center p-4 bg-slate-100 rounded-lg w-full md:w-1/4">
+                            <div class="text-4xl">💡</div>
+                            <h4 class="font-bold mt-2">信号代理</h4>
+                            <p class="text-xs text-slate-500">生成可操作见解</p>
+                        </div>
+                        <div class="text-2xl text-slate-400 font-mono">&rarr;</div>
+                        <div class="text-center p-4 bg-slate-100 rounded-lg w-full md:w-1/4">
+                            <div class="text-4xl">🗺️</div>
+                            <h4 class="font-bold mt-2">策略代理</h4>
+                            <p class="text-xs text-slate-500">制定具体投资策略</p>
+                        </div>
+                        <div class="text-2xl text-slate-400 font-mono">&rarr;</div>
+                        <div class="text-center p-4 bg-slate-100 rounded-lg w-full md:w-1/4">
+                            <div class="text-4xl">🚀</div>
+                            <h4 class="font-bold mt-2">执行代理</h4>
+                            <p class="text-xs text-slate-500">在链上执行策略</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: Market & Tokenomics -->
+        <section id="market" class="mb-16 scroll-mt-24">
+            <h2 class="text-3xl font-bold mb-2 text-slate-900">市场与代币经济学</h2>
+            <p class="text-lg text-slate-600 mb-8">本节分析Theoriq在AI+Crypto赛道中的竞争地位，并拆解其原生代币$THQ的经济模型与价值捕获机制。</p>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Tokenomics Chart -->
+                <div class="bg-white p-6 rounded-xl shadow-lg border border-slate-200 card-hover-effect">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4 text-center">$THQ 代币分配 (总量10亿)</h3>
+                    <div class="chart-container">
+                        <canvas id="tokenomicsChart"></canvas>
+                    </div>
+                </div>
+                <!-- Competitive Chart -->
+                <div class="bg-white p-6 rounded-xl shadow-lg border border-slate-200 card-hover-effect">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4 text-center">竞争格局：全稀释估值(FDV)对比</h3>
+                    <p class="text-center text-slate-500 text-sm mb-4">Theoriq的预计FDV远低于已上线竞品，存在估值套利空间。</p>
+                    <div class="chart-container">
+                        <canvas id="competitorChart"></canvas>
+                    </div>
+                </div>
+                 <!-- Token Utility -->
+                <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-lg border border-slate-200 card-hover-effect">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4">代币效用：价值的三大支柱</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                        <div>
+                            <div class="text-4xl mb-2">🛡️</div>
+                            <h4 class="font-bold text-slate-700">访问与安全</h4>
+                            <p class="text-sm text-slate-600">AI代理人需质押$THQ作为保证金才能访问协议，确保其行为诚实可靠。</p>
+                        </div>
+                        <div>
+                            <div class="text-4xl mb-2">🗳️</div>
+                            <h4 class="font-bold text-slate-700">治理与影响力</h4>
+                            <p class="text-sm text-slate-600">锁定$THQ可参与协议治理，影响发展方向，并获得更高奖励。</p>
+                        </div>
+                        <div>
+                            <div class="text-4xl mb-2">💰</div>
+                            <h4 class="font-bold text-slate-700">奖励与激励</h4>
+                            <p class="text-sm text-slate-600">协议的费用收入将分配给$THQ质押者，形成价值回馈。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 6: Team & Backers -->
+        <section id="team" class="scroll-mt-24">
+            <h2 class="text-3xl font-bold mb-2 text-slate-900">团队与支持者</h2>
+            <p class="text-lg text-slate-600 mb-8">项目的成功离不开强大的团队和资本支持。Theoriq在这一方面拥有显著优势。</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-xl shadow-lg border border-slate-200 card-hover-effect">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4">创始团队</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <h4 class="font-semibold text-indigo-700">Ron Bodkin (联合创始人兼CEO)</h4>
+                            <p class="text-slate-600">履历显赫，曾任谷歌应用AI技术总监、创办被收购的大数据公司Think Big Analytics，在AI和企业技术领域拥有极高可信度。</p>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-indigo-700">核心成员</h4>
+                            <p class="text-slate-600">团队由来自谷歌、高盛、ConsenSys等顶级公司的AI研究员、工程师和区块链资深人士组成。</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-lg border border-slate-200 card-hover-effect">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4">投资者与战略伙伴</h3>
+                    <p class="text-slate-600 mb-4">已完成超1040万美元融资，由Hack VC领投，并获得关键技术赋能者的战略支持。</p>
+                    <div class="flex flex-wrap gap-4 justify-center items-center">
+                        <span class="bg-slate-200 text-slate-800 px-3 py-1 rounded-full font-medium">NVIDIA</span>
+                        <span class="bg-slate-200 text-slate-800 px-3 py-1 rounded-full font-medium">Google Cloud</span>
+                        <span class="bg-slate-200 text-slate-800 px-3 py-1 rounded-full font-medium">Hack VC</span>
+                        <span class="bg-slate-200 text-slate-800 px-3 py-1 rounded-full font-medium">The Graph</span>
+                        <span class="bg-slate-200 text-slate-800 px-3 py-1 rounded-full font-medium">Foresight Ventures</span>
+                        <span class="bg-slate-200 text-slate-800 px-3 py-1 rounded-full font-medium">HashKey</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-slate-800 text-white mt-16">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4 text-center text-sm text-slate-400">
+            <p>本报告仅为信息分享，不构成任何投资建议。投资有风险，入市需谨慎。</p>
+            <p>数据来源于公开信息，报告生成于 2025年7月</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Mobile Navigation
+            const mobileNav = document.getElementById('mobile-nav');
+            mobileNav.addEventListener('change', () => {
+                window.location.hash = mobileNav.value;
+            });
+
+            // Strategy Table Accordion
+            const strategyTable = document.getElementById('strategy-table');
+            strategyTable.addEventListener('click', function(e) {
+                let targetRow = e.target.closest('.strategy-row');
+                if (targetRow) {
+                    let detailsRow = targetRow.nextElementSibling;
+                    if (detailsRow && detailsRow.classList.contains('details-row')) {
+                        detailsRow.style.display = detailsRow.style.display === 'table-row' ? 'none' : 'table-row';
+                    }
+                }
+            });
+
+            // Active Nav Link Highlighting on Scroll
+            const sections = document.querySelectorAll('section');
+            const navLinks = document.querySelectorAll('.nav-link');
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        navLinks.forEach(link => {
+                            link.classList.remove('active');
+                            if (link.getAttribute('href').substring(1) === entry.target.id) {
+                                link.classList.add('active');
+                            }
+                        });
+                        // Update mobile nav dropdown
+                        mobileNav.value = `#${entry.target.id}`;
+                    }
+                });
+            }, { rootMargin: "-50% 0px -50% 0px" });
+
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+
+            // Chart.js Implementations
+            const chartLabelColor = '#334155'; // slate-700
+            const chartGridColor = '#e2e8f0'; // slate-200
+
+            // Tokenomics Chart
+            const tokenomicsCtx = document.getElementById('tokenomicsChart').getContext('2d');
+            new Chart(tokenomicsCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['投资者 (30%)', '财库 (28%)', '核心贡献者 (24%)', '社区 (18%)'],
+                    datasets: [{
+                        label: '代币分配',
+                        data: [30, 28, 24, 18],
+                        backgroundColor: [
+                            'rgba(79, 70, 229, 0.7)',  // indigo-600
+                            'rgba(30, 64, 175, 0.7)', // blue-800
+                            'rgba(59, 130, 246, 0.7)',// blue-500
+                            'rgba(147, 197, 253, 0.7)'// blue-300
+                        ],
+                        borderColor: '#f8fafc',
+                        borderWidth: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: chartLabelColor,
+                                font: { size: 12 }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.label}: ${context.raw}%`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Competitor Chart
+            const competitorCtx = document.getElementById('competitorChart').getContext('2d');
+            new Chart(competitorCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Theoriq AI ($THQ)', 'Autonolas ($OLAS)', 'SingularityNET ($AGIX)', 'ASI (Fetch.ai) ($FET)', 'Bittensor ($TAO)'],
+                    datasets: [{
+                        label: '全稀释估值 (FDV) in M USD',
+                        data: [75, 114, 638, 2000, 9000],
+                        backgroundColor: [
+                            'rgba(239, 68, 68, 0.7)', // red-500 for Theoriq
+                            'rgba(59, 130, 246, 0.7)',
+                            'rgba(59, 130, 246, 0.7)',
+                            'rgba(59, 130, 246, 0.7)',
+                            'rgba(59, 130, 246, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(239, 68, 68, 1)',
+                            'rgba(59, 130, 246, 1)',
+                            'rgba(59, 130, 246, 1)',
+                            'rgba(59, 130, 246, 1)',
+                            'rgba(59, 130, 246, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            type: 'logarithmic',
+                            title: {
+                                display: true,
+                                text: '估值 (百万美元, 对数坐标)',
+                                color: chartLabelColor
+                            },
+                            ticks: {
+                                color: chartLabelColor,
+                                callback: function(value, index, values) {
+                                    if (value === 10 || value === 100 || value === 1000 || value === 10000) {
+                                        return '$' + value + 'M';
+                                    }
+                                }
+                            },
+                            grid: { color: chartGridColor }
+                        },
+                        y: {
+                            ticks: { color: chartLabelColor },
+                            grid: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `FDV: $${context.raw.toLocaleString()} M`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

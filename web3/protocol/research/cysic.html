@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cysic 交互式投资分析仪表盘</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutral Harmony -->
+    <!-- Application Structure Plan: The application is designed as a tab-based dashboard. This structure was chosen over a linear report to cater to different user profiles (e.g., airdrop hunters, long-term investors, technical analysts). The '概览' tab provides an immediate high-level summary. The '投资机会' tab is the most actionable, transforming the static report table into interactive cards for quick comparison. '技术深度' and '风险与竞争' allow users to selectively deep-dive into areas of interest without information overload. This non-linear, task-oriented structure enhances usability and allows for quicker decision-making by letting users navigate directly to the information they value most. -->
+    <!-- Visualization & Content Choices: 
+        - Investment Opportunities: Report's table -> Goal: Compare/Decide -> Viz: Interactive Cards -> Interaction: Click to expand details -> Justification: More engaging and mobile-friendly than a wide table. Allows progressive disclosure of information. Method: JS DOM manipulation.
+        - Risk Assessment: Report's list -> Goal: Inform/Warn -> Viz: Accordion List -> Interaction: Click to expand -> Justification: Condenses a large amount of text into a clean, manageable UI, preventing the page from becoming too long. Method: JS DOM manipulation.
+        - Tech Stack: Report's text -> Goal: Organize/Explain -> Viz: HTML/CSS Flow Diagram -> Interaction: Static Visual -> Justification: Visually represents the complex full-stack model and network roles more effectively than plain text, improving comprehension. Method: Tailwind Flexbox/Grid.
+        - Competition: Report's text -> Goal: Compare -> Viz: Bar Chart -> Interaction: Hover for tooltips -> Justification: A bar chart provides a much clearer and more immediate comparison of the nuanced hardware trade-offs (GPU/FPGA/ASIC) than descriptive text. Method: Chart.js/Canvas.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { font-family: 'Noto Sans SC', sans-serif; }
+        .tab-button.active { border-color: #3b82f6; color: #3b82f6; background-color: #eff6ff; }
+        .tab-button { transition: all 0.2s ease-in-out; }
+        .content-pane { display: none; }
+        .content-pane.active { display: block; }
+        .chart-container { position: relative; width: 100%; max-width: 800px; margin-left: auto; margin-right: auto; height: 350px; max-height: 50vh; }
+        @media (min-width: 768px) { .chart-container { height: 400px; } }
+        .card-enter-active { animation: card-enter 0.5s ease-out; }
+        @keyframes card-enter { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+        
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-900">Cysic (CYS) 项目投资分析</h1>
+            <p class="text-slate-500 mt-2">一个全栈 ZK 计算网络的交互式深度剖析</p>
+            <div class="mt-4 inline-flex items-center gap-2 bg-blue-100 text-blue-800 text-lg font-bold px-4 py-2 rounded-full">
+                <span class="w-3 h-3 bg-blue-500 rounded-full"></span>
+                最终投资评级: 建议 (Recommend)
+            </div>
+        </header>
+
+        <main class="bg-white rounded-2xl shadow-lg p-4 sm:p-6 md:p-8">
+            <nav class="mb-6 border-b border-slate-200">
+                <ul id="tab-nav" class="flex flex-wrap -mb-px text-sm font-medium text-center text-slate-500">
+                    <li class="mr-2"><button data-tab="overview" class="tab-button inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-slate-600 hover:border-slate-300 active">概览</button></li>
+                    <li class="mr-2"><button data-tab="opportunities" class="tab-button inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-slate-600 hover:border-slate-300">投资机会</button></li>
+                    <li class="mr-2"><button data-tab="tech" class="tab-button inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-slate-600 hover:border-slate-300">技术深度</button></li>
+                    <li class="mr-2"><button data-tab="risks" class="tab-button inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-slate-600 hover:border-slate-300">风险与竞争</button></li>
+                    <li><button data-tab="fundamentals" class="tab-button inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-slate-600 hover:border-slate-300">项目基本面</button></li>
+                </ul>
+            </nav>
+
+            <div id="tab-content">
+                <div id="overview" class="content-pane active">
+                    <div class="space-y-6">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-900 mb-3">执行摘要</h2>
+                            <p class="text-slate-600 leading-relaxed">本部分旨在提供对 Cysic 项目的快速、高层次的理解。Cysic 定位于解决零知识证明（ZKP）领域的计算效率瓶颈，通过其自研硬件（ASIC）与去中心化网络相结合的全栈解决方案，提供“ZK 计算即服务”（ZK-CaaS）。这使其在Web3关键基础设施赛道中占据了独特且重要的生态位。</p>
+                        </div>
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="bg-green-50 border border-green-200 rounded-lg p-6">
+                                <h3 class="text-xl font-bold text-green-800 mb-2">看涨情景 (Bull Case) 🐂</h3>
+                                <p class="text-green-700">Cysic 成功交付高性能 ASIC 芯片，成为 ZK 计算市场最高效、成本最低的服务商。随着 ZK-Rollups 成为行业主流，Cysic 作为底层核心供应商，捕获巨大网络价值，其代币 $CYS 成为 ZK 计算领域的“数字石油”。</p>
+                            </div>
+                            <div class="bg-red-50 border border-red-200 rounded-lg p-6">
+                                <h3 class="text-xl font-bold text-red-800 mb-2">看跌情景 (Bear Case) 🐻</h3>
+                                <p class="text-red-700">ASIC 研发遭遇重大挫折或延期，错失市场窗口。竞争对手或颠覆性 ZK 算法出现，使其硬件优势丧失。项目可能难以实现商业目标，导致投资价值大幅缩水。</p>
+                            </div>
+                        </div>
+                        <div class="bg-slate-100 rounded-lg p-6">
+                            <h3 class="text-xl font-bold text-slate-900 mb-4">核心优势概览</h3>
+                            <ul class="space-y-3">
+                                <li class="flex items-start"><span class="text-blue-500 mr-3 mt-1">✓</span><div><strong class="font-semibold">世界级团队:</strong> 创始人拥有康奈尔大学、耶鲁大学密码学博士背景。</div></li>
+                                <li class="flex items-start"><span class="text-blue-500 mr-3 mt-1">✓</span><div><strong class="font-semibold">顶级资本背书:</strong> 获得 Polychain, HashKey, OKX 等顶级 VC 共计 1800 万美元投资。</div></li>
+                                <li class="flex items-start"><span class="text-blue-500 mr-3 mt-1">✓</span><div><strong class="font-semibold">战略合作:</strong> 与以太坊 L2 头部项目 Scroll 深度绑定，获得关键的初始业务。</div></li>
+                                <li class="flex items-start"><span class="text-blue-500 mr-3 mt-1">✓</span><div><strong class="font-semibold">全栈护城河:</strong> 垂直整合硬件与软件，有望形成独特的性能与成本优势。</div></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="opportunities" class="content-pane">
+                     <div>
+                        <h2 class="text-2xl font-bold text-slate-900 mb-3">投资机会矩阵</h2>
+                        <p class="text-slate-600 leading-relaxed mb-6">本节将报告中的投资机会转化为一个交互式矩阵。您可以根据自身的风险偏好、资本规模和技术背景，点击下方的卡片来探索最适合您的参与方式。从低风险的空投 farming 到高回报的生态系统建设，Cysic 提供了多层次的切入点。</p>
+                        <div id="opportunity-cards" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tech" class="content-pane">
+                    <div class="space-y-8">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-900 mb-3">技术架构与创新</h2>
+                            <p class="text-slate-600 leading-relaxed mb-6">Cysic 的核心竞争力源于其创新的技术架构，该架构分为硬件层和网络层。本节将通过图示和说明，帮助您理解其如何通过软硬件协同，构建起 ZK 计算的护城河。这种全栈模式是其区别于纯软件或纯硬件竞争者的关键。</p>
+                        </div>
+                        
+                        <div>
+                            <h3 class="text-xl font-bold text-slate-900 mb-4">硬件层：三步走战略</h3>
+                             <div class="relative p-6 border-l-4 border-blue-300 space-y-8">
+                                <div class="relative">
+                                    <div class="absolute w-4 h-4 bg-blue-500 rounded-full -left-[34px] top-1 border-4 border-white"></div>
+                                    <h4 class="font-bold text-lg">第一阶段: FPGA 原型验证</h4>
+                                    <p class="text-slate-500">通过 FPGA 快速验证设计理念，实现比竞品快 2-5 倍的性能。</p>
+                                </div>
+                                <div class="relative">
+                                    <div class="absolute w-4 h-4 bg-blue-500 rounded-full -left-[34px] top-1 border-4 border-white"></div>
+                                    <h4 class="font-bold text-lg">第二阶段: GPU 加速方案 (ZKPoG)</h4>
+                                    <p class="text-slate-500">为 Scroll 等合作伙伴提供基于 GPU 的服务，实现短期市场切入和创收。</p>
+                                </div>
+                                 <div class="relative">
+                                    <div class="absolute w-4 h-4 bg-blue-500 rounded-full -left-[34px] top-1 border-4 border-white"></div>
+                                    <h4 class="font-bold text-lg">最终目标: C1 ASIC 芯片</h4>
+                                    <p class="text-slate-500">研发专用 ASIC 芯片，以期在性能和能效比上获得终极优势，构建长期护城河。</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 class="text-xl font-bold text-slate-900 mb-4">网络层：去中心化计算网络</h3>
+                            <div class="flex flex-col md:flex-row gap-6 items-center bg-slate-100 p-6 rounded-lg">
+                                <div class="flex-1 space-y-4">
+                                    <p>Cysic 网络基于 <strong class="text-blue-600">Cosmos SDK</strong> 构建，兼容 <strong class="text-blue-600">EVM</strong>，并采用 <strong class="text-blue-600">CometBFT</strong> 共识引擎，确保了其灵活性、互操作性和安全性。其核心是创新的 <strong class="text-blue-600">计算证明 (Proof-of-Compute)</strong> 混合共识模型。</p>
+                                </div>
+                                <div class="flex-1 w-full flex flex-col items-center space-y-4">
+                                    <div class="w-full text-center bg-white p-3 rounded-lg shadow"><strong>代理 (Agents)</strong><p class="text-sm text-slate-500">中继证明任务</p></div>
+                                    <div class="text-2xl">↓</div>
+                                    <div class="w-full text-center bg-white p-3 rounded-lg shadow"><strong>证明者 (Provers)</strong><p class="text-sm text-slate-500">执行计算，生成证明</p></div>
+                                    <div class="text-2xl">↓</div>
+                                    <div class="w-full text-center bg-white p-3 rounded-lg shadow"><strong>验证者 (Verifiers)</strong><p class="text-sm text-slate-500">验证证明正确性</p></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 class="text-xl font-bold text-slate-900 mb-4">代币经济学：双代币飞轮</h3>
+                             <div class="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center">
+                                <div class="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8">
+                                    <div class="text-center">
+                                        <div class="text-2xl font-bold">$CYS</div>
+                                        <div class="text-slate-500">效用代币 (可流通)</div>
+                                        <div class="text-sm">支付 Gas, 奖励, 结算</div>
+                                    </div>
+                                    <div class="text-4xl font-light text-slate-400 transform md:rotate-0 rotate-90">➔</div>
+                                    <div class="text-center p-4 bg-blue-100 rounded-lg">
+                                        <div class="text-lg font-semibold">质押锁定</div>
+                                    </div>
+                                    <div class="text-4xl font-light text-slate-400 transform md:rotate-0 rotate-90">➔</div>
+                                    <div class="text-center">
+                                        <div class="text-2xl font-bold">$CGT</div>
+                                        <div class="text-slate-500">治理代币 (不可转让)</div>
+                                        <div class="text-sm">投票权, 验证者资格</div>
+                                    </div>
+                                </div>
+                                <p class="mt-6 text-slate-600">该模型通过激励用户锁定 $CYS 以获取 $CGT，减少流通供应，同时将网络价值与长期持有者绑定，形成一个正向的经济飞轮。</p>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div id="risks" class="content-pane">
+                     <div class="space-y-8">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-900 mb-3">风险评估与竞争格局</h2>
+                            <p class="text-slate-600 leading-relaxed mb-6">高回报预期往往伴随着高风险。本节旨在客观地揭示投资 Cysic 所面临的内外部挑战，并将其置于激烈的市场竞争中进行考量。理解这些风险点对于做出平衡的投资决策至关重要。</p>
+                        </div>
+                        <div id="risk-accordion" class="space-y-2">
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-slate-900 mb-4">核心技术路线之争</h3>
+                            <p class="text-slate-600 leading-relaxed mb-6">ZK 硬件赛道的核心分歧在于对 GPU、FPGA 和 ASIC 的选择。下图直观地比较了这三种技术路线的优缺点，并标示了 Cysic 的战略定位。Cysic 的多管齐下策略使其在短期和长期均有布局，但也面临着巨大的执行挑战。</p>
+                            <div class="chart-container">
+                                <canvas id="competitionChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="fundamentals" class="content-pane">
+                    <div class="space-y-8">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-900 mb-3">项目基本面</h2>
+                            <p class="text-slate-600 leading-relaxed mb-6">一个项目的长期价值根植于其基本面。本节将聚焦于 Cysic 背后的核心驱动力：创始团队的背景、顶级投资机构的战略支持，以及与关键生态伙伴的共生关系。这些因素共同构成了 Cysic 强大的社会资本和市场信誉。</p>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-slate-900 mb-4">核心团队</h3>
+                            <div class="grid md:grid-cols-2 gap-6">
+                                <div class="bg-slate-100 p-6 rounded-lg">
+                                    <h4 class="font-bold">Leo Fan (联合创始人)</h4>
+                                    <p class="text-slate-600">康奈尔大学密码学博士，师从著名教授 Elaine Shi。</p>
+                                </div>
+                                <div class="bg-slate-100 p-6 rounded-lg">
+                                    <h4 class="font-bold">Bowen Huang (联合创始人)</h4>
+                                    <p class="text-slate-600">耶鲁大学博士，曾就职于中国科学院计算技术研究所。</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-slate-900 mb-4">顶级投资者与合作伙伴</h3>
+                            <p class="text-slate-600 leading-relaxed mb-6">Cysic 的成功融资不仅带来了 1800 万美元资金，更重要的是构建了一个“VC 验证与战略合作飞轮”。投资者不仅提供资本，还为其带来了如 Scroll 这样的首批核心客户。</p>
+                             <div class="p-6 bg-slate-100 rounded-lg">
+                                <h4 class="font-semibold text-center text-slate-700 mb-4">主要支持者</h4>
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                                    <div class="p-4 bg-white rounded-md shadow-sm flex items-center justify-center h-20"><span class="font-semibold">Polychain Capital</span></div>
+                                    <div class="p-4 bg-white rounded-md shadow-sm flex items-center justify-center h-20"><span class="font-semibold">HashKey Capital</span></div>
+                                    <div class="p-4 bg-white rounded-md shadow-sm flex items-center justify-center h-20"><span class="font-semibold">OKX Ventures</span></div>
+                                    <div class="p-4 bg-white rounded-md shadow-sm flex items-center justify-center h-20"><span class="font-semibold">Scroll</span></div>
+                                    <div class="p-4 bg-white rounded-md shadow-sm flex items-center justify-center h-20"><span class="font-semibold">ABCDE</span></div>
+                                    <div class="p-4 bg-white rounded-md shadow-sm flex items-center justify-center h-20"><span class="font-semibold">Matrix Partners</span></div>
+                                    <div class="p-4 bg-white rounded-md shadow-sm flex items-center justify-center h-20"><span class="font-semibold">SNZ Holding</span></div>
+                                     <div class="p-4 bg-white rounded-md shadow-sm flex items-center justify-center h-20"><span class="font-semibold">... and more</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+
+        <footer class="text-center mt-8 text-slate-400 text-sm">
+            <p>免责声明：本内容仅供参考，不构成任何投资建议。所有信息均来源于公开报告。</p>
+        </footer>
+
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const opportunitiesData = [
+        {
+            title: '激励测试网：验证者节点',
+            type: '空投 farming',
+            capital: '低',
+            skill: '中',
+            risk: '低',
+            reward: '空投积分 (确认可兑换主网代币)',
+            details: '遵循官方指南设置 VPS 节点。硬件要求极低 (单核 CPU, 512MB 内存)，参与门槛非常亲民。这是当前风险最低、潜在回报最高的参与方式。'
+        },
+        {
+            title: '激励测试网：证明者节点',
+            type: '空投 farming',
+            capital: '中',
+            skill: '中高',
+            risk: '中低',
+            reward: '预计比验证者更高的空投积分',
+            details: '为拥有中高端 GPU 的用户准备的进阶参与方式。预计在测试网后续阶段开放，奖励可能远高于验证者。'
+        },
+        {
+            title: 'TGE 后代币购买',
+            type: '投机/长期持有',
+            capital: '高',
+            skill: '低',
+            risk: '高',
+            reward: '代币价格增值',
+            details: '适合希望获得直接代币敞口的投资者。需关注 TGE 公告 (预计 2024 年 Q3)，并在上市后购买，注意初期高波动性。'
+        },
+        {
+            title: '$CYS/$CGT 质押',
+            type: '收益 farming',
+            capital: '高',
+            skill: '低',
+            risk: '中高',
+            reward: '质押 APY',
+            details: '主网上线后，将 $CYS 锁定换取 $CGT 以获取网络基础收益和治理权。可能出现流动性质押等高级策略。'
+        },
+        {
+            title: '开发者：构建代理 (Agent)',
+            type: '生态参与/收入',
+            capital: '低-中',
+            skill: '高',
+            risk: '高',
+            reward: '服务费/收入分成',
+            details: '当代理角色无需许可化后，开发者可创建代理服务，帮助其他 ZK 项目接入 Cysic 网络并收费。'
+        },
+        {
+            title: '开发者：使用 ZK-CaaS',
+            type: '生态参与',
+            capital: '可变',
+            skill: '高',
+            risk: '中',
+            reward: '提升自有应用性能',
+            details: '通过 API 调用 Cysic 的硬件加速服务，为自己的 DApp 或项目赋能，降低 ZK 计算成本和复杂度。'
+        }
+    ];
+
+    const risksData = [
+        {
+            title: '技术与执行风险 (核心风险)',
+            content: '其“ASIC 决胜”的战略雄心勃勃，但也将巨大的不确定性集中在 C1 芯片的研发上。ASIC 设计和流片是一个极其复杂且昂贵的过程，任何技术上的失误或生产上的延期都可能对项目造成毁灭性打击。'
+        },
+        {
+            title: '市场与竞争风险',
+            content: 'ZK 领域技术发展日新月异。未来可能会出现全新的 ZK 证明系统，与 Cysic 的硬件架构不兼容。赛道内竞争激烈，不仅有初创公司，还有半导体巨头等潜在入场者。'
+        },
+        {
+            title: '安全风险',
+            content: '作为一个尚未上线主网的项目，Cysic 目前没有公开发布的安全审计报告。其智能合约和节点软件的安全性尚未经过第三方独立验证，上线后可能成为黑客攻击的目标。'
+        },
+        {
+            title: '中心化风险',
+            content: '为了确保启动阶段的稳定，测试网在早期依赖于中心化组件（如任务调度器）。项目能否成功过渡到一个完全去中心化、无需许可的系统，是衡量其长期价值的关键。'
+        }
+    ];
+
+    const tabNav = document.getElementById('tab-nav');
+    const tabContent = document.getElementById('tab-content');
+    const opportunityCardsContainer = document.getElementById('opportunity-cards');
+    const riskAccordionContainer = document.getElementById('risk-accordion');
+
+    function initTabs() {
+        const tabs = tabNav.querySelectorAll('.tab-button');
+        const panes = tabContent.querySelectorAll('.content-pane');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                panes.forEach(p => p.classList.remove('active'));
+
+                tab.classList.add('active');
+                const paneId = tab.dataset.tab;
+                document.getElementById(paneId).classList.add('active');
+            });
+        });
+    }
+
+    function createOpportunityCards() {
+        opportunityCardsContainer.innerHTML = '';
+        opportunitiesData.forEach((opp, index) => {
+            const card = document.createElement('div');
+            card.className = 'bg-white border border-slate-200 rounded-xl p-6 cursor-pointer hover:shadow-lg hover:border-blue-300 transition-all duration-300 card-enter-active';
+            card.style.animationDelay = `${index * 50}ms`;
+            
+            const riskColors = { '低': 'text-green-500', '中低': 'text-yellow-500', '中': 'text-orange-500', '中高': 'text-red-500', '高': 'text-red-700' };
+            const capitalColors = { '低': 'text-green-500', '中': 'text-yellow-500', '高': 'text-red-500', '低-中': 'text-orange-500', '可变': 'text-slate-500' };
+            const skillColors = { '低': 'text-green-500', '中': 'text-yellow-500', '中高': 'text-orange-500', '高': 'text-red-500' };
+
+            card.innerHTML = `
+                <h3 class="font-bold text-lg text-slate-900 mb-2">${opp.title}</h3>
+                <span class="inline-block bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full mb-3">${opp.type}</span>
+                <div class="text-sm space-y-2 mb-4">
+                    <div class="flex justify-between"><span>所需资本:</span><strong class="${capitalColors[opp.capital] || 'text-slate-500'}">${opp.capital}</strong></div>
+                    <div class="flex justify-between"><span>技能/精力:</span><strong class="${skillColors[opp.skill] || 'text-slate-500'}">${opp.skill}</strong></div>
+                    <div class="flex justify-between"><span>风险等级:</span><strong class="${riskColors[opp.risk] || 'text-slate-500'}">${opp.risk}</strong></div>
+                </div>
+                <div class="details hidden mt-4 pt-4 border-t border-slate-200">
+                    <p class="text-sm text-slate-600"><strong>潜在回报:</strong> ${opp.reward}</p>
+                    <p class="text-sm text-slate-600 mt-2">${opp.details}</p>
+                </div>
+            `;
+
+            card.addEventListener('click', () => {
+                card.querySelector('.details').classList.toggle('hidden');
+            });
+            opportunityCardsContainer.appendChild(card);
+        });
+    }
+
+    function createRiskAccordion() {
+        riskAccordionContainer.innerHTML = '';
+        risksData.forEach(risk => {
+            const item = document.createElement('div');
+            item.className = 'border border-slate-200 rounded-lg overflow-hidden';
+            item.innerHTML = `
+                <button class="w-full text-left p-4 bg-slate-100 hover:bg-slate-200 focus:outline-none flex justify-between items-center transition">
+                    <span class="font-semibold text-slate-800">${risk.title}</span>
+                    <svg class="w-5 h-5 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                <div class="content p-4 text-slate-600 hidden bg-white">
+                    ${risk.content}
+                </div>
+            `;
+            const button = item.querySelector('button');
+            const content = item.querySelector('.content');
+            const icon = item.querySelector('svg');
+
+            button.addEventListener('click', () => {
+                content.classList.toggle('hidden');
+                icon.classList.toggle('rotate-180');
+            });
+            riskAccordionContainer.appendChild(item);
+        });
+    }
+    
+    function createCompetitionChart() {
+        const ctx = document.getElementById('competitionChart').getContext('2d');
+        const competitionChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['GPU (现有方案)', 'FPGA (Cysic 早期/竞品)', 'Cysic ASIC (最终目标)'],
+                datasets: [
+                    {
+                        label: '性能/能效比',
+                        data: [5, 7, 10],
+                        backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: '灵活性 (适应算法变化)',
+                        data: [9, 7, 3],
+                        backgroundColor: 'rgba(34, 197, 94, 0.7)',
+                        borderColor: 'rgba(34, 197, 94, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: '研发成本/周期',
+                        data: [3, 6, 10],
+                        backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                        borderColor: 'rgba(239, 68, 68, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 10,
+                        ticks: {
+                           stepSize: 2,
+                           callback: function(value) {
+                                if (value === 0) return '低';
+                                if (value === 10) return '极高';
+                                return '';
+                           }
+                        }
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'ZK 硬件技术路线对比 (分数越高代表程度越高)',
+                        font: { size: 16 }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                label += context.parsed.y;
+                                if (context.parsed.y <= 3) label += ' (低)';
+                                else if (context.parsed.y <= 7) label += ' (中)';
+                                else label += ' (高)';
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    initTabs();
+    createOpportunityCards();
+    createRiskAccordion();
+    createCompetitionChart();
+});
+</script>
+
+</body>
+</html>

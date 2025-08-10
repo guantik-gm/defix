@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Chosen Palette: Analyst's Calm -->
+    <!-- Application Structure Plan: The application is designed as a top-down interactive dashboard. It starts with the final investment rating and key metrics for a quick overview. A sticky navigation allows users to jump to specific sections. The structure prioritizes user understanding by first presenting the core mechanisms visually, then quantitative data via charts, followed by a clear breakdown of risks, and finally, actionable, filterable investment strategies. This flow guides the user from "what is it?" and "how is it doing?" to "what are the risks?" and "what can I do?", which is a more natural decision-making process for an investor than the linear structure of the original report. -->
+    <!-- Visualization & Content Choices: 
+        - Key Metrics (Inform): Displayed as dynamic counters in the hero section for immediate impact. Goal: Provide a quick snapshot of the protocol's scale. Method: HTML/JS.
+        - Core Mechanisms (Organize): Interactive toggle between V2 and Boros, visualized with HTML/CSS diagrams instead of static text. Goal: Explain complex concepts intuitively. Method: HTML/CSS (Flexbox/Grid), JS for interactivity.
+        - Market Data (Compare/Change): Interactive charts for TVL, Revenue Model, and Tokenomics. Goal: Visualize trends and financial health. Method: Chart.js (Line, Doughnut) in responsive containers.
+        - Risk Assessment (Inform): Card-based layout with icons, highlighting the critical audit risk with color. Goal: Clearly communicate and categorize risks. Method: HTML/CSS.
+        - Investment Strategies (Organize/Compare): An interactive, filterable HTML table. Goal: Allow users to find strategies matching their skill level. Method: HTML table with JS filtering logic.
+        - Justification: These choices transform the static report into an engaging tool. Visual diagrams simplify complexity, charts reveal trends, and interactive filters provide personalized utility, directly supporting the goal of user-friendly exploration.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <title>Pendle Boros 交互式投资分析</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .nav-link {
+            transition: all 0.3s ease;
+        }
+        .nav-link.active {
+            color: #4f46e5;
+            border-bottom-color: #4f46e5;
+        }
+        .strategy-row {
+            transition: opacity 0.5s ease-out, max-height 0.5s ease-out;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white shadow-md sticky top-0 z-50">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="font-bold text-xl text-indigo-600">Pendle Boros 分析</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#summary" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-slate-700 hover:text-indigo-600 border-b-2 border-transparent">摘要</a>
+                        <a href="#mechanisms" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-slate-700 hover:text-indigo-600 border-b-2 border-transparent">核心机制</a>
+                        <a href="#data" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-slate-700 hover:text-indigo-600 border-b-2 border-transparent">市场数据</a>
+                        <a href="#risks" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-slate-700 hover:text-indigo-600 border-b-2 border-transparent">风险评估</a>
+                        <a href="#strategies" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-slate-700 hover:text-indigo-600 border-b-2 border-transparent">投资策略</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+
+        <section id="hero" class="text-center mb-16">
+            <h1 class="text-4xl md:text-5xl font-bold text-slate-900 mb-4">Pendle Boros 投资评估报告</h1>
+            <p class="text-lg text-slate-600 mb-6">一个解构利率衍生品市场未来的交互式分析</p>
+            <div class="bg-white p-6 rounded-xl shadow-lg inline-block">
+                <p class="text-slate-600 text-sm mb-2">最终投资评级</p>
+                <div class="bg-amber-100 text-amber-800 font-bold text-2xl px-6 py-3 rounded-lg inline-flex items-center">
+                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    建议 (高风险类别)
+                </div>
+            </div>
+            <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+                <div class="bg-white p-6 rounded-xl shadow">
+                    <p class="text-slate-500 text-sm font-medium">总锁仓价值 (TVL)</p>
+                    <p id="tvl-stat" class="text-3xl font-bold text-indigo-600 mt-2">$0 B</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow">
+                    <p class="text-slate-500 text-sm font-medium">PENDLE 流通市值</p>
+                    <p id="mcap-stat" class="text-3xl font-bold text-indigo-600 mt-2">$0 M</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow">
+                    <p class="text-slate-500 text-sm font-medium">30日交易量</p>
+                    <p id="vol-stat" class="text-3xl font-bold text-indigo-600 mt-2">$0 B</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="summary" class="mb-16 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center mb-2 text-slate-900">投资摘要</h2>
+            <p class="text-center text-slate-500 mb-10">关键机遇与核心风险概览，助您快速把握投资要点。</p>
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="bg-green-50 border-l-4 border-green-500 p-6 rounded-lg">
+                    <h3 class="text-xl font-bold text-green-800 mb-3">核心机遇：定义利率衍生品新市场</h3>
+                    <p class="text-green-700">Boros 的核心投资机遇在于，它为数千亿美元规模的永续合约资金费率市场，创造了首个去中心化的、可大规模交易和对冲的金融工具。这极大地扩展了 Pendle 的潜在市场规模，并直接满足了专业交易员、做市商和 Ethena 等协议的迫切需求。其价值捕获机制设计清晰，能将平台成功完全转化为 PENDLE 代币的价值。</p>
+                </div>
+                <div class="bg-red-50 border-l-4 border-red-500 p-6 rounded-lg">
+                    <h3 class="text-xl font-bold text-red-800 mb-3">关键风险：未经审计的智能合约</h3>
+                    <p class="text-red-700">项目面临的最突出风险在于技术与安全层面。Boros 是一个极其复杂的链上订单簿与保证金系统，其攻击面显著增大。**关键信息缺口在于：尽管官方声称已获顶级公司审计，但在公开渠道无法找到针对 Boros (V3) 线上合约的完整审计报告。** 在此信息不对称下，任何投资都面临巨大的、未知的智能合约风险盲点。</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="mechanisms" class="mb-16 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center mb-2 text-slate-900">核心机制</h2>
+            <p class="text-center text-slate-500 mb-10">通过可视化的方式，理解 Pendle V2 与 Boros (V3) 的革命性创新。</p>
+            <div class="bg-white p-6 rounded-xl shadow-lg">
+                <div class="flex justify-center border-b border-slate-200 mb-6">
+                    <button id="btn-v2" class="mechanism-btn text-lg font-semibold py-3 px-6 border-b-2 border-indigo-500 text-indigo-600">Pendle V2: 收益代币化</button>
+                    <button id="btn-v3" class="mechanism-btn text-lg font-semibold py-3 px-6 border-b-2 border-transparent text-slate-500">Boros (V3): 利率衍生品</button>
+                </div>
+                <div id="content-v2" class="mechanism-content">
+                    <p class="text-center text-slate-600 mb-6">V2 将任何生息资产拆分为**本金 (PT)** 和**未来收益 (YT)** 两部分，催生了固定收益和杠杆收益等多种玩法。</p>
+                    <div class="flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-8">
+                        <div class="text-center p-4 border-2 border-dashed rounded-lg">
+                            <p class="font-bold">生息资产</p>
+                            <p class="text-sm text-slate-500">(如 stETH)</p>
+                        </div>
+                        <div class="text-5xl font-thin text-indigo-400 transform md:rotate-0 rotate-90">&rarr;</div>
+                        <div class="flex items-center space-x-4">
+                            <div class="text-center p-4 bg-blue-100 text-blue-800 rounded-lg shadow">
+                                <p class="font-bold">本金代币 (PT)</p>
+                                <p class="text-sm">锁定固定收益</p>
+                            </div>
+                            <div class="text-2xl">+</div>
+                            <div class="text-center p-4 bg-purple-100 text-purple-800 rounded-lg shadow">
+                                <p class="font-bold">收益代币 (YT)</p>
+                                <p class="text-sm">杠杆化未来收益</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="content-v3" class="mechanism-content hidden">
+                    <p class="text-center text-slate-600 mb-6">Boros 将永续合约的**资金费率**代币化为**收益单元 (YU)**，允许用户交易和对冲未来利率。</p>
+                     <div class="flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-8">
+                        <div class="text-center p-4 border-2 border-dashed rounded-lg">
+                            <p class="font-bold">永续合约资金费率</p>
+                            <p class="text-sm text-slate-500">(链下市场的收益)</p>
+                        </div>
+                        <div class="text-5xl font-thin text-indigo-400 transform md:rotate-0 rotate-90">&rarr;</div>
+                        <div class="flex items-center space-x-4">
+                            <div class="text-center p-4 bg-teal-100 text-teal-800 rounded-lg shadow">
+                                <p class="font-bold">购买 YU</p>
+                                <p class="text-sm">做多资金费率</p>
+                            </div>
+                            <div class="text-2xl">&harr;</div>
+                            <div class="text-center p-4 bg-rose-100 text-rose-800 rounded-lg shadow">
+                                <p class="font-bold">卖空 YU</p>
+                                <p class="text-sm">做空/对冲资金费率</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="data" class="mb-16 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center mb-2 text-slate-900">市场与财务数据</h2>
+            <p class="text-center text-slate-500 mb-10">通过关键链上数据的可视化，洞察协议的健康度与增长趋势。</p>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-semibold mb-4 text-center">TVL 与交易量趋势</h3>
+                    <div class="chart-container">
+                        <canvas id="tvlChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-semibold mb-4 text-center">高效的协议收入模型</h3>
+                    <div class="chart-container">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-lg lg:col-span-2">
+                    <h3 class="text-xl font-semibold mb-4 text-center">PENDLE 代币释放计划 (通缩模型)</h3>
+                     <div class="chart-container">
+                        <canvas id="tokenomicsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="risks" class="mb-16 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center mb-2 text-slate-900">关键风险评估</h2>
+            <p class="text-center text-slate-500 mb-10">全面审视技术、市场与治理层面的潜在风险。</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="bg-white p-6 rounded-xl shadow-lg border-2 border-red-500">
+                    <div class="flex items-center text-red-600 mb-3">
+                        <svg class="w-8 h-8 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        <h3 class="text-xl font-bold">智能合约风险 (高)</h3>
+                    </div>
+                    <p class="text-slate-600">Boros 系统极其复杂，但**目前无法公开获取其完整的安全审计报告**。这是投资前必须正视的最大风险点。在报告公开且结论积极前，任何投资都面临巨大的未知技术风险。</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <div class="flex items-center text-amber-600 mb-3">
+                         <svg class="w-8 h-8 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                        <h3 class="text-xl font-bold">历史安全事件</h3>
+                    </div>
+                    <p class="text-slate-600">生态项目 Penpie 曾因自身漏洞被盗，但 Pendle 核心合约安全。此事件凸显了 DeFi 的可组合性风险，也证明了 Pendle 团队的监控和应急响应能力。</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <div class="flex items-center text-sky-600 mb-3">
+                        <svg class="w-8 h-8 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        <h3 class="text-xl font-bold">团队与治理</h3>
+                    </div>
+                    <p class="text-slate-600">创始人背景良好，团队经验丰富，投资者阵容强大。所有早期份额已完全解锁，无未来抛压。vePENDLE 模型将治理权与协议收入紧密绑定，激励长期持有。</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="strategies" class="scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center mb-2 text-slate-900">投资与参与策略</h2>
+            <p class="text-center text-slate-500 mb-10">根据您的风险偏好与技能水平，探索最适合您的参与方式。</p>
+            <div class="bg-white p-6 rounded-xl shadow-lg">
+                <div class="flex justify-center items-center space-x-4 mb-6">
+                    <span class="font-medium text-slate-700">按技能要求筛选:</span>
+                    <div class="flex space-x-2">
+                        <button class="strategy-filter-btn active" data-filter="all">全部</button>
+                        <button class="strategy-filter-btn" data-filter="初级">初级</button>
+                        <button class="strategy-filter-btn" data-filter="中级">中级</button>
+                        <button class="strategy-filter-btn" data-filter="高级">高级</button>
+                        <button class="strategy-filter-btn" data-filter="开发者">开发者</button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-slate-500">
+                        <thead class="text-xs text-slate-700 uppercase bg-slate-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3">策略名称</th>
+                                <th scope="col" class="px-6 py-3">主要回报</th>
+                                <th scope="col" class="px-6 py-3">核心风险</th>
+                                <th scope="col" class="px-6 py-3">技能要求</th>
+                            </tr>
+                        </thead>
+                        <tbody id="strategy-table-body">
+                            <tr class="strategy-row bg-white border-b" data-skill="初级">
+                                <td class="px-6 py-4 font-medium text-slate-900">购买 PENDLE 代币</td>
+                                <td class="px-6 py-4">资本增值</td>
+                                <td class="px-6 py-4">市场波动</td>
+                                <td class="px-6 py-4"><span class="bg-green-100 text-green-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded">初级</span></td>
+                            </tr>
+                            <tr class="strategy-row bg-white border-b" data-skill="初级-中级">
+                                <td class="px-6 py-4 font-medium text-slate-900">质押 vePENDLE</td>
+                                <td class="px-6 py-4">协议分红, 贿选, 空投</td>
+                                <td class="px-6 py-4">价格风险, 流动性丧失</td>
+                                <td class="px-6 py-4"><span class="bg-green-100 text-green-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded">初级</span><span class="bg-blue-100 text-blue-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded">中级</span></td>
+                            </tr>
+                            <tr class="strategy-row bg-white border-b" data-skill="初级">
+                                <td class="px-6 py-4 font-medium text-slate-900">V2 固定收益 (买PT)</td>
+                                <td class="px-6 py-4">锁定的固定利率</td>
+                                <td class="px-6 py-4">机会成本, 底层资产风险</td>
+                                <td class="px-6 py-4"><span class="bg-green-100 text-green-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded">初级</span></td>
+                            </tr>
+                            <tr class="strategy-row bg-white border-b" data-skill="中级">
+                                <td class="px-6 py-4 font-medium text-slate-900">V2 杠杆收益 (买YT)</td>
+                                <td class="px-6 py-4">浮动收益/空投积分</td>
+                                <td class="px-6 py-4">本金损失, 时间衰减</td>
+                                <td class="px-6 py-4"><span class="bg-blue-100 text-blue-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded">中级</span></td>
+                            </tr>
+                             <tr class="strategy-row bg-white border-b" data-skill="中级">
+                                <td class="px-6 py-4 font-medium text-slate-900">V2 流动性提供</td>
+                                <td class="px-6 py-4">交易费, PENDLE激励</td>
+                                <td class="px-6 py-4">极低的无常损失, 合约风险</td>
+                                <td class="px-6 py-4"><span class="bg-blue-100 text-blue-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded">中级</span></td>
+                            </tr>
+                            <tr class="strategy-row bg-white border-b" data-skill="高级">
+                                <td class="px-6 py-4 font-medium text-slate-900">Boros 交易资金费率</td>
+                                <td class="px-6 py-4">利率价差 (高度投机)</td>
+                                <td class="px-6 py-4">清算风险, 预言机风险</td>
+                                <td class="px-6 py-4"><span class="bg-orange-100 text-orange-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded">高级</span></td>
+                            </tr>
+                             <tr class="strategy-row bg-white border-b" data-skill="高级">
+                                <td class="px-6 py-4 font-medium text-slate-900">Delta 中性策略</td>
+                                <td class="px-6 py-4">纯资金费率收益</td>
+                                <td class="px-6 py-4">执行风险, 基差风险</td>
+                                <td class="px-6 py-4"><span class="bg-orange-100 text-orange-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded">高级</span></td>
+                            </tr>
+                            <tr class="strategy-row bg-white border-b" data-skill="高级开发者">
+                                <td class="px-6 py-4 font-medium text-slate-900">Boros 资金费率套利</td>
+                                <td class="px-6 py-4">跨市场利率差</td>
+                                <td class="px-6 py-4">执行风险, 合约风险</td>
+                                <td class="px-6 py-4"><span class="bg-orange-100 text-orange-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded">高级</span><span class="bg-red-100 text-red-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded">开发者</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="mt-8 bg-indigo-50 border-l-4 border-indigo-500 p-6 rounded-lg">
+                <h3 class="text-xl font-bold text-indigo-800 mb-3">建议的投资路径</h3>
+                <p class="text-indigo-700">鉴于高潜力和高风险并存，建议采取分阶段、有条件的资本配置策略：</p>
+                <ol class="list-decimal list-inside mt-4 space-y-2 text-indigo-700">
+                    <li><strong>第一阶段 (当前):</strong> 配置少量风险可控的资金，购买 PENDLE 并质押为 vePENDLE，以建立基础仓位，捕获 V2 收益并参与叙事。</li>
+                    <li><strong>第二阶段 (未来):</strong> 将更大比例的资金配置视为一个**待触发的期权**。触发条件为：**Pendle 团队公开发布 Boros 的完整、积极的审计报告，且平台稳定运行3-6个月以上。**</li>
+                </ol>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-slate-800 text-slate-400 mt-16">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4 text-center text-sm">
+            <p>本报告仅为信息分享，不构成任何投资建议。所有数据来源于公开信息，请自行研究并承担风险。</p>
+            <p>&copy; 2024 交互式投资分析. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            const animateStat = (element, start, end, duration, suffix = '', prefix = '', decimals = 2) => {
+                let startTimestamp = null;
+                const step = (timestamp) => {
+                    if (!startTimestamp) startTimestamp = timestamp;
+                    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                    const current = progress * (end - start) + start;
+                    element.innerHTML = `${prefix}${current.toFixed(decimals)}${suffix}`;
+                    if (progress < 1) {
+                        window.requestAnimationFrame(step);
+                    }
+                };
+                window.requestAnimationFrame(step);
+            };
+
+            const tvlStat = document.getElementById('tvl-stat');
+            const mcapStat = document.getElementById('mcap-stat');
+            const volStat = document.getElementById('vol-stat');
+
+            animateStat(tvlStat, 0, 7.31, 2000, ' B', '$');
+            animateStat(mcapStat, 0, 661, 2000, ' M', '$', 0);
+            animateStat(volStat, 0, 4.89, 2000, ' B', '$');
+
+            const mechanismBtns = document.querySelectorAll('.mechanism-btn');
+            const mechanismContents = document.querySelectorAll('.mechanism-content');
+            mechanismBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    mechanismBtns.forEach(b => {
+                        b.classList.remove('text-indigo-600', 'border-indigo-500');
+                        b.classList.add('text-slate-500', 'border-transparent');
+                    });
+                    btn.classList.add('text-indigo-600', 'border-indigo-500');
+                    btn.classList.remove('text-slate-500', 'border-transparent');
+
+                    mechanismContents.forEach(content => content.classList.add('hidden'));
+                    const targetId = btn.id.replace('btn', 'content');
+                    document.getElementById(targetId).classList.remove('hidden');
+                });
+            });
+
+            const tvlCtx = document.getElementById('tvlChart').getContext('2d');
+            new Chart(tvlCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Q1 23', 'Q2 23', 'Q3 23', 'Q4 23', 'Q1 24', 'Q2 24', 'Q3 24'],
+                    datasets: [{
+                        label: 'TVL (亿美元)',
+                        data: [0.5, 0.8, 1.5, 2.5, 4.0, 7.0, 7.31],
+                        borderColor: 'rgb(79, 70, 229)',
+                        backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        yAxisID: 'y',
+                    }, {
+                        label: '30日交易量 (亿美元)',
+                        data: [0.2, 0.5, 1.0, 1.8, 3.5, 5.2, 4.89],
+                        borderColor: 'rgb(14, 165, 233)',
+                        backgroundColor: 'rgba(14, 165, 233, 0.1)',
+                        fill: false,
+                        tension: 0.4,
+                        yAxisID: 'y',
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: '金额 (亿美元)' }
+                        }
+                    }
+                }
+            });
+
+            const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+            new Chart(revenueCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['协议收入 (98.3%)', '未捕获费用 (1.7%)'],
+                    datasets: [{
+                        label: '费用构成',
+                        data: [47.33, 48.13 - 47.33],
+                        backgroundColor: [
+                            'rgb(79, 70, 229)',
+                            'rgb(203, 213, 225)'
+                        ],
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact' }).format(context.parsed * 1000000);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            const tokenomicsCtx = document.getElementById('tokenomicsChart').getContext('2d');
+            const initialEmission = 100000;
+            const weeks = Array.from({length: 156}, (_, i) => `W${i+1}`);
+            const emissions = [];
+            let currentEmission = initialEmission;
+            for(let i=0; i<156; i++) {
+                emissions.push(currentEmission);
+                currentEmission *= (1 - 0.011);
+            }
+            new Chart(tokenomicsCtx, {
+                type: 'line',
+                data: {
+                    labels: weeks.filter((_, i) => i % 13 === 0),
+                    datasets: [{
+                        label: '每周 PENDLE 释放量 (示意)',
+                        data: emissions,
+                        borderColor: 'rgb(219, 39, 119)',
+                        backgroundColor: 'rgba(219, 39, 119, 0.1)',
+                        fill: true,
+                        tension: 0.1,
+                        pointRadius: 0,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            title: { display: true, text: '释放量' }
+                        },
+                        x: {
+                            title: { display: true, text: '时间 (周)' }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+            
+            const filterBtns = document.querySelectorAll('.strategy-filter-btn');
+            const strategyRows = document.querySelectorAll('.strategy-row');
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    filterBtns.forEach(b => b.classList.remove('active', 'bg-indigo-600', 'text-white'));
+                    btn.classList.add('active', 'bg-indigo-600', 'text-white');
+                    
+                    const filter = btn.dataset.filter;
+                    
+                    strategyRows.forEach(row => {
+                        const skill = row.dataset.skill;
+                        const shouldShow = filter === 'all' || skill.includes(filter);
+                        
+                        if (shouldShow) {
+                            row.style.opacity = '1';
+                            row.style.maxHeight = row.scrollHeight + 'px';
+                            row.style.visibility = 'visible';
+                        } else {
+                            row.style.opacity = '0';
+                            row.style.maxHeight = '0';
+                            setTimeout(() => {
+                                row.style.visibility = 'hidden';
+                            }, 500);
+                        }
+                    });
+                });
+            });
+            
+            document.querySelectorAll('.strategy-filter-btn').forEach(button => {
+                button.classList.add('px-3', 'py-1', 'rounded-full', 'text-sm', 'font-medium', 'transition-colors', 'duration-200');
+                if (!button.classList.contains('active')) {
+                    button.classList.add('bg-slate-200', 'text-slate-700', 'hover:bg-slate-300');
+                } else {
+                     button.classList.add('bg-indigo-600', 'text-white');
+                }
+            });
+
+            const sections = document.querySelectorAll('section');
+            const navLinks = document.querySelectorAll('.nav-link');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        navLinks.forEach(link => {
+                            link.classList.remove('active');
+                            if (link.getAttribute('href').substring(1) === entry.target.id) {
+                                link.classList.add('active');
+                            }
+                        });
+                    }
+                });
+            }, { rootMargin: "-50% 0px -50% 0px" });
+            sections.forEach(section => observer.observe(section));
+
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bless Network - 交互式投资分析仪表盘</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Chosen Palette: Calm Neutrals -->
+    <!-- Application Structure Plan: 采用仪表盘布局，通过顶部导航在“概览”、“深度分析”、“风险评估”和“投资策略”四个核心视图之间切换。这种结构将报告从线性叙事转变为主题探索模式，允许用户根据其信息需求直接跳转到最相关的部分。“概览”提供快速决策所需的核心信息；“深度分析”满足希望了解项目“为什么”的用户；“风险评估”隔离了关键的警示信息；“投资策略”则直接服务于有投资意向的用户。这种非线性的信息架构显著提升了信息获取效率和用户体验。 -->
+    <!-- Visualization & Content Choices: 
+        - 报告信息: 最终投资评级 -> 目标: 强调结论 -> 呈现方式: 顶部突出的信息卡片 -> 交互: 无，静态展示 -> 理由: 让用户第一眼看到最重要的结论。
+        - 报告信息: 核心风险评估 -> 目标: 比较不同风险的严重程度 -> 呈现方式: 水平条形图 (Chart.js/Canvas) -> 交互: 悬停显示风险详情 -> 理由: 直观地量化和比较无形的风险，比文字列表更有冲击力。
+        - 报告信息: Bless vs. Grass 对比 -> 目标: 对比竞争对手 -> 呈现方式: 分组条形图 (Chart.js/Canvas) -> 交互: 悬停显示具体数据 -> 理由: 清晰地展示关键指标差异。
+        - 报告信息: 投资机会矩阵 -> 目标: 组织和展示多种投资选项 -> 呈现方式: 可展开的HTML表格 -> 交互: 点击行展开显示优缺点 -> 理由: 在保持界面整洁的同时，提供按需深入了解的细节。
+        - 报告信息: 技术架构 -> 目标: 解释技术堆栈 -> 呈现方式: HTML/CSS Flexbox布局图 -> 交互: 悬停显示组件说明 -> 理由: 在不使用SVG的情况下，以结构化方式可视化技术信息。
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f8f9fa; /* Light neutral background */
+        }
+        .nav-link {
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link.active {
+            border-bottom-color: #4f46e5; /* Indigo-600 */
+            color: #1e293b; /* Slate-800 */
+        }
+        .content-section {
+            display: none;
+        }
+        .content-section.active {
+            display: block;
+        }
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.1);
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 50vh;
+        }
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 300px;
+            }
+        }
+        .details-row {
+            display: none;
+            background-color: #f9fafb;
+        }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
+        <!-- Header -->
+        <header class="mb-8">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
+                <div>
+                    <h1 class="text-4xl font-bold text-slate-900">Bless Network</h1>
+                    <p class="text-lg text-slate-500">交互式投资分析仪表盘</p>
+                </div>
+                <div id="final-rating-card" class="card mt-4 md:mt-0 p-4 border-l-4 rounded-lg">
+                    <p class="text-sm font-semibold text-slate-600">最终投资评级</p>
+                    <p class="text-2xl font-bold"></p>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="bg-white rounded-lg shadow-sm mb-8 sticky top-2 z-10">
+            <ul class="flex justify-center items-center p-2 space-x-2 md:space-x-8">
+                <li><a href="#overview" class="nav-link font-semibold text-slate-600 px-3 py-2">概览</a></li>
+                <li><a href="#deep-dive" class="nav-link font-semibold text-slate-600 px-3 py-2">深度分析</a></li>
+                <li><a href="#risk-assessment" class="nav-link font-semibold text-slate-600 px-3 py-2">风险评估</a></li>
+                <li><a href="#investment-strategy" class="nav-link font-semibold text-slate-600 px-3 py-2">投资策略</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main>
+            <!-- Overview Section -->
+            <section id="overview" class="content-section space-y-8">
+                <div class="card p-6">
+                    <h2 class="text-2xl font-bold mb-4 text-slate-900">报告摘要与核心观点</h2>
+                    <p class="text-slate-600 leading-relaxed">本部分提供对Bless Network的快速概览，总结了其核心价值、主要机遇与风险。旨在帮助您在最短时间内了解项目全貌，并做出初步判断。所有信息均提炼自深度分析报告，确保准确性和客观性。</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="card p-5">
+                        <p class="text-sm font-semibold text-slate-500 mb-2">融资金额</p>
+                        <p class="text-3xl font-bold text-indigo-600">$800万</p>
+                        <p class="text-xs text-slate-400 mt-1">由NGC Ventures等领投</p>
+                    </div>
+                    <div class="card p-5">
+                        <p class="text-sm font-semibold text-slate-500 mb-2">核心团队背景</p>
+                        <p class="text-3xl font-bold text-indigo-600">精英</p>
+                        <p class="text-xs text-slate-400 mt-1">来自Akash, Binance等</p>
+                    </div>
+                    <div class="card p-5">
+                        <p class="text-sm font-semibold text-slate-500 mb-2">所属赛道</p>
+                        <p class="text-3xl font-bold text-indigo-600">DePIN</p>
+                        <p class="text-xs text-slate-400 mt-1">高增长潜力叙事</p>
+                    </div>
+                     <div class="card p-5">
+                        <p class="text-sm font-semibold text-slate-500 mb-2">核心共享资源</p>
+                        <p class="text-3xl font-bold text-indigo-600">CPU/GPU</p>
+                        <p class="text-xs text-slate-400 mt-1">高价值计算能力</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="card p-6">
+                         <h3 class="text-xl font-bold mb-4 text-slate-900">优势 (Strengths) & 风险 (Risks)</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <p class="font-semibold text-green-600 flex items-center"><span class="text-xl mr-2">✅</span> 核心优势</p>
+                                <ul id="strengths-list" class="list-disc list-inside text-slate-600 mt-2 space-y-1"></ul>
+                            </div>
+                            <div>
+                                <p class="font-semibold text-red-600 flex items-center"><span class="text-xl mr-2">⚠️</span> 主要风险</p>
+                                <ul id="risks-list" class="list-disc list-inside text-slate-600 mt-2 space-y-1"></ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card p-6">
+                        <h3 class="text-xl font-bold mb-4 text-slate-900">竞争格局: Bless vs. Grass</h3>
+                        <p class="text-sm text-slate-500 mb-4">通过与直接竞争对手Grass的关键指标对比，可以更清晰地看到Bless的战略定位和差异化优势。</p>
+                        <div class="chart-container">
+                            <canvas id="competitorChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Deep Dive Section -->
+            <section id="deep-dive" class="content-section space-y-8">
+                 <div class="card p-6">
+                    <h2 class="text-2xl font-bold mb-4 text-slate-900">项目深度分析</h2>
+                    <p class="text-slate-600 leading-relaxed">本部分深入剖析项目的内在价值，涵盖技术架构、团队背景、市场定位和社区健康度等多个维度。通过这些详细信息，您可以全面评估项目的长期发展潜力和执行能力。</p>
+                </div>
+                <div class="card p-6">
+                    <h3 class="text-xl font-bold mb-4 text-slate-900">技术架构: “共享计算机”如何运作</h3>
+                    <p class="text-sm text-slate-500 mb-6">Bless通过精巧的技术选型构建其安全高效的去中心化计算网络。核心在于使用Go语言构建P2P网络守护进程，并采用Rust语言编写基于WASM的安全沙箱，从根本上保障用户设备安全。</p>
+                    <div class="flex flex-col md:flex-row items-center justify-around space-y-4 md:space-y-0 md:space-x-4 p-4 bg-slate-50 rounded-lg">
+                        <div class="text-center">
+                            <div class="p-4 bg-white rounded-lg shadow">
+                                <p class="text-2xl">👨‍💻</p>
+                                <p class="font-bold mt-1">开发者</p>
+                                <p class="text-xs text-slate-500">提交计算任务</p>
+                            </div>
+                        </div>
+                         <div class="text-3xl font-thin text-slate-400 transform rotate-90 md:rotate-0">→</div>
+                        <div class="text-center">
+                            <div class="p-4 bg-white rounded-lg shadow">
+                                <p class="text-2xl">🌐</p>
+                                <p class="font-bold mt-1">Bless 网络</p>
+                                <p class="text-xs text-slate-500">智能调度与匹配</p>
+                            </div>
+                        </div>
+                        <div class="text-3xl font-thin text-slate-400 transform rotate-90 md:rotate-0">→</div>
+                        <div class="text-center">
+                            <div class="p-4 bg-white rounded-lg shadow">
+                                <p class="text-2xl">💻</p>
+                                <p class="font-bold mt-1">贡献者节点</p>
+                                <p class="text-xs text-slate-500">在安全沙箱内执行</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card p-6">
+                    <h3 class="text-xl font-bold mb-4 text-slate-900">创始团队与投资者</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="team-list">
+                    </div>
+                </div>
+                 <div class="card p-6">
+                    <h3 class="text-xl font-bold mb-4 text-slate-900">社区渠道与情绪</h3>
+                     <p class="text-sm text-slate-500 mb-4">项目社区热度高，主要由空投预期驱动。官方渠道活跃，但深度讨论较少，需警惕TGE后的社区粘性问题。</p>
+                     <div class="flex flex-wrap gap-4">
+                        <a href="https://bless.network" target="_blank" class="bg-indigo-100 text-indigo-800 px-4 py-2 rounded-full font-semibold text-sm hover:bg-indigo-200 transition">官方网站</a>
+                        <a href="https://x.com/theblessnetwork" target="_blank" class="bg-sky-100 text-sky-800 px-4 py-2 rounded-full font-semibold text-sm hover:bg-sky-200 transition">官方 X (Twitter)</a>
+                        <a href="https://discord.com/invite/blessnetwork" target="_blank" class="bg-purple-100 text-purple-800 px-4 py-2 rounded-full font-semibold text-sm hover:bg-purple-200 transition">官方 Discord</a>
+                        <a href="https://github.com/blessnetwork" target="_blank" class="bg-slate-200 text-slate-800 px-4 py-2 rounded-full font-semibold text-sm hover:bg-slate-300 transition">官方 GitHub</a>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Risk Assessment Section -->
+            <section id="risk-assessment" class="content-section space-y-8">
+                 <div class="card p-6">
+                    <h2 class="text-2xl font-bold mb-4 text-slate-900">综合风险评估</h2>
+                    <p class="text-slate-600 leading-relaxed">投资没有绝对的安全，本部分集中揭示Bless Network面临的核心风险。我们通过风险矩阵和深度分析，帮助您量化感知风险的严重性，并理解其背后的原因，从而做出更审慎的决策。</p>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="card p-6">
+                        <h3 class="text-xl font-bold mb-4 text-slate-900">风险等级矩阵</h3>
+                        <p class="text-sm text-slate-500 mb-4">下图直观展示了各维度风险的评估等级。安全风险因缺乏审计而评为“极高”，是当前最需关注的要点。</p>
+                        <div class="chart-container">
+                            <canvas id="riskChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="card p-6 bg-red-50 border-l-4 border-red-500">
+                        <h3 class="text-xl font-bold mb-4 text-red-800">关键风险点详解</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <h4 class="font-bold text-lg text-red-700">1. 致命的审计缺失 (极高风险)</h4>
+                                <p class="text-red-600">截至目前，未发现任何第三方公开安全审计报告。在其沙箱环境的安全性得到独立验证前，用户资金和设备安全存在巨大隐患。</p>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-lg text-red-700">2. 严重的品牌混淆 (高风险)</h4>
+                                <p class="text-red-600">“Bless”名称极为普遍，市场已存在多个无关的同名代币，极易导致投资者混淆和资金损失，尤其是在TGE前后。</p>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-lg text-orange-700">3. TGE后的巨大抛压 (中高风险)</h4>
+                                <p class="text-orange-600">社区由空投猎人主导，TGE后可能出现集中抛售，对代币初始价格造成严峻考验。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Investment Strategy Section -->
+            <section id="investment-strategy" class="content-section space-y-8">
+                 <div class="card p-6">
+                    <h2 class="text-2xl font-bold mb-4 text-slate-900">投资机会与策略</h2>
+                    <p class="text-slate-600 leading-relaxed">本部分旨在为您提供具体、可操作的投资路径。我们系统性地梳理了从当前到主网上线后可能出现的各种投资机会，并对其优缺点、风险和潜在回报进行了评估。请根据您的风险偏好和技术背景选择合适的策略。</p>
+                </div>
+                <div class="card p-6">
+                     <h3 class="text-xl font-bold mb-4 text-slate-900">投资机会矩阵</h3>
+                     <p class="text-sm text-slate-500 mb-4">下表评估了不同投资机会的风险收益比。点击任意一行可展开查看详细的优缺点分析。当前参与激励测试网是风险最低的策略。</p>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="bg-slate-50">
+                                <tr>
+                                    <th class="p-4 font-semibold text-sm">投资机会</th>
+                                    <th class="p-4 font-semibold text-sm">风险等级</th>
+                                    <th class="p-4 font-semibold text-sm">潜在回报</th>
+                                    <th class="p-4 font-semibold text-sm">操作方式</th>
+                                </tr>
+                            </thead>
+                            <tbody id="investment-table">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                 <div class="card p-6">
+                     <h3 class="text-xl font-bold mb-4 text-slate-900">高阶策略：高APR DeFi与开发者机会</h3>
+                     <p class="text-sm text-slate-500 mb-4">对于经验丰富的DeFi玩家和具备开发背景的投资者，Bless生态可能提供更高回报的参与途径。</p>
+                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="border border-slate-200 p-4 rounded-lg">
+                            <h4 class="font-bold text-lg text-indigo-700">DeFi 组合拳 🃏</h4>
+                            <ul class="list-disc list-inside mt-2 space-y-1 text-slate-600">
+                                <li>基础流动性挖矿 (LP Farming)</li>
+                                <li>杠杆挖矿 (Leveraged Farming)</li>
+                                <li>套期保值挖矿 (Hedged Farming)</li>
+                                <li>流动性质押衍生品 (LSDfi)</li>
+                            </ul>
+                        </div>
+                         <div class="border border-slate-200 p-4 rounded-lg">
+                            <h4 class="font-bold text-lg text-teal-700">开发者生态参与 🛠️</h4>
+                            <ul class="list-disc list-inside mt-2 space-y-1 text-slate-600">
+                                 <li>使用官方SDK构建dApp</li>
+                                 <li>创建和运营收费的Agent/Plugin</li>
+                                 <li>争取官方开发者Grant</li>
+                                 <li>成为生态的“生产者”而非“消费者”</li>
+                            </ul>
+                        </div>
+                     </div>
+                 </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const reportData = {
+                rating: {
+                    level: "建议 (Recommend)",
+                    color: "green"
+                },
+                strengths: [
+                    "强大的创始团队与VC背景",
+                    "高增长的DePIN赛道",
+                    "差异化的高价值资源定位",
+                    "积极的开发进展与专业的技术选型"
+                ],
+                risks: [
+                    "致命的审计缺失",
+                    "严重的品牌混淆问题",
+                    "TGE后的巨大抛压",
+                    "技术实现路径挑战巨大"
+                ],
+                competitorData: {
+                    labels: ['融资额(百万美元)', '用户基数(百万)'],
+                    datasets: [
+                        {
+                            label: 'Bless Network',
+                            data: [8, 0.1], 
+                            backgroundColor: 'rgba(79, 70, 229, 0.8)',
+                            borderColor: 'rgba(79, 70, 229, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Grass',
+                            data: [4.5, 3],
+                            backgroundColor: 'rgba(34, 197, 94, 0.8)',
+                            borderColor: 'rgba(34, 197, 94, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                team: [
+                    { name: "Butian Li", role: "CEO", detail: "前NGC Ventures投资人，沃顿MBA" },
+                    { name: "Derek Anderson", role: "CTO", detail: "前Akash Network CTO，资深架构师" },
+                    { name: "Michael Chen", role: "COO", detail: "前Binance Labs研究员，项目分析专家" }
+                ],
+                riskData: {
+                    labels: ['团队风险', '技术风险', '市场风险', '品牌风险', '安全风险'],
+                    datasets: [{
+                        label: '风险等级',
+                        data: [1, 4, 3, 4, 5], 
+                        backgroundColor: [
+                            'rgba(34, 197, 94, 0.6)',
+                            'rgba(249, 115, 22, 0.6)',
+                            'rgba(234, 179, 8, 0.6)',
+                            'rgba(249, 115, 22, 0.6)',
+                            'rgba(239, 68, 68, 0.6)'
+                        ],
+                        borderColor: [
+                           'rgba(34, 197, 94, 1)',
+                           'rgba(249, 115, 22, 1)',
+                           'rgba(234, 179, 8, 1)',
+                           'rgba(249, 115, 22, 1)',
+                           'rgba(239, 68, 68, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                investmentOpportunities: [
+                    { opportunity: "参与激励测试网", risk: "低", reward: "中至高", method: "安装插件挖矿", pros: ["零成本", "非对称回报"], cons: ["时间成本", "女巫攻击稀释"] },
+                    { opportunity: "TGE后购买代币", risk: "高", reward: "高", method: "交易所直接购买", pros: ["操作简单", "流动性好"], cons: ["面临巨大空投抛压", "价格波动大"] },
+                    { opportunity: "提供流动性(LP)", risk: "极高", reward: "极高", method: "为DEX交易对提供LP", pros: ["可能获得极高初始APR", "赚取手续费"], cons: ["无常损失", "智能合约风险"] },
+                    { opportunity: "质押代币", risk: "中", reward: "中", method: "将代币质押到官方池", pros: ["稳定收益", "参与治理"], cons: ["有锁定期", "协议收入不及预期"] },
+                    { opportunity: "开发者生态参与", risk: "中", reward: "极高", method: "利用SDK构建应用/插件", pros: ["成为生态生产者", "回报天花板高"], cons: ["技术门槛高", "时间投入大"] }
+                ]
+            };
+
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('.content-section');
+
+            function updateContent(hash) {
+                hash = hash || window.location.hash || '#overview';
+
+                navLinks.forEach(link => {
+                    if (link.getAttribute('href') === hash) {
+                        link.classList.add('active');
+                    } else {
+                        link.classList.remove('active');
+                    }
+                });
+
+                sections.forEach(section => {
+                    if ('#' + section.id === hash) {
+                        section.classList.add('active');
+                    } else {
+                        section.classList.remove('active');
+                    }
+                });
+            }
+
+            navLinks.forEach(link => {
+                link.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const hash = this.getAttribute('href');
+                    history.pushState(null, null, hash);
+                    updateContent(hash);
+                });
+            });
+
+            window.addEventListener('popstate', () => updateContent(window.location.hash));
+
+            function populateUI() {
+                const ratingCard = document.getElementById('final-rating-card');
+                const ratingText = ratingCard.querySelector('p:last-child');
+                ratingText.textContent = reportData.rating.level;
+                if (reportData.rating.color === 'green') {
+                    ratingCard.classList.add('border-green-500', 'bg-green-50');
+                    ratingText.classList.add('text-green-800');
+                }
+
+                const strengthsList = document.getElementById('strengths-list');
+                reportData.strengths.forEach(item => {
+                    const li = document.createElement('li');
+                    li.textContent = item;
+                    strengthsList.appendChild(li);
+                });
+                
+                const risksList = document.getElementById('risks-list');
+                reportData.risks.forEach(item => {
+                    const li = document.createElement('li');
+                    li.textContent = item;
+                    risksList.appendChild(li);
+                });
+                
+                const teamList = document.getElementById('team-list');
+                reportData.team.forEach(member => {
+                    const div = document.createElement('div');
+                    div.className = 'bg-slate-100 p-4 rounded-lg';
+                    div.innerHTML = `<p class="font-bold text-slate-800">${member.name}</p><p class="text-sm font-semibold text-indigo-600">${member.role}</p><p class="text-xs text-slate-500 mt-1">${member.detail}</p>`;
+                    teamList.appendChild(div);
+                });
+                
+                const investmentTable = document.getElementById('investment-table');
+                reportData.investmentOpportunities.forEach(item => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'border-b border-slate-200 hover:bg-slate-50 cursor-pointer';
+                    tr.innerHTML = `
+                        <td class="p-4">${item.opportunity}</td>
+                        <td class="p-4"><span class="px-2 py-1 text-xs font-semibold rounded-full ${item.risk === '低' ? 'bg-green-100 text-green-800' : item.risk === '中' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}">${item.risk}</span></td>
+                        <td class="p-4"><span class="px-2 py-1 text-xs font-semibold rounded-full ${item.reward.includes('高') ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}">${item.reward}</span></td>
+                        <td class="p-4 text-sm text-slate-500">${item.method}</td>
+                    `;
+                    const detailsTr = document.createElement('tr');
+                    detailsTr.className = 'details-row';
+                    detailsTr.innerHTML = `
+                        <td colspan="4" class="p-4">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div><p class="font-semibold text-green-700">优点:</p><ul class="list-disc list-inside text-sm text-slate-600">${item.pros.map(p => `<li>${p}</li>`).join('')}</ul></div>
+                                <div><p class="font-semibold text-red-700">缺点:</p><ul class="list-disc list-inside text-sm text-slate-600">${item.cons.map(c => `<li>${c}</li>`).join('')}</ul></div>
+                            </div>
+                        </td>
+                    `;
+                    investmentTable.appendChild(tr);
+                    investmentTable.appendChild(detailsTr);
+
+                    tr.addEventListener('click', () => {
+                        const isVisible = detailsTr.style.display === 'table-row';
+                        document.querySelectorAll('.details-row').forEach(row => row.style.display = 'none');
+                        detailsTr.style.display = isVisible ? 'none' : 'table-row';
+                    });
+                });
+            }
+
+            function createCharts() {
+                const chartOptions = {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    family: "'Noto Sans SC', sans-serif"
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { font: { family: "'Noto Sans SC', sans-serif" } }
+                        },
+                        y: {
+                            ticks: { font: { family: "'Noto Sans SC', sans-serif" } }
+                        }
+                    }
+                };
+
+                new Chart(document.getElementById('competitorChart'), {
+                    type: 'bar',
+                    data: reportData.competitorData,
+                    options: chartOptions
+                });
+                
+                new Chart(document.getElementById('riskChart'), {
+                    type: 'bar',
+                    data: reportData.riskData,
+                    options: {
+                        ...chartOptions,
+                        indexAxis: 'y',
+                        plugins: {
+                           legend: { display: false }
+                        },
+                        scales: {
+                           x: {
+                               beginAtZero: true,
+                               max: 5,
+                               ticks: {
+                                   stepSize: 1,
+                                   callback: function(value) {
+                                       const labels = ['无', '低', '中', '中高', '高', '极高'];
+                                       return labels[value];
+                                   }
+                               }
+                           }
+                        }
+                    }
+                });
+            }
+
+            populateUI();
+            createCharts();
+            updateContent();
+        });
+    </script>
+</body>
+</html>

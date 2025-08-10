@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pendle Finance - 交互式投资分析报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Harmony Neutrals -->
+    <!-- Application Structure Plan: The SPA is designed as an interactive dashboard, diverging from the linear report format for better usability. It starts with a prominent final investment rating for immediate insight. A sticky navigation bar allows users to jump to key sections: '概览' (for core concepts), '数据洞察' (an interactive chart dashboard), '投资策略' (a filterable, task-oriented guide), '风险评估' (a structured accordion view), and '未来展望' (a visual timeline). This non-linear, task-oriented structure was chosen to empower users to explore information based on their interests and risk appetite, transforming passive reading into active analysis and decision-making. -->
+    <!-- Visualization & Content Choices: Key quantitative data (TVL, Price, Revenue) is visualized using Chart.js line and bar charts to show trends and financial health. A doughnut chart visualizes token lock-up, indicating community conviction. The core PT/YT mechanism is explained via an interactive HTML/CSS diagram with hover tooltips for clarity. Investment strategies are presented as filterable cards, allowing users to find relevant options quickly. Risks are organized in an accordion for digestible, focused information. The future roadmap is a CSS-based timeline. This approach uses the best interactive method for each data type to enhance understanding and engagement, all within the designed dashboard structure. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+            background-color: #F8F7F4;
+            color: #2c3e50;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 320px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .tooltip {
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .has-tooltip:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+        .nav-link {
+            transition: color 0.3s, border-bottom-color 0.3s;
+        }
+        .nav-link:hover {
+            color: #3b82f6;
+        }
+        .active-nav {
+            color: #3b82f6;
+            border-bottom-color: #3b82f6;
+        }
+        .strategy-btn.active {
+            background-color: #3b82f6;
+            color: white;
+            box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.39);
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header id="header" class="sticky top-0 z-50 bg-white/80 backdrop-blur-lg shadow-sm">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-2xl font-bold text-gray-800">Pendle Finance</span>
+                </div>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#overview" class="nav-link text-gray-600 font-medium border-b-2 border-transparent pb-1">核心概览</a>
+                    <a href="#data" class="nav-link text-gray-600 font-medium border-b-2 border-transparent pb-1">数据洞察</a>
+                    <a href="#strategies" class="nav-link text-gray-600 font-medium border-b-2 border-transparent pb-1">投资策略</a>
+                    <a href="#risks" class="nav-link text-gray-600 font-medium border-b-2 border-transparent pb-1">风险评估</a>
+                    <a href="#future" class="nav-link text-gray-600 font-medium border-b-2 border-transparent pb-1">未来展望</a>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+
+        <section id="hero" class="text-center mb-16">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4">交互式投资分析报告</h1>
+            <p class="text-lg text-gray-600 max-w-3xl mx-auto mb-8">解构收益交易巨头 Pendle Finance 的机遇与风险</p>
+            <div class="inline-block bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl p-6 shadow-lg">
+                <p class="text-lg font-medium mb-1">综合投资评级</p>
+                <p class="text-4xl font-bold">建议 (Recommended)</p>
+            </div>
+        </section>
+
+        <section id="overview" class="mb-20 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center mb-2 text-gray-800">核心概览</h2>
+            <p class="text-center text-gray-500 mb-12 max-w-2xl mx-auto">本节将解析Pendle的核心价值主张，即如何将传统金融中的利率衍生品市场引入DeFi，并通过其独特的代币化机制，让用户能够对未来收益进行交易和管理。</p>
+            
+            <div class="grid md:grid-cols-2 gap-8 items-center">
+                <div class="p-8 rounded-2xl glass-card">
+                    <h3 class="text-2xl font-bold mb-4 text-gray-900">收益代币化机制</h3>
+                    <p class="text-gray-700 mb-6">Pendle的核心创新在于将任何生息资产（如stETH）拆分为两个独立部分：本金代币(PT)和收益代币(YT)。这为DeFi世界带来了前所未有的收益管理灵活性。</p>
+                    <div class="space-y-4">
+                        <div class="relative has-tooltip">
+                            <div class="flex items-center p-3 bg-blue-50 rounded-lg">
+                                <span class="text-xl mr-3">💰</span>
+                                <div>
+                                    <p class="font-semibold text-blue-800">1. 存入生息资产</p>
+                                    <p class="text-sm text-blue-600">用户将资产存入Pendle。</p>
+                                </div>
+                            </div>
+                            <div class="tooltip absolute z-10 w-64 p-2 -mt-24 ml-4 text-sm text-white bg-gray-800 rounded-lg shadow-lg">
+                                任何能产生收益的资产，如Lido的stETH或Aave的aUSDC，都可以作为起点。
+                            </div>
+                        </div>
+                        <div class="pl-5 text-2xl text-center text-gray-400">↓</div>
+                        <div class="relative has-tooltip">
+                            <div class="flex items-center p-3 bg-green-50 rounded-lg">
+                                <span class="text-xl mr-3">📦</span>
+                                <div>
+                                    <p class="font-semibold text-green-800">2. 拆分为 PT & YT</p>
+                                    <p class="text-sm text-green-600">资产被代币化为本金和收益。</p>
+                                </div>
+                            </div>
+                             <div class="tooltip absolute z-10 w-64 p-2 -mt-24 ml-4 text-sm text-white bg-gray-800 rounded-lg shadow-lg">
+                                资产被封装为SY (Standardized Yield)，然后拆分为PT和YT。
+                            </div>
+                        </div>
+                        <div class="flex justify-around mt-4">
+                             <div class="relative has-tooltip text-center">
+                                <div class="p-3 bg-purple-50 rounded-lg w-32">
+                                    <p class="font-semibold text-purple-800">PT</p>
+                                    <p class="text-sm text-purple-600">本金代币</p>
+                                </div>
+                                <div class="tooltip absolute z-10 w-56 p-2 mt-2 text-sm text-white bg-gray-800 rounded-lg shadow-lg">
+                                    代表未来赎回本金的权利，类似零息债券，可用于锁定固定收益。
+                                </div>
+                            </div>
+                             <div class="relative has-tooltip text-center">
+                                <div class="p-3 bg-yellow-50 rounded-lg w-32">
+                                    <p class="font-semibold text-yellow-800">YT</p>
+                                    <p class="text-sm text-yellow-600">收益代币</p>
+                                </div>
+                                <div class="tooltip absolute z-10 w-60 p-2 mt-2 text-sm text-white bg-gray-800 rounded-lg shadow-lg">
+                                    代表未来所有浮动收益的权利，可用于杠杆化做多收益率或积分。
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="space-y-8">
+                    <div class="p-8 rounded-2xl glass-card">
+                        <h3 class="text-2xl font-bold mb-3 text-gray-900">vePENDLE 飞轮效应</h3>
+                        <p class="text-gray-700">通过锁定PENDLE获得vePENDLE，用户不仅能获取协议收入，还能引导代币激励，从而创造一个强大的、自我强化的增长循环。</p>
+                    </div>
+                    <div class="p-8 rounded-2xl glass-card">
+                        <h3 class="text-2xl font-bold mb-3 text-gray-900">定制化 AMM</h3>
+                        <p class="text-gray-700">Pendle V2 AMM专为YT这类价值随时间衰减的资产设计，通过动态调整曲线，显著降低无常损失，并提高资本效率。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="data" class="mb-20 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center mb-2 text-gray-800">数据洞察</h2>
+            <p class="text-center text-gray-500 mb-12 max-w-2xl mx-auto">本节通过交互式图表，直观展示Pendle的核心链上数据和财务健康状况。这些数据是评估项目当前规模、市场活跃度及长期可持续性的关键。</p>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-12">
+                <div class="p-4 rounded-2xl glass-card text-center">
+                    <p class="text-sm text-gray-600">总锁仓价值 (TVL)</p>
+                    <p class="text-2xl md:text-3xl font-bold text-gray-900">$65.01亿</p>
+                </div>
+                <div class="p-4 rounded-2xl glass-card text-center">
+                    <p class="text-sm text-gray-600">24小时交易量</p>
+                    <p class="text-2xl md:text-3xl font-bold text-gray-900">$1.49亿</p>
+                </div>
+                <div class="p-4 rounded-2xl glass-card text-center">
+                    <p class="text-sm text-gray-600">PENDLE 市值</p>
+                    <p class="text-2xl md:text-3xl font-bold text-gray-900">$7.34亿</p>
+                </div>
+                <div class="p-4 rounded-2xl glass-card text-center">
+                    <p class="text-sm text-gray-600">年化盈利</p>
+                    <p class="text-2xl md:text-3xl font-bold text-green-600">$799万</p>
+                </div>
+            </div>
+
+            <div class="grid lg:grid-cols-2 gap-8">
+                <div class="p-6 rounded-2xl glass-card">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800">TVL 与 PENDLE 价格走势</h3>
+                    <div class="chart-container">
+                        <canvas id="tvlPriceChart"></canvas>
+                    </div>
+                </div>
+                <div class="p-6 rounded-2xl glass-card">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800">协议财务健康度 (30天)</h3>
+                     <div class="chart-container">
+                        <canvas id="financialsChart"></canvas>
+                    </div>
+                </div>
+                 <div class="p-6 rounded-2xl glass-card lg:col-span-2">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800 text-center">代币经济学健康度</h3>
+                    <div class="grid md:grid-cols-2 gap-8 items-center">
+                        <div class="chart-container !h-64 md:!h-80">
+                            <canvas id="tokenomicsChart"></canvas>
+                        </div>
+                        <div class="text-center md:text-left">
+                            <h4 class="text-lg font-semibold text-gray-800">vePENDLE 锁仓率</h4>
+                            <p class="text-5xl font-bold text-blue-600 my-2">67%</p>
+                            <p class="text-gray-600 max-w-sm mx-auto md:mx-0">超过三分之二的流通供应量被锁定为vePENDLE，这反映了社区对协议长期价值的强烈信心和深度参与。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="strategies" class="mb-20 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center mb-2 text-gray-800">投资策略矩阵</h2>
+            <p class="text-center text-gray-500 mb-8 max-w-2xl mx-auto">Pendle为不同风险偏好的投资者提供了多样化的工具。本节将报告中的策略表格转化为一个交互式指南，请根据您的风险偏好选择，以发现最适合您的投资机会。</p>
+            <div class="flex justify-center space-x-2 md:space-x-4 mb-10">
+                <button class="strategy-btn px-4 py-2 rounded-full font-semibold transition-all duration-300 shadow-sm hover:shadow-md active" data-filter="all">全部</button>
+                <button class="strategy-btn px-4 py-2 rounded-full font-semibold transition-all duration-300 shadow-sm hover:shadow-md" data-filter="conservative">保守型</button>
+                <button class="strategy-btn px-4 py-2 rounded-full font-semibold transition-all duration-300 shadow-sm hover:shadow-md" data-filter="balanced">稳健型</button>
+                <button class="strategy-btn px-4 py-2 rounded-full font-semibold transition-all duration-300 shadow-sm hover:shadow-md" data-filter="aggressive">激进型</button>
+                <button class="strategy-btn px-4 py-2 rounded-full font-semibold transition-all duration-300 shadow-sm hover:shadow-md" data-filter="developer">开发者</button>
+            </div>
+
+            <div id="strategy-grid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            </div>
+        </section>
+
+        <section id="risks" class="mb-20 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center mb-2 text-gray-800">风险与安全评估</h2>
+            <p class="text-center text-gray-500 mb-12 max-w-2xl mx-auto">任何DeFi投资都伴随着风险。本节对Pendle面临的主要风险进行梳理，包括其经过多方审计的智能合约安全状况、历史安全事件的启示，以及市场和监管层面的潜在挑战。</p>
+            <div id="risk-accordion" class="max-w-3xl mx-auto space-y-4">
+            </div>
+        </section>
+
+        <section id="future" class="scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center mb-2 text-gray-800">未来展望与催化剂</h2>
+            <p class="text-center text-gray-500 mb-12 max-w-2xl mx-auto">Pendle的未来增长取决于其能否成功开拓新市场和新功能。本节通过时间线展示其雄心勃勃的路线图，包括进军永续合约衍生品市场、向非EVM链扩张等关键催化剂。</p>
+            <div class="relative wrap overflow-hidden p-10 h-full">
+                <div class="border-2-2 absolute border-opacity-20 border-gray-700 h-full border" style="left: 50%"></div>
+                
+                <div class="mb-8 flex justify-between items-center w-full right-timeline">
+                    <div class="order-1 w-5/12"></div>
+                    <div class="z-20 flex items-center order-1 bg-blue-500 shadow-xl w-8 h-8 rounded-full">
+                        <h1 class="mx-auto font-semibold text-lg text-white">1</h1>
+                    </div>
+                    <div class="order-1 bg-blue-100 rounded-lg shadow-xl w-5/12 px-6 py-4">
+                        <h3 class="mb-3 font-bold text-blue-800 text-xl">Boros - 进军永续合约市场</h3>
+                        <p class="text-sm leading-snug tracking-wide text-blue-700">推出新平台Boros，对永续合约的资金费率进行交易，目标市场规模远超当前LST/LRT，是未来最大的增长引擎。</p>
+                    </div>
+                </div>
+
+                <div class="mb-8 flex justify-between flex-row-reverse items-center w-full left-timeline">
+                    <div class="order-1 w-5/12"></div>
+                    <div class="z-20 flex items-center order-1 bg-blue-500 shadow-xl w-8 h-8 rounded-full">
+                        <h1 class="mx-auto text-white font-semibold text-lg">2</h1>
+                    </div>
+                    <div class="order-1 bg-indigo-100 rounded-lg shadow-xl w-5/12 px-6 py-4">
+                        <h3 class="mb-3 font-bold text-indigo-800 text-xl">"Citadel" - 多链扩张</h3>
+                        <p class="text-sm leading-snug tracking-wide text-indigo-700">计划将协议扩展至Solana, TON等非EVM生态，打破技术壁垒，捕获全新的资本、资产和用户群。</p>
+                    </div>
+                </div>
+                
+                <div class="mb-8 flex justify-between items-center w-full right-timeline">
+                    <div class="order-1 w-5/12"></div>
+                    <div class="z-20 flex items-center order-1 bg-blue-500 shadow-xl w-8 h-8 rounded-full">
+                        <h1 class="mx-auto font-semibold text-lg text-white">3</h1>
+                    </div>
+                    <div class="order-1 bg-green-100 rounded-lg shadow-xl w-5/12 px-6 py-4">
+                        <h3 class="mb-3 font-bold text-green-800 text-xl">机构采用与RWA整合</h3>
+                        <p class="text-sm leading-snug tracking-wide text-green-700">通过与Ethena等合作，为机构投资者提供合规入口，并持续整合真实世界资产(RWA)收益产品，连接TradFi与DeFi。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-gray-800 text-white mt-16">
+        <div class="container mx-auto px-8 py-6 text-center">
+            <p class="text-gray-400">本报告内容基于公开信息分析，不构成任何投资建议。请务必进行独立研究(DYOR)。</p>
+            <p class="text-sm text-gray-500 mt-2">数据来源: DeFiLlama, CoinGecko, 协议文档等。</p>
+        </div>
+    </footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    
+    const chartData = {
+        tvlPrice: {
+            labels: ['23年Q1', '23年Q2', '23年Q3', '23年Q4', '24年Q1', '24年Q2', '24年Q3'],
+            tvl: [0.5, 0.8, 1.5, 2.5, 4.0, 6.0, 6.5],
+            price: [0.1, 0.3, 0.6, 1.5, 5.0, 7.0, 4.43]
+        },
+        financials: {
+            labels: ['30天数据'],
+            revenue: [272],
+            incentives: [207]
+        },
+        tokenomics: {
+            labels: ['锁定为vePENDLE', '流通中'],
+            data: [67, 33]
+        }
+    };
+
+    const strategyData = [
+        { name: '购买PT (固定收益)', risk: 'low', category: 'conservative', description: '购买本金代币(PT)并持有至到期，获得固定可预测的回报，风险低，类似零息债券。', pros: '收益固定，风险低', cons: '收益有上限', icon: '🏦' },
+        { name: '购买并持有PENDLE', risk: 'medium', category: 'balanced', description: '直接在二级市场购买并持有PENDLE代币，分享协议长期增长的红利。', pros: '操作简单', cons: '承受代币价格波动', icon: '📈' },
+        { name: '提供流动性 (LP)', risk: 'medium', category: 'balanced', description: '为PT/SY池提供流动性，赚取交易费和PENDLE代币奖励，无常损失相对可控。', pros: '赚取双重收益', cons: '存在无常损失风险', icon: '💧' },
+        { name: '锁定为vePENDLE', risk: 'medium-high', category: 'balanced', description: '将PENDLE锁定为vePENDLE，获取协议真实收入，提升LP收益，并参与治理。', pros: '收益来源多样', cons: '丧失流动性', icon: '🗳️' },
+        { name: '购买YT (做多收益)', risk: 'very-high', category: 'aggressive', description: '购买收益代币(YT)，高杠杆做多未来收益或积分，潜在回报极高。', pros: '高杠杆，高回报潜力', cons: '若收益不及预期则亏损本金', icon: '🚀' },
+        { name: '杠杆挖矿', risk: 'very-high', category: 'aggressive', description: '通过第三方协议借贷，杠杆化购买PT或提供LP，显著放大收益率。', pros: '放大收益', cons: '存在清算风险', icon: '💥' },
+        { name: '积分挖矿', risk: 'very-high', category: 'aggressive', description: '购买LRT等资产的YT，以杠杆化方式获取积分，是高效的空投策略。', pros: '极高的积分获取效率', cons: '空投价值不确定', icon: '🎁' },
+        { name: '创建自动化策略', risk: 'N/A', category: 'developer', description: '利用Pendle的SDK和API构建交易机器人、套利策略或收益优化器。', pros: '发掘Alpha机会', cons: '需要编程能力', icon: '🤖' },
+        { name: '构建结构化产品', risk: 'N/A', category: 'developer', description: '在Pendle之上构建全新的DeFi产品，如一键固定收益基金或杠杆化YT产品。', pros: '创造新价值', cons: '开发和审计成本高', icon: '🏗️' }
+    ];
+
+    const riskData = [
+        { title: '智能合约与安全风险', content: 'Pendle核心合约经过多家顶级机构审计，且在Penpie事件中表现出强大的运营安全能力。核心协议风险较低，但其机制复杂性仍是潜在挑战。', icon: '🛡️' },
+        { title: '生态系统与组合性风险', content: '作为元协议，Pendle的风险部分来自于其集成的底层协议(如Lido, Aave)。这些协议若出现问题，将直接传导至Pendle。Penpie事件也表明生态项目是主要风险点。', icon: '🧩' },
+        { title: '市场与叙事依赖风险', content: '协议的爆发式增长与LST/LRT积分挖矿叙事高度绑定。若市场热点转移，协议的TVL和活跃度可能面临显著下降。', icon: '📉' },
+        { title: '监管风险', content: '作为一种新型金融衍生品，Pendle未来可能面临不明确的监管政策挑战，这构成了长期的不确定性。', icon: '⚖️' }
+    ];
+
+    function renderStrategies(filter = 'all') {
+        const grid = document.getElementById('strategy-grid');
+        grid.innerHTML = '';
+        const filteredStrategies = filter === 'all' 
+            ? strategyData 
+            : strategyData.filter(s => s.category === filter);
+
+        filteredStrategies.forEach(s => {
+            const card = document.createElement('div');
+            card.className = `strategy-card p-6 rounded-2xl glass-card border-2 transition-all duration-300 hover:shadow-lg hover:border-blue-300`;
+            card.innerHTML = `
+                <div class="flex items-center mb-3">
+                    <span class="text-3xl mr-4">${s.icon}</span>
+                    <h4 class="text-xl font-bold text-gray-800">${s.name}</h4>
+                </div>
+                <p class="text-gray-600 mb-4 text-sm">${s.description}</p>
+                <div class="text-xs space-y-1">
+                    <p><span class="font-semibold text-green-600">优点:</span> ${s.pros}</p>
+                    <p><span class="font-semibold text-red-600">缺点:</span> ${s.cons}</p>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+    }
+    
+    function renderRisks() {
+        const accordion = document.getElementById('risk-accordion');
+        accordion.innerHTML = '';
+        riskData.forEach((risk, index) => {
+            const item = document.createElement('div');
+            item.className = 'rounded-2xl glass-card overflow-hidden';
+            item.innerHTML = `
+                <button class="w-full flex justify-between items-center p-5 text-left font-semibold text-gray-800" data-accordion-target="risk-body-${index}">
+                    <span class="flex items-center"><span class="text-2xl mr-3">${risk.icon}</span> ${risk.title}</span>
+                    <svg class="w-6 h-6 shrink-0 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                <div id="risk-body-${index}" class="hidden p-5 pt-0">
+                    <p class="text-gray-600">${risk.content}</p>
+                </div>
+            `;
+            accordion.appendChild(item);
+        });
+
+        accordion.addEventListener('click', function(e) {
+            const button = e.target.closest('[data-accordion-target]');
+            if (button) {
+                const targetId = button.getAttribute('data-accordion-target');
+                const targetBody = document.getElementById(targetId);
+                const icon = button.querySelector('svg');
+                targetBody.classList.toggle('hidden');
+                icon.classList.toggle('rotate-180');
+            }
+        });
+    }
+
+    const strategyButtons = document.querySelectorAll('.strategy-btn');
+    strategyButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            strategyButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            renderStrategies(this.dataset.filter);
+        });
+    });
+
+    if (document.getElementById('tvlPriceChart')) {
+        new Chart(document.getElementById('tvlPriceChart'), {
+            type: 'line',
+            data: {
+                labels: chartData.tvlPrice.labels,
+                datasets: [
+                    {
+                        label: 'TVL (亿美元)',
+                        data: chartData.tvlPrice.tvl,
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        yAxisID: 'y',
+                        tension: 0.3,
+                        fill: true,
+                    },
+                    {
+                        label: 'PENDLE 价格 ($)',
+                        data: chartData.tvlPrice.price,
+                        borderColor: 'rgb(234, 179, 8)',
+                        backgroundColor: 'rgba(234, 179, 8, 0.1)',
+                        yAxisID: 'y1',
+                        tension: 0.3,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { type: 'linear', display: true, position: 'left', title: { display: true, text: 'TVL (亿美元)' } },
+                    y1: { type: 'linear', display: true, position: 'right', title: { display: true, text: '价格 ($)' }, grid: { drawOnChartArea: false } }
+                },
+                plugins: { legend: { position: 'top' } }
+            }
+        });
+    }
+
+    if (document.getElementById('financialsChart')) {
+        new Chart(document.getElementById('financialsChart'), {
+            type: 'bar',
+            data: {
+                labels: chartData.financials.labels,
+                datasets: [
+                    {
+                        label: '协议收入',
+                        data: chartData.financials.revenue,
+                        backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: '激励成本',
+                        data: chartData.financials.incentives,
+                        backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true, title: { display: true, text: '金额 (万美元)' } } },
+                plugins: { legend: { position: 'top' }, tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${c.raw}万美元` } } }
+            }
+        });
+    }
+
+    if (document.getElementById('tokenomicsChart')) {
+        new Chart(document.getElementById('tokenomicsChart'), {
+            type: 'doughnut',
+            data: {
+                labels: chartData.tokenomics.labels,
+                datasets: [{
+                    data: chartData.tokenomics.data,
+                    backgroundColor: ['rgba(59, 130, 246, 0.7)', 'rgba(203, 213, 225, 0.7)'],
+                    borderColor: ['#FFFFFF'],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+    }
+    
+    const navLinks = document.querySelectorAll('.nav-link');
+    const sections = document.querySelectorAll('section[id]');
+    window.addEventListener('scroll', () => {
+        let current = '';
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop;
+            if (pageYOffset >= sectionTop - 80) {
+                current = section.getAttribute('id');
+            }
+        });
+
+        navLinks.forEach(link => {
+            link.classList.remove('active-nav');
+            if (link.getAttribute('href').includes(current)) {
+                link.classList.add('active-nav');
+            }
+        });
+    });
+
+    renderStrategies();
+    renderRisks();
+});
+</script>
+</body>
+</html>

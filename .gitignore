@@ -1,0 +1,57 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+# package-lock.json  # Commented out to fix GitHub Actions
+
+# Production build
+.next/
+out/
+dist/
+build/
+.vercel/
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Testing
+coverage/
+test-results/
+playwright-report/
+.nyc_output/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+logs/
+*.log
+docs/
+.git.bak/
+
+# Web3 specific exclusions (exclude everything except specific paths)
+web3/*
+
+# Include only these specific web3 paths
+!web3/pools/
+!web3/pools/chain/
+web3/pools/*
+!web3/pools/chain/
+!web3/protocol/

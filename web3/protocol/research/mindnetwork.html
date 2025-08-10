@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mind Network ($FHE) - 交互式投资仪表盘</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Minimalist Tech Neutral (Slate, Sky, Violet) -->
+    <!-- Application Structure Plan: A single-page dashboard layout with a sticky navigation bar for quick access to different analysis modules. The flow is designed to guide the user from a high-level summary (key metrics, final verdict) down to detailed analysis (fundamentals, tokenomics, risks). This structure prioritizes immediate access to critical information (like the investment rating and security risks) while allowing for deeper exploration, which is more user-friendly than a linear report. Key interactions include tabbed sections for fundamentals, interactive charts for tokenomics, and highlighted cards for risks to draw user attention to crucial points. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Final Investment Rating -> Goal: Inform Immediately -> Presentation: Large, prominent text card -> Interaction: Static -> Justification: The most crucial takeaway should be instantly visible.
+        - Report Info: Token Allocation -> Goal: Show Proportions -> Viz: Donut Chart (Chart.js/Canvas) -> Interaction: Hover to see details -> Justification: Best practice for visualizing parts-of-a-whole data like token distribution.
+        - Report Info: MCap vs TVL vs Staked Value -> Goal: Compare key metrics -> Viz: Bar Chart (Chart.js/Canvas) -> Interaction: Hover for exact values -> Justification: Visually highlights the report's key insight that staked value is a more relevant metric than TVL for this project's current stage.
+        - Report Info: SWOT Analysis & Risks -> Goal: Summarize & Warn -> Presentation: Interactive Cards (HTML/CSS/JS) with icons -> Interaction: Click to toggle details -> Justification: Makes dense information digestible and uses visual cues (icons, colors) to emphasize important points, especially the critical security audit risk.
+        - Report Info: Competitive Analysis -> Goal: Compare -> Presentation: HTML Table -> Interaction: Static -> Justification: A clear and structured way to compare competitors across multiple attributes.
+        - Report Info: Investment Strategies -> Goal: Guide Decision -> Presentation: HTML Cards -> Interaction: Static -> Justification: Breaks down complex strategies into easily understandable options.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+            color: #1e293b; /* slate-800 */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .nav-link {
+            transition: color 0.3s, border-bottom-color 0.3s;
+        }
+        .nav-link.active, .nav-link:hover {
+            color: #0ea5e9; /* sky-500 */
+            border-bottom-color: #0ea5e9;
+        }
+        .tab-button {
+            transition: all 0.3s;
+        }
+        .tab-button.active {
+            background-color: #4f46e5; /* indigo-600 */
+            color: #ffffff;
+        }
+        .card-reveal {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Header & Navigation -->
+    <header class="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="font-bold text-xl text-slate-800">Mind Network</span>
+                    <span class="ml-2 text-sm font-medium text-slate-500">投资仪表盘</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#summary" class="nav-link px-3 py-2 text-sm font-medium text-slate-600 border-b-2 border-transparent">摘要</a>
+                        <a href="#fundamentals" class="nav-link px-3 py-2 text-sm font-medium text-slate-600 border-b-2 border-transparent">基本面</a>
+                        <a href="#tokenomics" class="nav-link px-3 py-2 text-sm font-medium text-slate-600 border-b-2 border-transparent">代币经济学</a>
+                        <a href="#opportunities" class="nav-link px-3 py-2 text-sm font-medium text-slate-600 border-b-2 border-transparent">投资机会</a>
+                        <a href="#risks" class="nav-link px-3 py-2 text-sm font-medium text-slate-600 border-b-2 border-transparent">风险与竞争</a>
+                    </div>
+                </div>
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="inline-flex items-center justify-center p-2 rounded-md text-slate-400 hover:text-slate-500 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-sky-500">
+                        <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </nav>
+        <div id="mobile-menu" class="md:hidden hidden">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="#summary" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-slate-600">摘要</a>
+                <a href="#fundamentals" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-slate-600">基本面</a>
+                <a href="#tokenomics" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-slate-600">代币经济学</a>
+                <a href="#opportunities" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-slate-600">投资机会</a>
+                <a href="#risks" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-slate-600">风险与竞争</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+
+        <!-- Section 1: Summary -->
+        <section id="summary" class="scroll-mt-20 mb-16">
+            <h2 class="text-3xl font-bold text-slate-800 mb-2">投资摘要与核心洞察</h2>
+            <p class="text-slate-500 mb-8">本节提供对 Mind Network 项目的顶层视图，包括关键实时指标、最终投资评级以及核心优劣势分析，帮助您快速把握项目概况。</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                <!-- Investment Rating -->
+                <div class="lg:col-span-2 bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl shadow-lg p-6 text-white flex flex-col justify-center items-center">
+                    <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-300 mb-2">最终投资评级</h3>
+                    <p class="text-5xl font-bold text-amber-400">中立</p>
+                    <p class="mt-3 text-center text-slate-400 text-sm">巨大技术潜力与显著安全风险并存。建议在关键风险缓解前保持观望。</p>
+                </div>
+                <!-- Key Metrics -->
+                <div class="bg-white rounded-xl shadow-md p-6 flex flex-col justify-center">
+                    <h3 class="text-sm font-semibold text-slate-500">市值 (MCap)</h3>
+                    <p class="text-3xl font-bold text-slate-800 mt-1" id="mcap-value">~$18M</p>
+                </div>
+                <div class="bg-white rounded-xl shadow-md p-6 flex flex-col justify-center">
+                    <h3 class="text-sm font-semibold text-slate-500">质押价值 (Staked)</h3>
+                    <p class="text-3xl font-bold text-slate-800 mt-1" id="staked-value">~$4.3M</p>
+                    <p class="text-xs text-slate-400 mt-1">价值远超TVL，表明持有者信心</p>
+                </div>
+            </div>
+
+            <!-- SWOT Analysis -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <h4 class="font-bold text-lg text-green-600">优势 (Strengths)</h4>
+                    <ul class="mt-2 list-disc list-inside text-slate-600 text-sm space-y-1">
+                        <li>领先的 FHE 技术应用</li>
+                        <li>Binance Labs 领投</li>
+                        <li>与 Chainlink、以太坊基金会等深度合作</li>
+                        <li>清晰的 AI + 隐私叙事</li>
+                    </ul>
+                </div>
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <h4 class="font-bold text-lg text-red-600">劣势 (Weaknesses)</h4>
+                    <ul class="mt-2 list-disc list-inside text-slate-600 text-sm space-y-1">
+                        <li><span class="font-bold">严重缺乏顶级公开审计报告</span></li>
+                        <li>TVL 相对市值较低</li>
+                        <li>面临资金雄厚的竞争对手</li>
+                    </ul>
+                </div>
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <h4 class="font-bold text-lg text-sky-600">机会 (Opportunities)</h4>
+                    <ul class="mt-2 list-disc list-inside text-slate-600 text-sm space-y-1">
+                        <li>在 FHE 赋能 AI 领域有先发优势</li>
+                        <li>有望成为 AI 代理的默认隐私层</li>
+                        <li>“HTTPZ”愿景潜力巨大</li>
+                    </ul>
+                </div>
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <h4 class="font-bold text-lg text-amber-600">威胁 (Threats)</h4>
+                    <ul class="mt-2 list-disc list-inside text-slate-600 text-sm space-y-1">
+                        <li>FHE 技术执行风险高</li>
+                        <li>代币解锁可能带来抛压</li>
+                        <li>市场叙事转移风险</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Fundamentals -->
+        <section id="fundamentals" class="scroll-mt-20 mb-16">
+            <h2 class="text-3xl font-bold text-slate-800 mb-2">项目基本面解析</h2>
+            <p class="text-slate-500 mb-8">深入了解 Mind Network 的核心价值主张，包括其前沿技术、产品生态系统以及背后的强大团队和支持者。</p>
+
+            <div class="bg-white rounded-xl shadow-md">
+                <div class="border-b border-slate-200">
+                    <nav id="tabs" class="flex space-x-1 p-2" aria-label="Tabs">
+                        <button data-tab="tech" class="tab-button active px-4 py-2 text-sm font-medium rounded-md text-slate-600 hover:bg-slate-100">技术愿景</button>
+                        <button data-tab="ecosystem" class="tab-button px-4 py-2 text-sm font-medium rounded-md text-slate-600 hover:bg-slate-100">产品生态</button>
+                        <button data-tab="team" class="tab-button px-4 py-2 text-sm font-medium rounded-md text-slate-600 hover:bg-slate-100">团队与支持者</button>
+                    </nav>
+                </div>
+                <div id="tab-content" class="p-6">
+                    <!-- Tech Tab -->
+                    <div id="tab-tech" class="tab-panel">
+                        <h3 class="font-bold text-xl mb-4 text-slate-700">构建零信任互联网：FHE + ZKP</h3>
+                        <p class="text-slate-600 mb-4">Mind Network的核心是通过“HTTPZ”协议，利用全同态加密（FHE）技术，实现对数据在计算过程中的端到端加密。FHE被誉为“密码学的圣杯”，允许在不解密数据的情况下进行计算，且其技术基础能抵抗未来量子计算机的破解。这为解决公有链的透明性问题和AI数据隐私风险提供了根本性的解决方案。</p>
+                        <div class="mt-6 p-4 border border-indigo-200 rounded-lg bg-indigo-50">
+                            <p class="font-semibold text-indigo-800">关键组合：FHE + ZKP</p>
+                            <p class="text-sm text-indigo-700 mt-1">项目声称结合使用FHE进行隐私计算，并用零知识证明（ZKP）来验证计算的正确性，这在理论上构成了一个既隐私又可信的强大计算范式。</p>
+                        </div>
+                    </div>
+                    <!-- Ecosystem Tab -->
+                    <div id="tab-ecosystem" class="tab-panel hidden">
+                        <h3 class="font-bold text-xl mb-4 text-slate-700">旗舰产品与赋能层战略</h3>
+                        <p class="text-slate-600 mb-6">Mind Network并非单一应用，而是旨在成为Web3和AI生态的“机密计算层”。其产品生态体现了这一赋能者角色。</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="p-4 border rounded-lg">
+                                <h4 class="font-semibold text-slate-800">AgenticWorld</h4>
+                                <p class="text-sm text-slate-600 mt-1">为去中心化AI代理设计的旗舰操作系统，响应NVIDIA等巨头推动的“代理式AI”趋势。</p>
+                            </div>
+                            <div class="p-4 border rounded-lg">
+                                <h4 class="font-semibold text-slate-800">MindChain</h4>
+                                <p class="text-sm text-slate-600 mt-1">项目自有的FHE原生区块链，作为生态的共识与结算层。</p>
+                            </div>
+                             <div class="p-4 border rounded-lg">
+                                <h4 class="font-semibold text-slate-800">FHE Bridge & MindSAP</h4>
+                                <p class="text-sm text-slate-600 mt-1">与Chainlink合作开发的隐私跨链桥，利用FHE和隐身地址技术保护跨链资产转移。</p>
+                            </div>
+                             <div class="p-4 border rounded-lg">
+                                <h4 class="font-semibold text-slate-800">MindLake</h4>
+                                <p class="text-sm text-slate-600 mt-1">零信任数据湖产品，提供加密存储和访问控制服务。</p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Team Tab -->
+                    <div id="tab-team" class="tab-panel hidden">
+                        <h3 class="font-bold text-xl mb-4 text-slate-700">精英团队与顶级支持</h3>
+                        <p class="text-slate-600 mb-6">项目的成功很大程度上依赖其团队的执行力和行业资源。Mind Network在这两方面都表现出色。</p>
+                        <div class="space-y-6">
+                            <div>
+                                <h4 class="font-semibold text-slate-800">核心团队</h4>
+                                <p class="text-sm text-slate-600 mt-1">团队融合了学术界（剑桥博士）、以太坊基金会研究员和顶尖白帽黑客（曾攻破特斯拉）等多元化背景，专业能力全面。</p>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-slate-800">顶级投资者 (融资 ~$12.5M)</h4>
+                                <div class="flex flex-wrap items-center gap-4 mt-2">
+                                    <span class="px-3 py-1 bg-slate-100 text-slate-700 text-sm font-medium rounded-full">Binance Labs</span>
+                                    <span class="px-3 py-1 bg-slate-100 text-slate-700 text-sm font-medium rounded-full">Animoca Brands</span>
+                                    <span class="px-3 py-1 bg-slate-100 text-slate-700 text-sm font-medium rounded-full">HashKey Capital</span>
+                                </div>
+                            </div>
+                             <div>
+                                <h4 class="font-semibold text-slate-800">战略合作伙伴</h4>
+                                <div class="flex flex-wrap items-center gap-4 mt-2">
+                                     <span class="px-3 py-1 bg-sky-100 text-sky-800 text-sm font-medium rounded-full">Ethereum Foundation</span>
+                                     <span class="px-3 py-1 bg-sky-100 text-sky-800 text-sm font-medium rounded-full">Chainlink BUILD</span>
+                                     <span class="px-3 py-1 bg-sky-100 text-sky-800 text-sm font-medium rounded-full">Google</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Tokenomics -->
+        <section id="tokenomics" class="scroll-mt-20 mb-16">
+            <h2 class="text-3xl font-bold text-slate-800 mb-2">$FHE 代币经济学</h2>
+            <p class="text-slate-500 mb-8">分析 $FHE 代币的分配机制、核心效用以及关键估值指标。理解代币经济学是评估项目长期价值和潜在价格动力的关键。</p>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <h3 class="font-bold text-xl mb-4 text-center text-slate-700">代币分配 (总量10亿)</h3>
+                    <div class="chart-container">
+                        <canvas id="tokenAllocationChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-md p-6">
+                     <h3 class="font-bold text-xl mb-4 text-center text-slate-700">核心指标对比</h3>
+                    <div class="chart-container">
+                        <canvas id="metricsComparisonChart"></canvas>
+                    </div>
+                     <p class="text-center text-sm text-slate-500 mt-4">高“质押价值”相对低“TVL”更能反映当前阶段的网络健康度和投资者信心。</p>
+                </div>
+            </div>
+             <div class="mt-8 bg-white rounded-xl shadow-md p-6">
+                <h3 class="font-bold text-xl mb-4 text-slate-700">代币核心效用</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                    <div>
+                        <div class="mx-auto bg-indigo-100 text-indigo-600 rounded-full h-12 w-12 flex items-center justify-center">⚙️</div>
+                        <p class="mt-2 text-sm font-medium">Gas与计算费</p>
+                    </div>
+                    <div>
+                        <div class="mx-auto bg-indigo-100 text-indigo-600 rounded-full h-12 w-12 flex items-center justify-center">🛡️</div>
+                        <p class="mt-2 text-sm font-medium">质押与安全</p>
+                    </div>
+                    <div>
+                        <div class="mx-auto bg-indigo-100 text-indigo-600 rounded-full h-12 w-12 flex items-center justify-center">🗳️</div>
+                        <p class="mt-2 text-sm font-medium">治理投票</p>
+                    </div>
+                    <div>
+                        <div class="mx-auto bg-indigo-100 text-indigo-600 rounded-full h-12 w-12 flex items-center justify-center">🤖</div>
+                        <p class="mt-2 text-sm font-medium">AI代理激活</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Opportunities -->
+        <section id="opportunities" class="scroll-mt-20 mb-16">
+            <h2 class="text-3xl font-bold text-slate-800 mb-2">投资机会分析</h2>
+            <p class="text-slate-500 mb-8">Mind Network 提供了多样化的投资和参与途径。本节将为您解析不同策略的机制、风险与潜在回报，帮助您找到适合自己的参与方式。</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="bg-white rounded-xl shadow-md p-6 border-t-4 border-sky-500">
+                    <h3 class="font-bold text-lg">代币购买</h3>
+                    <p class="text-sm text-slate-600 mt-2">最直接的方式，在Bybit、Kraken等交易所购买$FHE$。风险最高，完全暴露于价格波动，适合高信念投资者。</p>
+                    <div class="mt-4">
+                        <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-red-600 bg-red-200">风险: 高</span>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-md p-6 border-t-4 border-indigo-500">
+                    <h3 class="font-bold text-lg">官方质押</h3>
+                    <p class="text-sm text-slate-600 mt-2">在其DApp内委托vFHE代币，参与网络安全。收益可变，基于活动奖励，无固定APY。注意规避第三方高息骗局。</p>
+                     <div class="mt-4">
+                        <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-amber-600 bg-amber-200">风险: 中</span>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-md p-6 border-t-4 border-teal-500">
+                    <h3 class="font-bold text-lg">空投挖矿</h3>
+                    <p class="text-sm text-slate-600 mt-2">通过参与测试网、Galxe活动、社区贡献等方式获取未来空投资格。低财务风险，高时间精力投入，可能获得可观回报。</p>
+                     <div class="mt-4">
+                        <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-green-600 bg-green-200">风险: 低</span>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-md p-6 border-t-4 border-slate-500">
+                    <h3 class="font-bold text-lg">开发者参与</h3>
+                    <p class="text-sm text-slate-600 mt-2">对于有技术背景的投资者，可以通过参与漏洞赏金计划或使用其SDK构建应用来获得收益。潜在回报极高。</p>
+                     <div class="mt-4">
+                        <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-slate-600 bg-slate-200">技能要求: 高</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: Risks & Competition -->
+        <section id="risks" class="scroll-mt-20">
+            <h2 class="text-3xl font-bold text-slate-800 mb-2">风险评估与竞争格局</h2>
+            <p class="text-slate-500 mb-8">任何投资都伴随着风险。本节重点揭示Mind Network面临的关键安全、市场和执行风险，并将其与主要竞争对手进行对比。</p>
+            
+            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md mb-8" role="alert">
+                <p class="font-bold">重大安全警示：缺乏顶级公开审计</p>
+                <p>截至报告分析时，项目**严重缺乏**由PeckShield、Veridise等顶级安全公司发布的公开、详细的智能合约审计报告。在获得此类审计确认前，任何大额投资都面临不可接受的技术风险。</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Risks -->
+                <div class="lg:col-span-2 space-y-4">
+                    <div class="bg-white rounded-xl shadow-md p-4">
+                        <h4 class="font-semibold text-lg text-slate-800">主要风险点</h4>
+                        <div class="mt-2 space-y-3">
+                            <div class="flex items-start">
+                                <span class="text-amber-500 mr-3 mt-1">⚠️</span>
+                                <div>
+                                    <h5 class="font-medium">技术与执行风险</h5>
+                                    <p class="text-sm text-slate-600">FHE技术计算成本高昂，能否成功规模化是巨大挑战。路线图宏大，交付延迟可能侵蚀信心。</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start">
+                                <span class="text-amber-500 mr-3 mt-1">⚠️</span>
+                                <div>
+                                    <h5 class="font-medium">市场与财务风险</h5>
+                                    <p class="text-sm text-slate-600">投资者和团队代币将在2025年中期开始解锁，可能带来巨大抛压。项目估值与AI和隐私叙事高度绑定。</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start">
+                                <span class="text-red-500 mr-3 mt-1">🚨</span>
+                                <div>
+                                    <h5 class="font-medium text-red-600">安全与中心化风险</h5>
+                                    <p class="text-sm text-slate-600">除审计缺失外，自动化扫描显示持币地址高度集中，前三大钱包持有>99%。虽可能是项目方管理，但缺乏透明度构成风险。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Competition -->
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <h4 class="font-semibold text-lg text-slate-800 mb-4">FHE 赛道竞争</h4>
+                    <div class="space-y-4">
+                        <div>
+                            <p class="font-bold">Mind Network</p>
+                            <p class="text-sm text-slate-600">融资$12.5M，由Binance Labs领投。专注AI代理经济的FHE再质押层。</p>
+                        </div>
+                        <hr>
+                        <div>
+                            <p class="font-bold">Zama</p>
+                            <p class="text-sm text-slate-600">融资>$150M，估值超10亿美元。核心产品是通用的FHEVM，技术提供商定位。</p>
+                        </div>
+                         <hr>
+                        <div>
+                            <p class="font-bold">Fhenix</p>
+                            <p class="text-sm text-slate-600">融资$22M，由Hack VC领投。专注于以太坊L2和与EigenLayer合作的FHE协处理器。</p>
+                        </div>
+                    </div>
+                     <p class="text-xs text-slate-500 mt-4">Mind Network的差异化优势在于其**对AI代理经济的专注**，这可能是其在激烈竞争中胜出的关键路径。</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+    
+    <footer class="bg-slate-800 text-white mt-16">
+        <div class="container mx-auto py-6 px-4 sm:px-6 lg:px-8 text-center text-sm text-slate-400">
+            <p>本交互式报告由AI根据提供的尽职调查报告生成，内容仅供参考。</p>
+            <p>信息并非投资建议，请在做出任何投资决策前进行自己的独立研究（DYOR）。</p>
+        </div>
+    </footer>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Mobile Menu Toggle
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+
+            // Tab functionality
+            const tabs = document.getElementById('tabs');
+            const tabContent = document.getElementById('tab-content');
+            tabs.addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON') {
+                    const tabId = e.target.getAttribute('data-tab');
+                    
+                    // Update button styles
+                    tabs.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+                    e.target.classList.add('active');
+
+                    // Update content visibility
+                    tabContent.querySelectorAll('.tab-panel').forEach(panel => panel.classList.add('hidden'));
+                    document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+                }
+            });
+
+            // Smooth scrolling for navigation
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                     if (mobileMenu.classList.contains('hidden') === false) {
+                        mobileMenu.classList.add('hidden');
+                    }
+                });
+            });
+
+            // Chart.js Implementations
+            const ctxToken = document.getElementById('tokenAllocationChart');
+            if (ctxToken) {
+                new Chart(ctxToken, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['社区', '投资者', '团队', '空投', '财库', '公开销售', '流动性', '顾问'],
+                        datasets: [{
+                            label: '代币分配',
+                            data: [30, 20, 17, 11.7, 10, 5, 5, 1.3],
+                             backgroundColor: [
+                                '#38bdf8', // sky-400
+                                '#818cf8', // indigo-400
+                                '#c084fc', // purple-400
+                                '#f87171', // red-400
+                                '#fbbf24', // amber-400
+                                '#a3e635', // lime-400
+                                '#34d399', // emerald-400
+                                '#9ca3af'  // slate-400
+                            ],
+                            borderColor: '#f8fafc',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    font: {
+                                        family: "'Noto Sans SC', sans-serif"
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed !== null) {
+                                            label += context.parsed + '%';
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            const ctxMetrics = document.getElementById('metricsComparisonChart');
+            if (ctxMetrics) {
+                 new Chart(ctxMetrics, {
+                    type: 'bar',
+                    data: {
+                        labels: ['市值', '质押价值', '总锁仓价值(TVL)'],
+                        datasets: [{
+                            label: '价值 (美元)',
+                            data: [18000000, 4310000, 330000],
+                            backgroundColor: [
+                                'rgba(59, 130, 246, 0.7)',  // blue-500
+                                'rgba(99, 102, 241, 0.7)', // indigo-500
+                                'rgba(234, 179, 8, 0.7)'     // yellow-500
+                            ],
+                            borderColor: [
+                                'rgb(59, 130, 246)',
+                                'rgb(99, 102, 241)',
+                                'rgb(234, 179, 8)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                         scales: {
+                            x: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value, index, values) {
+                                        if (value >= 1000000) return (value / 1000000) + 'M';
+                                        if (value >= 1000) return (value / 1000) + 'K';
+                                        return value;
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                             tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed.x !== null) {
+                                            label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed.x);
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // Active nav link on scroll
+            const sections = document.querySelectorAll('section[id]');
+            const navLinks = document.querySelectorAll('nav a');
+
+            window.addEventListener('scroll', () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (pageYOffset >= sectionTop - 80) { // 80 is header height + buffer
+                        current = section.getAttribute('id');
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.href.includes(current)) {
+                        link.classList.add('active');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

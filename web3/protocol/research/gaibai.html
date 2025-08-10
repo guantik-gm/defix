@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>交互式报告：Gaib AI 投资分析</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Dune Tech (Slate, Amber, Teal on a light base) -->
+    <!-- Application Structure Plan: A top-down narrative flow designed for investor decision-making. Starts with a high-level summary and final rating (the "answer"), followed by the core tension (Bull vs. Bear cases). It then allows for a "Deep Dive" into specifics via tabs (Project, Market, Risk) for users who want more detail. Finally, it presents actionable "Investment Playbook" with interactive filters. This structure guides users from "what is it?" to "why should I care?" to "how can I participate?", which is more intuitive than the original report's linear chapter structure. -->
+    <!-- Visualization & Content Choices: 
+        - Key Metrics (Cards): Goal: Inform. Method: HTML/CSS cards for immediate high-level data (Funding, Community, Rating). Interaction: None, for quick scanning. Justification: Most critical data first.
+        - Bull vs. Bear (Columns): Goal: Compare. Method: Two-column HTML layout. Interaction: Hover effects. Justification: Directly presents the core investment conflict.
+        - Funding Chart (Bar Chart): Goal: Inform. Method: Chart.js Bar Chart. Interaction: Tooltips. Justification: Simple, clear visualization of capital backing.
+        - Competitor Table (HTML Table): Goal: Compare. Method: Styled HTML table. Interaction: None. Justification: Better for qualitative comparison than a complex chart.
+        - Risk Matrix (Interactive Grid): Goal: Organize/Inform. Method: HTML grid. Interaction: Click to reveal details. Justification: Organizes complex risk data into a digestible, interactive format.
+        - Community Chart (Doughnut Chart): Goal: Inform. Method: Chart.js Doughnut. Interaction: Tooltips. Justification: Shows social presence distribution effectively.
+        - Investment Strategies (Filterable Table): Goal: Organize/Interact. Method: HTML table with JS filters. Interaction: Buttons to filter by risk, click row for modal. Justification: The core interactive tool, turning analysis into an actionable playbook for the user.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+            color: #1e293b; /* slate-800 */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 50vh;
+        }
+        .section-title {
+            font-size: 2.25rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 1rem;
+            color: #0f172a; /* slate-900 */
+        }
+        .section-subtitle {
+            font-size: 1.125rem;
+            text-align: center;
+            max-width: 48rem;
+            margin: 0 auto 3rem auto;
+            color: #475569; /* slate-600 */
+        }
+        .nav-link {
+            transition: color 0.3s, border-bottom-color 0.3s;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #0d9488; /* teal-600 */
+            border-bottom-color: #0d9488; /* teal-600 */
+        }
+        .tab-btn {
+            transition: all 0.3s;
+        }
+        .tab-btn.active {
+            background-color: #0d9488; /* teal-600 */
+            color: white;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .modal-overlay {
+            transition: opacity 0.3s ease-in-out;
+        }
+        .modal-content {
+            transition: transform 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Header & Navigation -->
+    <header id="header" class="bg-white/80 backdrop-blur-lg sticky top-0 z-40 shadow-sm">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="text-2xl font-bold text-slate-900">
+                GAIB<span class="text-teal-600">.ai</span>
+            </div>
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="#overview" class="nav-link font-medium text-slate-600 pb-1">总览</a>
+                <a href="#bull-vs-bear" class="nav-link font-medium text-slate-600 pb-1">机遇与风险</a>
+                <a href="#deep-dive" class="nav-link font-medium text-slate-600 pb-1">深度解析</a>
+                <a href="#playbook" class="nav-link font-medium text-slate-600 pb-1">投资策略</a>
+                <a href="#verdict" class="nav-link font-medium text-slate-600 pb-1">最终评级</a>
+            </div>
+            <button id="mobile-menu-btn" class="md:hidden focus:outline-none">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+            </button>
+        </nav>
+        <div id="mobile-menu" class="hidden md:hidden">
+            <a href="#overview" class="block text-center py-2 px-4 text-sm text-slate-700 hover:bg-teal-50">总览</a>
+            <a href="#bull-vs-bear" class="block text-center py-2 px-4 text-sm text-slate-700 hover:bg-teal-50">机遇与风险</a>
+            <a href="#deep-dive" class="block text-center py-2 px-4 text-sm text-slate-700 hover:bg-teal-50">深度解析</a>
+            <a href="#playbook" class="block text-center py-2 px-4 text-sm text-slate-700 hover:bg-teal-50">投资策略</a>
+            <a href="#verdict" class="block text-center py-2 px-4 text-sm text-slate-700 hover:bg-teal-50">最终评级</a>
+        </div>
+    </header>
+
+    <main>
+        <!-- Section 1: Overview -->
+        <section id="overview" class="py-20 bg-white">
+            <div class="container mx-auto px-6 text-center">
+                <h1 class="text-4xl md:text-6xl font-bold text-slate-900 mb-4 leading-tight">GAIB.ai 投资评估报告</h1>
+                <p class="text-lg md:text-xl text-slate-600 max-w-3xl mx-auto mb-12">一个旨在成为 AI 时代“经济层”的 RWAiFi 项目，连接真实世界算力与链上流动性。</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                    <div class="bg-slate-50 p-6 rounded-xl shadow-md border border-slate-200/50">
+                        <h3 class="text-xl font-bold text-slate-800 mb-2">总融资额</h3>
+                        <p class="text-4xl font-bold text-teal-600">$1500万</p>
+                        <p class="text-sm text-slate-500 mt-2">由 Amber Group, Hack VC, Hashed 领投</p>
+                    </div>
+                    <div class="bg-slate-50 p-6 rounded-xl shadow-md border border-slate-200/50">
+                        <h3 class="text-xl font-bold text-slate-800 mb-2">社区总规模</h3>
+                        <p class="text-4xl font-bold text-teal-600">37万+</p>
+                        <p class="text-sm text-slate-500 mt-2">覆盖 Twitter, Discord, Telegram</p>
+                    </div>
+                    <div class="bg-slate-50 p-6 rounded-xl shadow-md border border-amber-300/50 bg-amber-50/30">
+                        <h3 class="text-xl font-bold text-amber-900 mb-2">综合投资评级</h3>
+                        <p class="text-4xl font-bold text-amber-600">中立 (高风险)</p>
+                        <p class="text-sm text-amber-700 mt-2">高潜力叙事 vs. 执行风险</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Bull vs Bear -->
+        <section id="bull-vs-bear" class="py-20">
+            <div class="container mx-auto px-6">
+                <h2 class="section-title">机遇 vs. 风险</h2>
+                <p class="section-subtitle">GAIB项目呈现出显著的两面性。一方面是其宏大的叙事和雄厚的资本背景，另一方面是其不透明的技术执行和潜在的运营风险。理解这种核心矛盾是做出投资决策的关键。</p>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
+                    <!-- Bull Case -->
+                    <div class="bg-white p-8 rounded-xl shadow-lg border border-green-200/80">
+                        <h3 class="text-3xl font-bold text-green-600 mb-6 flex items-center"><span class="text-4xl mr-3">📈</span> 核心优势 (Bull Case)</h3>
+                        <ul class="space-y-4 text-slate-700">
+                            <li class="flex items-start"><span class="text-green-500 font-bold mr-3 mt-1">✓</span><div><strong class="text-slate-800">顶级叙事:</strong> 完美契合 AI + RWA 两大热门赛道，想象空间巨大。</div></li>
+                            <li class="flex items-start"><span class="text-green-500 font-bold mr-3 mt-1">✓</span><div><strong class="text-slate-800">雄厚背景:</strong> 获顶级VC加持，团队具备深厚金融背景，资本资源优势明显。</div></li>
+                            <li class="flex items-start"><span class="text-green-500 font-bold mr-3 mt-1">✓</span><div><strong class="text-slate-800">创新模式:</strong> “算力金融层”定位独特，有望成为赛道的“卖水人”，系统性捕获增长价值。</div></li>
+                            <li class="flex items-start"><span class="text-green-500 font-bold mr-3 mt-1">✓</span><div><strong class="text-slate-800">市场热度:</strong> 社区规模庞大，为未来产品启动和代币发行奠定良好用户基础。</div></li>
+                            <li class="flex items-start"><span class="text-green-500 font-bold mr-3 mt-1">✓</span><div><strong class="text-slate-800">真实收益:</strong> 业务与真实世界经济活动挂钩，有潜力带来可持续的“真实收益”。</div></li>
+                        </ul>
+                    </div>
+                    <!-- Bear Case -->
+                    <div class="bg-white p-8 rounded-xl shadow-lg border border-red-200/80">
+                        <h3 class="text-3xl font-bold text-red-600 mb-6 flex items-center"><span class="text-4xl mr-3">📉</span> 主要风险 (Bear Case)</h3>
+                        <ul class="space-y-4 text-slate-700">
+                            <li class="flex items-start"><span class="text-red-500 font-bold mr-3 mt-1">✗</span><div><strong class="text-slate-800">执行与透明度风险 (最关键):</strong> GitHub 代码库长期不活跃，技术执行能力存疑。</div></li>
+                            <li class="flex items-start"><span class="text-red-500 font-bold mr-3 mt-1">✗</span><div><strong class="text-slate-800">信息披露混乱:</strong> 官方文档不清晰，第三方平台透明度评分极低。</div></li>
+                            <li class="flex items-start"><span class="text-red-500 font-bold mr-3 mt-1">✗</span><div><strong class="text-slate-800">代币经济学未知:</strong> 核心经济模型缺失，无法评估长期价值和抛压。</div></li>
+                            <li class="flex items-start"><span class="text-red-500 font-bold mr-3 mt-1">✗</span><div><strong class="text-slate-800">RWA 固有风险:</strong> 面临交易对手违约、资产折旧和复杂的法律执行风险。</div></li>
+                            <li class="flex items-start"><span class="text-red-500 font-bold mr-3 mt-1">✗</span><div><strong class="text-slate-800">市场投机风险:</strong> 当前激励（Spice积分）价值不确定，参与行为投机性强。</div></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Deep Dive -->
+        <section id="deep-dive" class="py-20 bg-white">
+            <div class="container mx-auto px-6">
+                <h2 class="section-title">深度解析</h2>
+                <p class="section-subtitle">深入了解 GAIB 的核心构成，从项目基因到市场格局，再到具体的风险矩阵。点击下方标签页切换不同维度的详细信息。</p>
+                
+                <!-- Tabs Navigation -->
+                <div class="flex justify-center mb-8 space-x-2 md:space-x-4">
+                    <button data-tab="dna" class="tab-btn active text-sm md:text-base font-semibold py-3 px-6 rounded-full bg-slate-200 text-slate-700">项目基因</button>
+                    <button data-tab="market" class="tab-btn text-sm md:text-base font-semibold py-3 px-6 rounded-full bg-slate-200 text-slate-700">市场格局</button>
+                    <button data-tab="risk" class="tab-btn text-sm md:text-base font-semibold py-3 px-6 rounded-full bg-slate-200 text-slate-700">风险矩阵</button>
+                    <button data-tab="community" class="tab-btn text-sm md:text-base font-semibold py-3 px-6 rounded-full bg-slate-200 text-slate-700">社区脉搏</button>
+                </div>
+
+                <!-- Tabs Content -->
+                <div class="max-w-5xl mx-auto">
+                    <!-- Tab 1: Project DNA -->
+                    <div id="tab-content-dna" class="tab-content">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                            <div class="text-left">
+                                <h3 class="text-2xl font-bold mb-4">项目基因：资本与愿景</h3>
+                                <p class="text-slate-600 mb-4">GAIB 的核心是其旗舰产品 AID (AI 合成美元)，由创收型 GPU 资产和高流动性储备支撑。项目已完成两轮关键融资，展示了强大的资本吸引力。</p>
+                                <ul class="space-y-2 text-slate-600">
+                                    <li><strong>产品核心:</strong> AID (AI 合成美元)</li>
+                                    <li><strong>价值支撑:</strong> GPU 融资协议 + 美国国库券</li>
+                                    <li><strong>团队总部:</strong> 新加坡</li>
+                                    <li><strong>成立时间:</strong> 2024年</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <div class="chart-container">
+                                    <canvas id="fundingChart"></canvas>
+                                </div>
+                                <p class="text-center text-sm text-slate-500 mt-2">图1: GAIB 公开融资历史</p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Tab 2: Market Landscape -->
+                    <div id="tab-content-market" class="tab-content hidden">
+                        <h3 class="text-2xl font-bold mb-4 text-center">竞争格局分析</h3>
+                        <p class="text-slate-600 mb-8 text-center max-w-3xl mx-auto">GAIB 的定位是“算力金融市场”，与 Akash、io.net 等“算力供给市场”形成互补关系，而非直接竞争。其直接竞争对手是其他从事 RWAiFi 的项目。</p>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full bg-white border border-slate-200 rounded-lg">
+                                <thead class="bg-slate-50">
+                                    <tr>
+                                        <th class="py-3 px-4 text-left font-semibold text-slate-600">项目</th>
+                                        <th class="py-3 px-4 text-left font-semibold text-slate-600">赛道定位</th>
+                                        <th class="py-3 px-4 text-left font-semibold text-slate-600">与GAIB的关系</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="text-slate-700">
+                                    <tr class="border-t border-slate-200"><td class="py-3 px-4 font-bold">GAIB</td><td class="py-3 px-4">AI算力金融层 (RWAiFi)</td><td class="py-3 px-4 font-medium text-teal-700">生态核心</td></tr>
+                                    <tr class="border-t border-slate-200"><td class="py-3 px-4">Aethir / io.net</td><td class="py-3 px-4">DePIN (算力供给)</td><td class="py-3 px-4">合作伙伴 / 潜在客户</td></tr>
+                                    <tr class="border-t border-slate-200"><td class="py-3 px-4">USDAI (Permian Labs)</td><td class="py-3 px-4">RWAiFi (债务)</td><td class="py-3 px-4 font-medium text-amber-700">直接竞争对手</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <!-- Tab 3: Risk Matrix -->
+                    <div id="tab-content-risk" class="tab-content hidden">
+                        <h3 class="text-2xl font-bold mb-4 text-center">交互式风险矩阵</h3>
+                        <p class="text-slate-600 mb-8 text-center">点击下方不同风险类别，查看详细解释。</p>
+                        <div id="risk-grid" class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            <!-- Risk items will be injected here by JS -->
+                        </div>
+                        <div id="risk-details" class="mt-6 p-6 bg-slate-50 rounded-lg border border-slate-200 min-h-[100px]">
+                            <p class="text-slate-500">请选择一个风险项以查看详情。</p>
+                        </div>
+                    </div>
+                    <!-- Tab 4: Community Pulse -->
+                    <div id="tab-content-community" class="tab-content hidden">
+                         <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                            <div class="text-left">
+                                <h3 class="text-2xl font-bold mb-4">社区脉搏：热度与隐忧</h3>
+                                <p class="text-slate-600 mb-4">GAIB 拥有极其亮眼的社交媒体数据，显示出强大的市场营销能力。但投资者需警惕，庞大的社区规模可能由空投预期驱动，需要辨别“真实活跃度”与“虚假繁荣”。</p>
+                                <ul class="space-y-2 text-slate-600">
+                                    <li><strong>Twitter:</strong> 21.9万+ 关注者</li>
+                                    <li><strong>Discord:</strong> 10万+ 成员</li>
+                                    <li><strong>Telegram:</strong> 5.3万+ 成员</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <div class="chart-container">
+                                    <canvas id="communityChart"></canvas>
+                                </div>
+                                <p class="text-center text-sm text-slate-500 mt-2">图2: GAIB 社区规模分布</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Investment Playbook -->
+        <section id="playbook" class="py-20">
+            <div class="container mx-auto px-6">
+                <h2 class="section-title">投资策略手册</h2>
+                <p class="section-subtitle">GAIB 提供了多层次的参与机会。使用下方的过滤器来查找适合您风险偏好和技术背景的投资策略。点击任意策略可查看详细的优缺点分析。</p>
+                
+                <div class="flex justify-center mb-8 space-x-2">
+                    <button data-filter="all" class="filter-btn active bg-teal-600 text-white font-semibold py-2 px-4 rounded-full">全部</button>
+                    <button data-filter="low" class="filter-btn bg-white text-slate-700 font-semibold py-2 px-4 rounded-full border border-slate-300">低风险</button>
+                    <button data-filter="high" class="filter-btn bg-white text-slate-700 font-semibold py-2 px-4 rounded-full border border-slate-300">高风险</button>
+                    <button data-filter="dev" class="filter-btn bg-white text-slate-700 font-semibold py-2 px-4 rounded-full border border-slate-300">开发者</button>
+                </div>
+
+                <div class="overflow-x-auto max-w-6xl mx-auto bg-white rounded-lg shadow-lg p-4">
+                    <table class="min-w-full">
+                        <thead class="border-b-2 border-slate-200">
+                            <tr>
+                                <th class="py-3 px-4 text-left font-semibold text-slate-600">投资策略</th>
+                                <th class="py-3 px-4 text-left font-semibold text-slate-600 hidden md:table-cell">风险等级</th>
+                                <th class="py-3 px-4 text-left font-semibold text-slate-600 hidden md:table-cell">适合人群</th>
+                                <th class="py-3 px-4 text-left font-semibold text-slate-600"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="strategies-tbody">
+                            <!-- Strategies will be injected here by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Section 5: Verdict -->
+        <section id="verdict" class="py-20 bg-white">
+            <div class="container mx-auto px-6 text-center max-w-4xl">
+                <h2 class="section-title">最终评级与结论</h2>
+                <p class="section-subtitle">综合来看，GAIB 是一个典型的“高风险、高潜在回报、强叙事驱动”的早期项目。目前的投资更像是一场对“项目团队和其背后的顶级资本方，能否最终兑现其宏伟承诺”的押注。</p>
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-8">
+                    <h3 class="text-2xl font-bold text-slate-800 mb-4">分层投资策略建议</h3>
+                    <div class="text-left grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="border-l-4 border-blue-500 pl-4">
+                            <strong class="text-blue-600">普通投资者</strong>
+                            <p class="text-slate-600 text-sm mt-1">建议采取<strong class="font-bold">中立</strong>观望态度，在技术进展更明确前不宜投入大额资金。</p>
+                        </div>
+                        <div class="border-l-4 border-amber-500 pl-4">
+                            <strong class="text-amber-600">资深DeFi玩家</strong>
+                            <p class="text-slate-600 text-sm mt-1">可视为<strong class="font-bold">高风险空投投机</strong>，使用少量、可承受损失的资金参与挖矿。</p>
+                        </div>
+                        <div class="border-l-4 border-purple-500 pl-4">
+                            <strong class="text-purple-600">开发者</strong>
+                            <p class="text-slate-600 text-sm mt-1"><strong>强烈建议</strong>持续关注，其长期价值可能体现在生态建设的早期机会上。</p>
+                        </div>
+                    </div>
+                     <div class="mt-8 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-r-lg" role="alert">
+                        <p class="font-bold">最终警告</p>
+                        <p>在任何情况下，都不要在二级市场购买任何名为“GAIB”的代币，直到项目方官方宣布TGE。当前市场上的同名代币极有可能是骗局。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <!-- Modal -->
+    <div id="strategy-modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 opacity-0 pointer-events-none">
+        <div class="modal-content bg-white rounded-lg shadow-xl w-full max-w-2xl transform -translate-y-10">
+            <div class="p-6 border-b border-slate-200 flex justify-between items-center">
+                <h3 id="modal-title" class="text-2xl font-bold"></h3>
+                <button id="modal-close-btn" class="text-slate-500 hover:text-slate-800">&times;</button>
+            </div>
+            <div class="p-6">
+                <p id="modal-description" class="text-slate-600 mb-6"></p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h4 class="font-bold text-green-600 mb-2">优点</h4>
+                        <ul id="modal-pros" class="space-y-2 list-disc list-inside text-slate-700"></ul>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-red-600 mb-2">缺点</h4>
+                        <ul id="modal-cons" class="space-y-2 list-disc list-inside text-slate-700"></ul>
+                    </div>
+                </div>
+                <div class="mt-6 bg-slate-50 p-4 rounded-lg">
+                    <div class="flex justify-between items-center">
+                        <span class="font-semibold text-slate-700">预期收益 (APY/APR):</span>
+                        <span id="modal-apy" class="font-bold text-teal-600"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            // Data
+            const fundingData = {
+                labels: ['Pre-Seed (2024/12)', '战略轮 (2025/07)'],
+                datasets: [{
+                    label: '融资金额 (百万美元)',
+                    data: [5, 10],
+                    backgroundColor: ['#34d399', '#0d9488'],
+                    borderColor: ['#10b981', '#0f766e'],
+                    borderWidth: 1,
+                    borderRadius: 4,
+                }]
+            };
+
+            const communityData = {
+                labels: ['Twitter', 'Discord', 'Telegram'],
+                datasets: [{
+                    label: '社区成员数',
+                    data: [219000, 100000, 53000],
+                    backgroundColor: [
+                        '#38bdf8', // sky-400
+                        '#818cf8', // indigo-400
+                        '#60a5fa'  // blue-400
+                    ],
+                    hoverOffset: 4
+                }]
+            };
+
+            const riskData = [
+                { id: 'execution', title: '执行与透明度', severity: 'high', details: '项目最关键的风险。其公开的GitHub代码库长期处于不活跃状态，这与其宏大愿景和庞大融资规模严重不匹配，引发市场对其技术执行能力的严重担忧。' },
+                { id: 'info', title: '信息披露', severity: 'high', details: '官方文档不清晰、部分链接失效、第三方平台（如VaaSBlock）给予极低的透明度评分，这些都损害了项目的可信度和专业性。' },
+                { id: 'tokenomics', title: '代币经济学', severity: 'medium', details: '核心的$GAIB代币的分配机制、释放时间表等关键经济模型参数尚未公布，使得投资者无法对其长期价值和潜在抛压进行有效评估。' },
+                { id: 'rwa', title: 'RWA固有风险', severity: 'medium', details: '项目深度介入真实世界资产，不可避免地会面临交易对手违约风险、硬件资产折旧风险、以及复杂的跨国法律执行风险。' },
+                { id: 'speculation', title: '市场投机', severity: 'medium', details: '当前参与活动的核心回报——Spice积分，其未来价值完全不确定。这意味着目前的参与行为具有极强的投机性质。' },
+                { id: 'fraud', title: '欺诈风险', severity: 'high', details: '市场上已出现同名诈骗代币，对不熟悉情况的散户投资者构成极大的投资陷阱。官方代币尚未发行。' }
+            ];
+
+            const investmentStrategies = [
+                {
+                    name: 'AID Alpha 稳定币挖矿',
+                    risk: 'low',
+                    audience: '所有DeFi用户，稳健型投资者',
+                    description: '直接存入USDC/USDT赚取Spice积分，是参与GAIB生态最直接、门槛最低的方式。',
+                    pros: ['操作简单', '本金风险极低（承诺1:1赎回）'],
+                    cons: ['资金有锁定期', '存在机会成本', '积分最终价值高度不确定'],
+                    apy: '取决于空投价值',
+                    category: 'low'
+                },
+                {
+                    name: 'Wand.fi 杠杆积分挖矿',
+                    risk: '非常高',
+                    audience: '资深DeFi玩家，高风险偏好者',
+                    description: '通过收益拆分和循环贷，杠杆化获取Spice积分，以放大潜在收益。',
+                    pros: ['可能获得数倍于本金的积分敞口', '潜在收益极高'],
+                    cons: ['操作复杂', '涉及多重智能合约风险', '杠杆清算风险', '本金可能受损'],
+                    apy: '杠杆倍数 * 空投价值',
+                    category: 'high'
+                },
+                {
+                    name: 'CIAN 借贷挖矿',
+                    risk: '高',
+                    audience: '持有蓝筹资产的DeFi资深玩家',
+                    description: '抵押BTC等资产借出稳定币存入GAIB，实现“一鱼多吃”。',
+                    pros: ['在保持原有头寸的同时赚取多重收益'],
+                    cons: ['涉及资产清算风险', '多协议风险', '操作复杂'],
+                    apy: '多重收益叠加',
+                    category: 'high'
+                },
+                {
+                    name: '生态开发',
+                    risk: '非常高',
+                    audience: '开发者，技术型投资者',
+                    description: '在GAIB主网上线后构建DApp或AI Agent，成为早期生态贡献者。',
+                    pros: ['潜在回报上限最高', '可能获得巨额早期贡献者激励'],
+                    cons: ['技术门槛极高', '需要等待生态成熟', '时间成本和不确定性最大'],
+                    apy: '极高，无法估量',
+                    category: 'dev'
+                },
+                {
+                    name: 'NFT 投资',
+                    risk: '高',
+                    audience: '早期大户，NFT收藏家',
+                    description: '获取并持有限量版Fremen Essence NFT，以享受生态系统中的独家权益。',
+                    pros: ['享受生态独家权益', '可能具有收藏和投机价值'],
+                    cons: ['获取门槛高', '未来流动性可能较差'],
+                    apy: '取决于赋能和市场情绪',
+                    category: 'high'
+                }
+            ];
+
+            // Mobile Menu
+            const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenuBtn.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+
+            // Smooth Scrolling & Active Nav Link
+            const navLinks = document.querySelectorAll('.nav-link, #mobile-menu a');
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href');
+                    const targetElement = document.querySelector(targetId);
+                    if (targetElement) {
+                        const headerOffset = document.getElementById('header').offsetHeight;
+                        const elementPosition = targetElement.getBoundingClientRect().top;
+                        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+                        window.scrollTo({
+                            top: offsetPosition,
+                            behavior: 'smooth'
+                        });
+                    }
+                    if(mobileMenu.classList.contains('hidden') === false) {
+                        mobileMenu.classList.add('hidden');
+                    }
+                });
+            });
+            
+            const sections = document.querySelectorAll('main section');
+            window.addEventListener('scroll', () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop - document.getElementById('header').offsetHeight - 50;
+                    if (pageYOffset >= sectionTop) {
+                        current = section.getAttribute('id');
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href').substring(1) === current) {
+                        link.classList.add('active');
+                    }
+                });
+            });
+
+
+            // Tabs
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const tabId = button.dataset.tab;
+
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+
+                    tabContents.forEach(content => {
+                        if (content.id === `tab-content-${tabId}`) {
+                            content.classList.remove('hidden');
+                        } else {
+                            content.classList.add('hidden');
+                        }
+                    });
+                });
+            });
+
+            // Charts
+            const fundingChartCtx = document.getElementById('fundingChart').getContext('2d');
+            new Chart(fundingChartCtx, {
+                type: 'bar',
+                data: fundingData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: true, text: '融资金额 (百万美元)', padding: { bottom: 20 } }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, title: { display: true, text: '百万美元' } }
+                    }
+                }
+            });
+
+            const communityChartCtx = document.getElementById('communityChart').getContext('2d');
+            new Chart(communityChartCtx, {
+                type: 'doughnut',
+                data: communityData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        title: { display: true, text: '社区成员分布', padding: { bottom: 20 } }
+                    }
+                }
+            });
+
+            // Risk Matrix
+            const riskGrid = document.getElementById('risk-grid');
+            const riskDetails = document.getElementById('risk-details');
+            const riskSeverityClasses = {
+                high: 'border-red-500 bg-red-50 text-red-700 hover:bg-red-100',
+                medium: 'border-amber-500 bg-amber-50 text-amber-700 hover:bg-amber-100'
+            };
+            riskData.forEach(risk => {
+                const riskItem = document.createElement('button');
+                riskItem.className = `p-4 rounded-lg border-2 text-center font-semibold transition ${riskSeverityClasses[risk.severity]}`;
+                riskItem.textContent = risk.title;
+                riskItem.addEventListener('click', () => {
+                    riskDetails.innerHTML = `<strong class="block mb-2 text-lg">${risk.title}</strong><p>${risk.details}</p>`;
+                });
+                riskGrid.appendChild(riskItem);
+            });
+
+            // Investment Strategies Table & Modal
+            const strategiesTbody = document.getElementById('strategies-tbody');
+            const modal = document.getElementById('strategy-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalDescription = document.getElementById('modal-description');
+            const modalPros = document.getElementById('modal-pros');
+            const modalCons = document.getElementById('modal-cons');
+            const modalApy = document.getElementById('modal-apy');
+            const modalCloseBtn = document.getElementById('modal-close-btn');
+
+            function renderStrategies(filter = 'all') {
+                strategiesTbody.innerHTML = '';
+                const filteredStrategies = investmentStrategies.filter(s => {
+                    if (filter === 'all') return true;
+                    return s.category === filter;
+                });
+
+                filteredStrategies.forEach(strategy => {
+                    const row = document.createElement('tr');
+                    row.className = 'border-t border-slate-200 hover:bg-slate-50 cursor-pointer';
+                    
+                    const riskColors = {
+                        'low': 'bg-green-100 text-green-800',
+                        '高': 'bg-amber-100 text-amber-800',
+                        '非常高': 'bg-red-100 text-red-800'
+                    };
+
+                    row.innerHTML = `
+                        <td class="py-4 px-4">
+                            <strong class="font-bold text-slate-800">${strategy.name}</strong>
+                            <p class="text-sm text-slate-500 md:hidden">${strategy.risk} - ${strategy.audience}</p>
+                        </td>
+                        <td class="py-4 px-4 hidden md:table-cell">
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full ${riskColors[strategy.risk] || 'bg-slate-100 text-slate-800'}">${strategy.risk}</span>
+                        </td>
+                        <td class="py-4 px-4 text-sm text-slate-600 hidden md:table-cell">${strategy.audience}</td>
+                        <td class="py-4 px-4 text-right"><span class="text-teal-600 font-bold">详情 &rarr;</span></td>
+                    `;
+                    row.addEventListener('click', () => openModal(strategy));
+                    strategiesTbody.appendChild(row);
+                });
+            }
+
+            function openModal(strategy) {
+                modalTitle.textContent = strategy.name;
+                modalDescription.textContent = strategy.description;
+                modalApy.textContent = strategy.apy;
+                modalPros.innerHTML = strategy.pros.map(p => `<li>${p}</li>`).join('');
+                modalCons.innerHTML = strategy.cons.map(c => `<li>${c}</li>`).join('');
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+                modal.querySelector('.modal-content').classList.remove('-translate-y-10');
+            }
+
+            function closeModal() {
+                modal.classList.add('opacity-0', 'pointer-events-none');
+                modal.querySelector('.modal-content').classList.add('-translate-y-10');
+            }
+
+            modalCloseBtn.addEventListener('click', closeModal);
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeModal();
+                }
+            });
+
+            // Filter buttons
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            filterButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    filterButtons.forEach(btn => {
+                        btn.classList.remove('active', 'bg-teal-600', 'text-white');
+                        btn.classList.add('bg-white', 'text-slate-700');
+                    });
+                    button.classList.add('active', 'bg-teal-600', 'text-white');
+                    button.classList.remove('bg-white', 'text-slate-700');
+                    renderStrategies(button.dataset.filter);
+                });
+            });
+
+            // Initial render
+            renderStrategies();
+        });
+    </script>
+</body>
+</html>

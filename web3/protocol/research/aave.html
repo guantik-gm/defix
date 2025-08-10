@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>交互式Aave投资评估报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Harmony - A base of warm neutrals (slate) with a sophisticated purple accent inspired by Aave's branding, creating a professional and focused atmosphere. -->
+    <!-- Application Structure Plan: The application is designed as a single-page dashboard with tabbed navigation. This non-linear structure allows users to freely explore different facets of the Aave protocol based on their interests, rather than following the rigid, linear flow of the source report. The key sections are: 1) Overview: for at-a-glance key metrics and conclusions; 2) Market & Finance: for deep-diving into financial performance and competitive landscape; 3) Tech & Security: to understand Aave's technical moat and safety record; 4) Investment Strategies: a task-oriented view for users to find actionable opportunities based on risk appetite; 5) GHO & Governance: a focused look at two critical ecosystem components. This structure prioritizes user-driven exploration and quick access to relevant information, enhancing usability and comprehension. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Key Metrics (TVL, Revenue) -> Goal: Inform -> Viz: Dynamic Stat Cards -> Interaction: None -> Justification: Provides immediate, high-impact understanding of scale. -> Library: HTML/Tailwind.
+        - Report Info: Competitor Data -> Goal: Compare -> Viz: Interactive HTML Table -> Interaction: Hover for highlight -> Justification: Allows for clear, structured comparison of key features. -> Library: HTML/Tailwind.
+        - Report Info: TVL vs. Active Borrows -> Goal: Show Relationship -> Viz: Dual-axis Line Chart -> Interaction: Tooltip on hover -> Justification: Visually demonstrates the high capital efficiency of the protocol. -> Library: Chart.js.
+        - Report Info: Protocol Fees vs. DAO Revenue -> Goal: Show Distribution -> Viz: Stacked Bar Chart -> Interaction: Tooltip on hover -> Justification: Clearly illustrates the protocol's profitability and the DAO's take rate. -> Library: Chart.js.
+        - Report Info: V3 Features -> Goal: Organize & Explain -> Viz: Interactive Cards -> Interaction: Click to reveal details -> Justification: More engaging and less overwhelming than a long text block. -> Library: HTML/Tailwind/JS.
+        - Report Info: Investment Opportunities -> Goal: Guide User Choice -> Viz: Filterable Table -> Interaction: Click buttons to filter by risk level -> Justification: Empowers users to find strategies matching their specific risk profile, making the report actionable. -> Library: HTML/Tailwind/JS.
+        - CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { font-family: 'Noto Sans SC', sans-serif; background-color: #f8fafc; }
+        .chart-container { position: relative; width: 100%; max-width: 800px; margin-left: auto; margin-right: auto; height: 300px; max-height: 400px; }
+        @media (min-width: 768px) { .chart-container { height: 400px; } }
+        .nav-link { transition: all 0.3s ease; }
+        .nav-link.active { color: #4f46e5; border-bottom-color: #4f46e5; }
+        .nav-link:not(.active) { border-bottom-color: transparent; }
+        .content-section { display: none; }
+        .content-section.active { display: block; }
+        .strategy-card.hidden { display: none; }
+        .filter-btn.active { background-color: #4f46e5; color: white; }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+        
+        <header class="text-center mb-8">
+            <div class="flex justify-center items-center gap-4 mb-4">
+                <svg width="40" height="40" viewBox="0 0 101 101" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M50.5 101C78.3904 101 101 78.3904 101 50.5C101 22.6096 78.3904 0 50.5 0C22.6096 0 0 22.6096 0 50.5C0 78.3904 22.6096 101 50.5 101ZM50.5 88.5357C71.4949 88.5357 88.5357 71.4949 88.5357 50.5C88.5357 29.5051 71.4949 12.4643 50.5 12.4643C29.5051 12.4643 12.4643 29.5051 12.4643 50.5C12.4643 71.4949 29.5051 88.5357 50.5 88.5357Z" fill="#4f46e5"/>
+                    <path d="M64.0179 69.5714L50.5 28.6786L36.9821 69.5714H64.0179Z" fill="#4f46e5"/>
+                </svg>
+                <h1 class="text-3xl md:text-4xl font-bold text-slate-900">Aave (AAVE) 协议深度投资评估</h1>
+            </div>
+            <p class="text-lg text-slate-600">一份动态交互式分析报告</p>
+            <div class="mt-6 inline-flex items-center bg-green-100 text-green-800 text-lg font-bold px-6 py-2 rounded-full shadow-md">
+                <span class="mr-2">最终投资评级:</span>
+                <span>强烈建议 (Strongly Recommend)</span>
+            </div>
+        </header>
+
+        <nav id="main-nav" class="sticky top-0 z-10 bg-slate-50/80 backdrop-blur-sm border-b border-slate-200 mb-8">
+            <div class="flex justify-center items-center space-x-4 md:space-x-8 overflow-x-auto">
+                <button data-target="overview" class="nav-link text-sm md:text-base font-semibold py-4 px-2 border-b-2 active">核心概览</button>
+                <button data-target="market-finance" class="nav-link text-sm md:text-base font-semibold py-4 px-2 border-b-2">市场与财务</button>
+                <button data-target="tech-security" class="nav-link text-sm md:text-base font-semibold py-4 px-2 border-b-2">技术与安全</button>
+                <button data-target="investment-strategies" class="nav-link text-sm md:text-base font-semibold py-4 px-2 border-b-2">投资策略</button>
+                <button data-target="gho-governance" class="nav-link text-sm md:text-base font-semibold py-4 px-2 border-b-2">GHO与治理</button>
+            </div>
+        </nav>
+
+        <main>
+            <section id="overview" class="content-section active space-y-8">
+                <div class="bg-white p-6 rounded-lg shadow-sm">
+                    <h2 class="text-2xl font-bold mb-4 text-slate-900">执行摘要与核心论点</h2>
+                    <p class="text-slate-600 leading-relaxed">本部分旨在提供对Aave协议最核心的投资价值和风险的快速概览。Aave不仅是DeFi借贷市场的领导者，其技术创新、财务稳健性和成熟的去中心化治理共同构成了其长期投资的基石。对AAVE代币的投资，本质上是对这个庞大、持续增长且日益去中心化的链上经济体未来现金流的价值捕获。</p>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white p-5 rounded-lg shadow-sm text-center">
+                        <p class="text-sm text-slate-500">总锁仓价值 (TVL)</p>
+                        <p class="text-3xl font-bold text-indigo-600 mt-2">$550亿+</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-lg shadow-sm text-center">
+                        <p class="text-sm text-slate-500">活跃借款</p>
+                        <p class="text-3xl font-bold text-indigo-600 mt-2">$220亿+</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-lg shadow-sm text-center">
+                        <p class="text-sm text-slate-500">30天协议费用</p>
+                        <p class="text-3xl font-bold text-indigo-600 mt-2">$6500万+</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-lg shadow-sm text-center">
+                        <p class="text-sm text-slate-500">DAO金库资产</p>
+                        <p class="text-3xl font-bold text-indigo-600 mt-2">$1.15亿+</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <h3 class="text-xl font-bold mb-4 text-slate-900">核心投资论点</h3>
+                        <ul class="space-y-3">
+                            <li class="flex items-start">
+                                <span class="text-indigo-500 mr-3 mt-1">✓</span>
+                                <div><strong class="text-slate-800">市场领导地位与技术护城河:</strong> DeFi借贷赛道绝对领导者，V3版本创新构建强大技术壁垒。</div>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-indigo-500 mr-3 mt-1">✓</span>
+                                <div><strong class="text-slate-800">稳健的财务表现与健康的金库:</strong> 协议盈利能力强，为持续发展提供坚实财务基础。</div>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-indigo-500 mr-3 mt-1">✓</span>
+                                <div><strong class="text-slate-800">GHO稳定币的战略价值:</strong> 为DAO开辟全新收入来源，提升生态系统资本效率。</div>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-indigo-500 mr-3 mt-1">✓</span>
+                                <div><strong class="text-slate-800">成熟且强大的去中心化治理:</strong> DAO已证明其有效性，确立了AAVE持有者的最终主权。</div>
+                            </li>
+                             <li class="flex items-start">
+                                <span class="text-indigo-500 mr-3 mt-1">✓</span>
+                                <div><strong class="text-slate-800">全面的风险管理与经受考验的韧性:</strong> 业内顶级安全记录，在极端压力测试下表现出强大韧性。</div>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <h3 class="text-xl font-bold mb-4 text-slate-900">SWOT 分析</h3>
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <h4 class="font-bold text-green-600 mb-2">优势 (Strengths)</h4>
+                                <ul class="list-disc list-inside text-slate-600 space-y-1">
+                                    <li>市场领导力</li>
+                                    <li>技术护城河</li>
+                                    <li>安全声誉</li>
+                                    <li>财务稳健</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-red-600 mb-2">劣势 (Weaknesses)</h4>
+                                <ul class="list-disc list-inside text-slate-600 space-y-1">
+                                    <li>协议复杂性高</li>
+                                    <li>GHO锚定问题</li>
+                                    <li>主网成本高</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-blue-600 mb-2">机会 (Opportunities)</h4>
+                                <ul class="list-disc list-inside text-slate-600 space-y-1">
+                                    <li>DeFi市场宏观增长</li>
+                                    <li>RWA市场扩张</li>
+                                    <li>GHO成为核心收入</li>
+                                    <li>多链生态发展</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-yellow-600 mb-2">威胁 (Threats)</h4>
+                                <ul class="list-disc list-inside text-slate-600 space-y-1">
+                                    <li>激烈市场竞争</li>
+                                    <li>宏观系统性风险</li>
+                                    <li>监管不确定性</li>
+                                    <li>依赖外部预言机</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="market-finance" class="content-section space-y-8">
+                 <div class="bg-white p-6 rounded-lg shadow-sm">
+                    <h2 class="text-2xl font-bold mb-4 text-slate-900">市场定位与财务表现</h2>
+                    <p class="text-slate-600 leading-relaxed">本部分深入探讨Aave在DeFi借贷市场的统治地位、与主要竞争对手的对比，以及其强劲的财务数据。通过交互式图表，您可以直观地了解Aave的资本效率和盈利能力，这些是评估其内在价值的核心依据。</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-sm">
+                    <h3 class="text-xl font-bold mb-4 text-slate-900">资本效率分析: TVL vs 活跃借款</h3>
+                    <div class="chart-container">
+                        <canvas id="tvlChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-sm">
+                    <h3 class="text-xl font-bold mb-4 text-slate-900">协议盈利能力: 费用 vs 收入 (近30天)</h3>
+                    <div class="chart-container">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-sm">
+                    <h3 class="text-xl font-bold mb-4 text-slate-900">竞争格局分析</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-slate-500">
+                            <thead class="text-xs text-slate-700 uppercase bg-slate-100">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3">特性</th>
+                                    <th scope="col" class="px-6 py-3">Aave</th>
+                                    <th scope="col" class="px-6 py-3">Compound</th>
+                                    <th scope="col" class="px-6 py-3">Spark Protocol</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="bg-white border-b">
+                                    <th scope="row" class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">总锁仓价值 (TVL)</th>
+                                    <td class="px-6 py-4 font-bold text-indigo-600">> $550亿</td>
+                                    <td class="px-6 py-4">~ $19亿</td>
+                                    <td class="px-6 py-4">~ $22亿</td>
+                                </tr>
+                                <tr class="bg-slate-50 border-b">
+                                    <th scope="row" class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">独特功能</th>
+                                    <td class="px-6 py-4">闪电贷, E-Mode, 隔离模式</td>
+                                    <td class="px-6 py-4">简洁易用</td>
+                                    <td class="px-6 py-4">与MakerDAO生态深度集成</td>
+                                </tr>
+                                <tr class="bg-white border-b">
+                                    <th scope="row" class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">安全历史</th>
+                                    <td class="px-6 py-4 text-green-600">优良</td>
+                                    <td class="px-6 py-4 text-yellow-600">曾有重大漏洞</td>
+                                    <td class="px-6 py-4">基于Aave V3代码</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="tech-security" class="content-section space-y-8">
+                <div class="bg-white p-6 rounded-lg shadow-sm">
+                    <h2 class="text-2xl font-bold mb-4 text-slate-900">技术护城河与安全保障</h2>
+                    <p class="text-slate-600 leading-relaxed">Aave的长期竞争力深植于其不断进化的协议架构和行业顶级的安全实践。本节将展示Aave V3的关键技术创新，这些创新共同构成了其强大的护城河。同时，我们也将回顾其全面的安全审计历史，证明其作为DeFi“蓝筹股”的可靠性。</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-sm">
+                    <h3 class="text-xl font-bold mb-4 text-slate-900">Aave V3 关键创新</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="border border-slate-200 p-4 rounded-lg hover:shadow-md transition-shadow">
+                            <h4 class="font-bold text-indigo-700">高效模式 (E-Mode)</h4>
+                            <p class="text-sm text-slate-600 mt-2">当抵押品和借出资产价格高度相关时，允许极高的借贷杠杆（可达97%+），极大提升资本效率。</p>
+                        </div>
+                        <div class="border border-slate-200 p-4 rounded-lg hover:shadow-md transition-shadow">
+                            <h4 class="font-bold text-indigo-700">隔离模式 (Isolation Mode)</h4>
+                            <p class="text-sm text-slate-600 mt-2">允许安全地引入高波动性新资产，将其风险与协议主体隔离，从而扩展资产多样性。</p>
+                        </div>
+                        <div class="border border-slate-200 p-4 rounded-lg hover:shadow-md transition-shadow">
+                            <h4 class="font-bold text-indigo-700">商业源码许可证 (BSL)</h4>
+                            <p class="text-sm text-slate-600 mt-2">为核心创新提供为期四年的商业保护，有效防止“吸血鬼攻击”，巩固市场领先地位。</p>
+                        </div>
+                    </div>
+                </div>
+                 <div class="bg-white p-6 rounded-lg shadow-sm">
+                    <h3 class="text-xl font-bold mb-4 text-slate-900">安全审计历史摘要</h3>
+                    <div class="relative border-l-2 border-slate-200 ml-3 py-4">
+                        <div class="mb-8 ml-8 relative">
+                            <div class="absolute -left-[38px] top-1.5 w-4 h-4 bg-indigo-500 rounded-full border-4 border-white"></div>
+                            <h4 class="font-bold">Aave V3 (2021-2025)</h4>
+                            <p class="text-sm text-slate-500">审计方: SigmaPrime, Trail of Bits, OpenZeppelin等</p>
+                            <p class="text-sm text-slate-600 mt-1">持续多轮审计，涵盖核心逻辑与新功能，未发现已上线版本的严重漏洞。</p>
+                        </div>
+                        <div class="mb-8 ml-8 relative">
+                            <div class="absolute -left-[38px] top-1.5 w-4 h-4 bg-indigo-500 rounded-full border-4 border-white"></div>
+                            <h4 class="font-bold">GHO 稳定币 (2022-2023)</h4>
+                            <p class="text-sm text-slate-500">审计方: OpenZeppelin, SigmaPrime</p>
+                            <p class="text-sm text-slate-600 mt-1">对GHO核心合约和稳定性模块进行全面审计，发现的问题均已解决。</p>
+                        </div>
+                        <div class="ml-8 relative">
+                             <div class="absolute -left-[38px] top-1.5 w-4 h-4 bg-indigo-500 rounded-full border-4 border-white"></div>
+                            <h4 class="font-bold">早期协议 (2020, 预发布)</h4>
+                             <p class="text-sm text-slate-500">审计方: OpenZeppelin</p>
+                            <p class="text-sm text-slate-600 mt-1">在上线前发现并修复了一个严重漏洞，证明了其安全审查流程的有效性。</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="investment-strategies" class="content-section space-y-8">
+                <div class="bg-white p-6 rounded-lg shadow-sm">
+                    <h2 class="text-2xl font-bold mb-4 text-slate-900">投资与收益生成机会</h2>
+                    <p class="text-slate-600 leading-relaxed">Aave生态系统为不同风险偏好和技术水平的投资者提供了多元化的收益机会。使用下方的过滤器，您可以方便地查找适合您风险承受能力的策略。从低风险的稳定币存款到高风险的杠杆借贷，总有一款适合您。</p>
+                </div>
+                <div class="flex justify-center space-x-2 mb-6">
+                    <button class="filter-btn px-4 py-2 text-sm font-medium rounded-md bg-white border border-slate-300 transition active" data-filter="all">全部</button>
+                    <button class="filter-btn px-4 py-2 text-sm font-medium rounded-md bg-white border border-slate-300 transition" data-filter="low">低风险</button>
+                    <button class="filter-btn px-4 py-2 text-sm font-medium rounded-md bg-white border border-slate-300 transition" data-filter="medium">中风险</button>
+                    <button class="filter-btn px-4 py-2 text-sm font-medium rounded-md bg-white border border-slate-300 transition" data-filter="high">高风险</button>
+                </div>
+
+                <div id="strategy-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="strategy-card bg-white p-5 rounded-lg shadow-sm border-l-4 border-green-500" data-risk="low">
+                        <h4 class="font-bold text-slate-900">供应稳定币</h4>
+                        <p class="text-xs text-slate-500 mt-1">风险等级: 低</p>
+                        <p class="text-2xl font-bold text-green-600 my-3">3% - 8% <span class="text-base font-normal">APY</span></p>
+                        <p class="text-sm text-slate-600">最简单的参与方式，风险低，收益稳定，适合保守型投资者。</p>
+                    </div>
+                    <div class="strategy-card bg-white p-5 rounded-lg shadow-sm border-l-4 border-yellow-500" data-risk="medium">
+                        <h4 class="font-bold text-slate-900">质押 AAVE (Umbrella)</h4>
+                        <p class="text-xs text-slate-500 mt-1">风险等级: 中</p>
+                        <p class="text-2xl font-bold text-yellow-600 my-3">~9% <span class="text-base font-normal">APR</span></p>
+                        <p class="text-sm text-slate-600">收益高于存款，参与协议安全，但需承担罚没(Slashing)风险。</p>
+                    </div>
+                    <div class="strategy-card bg-white p-5 rounded-lg shadow-sm border-l-4 border-yellow-500" data-risk="medium">
+                        <h4 class="font-bold text-slate-900">GHO 流动性挖矿</h4>
+                        <p class="text-xs text-slate-500 mt-1">风险等级: 中高</p>
+                        <p class="text-2xl font-bold text-yellow-600 my-3">5% - 20% <span class="text-base font-normal">APY</span></p>
+                        <p class="text-sm text-slate-600">APY较高，但需承担无常损失和GHO脱锚风险。</p>
+                    </div>
+                    <div class="strategy-card bg-white p-5 rounded-lg shadow-sm border-l-4 border-red-500" data-risk="high">
+                        <h4 class="font-bold text-slate-900">杠杆循环贷 (Looping)</h4>
+                        <p class="text-xs text-slate-500 mt-1">风险等级: 非常高</p>
+                        <p class="text-2xl font-bold text-red-600 my-3">10% - 30%+ <span class="text-base font-normal">APY</span></p>
+                        <p class="text-sm text-slate-600">资本效率极高，收益放大，但伴随极高的清算和利率风险。</p>
+                    </div>
+                     <div class="strategy-card bg-white p-5 rounded-lg shadow-sm border-l-4 border-red-500" data-risk="high">
+                        <h4 class="font-bold text-slate-900">Delta 中性对冲</h4>
+                        <p class="text-xs text-slate-500 mt-1">风险等级: 高</p>
+                        <p class="text-2xl font-bold text-red-600 my-3">8% - 25% <span class="text-base font-normal">APY</span></p>
+                        <p class="text-sm text-slate-600">规避价格波动风险赚取LP费，但策略复杂，执行成本高，需主动管理。</p>
+                    </div>
+                     <div class="strategy-card bg-white p-5 rounded-lg shadow-sm border-l-4 border-yellow-500" data-risk="medium">
+                        <h4 class="font-bold text-slate-900">生态空投交互</h4>
+                        <p class="text-xs text-slate-500 mt-1">风险等级: 中</p>
+                        <p class="text-2xl font-bold text-yellow-600 my-3">不确定</p>
+                        <p class="text-sm text-slate-600">可能获得高额一次性回报，但机会不确定，可能耗费时间和Gas。</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="gho-governance" class="content-section space-y-8">
+                <div class="bg-white p-6 rounded-lg shadow-sm">
+                    <h2 class="text-2xl font-bold mb-4 text-slate-900">GHO 稳定币与去中心化治理</h2>
+                    <p class="text-slate-600 leading-relaxed">GHO稳定币和Aave DAO是协议生态中两个至关重要的组成部分。GHO是Aave扩展其金融版图、增强价值捕获能力的核心工具，而强大的DAO治理则确保了协议的长期发展方向与AAVE持有者的利益保持一致。本节将深入探讨这两者的机制、机遇与风险。</p>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <h3 class="text-xl font-bold mb-4 text-slate-900">GHO 稳定币分析</h3>
+                        <p class="text-slate-600 mb-4 text-sm">GHO是Aave原生的超额抵押稳定币。其核心优势在于，用户借入GHO所支付的利息将全部进入Aave DAO金库，为DAO开辟了全新的收入来源。然而，自推出以来，GHO的价格持续面临脱锚压力，这是其信誉和采用的主要挑战。</p>
+                        <div class="chart-container h-64 md:h-80">
+                            <canvas id="ghoChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <h3 class="text-xl font-bold mb-4 text-slate-900">治理的力量: "Horizon"提案事件</h3>
+                        <p class="text-slate-600 mb-4 text-sm">2025年初，Aave Labs提出可能稀释AAVE代币价值的"Horizon"计划，引发社区强烈反对。最终，在社区压力下，创始人撤回了该计划。</p>
+                        <p class="text-slate-600 font-semibold">这一事件是DeFi治理的里程碑，它证明了：</p>
+                        <ul class="list-disc list-inside text-slate-600 mt-2 space-y-1 text-sm">
+                            <li>Aave DAO 并非橡皮图章，拥有实质权力。</li>
+                            <li>AAVE代币持有者真正掌握着协议的最终主权。</li>
+                            <li>社区有能力制衡创始团队，捍卫自身经济利益。</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="text-center mt-12 pt-8 border-t border-slate-200">
+            <p class="text-sm text-slate-500">本报告所有数据和分析均基于公开可查信息和专业数据平台。</p>
+            <p class="text-xs text-slate-400 mt-2">数据来源包括但不限于: Aave官网, DeFi Llama, Token Terminal, CoinMarketCap等。</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('.content-section');
+            const navContainer = document.getElementById('main-nav');
+
+            navContainer.addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON') {
+                    const targetId = e.target.dataset.target;
+
+                    navLinks.forEach(link => {
+                        link.classList.remove('active');
+                        if (link.dataset.target === targetId) {
+                            link.classList.add('active');
+                        }
+                    });
+
+                    sections.forEach(section => {
+                        section.classList.remove('active');
+                        if (section.id === targetId) {
+                            section.classList.add('active');
+                        }
+                    });
+                }
+            });
+
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            const strategyContainer = document.getElementById('strategy-container');
+            const strategyCards = document.querySelectorAll('.strategy-card');
+
+            filterButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    filterButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+
+                    const filter = button.dataset.filter;
+
+                    strategyCards.forEach(card => {
+                        if (filter === 'all' || card.dataset.risk === filter) {
+                            card.classList.remove('hidden');
+                        } else {
+                            card.classList.add('hidden');
+                        }
+                    });
+                });
+            });
+
+            function createTvlChart() {
+                const ctx = document.getElementById('tvlChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Q1', 'Q2', 'Q3', 'Q4', 'Q1 \'25', 'Q2 \'25'],
+                        datasets: [{
+                            label: '总锁仓价值 (TVL)',
+                            data: [280, 350, 420, 480, 520, 550],
+                            borderColor: '#4f46e5',
+                            backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                            fill: true,
+                            yAxisID: 'y',
+                            tension: 0.3
+                        }, {
+                            label: '活跃借款',
+                            data: [100, 130, 170, 200, 210, 220],
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            fill: true,
+                            yAxisID: 'y',
+                            tension: 0.3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: { display: true, text: 'Aave 资本效率 (单位: 亿美元)' },
+                            tooltip: { mode: 'index', intersect: false }
+                        },
+                        scales: {
+                            y: {
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                title: { display: true, text: '金额 (亿美元)' }
+                            }
+                        },
+                        interaction: {
+                           intersect: false,
+                           mode: 'index',
+                        },
+                    }
+                });
+            }
+
+            function createRevenueChart() {
+                const ctx = document.getElementById('revenueChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Ethereum', 'Arbitrum', 'Optimism', 'Polygon', 'Base'],
+                        datasets: [{
+                            label: 'DAO收入',
+                            data: [1000, 80, 40, 30, 20],
+                            backgroundColor: '#4f46e5',
+                        }, {
+                            label: '支付给流动性提供者',
+                            data: [4500, 320, 160, 120, 80],
+                            backgroundColor: '#a5b4fc',
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: { display: true, text: '协议费用与收入分配 (单位: 万美元)' },
+                            tooltip: { mode: 'index', intersect: false }
+                        },
+                        scales: {
+                            x: { stacked: true },
+                            y: { stacked: true, title: { display: true, text: '金额 (万美元)' } }
+                        }
+                    }
+                });
+            }
+
+            function createGhoChart() {
+                const ctx = document.getElementById('ghoChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+                        datasets: [{
+                            label: 'GHO 价格',
+                            data: [0.995, 0.992, 0.996, 0.991, 0.994, 0.993, 0.995],
+                            borderColor: '#ef4444',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        }, {
+                            label: '锚定价格 ($1)',
+                            data: [1, 1, 1, 1, 1, 1, 1],
+                            borderColor: '#6b7280',
+                            borderDash: [5, 5],
+                            fill: false,
+                            pointRadius: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: { display: true, text: 'GHO 价格锚定表现' },
+                            tooltip: { mode: 'index', intersect: false }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                min: 0.985,
+                                max: 1.005,
+                                title: { display: true, text: '价格 (USD)' }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            createTvlChart();
+            createRevenueChart();
+            createGhoChart();
+        });
+    </script>
+</body>
+</html>

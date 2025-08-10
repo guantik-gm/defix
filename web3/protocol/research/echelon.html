@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Echelon Market 交互式投资分析</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutral Harmony -->
+    <!-- Application Structure Plan: A single-page, scroll-based dashboard design with a sticky side navigation. This structure was chosen for its intuitive flow, allowing users to move from a high-level summary (Executive Dashboard) to deeper dives into specific areas like Market Performance, Risk Assessment, and Investment Strategies. This non-linear but guided approach is superior to a simple report format, enabling users to explore data based on their interests (e.g., a risk-averse user can jump straight to security analysis). Key interactions include hovering over charts for detailed tooltips and clicking navigation links to smoothly scroll to relevant sections. This design facilitates comprehension by breaking down complex information into manageable, visually distinct modules. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Final Investment Rating -> Goal: Immediate Verdict -> Viz: Prominent colored card -> Justification: Highlights the most crucial conclusion upfront.
+        - Report Info: Key Metrics (TVL, Revenue) -> Goal: Show Growth -> Viz: Bar charts (Chart.js) -> Interaction: Hover tooltips -> Justification: Bar charts are excellent for comparing magnitudes and showing performance over time.
+        - Report Info: TVL by Chain -> Goal: Show Distribution -> Viz: Doughnut chart (Chart.js) -> Interaction: Hover tooltips -> Justification: Ideal for showing part-to-whole relationships clearly.
+        - Report Info: Competitor TVL -> Goal: Compare Market Position -> Viz: Horizontal Bar Chart (Chart.js) -> Interaction: Hover tooltips -> Justification: Best for comparing entities and ranking them effectively.
+        - Report Info: Security Audit Findings -> Goal: Highlight Critical Risk -> Viz: High-contrast HTML cards with Unicode icons (‼️) -> Justification: Text and icons in a stark layout are more impactful for warnings than a chart.
+        - Report Info: Investment Strategies -> Goal: Compare Options -> Viz: Interactive HTML card grid -> Interaction: Hover effects -> Justification: Cards allow for detailed comparison of pros, cons, and risks for each strategy in a digestible format.
+        - Library/Method: All charts use Chart.js on a Canvas element. All other visuals use structured HTML and Tailwind CSS. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+            background-color: #F8F7F4;
+            color: #333;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 300px;
+            }
+        }
+        .nav-link {
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+        .nav-link.active {
+            background-color: #E9E7E2;
+            color: #A36A00;
+            border-left-color: #A36A00;
+        }
+        .nav-link:hover {
+            background-color: #E9E7E2;
+            color: #A36A00;
+        }
+        .strategy-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .strategy-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-[#F8F7F4]">
+
+    <div class="flex min-h-screen">
+        <!-- Sticky Sidebar Navigation -->
+        <aside class="w-64 bg-[#EFEBE6] p-4 sticky top-0 h-screen hidden lg:flex flex-col">
+            <h1 class="text-2xl font-bold text-[#A36A00] mb-8">Echelon 报告</h1>
+            <nav id="desktop-nav" class="flex flex-col space-y-2">
+                <a href="#dashboard" class="nav-link active font-semibold p-3 rounded-lg">高管仪表盘</a>
+                <a href="#performance" class="nav-link font-semibold p-3 rounded-lg">市场与财务</a>
+                <a href="#competition" class="nav-link font-semibold p-3 rounded-lg">竞争格局</a>
+                <a href="#risk" class="nav-link font-semibold p-3 rounded-lg">风险与安全</a>
+                <a href="#strategies" class="nav-link font-semibold p-3 rounded-lg">投资策略</a>
+                <a href="#conclusion" class="nav-link font-semibold p-3 rounded-lg">最终结论</a>
+            </nav>
+            <div class="mt-auto text-xs text-gray-500">
+                <p>数据更新于 2025年7月</p>
+                <p>交互式报告由 Gemini 生成</p>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-4 sm:p-6 md:p-10">
+            <!-- Mobile Header -->
+            <header class="lg:hidden mb-6">
+                 <h1 class="text-3xl font-bold text-[#A36A00]">Echelon 投资分析</h1>
+                 <p class="text-gray-600 mt-1">一个交互式报告</p>
+            </header>
+            
+            <div class="max-w-7xl mx-auto space-y-16">
+
+                <!-- Section 1: Executive Dashboard -->
+                <section id="dashboard">
+                    <h2 class="text-3xl font-bold mb-2 text-gray-800">高管仪表盘</h2>
+                    <p class="text-gray-600 mb-6">本节提供 Echelon Market 的顶层概览，包括核心投资论点、关键指标和最终投资评级，旨在帮助您快速把握项目全貌。</p>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Investment Rating -->
+                        <div class="lg:col-span-1 bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex flex-col justify-center items-center text-center">
+                            <span class="text-sm font-semibold text-gray-500 mb-2">最终投资评级</span>
+                            <span class="text-3xl font-bold text-amber-600">建议</span>
+                            <p class="text-xs text-gray-500 mt-2">(仅限高风险偏好投资者)</p>
+                            <p class="mt-4 text-sm text-gray-700">高回报潜力与严峻的安全风险并存。未经公开验证的高危漏洞是其致命短板。</p>
+                        </div>
+
+                        <!-- Key Metrics -->
+                        <div class="lg:col-span-2 grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-200 text-center">
+                                <p class="text-sm text-gray-500">总锁仓价值 (TVL)</p>
+                                <p class="text-2xl font-bold text-gray-800 mt-2">$1.49亿</p>
+                            </div>
+                            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-200 text-center">
+                                <p class="text-sm text-gray-500">30日费用</p>
+                                <p class="text-2xl font-bold text-gray-800 mt-2">$103万</p>
+                            </div>
+                            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-200 text-center">
+                                <p class="text-sm text-gray-500">30日收入</p>
+                                <p class="text-2xl font-bold text-gray-800 mt-2">$31.2万</p>
+                            </div>
+                            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-200 text-center">
+                                <p class="text-sm text-gray-500">种子轮融资</p>
+                                <p class="text-2xl font-bold text-gray-800 mt-2">$350万</p>
+                            </div>
+                        </div>
+
+                        <!-- Pros and Cons -->
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                            <h3 class="font-bold text-lg mb-3 text-green-700">优势与机遇</h3>
+                            <ul class="list-disc list-inside space-y-2 text-sm text-gray-700">
+                                <li><span class="font-semibold">战略定位精准：</span>专注高增长的Move生态。</li>
+                                <li><span class="font-semibold">创新功能驱动：</span>E-Mode极大提高资本效率。</li>
+                                <li><span class="font-semibold">顶级资本背书：</span>Amber Group, Laser Digital领投。</li>
+                                <li><span class="font-semibold">强劲市场表现：</span>TVL和收入快速增长。</li>
+                            </ul>
+                        </div>
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                           <h3 class="font-bold text-lg mb-3 text-red-700">风险与挑战</h3>
+                            <ul class="list-disc list-inside space-y-2 text-sm text-gray-700">
+                                <li class="font-bold text-red-600"><span class="font-semibold">高危安全漏洞：</span>Zellic审计发现2个高危漏洞，修复情况不明。</li>
+                                <li><span class="font-semibold">匿名团队：</span>创始人背景不公开，增加管理风险。</li>
+                                <li><span class="font-semibold">生态系统依赖：</span>与Aptos生态深度绑定。</li>
+                                <li><span class="font-semibold">空投后抛压：</span>TGE后可能面临资本流出。</li>
+                            </ul>
+                        </div>
+                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 lg:col-span-1">
+                           <h3 class="font-bold text-lg mb-3 text-blue-700">核心投资论点</h3>
+                           <p class="text-sm text-gray-700">凭借其卓越的资本效率架构和强劲的早期增长势头，Echelon具备成为Move生态主导借贷协议的巨大潜力，但前提是其严重的安全漏洞得到透明化解决。</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 2: Market Performance -->
+                <section id="performance">
+                    <h2 class="text-3xl font-bold mb-2 text-gray-800">市场与财务表现</h2>
+                    <p class="text-gray-600 mb-6">本节深入分析Echelon Market的链上财务健康状况，通过可视化图表展示其总锁仓价值（TVL）的构成和协议的创收能力。</p>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                            <h3 class="font-semibold text-center mb-4">总锁仓价值 (TVL) 分布</h3>
+                            <div class="chart-container">
+                                <canvas id="tvlByChainChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                            <h3 class="font-semibold text-center mb-4">协议财务状况 (近30天 vs 年化)</h3>
+                            <div class="chart-container">
+                                <canvas id="financialsChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 3: Competition -->
+                <section id="competition">
+                    <h2 class="text-3xl font-bold mb-2 text-gray-800">竞争格局</h2>
+                    <p class="text-gray-600 mb-6">在Aptos生态系统中，借贷赛道竞争激烈。本节将Echelon Market与其主要竞争对手进行比较，重点突出其在总锁仓价值（TVL）和核心差异化优势方面的市场地位。</p>
+                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                        <h3 class="font-semibold text-center mb-4">Aptos 借贷协议 TVL 对比 (美元)</h3>
+                        <div class="chart-container" style="height: 400px;">
+                            <canvas id="competitorChart"></canvas>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 4: Risk & Security -->
+                <section id="risk">
+                    <h2 class="text-3xl font-bold mb-2 text-gray-800">风险与安全评估</h2>
+                    <p class="text-gray-600 mb-6">安全是DeFi协议的生命线。本节聚焦于Echelon Market面临的最严峻挑战：由Zellic审计发现的智能合约漏洞，以及其他相关的协议和市场风险。</p>
+                    <div class="bg-red-50 border-l-4 border-red-500 p-6 rounded-lg shadow-md">
+                        <div class="flex items-center">
+                            <div class="text-4xl mr-4">‼️</div>
+                            <div>
+                                <h3 class="text-xl font-bold text-red-800">严重警告：未经修复的高危漏洞</h3>
+                                <p class="text-red-700 mt-2">Zellic的安全审计发现了 <strong class="font-extrabold">2个高风险漏洞</strong>。截至本报告发布，项目方尚未在任何公开渠道提供这些漏洞已被修复并验证的明确证据。这为投资带来了巨大的、难以量化的安全隐患，可能导致用户资金的全部损失。</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                            <h4 class="font-bold text-lg mb-2">匿名团队风险</h4>
+                            <p class="text-sm text-gray-600">创始人身份未知，增加了“卷款跑路”或管理不善的风险。尽管顶级VC的背书在一定程度上缓解了此担忧，但风险依然存在。</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                            <h4 class="font-bold text-lg mb-2">清算瀑布风险</h4>
+                            <p class="text-sm text-gray-600">协议主打的高杠杆特性，在市场极端波动时会显著放大清算风险，可能导致协议产生坏账。</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                            <h4 class="font-bold text-lg mb-2">资产脱锚风险</h4>
+                            <p class="text-sm text-gray-600">对LSTs和RWAs的支持引入了新的风险维度。若抵押品发生脱锚，其价值将无法覆盖债务。</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 5: Investment Strategies -->
+                <section id="strategies">
+                    <h2 class="text-3xl font-bold mb-2 text-gray-800">投资策略与机遇</h2>
+                    <p class="text-gray-600 mb-6">对于不同风险偏好和技术水平的投资者，Echelon Market提供了多样的参与机会。本节详细拆解了从低风险到高风险的各种投资策略，并为有开发背景的投资者指出了潜在的生态系统机遇。</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Strategy Card 1 -->
+                        <div class="strategy-card bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex flex-col">
+                            <div class="flex justify-between items-center mb-3">
+                                <h4 class="font-bold text-lg">空投积分挖矿</h4>
+                                <span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">中风险</span>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-4">通过供应和借贷最大化累积积分，以博取未来空投。这是当前参与的核心动机。</p>
+                            <div class="mt-auto space-y-3">
+                                <p class="text-sm"><strong class="text-green-600">优点:</strong> 潜在回报极高。</p>
+                                <p class="text-sm"><strong class="text-red-600">缺点:</strong> 投入成本可能无法被覆盖，代币上线后有暴跌风险。</p>
+                            </div>
+                        </div>
+                        <!-- Strategy Card 2 -->
+                        <div class="strategy-card bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex flex-col">
+                            <div class="flex justify-between items-center mb-3">
+                                <h4 class="font-bold text-lg">杠杆循环策略</h4>
+                                <span class="bg-red-100 text-red-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">高风险</span>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-4">在稳定币对之间或利用LST反复存贷，放大头寸以追求极致的收益和积分累积速度。</p>
+                             <div class="mt-auto space-y-3">
+                                <p class="text-sm"><strong class="text-green-600">优点:</strong> 资本效率极高，收益和积分累积最快。</p>
+                                <p class="text-sm"><strong class="text-red-600">缺点:</strong> 操作复杂，市场微小波动都可能导致清算。</p>
+                            </div>
+                        </div>
+                        <!-- Strategy Card 3 -->
+                        <div class="strategy-card bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex flex-col">
+                            <div class="flex justify-between items-center mb-3">
+                                <h4 class="font-bold text-lg">开发者参与</h4>
+                                <span class="bg-purple-100 text-purple-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">专家级</span>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-4">创建清算机器人、套利机器人或自动化策略库，以赚取技术驱动型收益。</p>
+                             <div class="mt-auto space-y-3">
+                                <p class="text-sm"><strong class="text-green-600">优点:</strong> 收益来源与币价波动关联度较低。</p>
+                                <p class="text-sm"><strong class="text-red-600">缺点:</strong> 技术门槛最高，需要持续开发和维护。</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 6: Conclusion -->
+                <section id="conclusion">
+                     <h2 class="text-3xl font-bold mb-2 text-gray-800">最终结论与未来展望</h2>
+                    <p class="text-gray-600 mb-6">综合所有分析，我们对Echelon Market的未来进行展望，并明确指出其成功的关键依赖因素。</p>
+                    <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-200">
+                        <p class="mb-4 text-gray-700">Echelon Market无疑是DeFi领域最值得关注的新兴项目之一。它精准切入Move生态，以“资本效率”为突破口，成功吸引了大量资本和用户。产品设计精巧，增长数据亮眼，并有顶级资本加持。</p>
+                        <p class="mb-4 text-gray-700">然而，光环之下是巨大的阴影。项目在核心的安全和透明度问题上存在严重瑕疵。两处未经验证修复的高危漏洞，如同悬顶之剑，使任何投资都成为一场高风险赌博。</p>
+                        <h4 class="font-bold text-lg mt-6 mb-3">成功的关键节点：</h4>
+                        <ul class="list-decimal list-inside space-y-2 text-gray-700">
+                            <li><strong class="font-semibold text-gray-800">安全问题的解决与透明化：</strong>这是项目能否从“投机乐园”转变为“可靠选择”的决定性一步。</li>
+                            <li><strong class="font-semibold text-gray-800">代币生成事件(TGE)的成功：</strong>精心设计的代币经济模型是留住流动性的关键。</li>
+                            <li><strong class="font-semibold text-gray-800">路线图的执行：</strong>能否成功整合RWA等机构级资产，将决定其最终格局。</li>
+                        </ul>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const data = {
+                tvlByChain: {
+                    labels: ['Aptos', 'Movement', 'Echelon Chain'],
+                    datasets: [{
+                        label: 'TVL by Chain',
+                        data: [126020000, 17660000, 5500000],
+                        backgroundColor: [
+                            '#A36A00', // Warm Gold
+                            '#C79D5D', // Light Gold
+                            '#E9E7E2', // Neutral Beige
+                        ],
+                        borderColor: '#F8F7F4',
+                        borderWidth: 4
+                    }]
+                },
+                financials: {
+                    labels: ['费用', '收入'],
+                    datasets: [{
+                        label: '近30天 (美元)',
+                        data: [1030000, 312000],
+                        backgroundColor: '#A36A00',
+                        borderColor: '#8B5A00',
+                        borderWidth: 1
+                    }, {
+                        label: '年化预估 (美元)',
+                        data: [12000000, 3600000],
+                        backgroundColor: '#C79D5D',
+                        borderColor: '#A36A00',
+                        borderWidth: 1
+                    }]
+                },
+                competitors: {
+                    labels: ['Echo Lending', 'Aries Markets', 'Echelon Market', 'Aptin Finance'],
+                    datasets: [{
+                        label: 'Aptos TVL (美元)',
+                        data: [284000000, 220000000, 126000000, 15530000],
+                        backgroundColor: [
+                            '#BDBDBD',
+                            '#BDBDBD',
+                            '#A36A00',
+                            '#BDBDBD',
+                        ],
+                        borderColor: '#F8F7F4',
+                        borderWidth: 2
+                    }]
+                }
+            };
+
+            const chartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: {
+                                family: "'Inter', 'Noto Sans SC', sans-serif"
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                     label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(context.parsed.y);
+                                } else if(context.parsed.x !== null) {
+                                     label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(context.parsed.x);
+                                } else {
+                                     label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(context.parsed);
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        ticks: {
+                            callback: function(value, index, values) {
+                                return '$' + (value / 1000000) + 'M';
+                            }
+                        }
+                    },
+                    x: {
+                        ticks: {
+                           callback: function(value, index, values) {
+                                const label = this.getLabelForValue(value);
+                                if (label.length > 16) {
+                                    return label.substring(0, 16) + '...';
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            };
+            
+            const competitorChartOptions = {
+                ...chartOptions,
+                indexAxis: 'y',
+                scales: {
+                    x: {
+                        ticks: {
+                            callback: function(value, index, values) {
+                                return '$' + (value / 1000000) + 'M';
+                            }
+                        }
+                    },
+                    y: {
+                       ticks: {
+                           font: {
+                                size: 12,
+                                weight: '500'
+                           }
+                       }
+                    }
+                }
+            };
+
+
+            const tvlCtx = document.getElementById('tvlByChainChart').getContext('2d');
+            new Chart(tvlCtx, {
+                type: 'doughnut',
+                data: data.tvlByChain,
+                options: { ...chartOptions, scales: {} }
+            });
+
+            const financialsCtx = document.getElementById('financialsChart').getContext('2d');
+            new Chart(financialsCtx, {
+                type: 'bar',
+                data: data.financials,
+                options: chartOptions
+            });
+
+            const competitorCtx = document.getElementById('competitorChart').getContext('2d');
+            new Chart(competitorCtx, {
+                type: 'bar',
+                data: data.competitors,
+                options: competitorChartOptions
+            });
+
+            const sections = document.querySelectorAll('section');
+            const navLinks = document.querySelectorAll('.nav-link');
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        navLinks.forEach(link => {
+                            link.classList.remove('active');
+                            if (link.getAttribute('href').substring(1) === entry.target.id) {
+                                link.classList.add('active');
+                            }
+                        });
+                    }
+                });
+            }, { rootMargin: "-30% 0px -70% 0px" });
+
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+            
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+
+        });
+    </script>
+</body>
+</html>

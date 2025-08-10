@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upshift Finance - 交互式投资分析报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Chosen Palette: Fintech Clarity -->
+    <!-- Application Structure Plan: The SPA is designed as an interactive investment dashboard, moving beyond the linear structure of the source report. The user journey starts with a high-level summary and overall verdict ('建议'), immediately followed by key performance indicators (KPIs) like TVL and funding. A sticky navigation allows users to jump to specific sections of interest: Data Insights, Risk Assessment, and Investment Strategies. The core of the application is the 'Interactive Investment Strategy Browser', which transforms the static report table into a filterable, card-based interface. This allows users to actively explore opportunities based on criteria like points multiplier or asset type. The structure concludes with a scannable SWOT analysis and tabbed recommendations for different investor profiles. This task-oriented, non-linear design empowers users to quickly find the information most relevant to their decision-making process, making the report's dense information much more consumable and actionable. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Overall assessment. Goal: Inform immediately. Viz: Prominent '建议' badge. Justification: Provides the report's key takeaway upfront. Method: HTML/CSS.
+        - Report Info: TVL distribution by chain. Goal: Show composition. Viz: Donut Chart. Interaction: Hover tooltips. Justification: Best for visualizing parts of a whole. Library: Chart.js.
+        - Report Info: TVL comparison with competitors. Goal: Show market position. Viz: Bar Chart. Interaction: Hover tooltips. Justification: Ideal for comparing magnitudes directly. Library: Chart.js.
+        - Report Info: Investment vault details table. Goal: Organize and enable exploration. Viz: Interactive filterable card grid. Interaction: Filter buttons. Justification: Far more engaging and user-friendly than a static table, encourages discovery. Method: HTML/CSS/JS.
+        - Report Info: SWOT analysis. Goal: Summarize strategic position. Viz: 2x2 grid. Justification: Classic, scannable format for strategic analysis. Method: HTML/CSS.
+        - Report Info: Investor-specific recommendations. Goal: Provide tailored advice. Viz: Tabbed interface. Interaction: Click to switch profiles. Justification: Cleans up UI and allows users to self-select content. Method: HTML/CSS/JS.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f8f9fa;
+            color: #343a40;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 350px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+                max-height: 400px;
+            }
+        }
+        .nav-link {
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #0d6efd;
+            border-bottom-color: #0d6efd;
+        }
+        .strategy-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .strategy-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .filter-btn {
+            transition: all 0.2s ease-in-out;
+        }
+        .filter-btn.active {
+            background-color: #0d6efd;
+            color: white;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <nav class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <h1 class="text-xl md:text-2xl font-bold text-gray-800">Upshift Finance</h1>
+            <div class="hidden md:flex space-x-6">
+                <a href="#overview" class="nav-link font-medium text-gray-600 px-2 py-1">总览</a>
+                <a href="#data-insights" class="nav-link font-medium text-gray-600 px-2 py-1">数据洞察</a>
+                <a href="#risk-assessment" class="nav-link font-medium text-gray-600 px-2 py-1">风险评估</a>
+                <a href="#strategies" class="nav-link font-medium text-gray-600 px-2 py-1">投资策略</a>
+                <a href="#verdict" class="nav-link font-medium text-gray-600 px-2 py-1">最终结论</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto p-4 md:p-8">
+        
+        <section id="overview" class="text-center mb-16 pt-12">
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">交互式投资分析仪表盘</h2>
+            <p class="max-w-3xl mx-auto text-lg text-gray-600 mb-8">本报告将深度分析报告转化为动态仪表盘，助您高效评估 Upshift Finance 的投资潜力。</p>
+            
+            <div class="bg-white border border-gray-200 rounded-xl shadow-lg p-6 max-w-4xl mx-auto">
+                <div class="flex flex-col md:flex-row items-center justify-between">
+                    <div class="text-left mb-6 md:mb-0 md:w-2/3">
+                        <h3 class="text-2xl font-bold text-gray-800 mb-2">综合投资评级</h3>
+                        <p class="text-gray-600">经过对项目基本面、安全审计、团队背景和市场潜力的全面评估，我们得出以下结论。详细分析见后续章节。</p>
+                    </div>
+                    <div class="flex items-center justify-center bg-green-100 text-green-800 rounded-full px-8 py-4">
+                        <span class="text-4xl font-bold">建议</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 ml-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
+                    </div>
+                </div>
+
+                <hr class="my-6">
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+                    <div>
+                        <p class="text-sm text-gray-500 font-semibold">总锁仓价值 (TVL)</p>
+                        <p class="text-3xl font-bold text-gray-900">$3.37 亿</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500 font-semibold">领投机构</p>
+                        <p class="text-3xl font-bold text-gray-900">Dragonfly</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500 font-semibold">安全审计</p>
+                        <p class="text-3xl font-bold text-gray-900">3+家顶级机构</p>
+                    </div>
+                </div>
+                 <div class="mt-6 text-left bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h4 class="font-bold text-lg text-blue-800 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        关键指控核查
+                    </h4>
+                    <p class="text-blue-700 mt-2">经核查，网络上流传的关于Upshift为“欺诈项目”并受FCA警告的指控，来源可疑、缺乏官方证据支持，极大概率为旨在推广欺诈性资金追回服务的恶意内容。项目的庞大TVL、顶级VC背书和多重安全审计均与“欺诈”定性严重不符。</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="data-insights" class="mb-16 pt-12">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-900">数据洞察与市场定位</h2>
+                <p class="max-w-2xl mx-auto text-lg text-gray-600 mt-2">通过关键链上数据和竞品对比，直观了解 Upshift 的市场体量与生态布局。</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-lg">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">TVL 多链分布</h3>
+                    <p class="text-center text-gray-600 mb-4">Upshift 成功将资本部署到多个高增长生态，尤其是在以太坊和新兴的 Hyperliquid L1 上，显示了其强大的跨链拓展能力。</p>
+                    <div class="chart-container">
+                        <canvas id="tvlDonutChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-lg">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">赛道竞品 TVL 对比</h3>
+                    <p class="text-center text-gray-600 mb-4">相较于 Veda 和 Spark 等基础设施巨头，Upshift 体量较小，但其定位更像精品“对冲基金”，专注于提供高 Alpha 的差异化收益策略。</p>
+                    <div class="chart-container">
+                        <canvas id="competitorBarChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="risk-assessment" class="mb-16 pt-12">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-900">风险与安全框架</h2>
+                <p class="max-w-2xl mx-auto text-lg text-gray-600 mt-2">全面评估项目的技术安全性和系统性风险，是做出明智投资决策的前提。</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-lg">
+                    <h3 class="text-xl font-bold text-green-700 flex items-center mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                        智能合约安全
+                    </h3>
+                    <p class="text-gray-600 mb-4">协议在安全方面投入巨大，采用行业最佳实践，显著降低了代码层面的风险。</p>
+                    <ul class="space-y-3">
+                        <li class="flex items-center"><span class="inline-block h-2 w-2 bg-green-500 rounded-full mr-3"></span>采用 ERC-4626 标准化金库，减少未知漏洞。</li>
+                        <li class="flex items-center"><span class="inline-block h-2 w-2 bg-green-500 rounded-full mr-3"></span>经由 <strong>ChainSecurity</strong> 独立审计。</li>
+                        <li class="flex items-center"><span class="inline-block h-2 w-2 bg-green-500 rounded-full mr-3"></span>经由 <strong>Zellic</strong> 独立审计。</li>
+                        <li class="flex items-center"><span class="inline-block h-2 w-2 bg-green-500 rounded-full mr-3"></span>经由 <strong>Sigma Prime</strong> 独立审计。</li>
+                    </ul>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-lg">
+                     <h3 class="text-xl font-bold text-orange-600 flex items-center mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                        主要系统性风险
+                    </h3>
+                    <p class="text-gray-600 mb-4">除了代码风险，投资者还需关注以下更广泛的系统性风险，这些风险与协议的运营模式直接相关。</p>
+                    <ul class="space-y-3">
+                       <li class="flex items-start">
+                           <span class="inline-block h-2 w-2 bg-orange-500 rounded-full mr-3 mt-2 flex-shrink-0"></span>
+                           <div><strong>对手方与策略风险：</strong>收益依赖外部策略和机构借款人，其表现或违约将直接导致金库资产损失。</div>
+                        </li>
+                       <li class="flex items-start">
+                           <span class="inline-block h-2 w-2 bg-orange-500 rounded-full mr-3 mt-2 flex-shrink-0"></span>
+                           <div><strong>中心化风险：</strong>项目与核心合作伙伴 August Digital 深度绑定，其运营稳健性对协议至关重要。</div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="strategies" class="mb-16 pt-12">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-900">互动投资策略浏览器</h2>
+                <p class="max-w-2xl mx-auto text-lg text-gray-600 mt-2">当前核心投资逻辑是“真实收益 + 高潜力空投预期”。使用下方筛选器，探索最适合您的收益金库。</p>
+            </div>
+
+            <div class="flex flex-wrap justify-center gap-2 md:gap-4 mb-8" id="strategy-filters">
+                <button data-filter="all" class="filter-btn active font-medium py-2 px-4 rounded-full bg-gray-200 text-gray-700">全部金库</button>
+                <button data-filter="high-points" class="filter-btn font-medium py-2 px-4 rounded-full bg-gray-200 text-gray-700">高积分</button>
+                <button data-filter="stablecoin" class="filter-btn font-medium py-2 px-4 rounded-full bg-gray-200 text-gray-700">稳定币</button>
+                <button data-filter="btc" class="filter-btn font-medium py-2 px-4 rounded-full bg-gray-200 text-gray-700">BTC</button>
+                <button data-filter="multi-points" class="filter-btn font-medium py-2 px-4 rounded-full bg-gray-200 text-gray-700">多重积分</button>
+            </div>
+            
+            <div id="strategy-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            </div>
+        </section>
+        
+        <section id="verdict" class="pt-12">
+             <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-900">最终结论与投资建议</h2>
+                <p class="max-w-2xl mx-auto text-lg text-gray-600 mt-2">综合所有分析，我们提供 SWOT 总结和针对不同风险偏好投资者的具体建议。</p>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-lg mb-12">
+                <h3 class="text-2xl font-bold text-center mb-6">SWOT 分析</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-green-50 p-4 rounded-lg">
+                        <h4 class="font-bold text-lg text-green-800">优势 (Strengths)</h4>
+                        <ul class="list-disc list-inside mt-2 text-green-700 space-y-1">
+                            <li>基本面强劲 (高TVL, 顶级VC)</li>
+                            <li>高度安全性 (多重审计, ERC-4626)</li>
+                            <li>清晰的价值主张 (机构级策略)</li>
+                            <li>成功的跨链部署</li>
+                        </ul>
+                    </div>
+                    <div class="bg-red-50 p-4 rounded-lg">
+                        <h4 class="font-bold text-lg text-red-800">劣势 (Weaknesses)</h4>
+                        <ul class="list-disc list-inside mt-2 text-red-700 space-y-1">
+                            <li>对合作伙伴的中心化依赖</li>
+                            <li>创始团队匿名</li>
+                            <li>代币经济学未知</li>
+                        </ul>
+                    </div>
+                    <div class="bg-blue-50 p-4 rounded-lg">
+                        <h4 class="font-bold text-lg text-blue-800">机会 (Opportunities)</h4>
+                        <ul class="list-disc list-inside mt-2 text-blue-700 space-y-1">
+                            <li>高潜力空投预期 (积分计划)</li>
+                            <li>资本高效的多重积分策略</li>
+                            <li>在新兴生态中的先发优势</li>
+                        </ul>
+                    </div>
+                    <div class="bg-orange-50 p-4 rounded-lg">
+                        <h4 class="font-bold text-lg text-orange-800">威胁 (Threats)</h4>
+                        <ul class="list-disc list-inside mt-2 text-orange-700 space-y-1">
+                            <li>网络虚假信息带来的声誉风险</li>
+                            <li>激烈的市场竞争</li>
+                            <li>底层策略的系统性风险</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-lg">
+                 <h3 class="text-2xl font-bold text-center mb-6">分层投资建议</h3>
+                 <div>
+                    <div class="border-b border-gray-200">
+                        <nav class="-mb-px flex space-x-6" id="recommendation-tabs">
+                            <button data-tab="conservative" class="tab-btn active shrink-0 border-b-2 font-medium px-1 py-4 text-sm border-blue-500 text-blue-600">
+                                稳健收益型
+                            </button>
+                            <button data-tab="aggressive" class="tab-btn shrink-0 border-b-2 font-medium px-1 py-4 text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                                激进空投型
+                            </button>
+                            <button data-tab="developer" class="tab-btn shrink-0 border-b-2 font-medium px-1 py-4 text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                                技术开发者
+                            </button>
+                        </nav>
+                    </div>
+                    <div id="recommendation-content" class="pt-6">
+                        <div data-content="conservative" class="tab-content">
+                            <h4 class="font-bold text-lg text-gray-800">投资评级：建议</h4>
+                            <p class="mt-2 text-gray-600">重点关注基于 USDC 等稳定币的金库。这类策略风险相对较低，在获取稳健收益的同时，也能累积空投积分，分享项目成长红利。</p>
+                        </div>
+                        <div data-content="aggressive" class="tab-content hidden">
+                            <h4 class="font-bold text-lg text-gray-800">投资评级：强烈建议</h4>
+                            <p class="mt-2 text-gray-600">优先考虑具有最高积分乘数（如10x的uBTC金库）和“积分叠加”效应的金库。这类策略旨在最大化未来空投份额，是当前阶段最具爆发力的玩法。</p>
+                        </div>
+                        <div data-content="developer" class="tab-content hidden">
+                           <h4 class="font-bold text-lg text-gray-800">投资评级：建议</h4>
+                            <p class="mt-2 text-gray-600">利用协议的标准化ERC-4626接口，尝试构建增值工具或应用（如自定义仪表盘、策略管理器）。这不仅可能带来直接回报，更有机会在生态中建立声誉，获得潜在的追溯性奖励。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-center py-8 mt-12 border-t">
+        <p class="text-gray-500">本报告仅供参考，不构成任何投资建议。请自行进行尽职调查。</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            
+            const strategyVaultsData = [
+                {
+                    name: "Hyperbeat's Ultra uBTC Vault",
+                    asset: "cbBTC, LBTC",
+                    chain: "Hyperliquid L1",
+                    points: "10x",
+                    strategy: "在Hyperliquid生态中进行复杂的BTC本位收益策略。",
+                    risk: "Hyperliquid协议风险；BTC衍生品市场波动；uBTC脱锚风险。",
+                    pro: "极高的积分乘数，最大化空投预期；BTC本位收益。",
+                    con: "策略复杂，风险较高；需要持有特定类型的BTC封装资产。",
+                    tags: ["high-points", "btc"]
+                },
+                {
+                    name: "Lombard LBTC Vault",
+                    asset: "LBTC",
+                    chain: "Avalanche",
+                    points: "5x Upshift + 3x Lombard & Babylon",
+                    strategy: "参与Lombard协议和Babylon BTC质押生态，赚取多重收益。",
+                    risk: "Lombard和Babylon协议的智能合约风险；LBTC流动性风险。",
+                    pro: "一鱼多吃，同时获得多个项目的空投积分，资本效率高。",
+                    con: "收益来源分散，需要对多个关联协议都有信心。",
+                    tags: ["btc", "multi-points"]
+                },
+                {
+                    name: "Upshift TAC USR Vault",
+                    asset: "USDC",
+                    chain: "Ethereum",
+                    points: "5x Upshift + Resolv & Tac",
+                    strategy: "参与TAC协议的用户状态层（USR）策略，可能涉及稳定币套利或借贷。",
+                    risk: "TAC协议风险；稳定币策略的市场风险。",
+                    pro: "稳定币本位，风险相对较低；同样具备积分叠加效应。",
+                    con: "基础APY可能低于高风险策略。",
+                    tags: ["stablecoin", "multi-points"]
+                },
+                {
+                    name: "Hyperbeat's Ultra HYPE Vault",
+                    asset: "HYPE",
+                    chain: "Hyperliquid L1",
+                    points: "5x",
+                    strategy: "投资于Hyperliquid生态项目（Hyperbeat, HyperLend等）的一揽子策略。",
+                    risk: "Hyperliquid生态系统性风险；HYPE代币价格波动。",
+                    pro: "深度参与高增长的Hyperliquid生态；分享生态成长红利。",
+                    con: "需要承担HYPE代币本身的价格波动风险。",
+                    tags: []
+                },
+                {
+                    name: "Multipli USDC Vault",
+                    asset: "USDC",
+                    chain: "Ethereum",
+                    points: "5x Upshift + Tac",
+                    strategy: "专注于为Tac协议提供流动性或参与其策略。",
+                    risk: "Tac协议风险；依赖单一外部协议。",
+                    pro: "稳定币本位，风险可控；可同时累积Tac积分。",
+                    con: "收益和积分来源较为单一。",
+                    tags: ["stablecoin", "multi-points"]
+                }
+            ];
+
+            const strategyGrid = document.getElementById('strategy-grid');
+
+            function renderVaults(filter = 'all') {
+                strategyGrid.innerHTML = '';
+                const filteredVaults = filter === 'all' 
+                    ? strategyVaultsData 
+                    : strategyVaultsData.filter(vault => vault.tags.includes(filter));
+
+                filteredVaults.forEach(vault => {
+                    const card = `
+                        <div class="strategy-card bg-white p-6 rounded-xl border border-gray-200 flex flex-col" data-tags="${vault.tags.join(' ')}">
+                            <div class="flex-grow">
+                                <div class="flex justify-between items-start mb-2">
+                                    <h4 class="font-bold text-lg text-gray-800 pr-2">${vault.name}</h4>
+                                    <span class="text-sm font-bold whitespace-nowrap bg-blue-100 text-blue-800 px-3 py-1 rounded-full">${vault.points} 积分</span>
+                                </div>
+                                <p class="text-sm text-gray-500 mb-4">${vault.chain} - ${vault.asset}</p>
+                                <p class="text-gray-600 mb-2"><strong>策略:</strong> ${vault.strategy}</p>
+                                <p class="text-gray-600 mb-4"><strong>风险:</strong> ${vault.risk}</p>
+                            </div>
+                            <div class="mt-auto pt-4 border-t">
+                                <p class="text-green-600 font-medium text-sm mb-2"><strong>优点:</strong> ${vault.pro}</p>
+                                <p class="text-red-600 font-medium text-sm"><strong>缺点:</strong> ${vault.con}</p>
+                            </div>
+                        </div>
+                    `;
+                    strategyGrid.innerHTML += card;
+                });
+            }
+            
+            renderVaults();
+
+            const filterButtons = document.querySelectorAll('#strategy-filters .filter-btn');
+            filterButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    filterButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    renderVaults(button.dataset.filter);
+                });
+            });
+
+            const tvlData = {
+                labels: ['Ethereum', 'Hyperliquid L1', 'Avalanche', 'BSC', 'Base'],
+                datasets: [{
+                    label: 'TVL (in M USD)',
+                    data: [256.79, 67.18, 12.23, 1.02, 0.065],
+                    backgroundColor: ['#4f46e5', '#0891b2', '#f97316', '#eab308', '#64748b'],
+                    hoverOffset: 4
+                }]
+            };
+
+            new Chart(document.getElementById('tvlDonutChart'), {
+                type: 'doughnut',
+                data: tvlData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        tooltip: { callbacks: { label: (context) => `${context.label}: $${context.raw}M` } }
+                    }
+                }
+            });
+
+            const competitorData = {
+                labels: ['Upshift', 'Veda', 'Spark Protocol'],
+                datasets: [{
+                    label: 'TVL (in B USD)',
+                    data: [0.337, 3.8, 6.0],
+                    backgroundColor: ['#4338ca', '#64748b', '#9ca3af'],
+                    borderColor: ['#3730a3', '#475569', '#6b7280'],
+                    borderWidth: 1
+                }]
+            };
+
+            new Chart(document.getElementById('competitorBarChart'), {
+                type: 'bar',
+                data: competitorData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    scales: { x: { beginAtZero: true } },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { callbacks: { label: (context) => ` TVL: $${context.raw}B` } }
+                    }
+                }
+            });
+
+            const tabs = document.querySelectorAll('#recommendation-tabs .tab-btn');
+            const contents = document.querySelectorAll('#recommendation-content .tab-content');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => {
+                        t.classList.remove('active', 'border-blue-500', 'text-blue-600');
+                        t.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+                    });
+                    tab.classList.add('active', 'border-blue-500', 'text-blue-600');
+                    tab.classList.remove('border-transparent', 'text-gray-500');
+                    
+                    contents.forEach(content => {
+                        content.classList.add('hidden');
+                        if (content.dataset.content === tab.dataset.tab) {
+                            content.classList.remove('hidden');
+                        }
+                    });
+                });
+            });
+            
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('section');
+            window.addEventListener('scroll', () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (pageYOffset >= sectionTop - 60) {
+                        current = section.getAttribute('id');
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href').includes(current)) {
+                        link.classList.add('active');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

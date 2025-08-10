@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DefiTuna (TUNA) 交互式投资分析报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutral Harmony -->
+    <!-- Application Structure Plan: The SPA is designed as an interactive dashboard, moving away from the linear report format. The structure includes: 1. A top-level summary with key metrics and the final investment rating for quick insights. 2. A balanced "Pros vs. Cons" section for a quick assessment of strengths and weaknesses. 3. A core interactive "Investment Opportunity Matrix" filterable by risk level, allowing users to explore strategies relevant to them. 4. A final section on team and security to build trust. This user-centric, non-linear structure enables investors to explore information based on their own priorities (e.g., a risk-averse user can filter for low-risk opportunities), making the complex data more digestible and actionable. -->
+    <!-- Visualization & Content Choices: 1. TVL Comparison: Report data on TVL is visualized as a bar chart (Chart.js) to immediately show the market position against the main competitor, Kamino. Goal: Compare. Method: Bar Chart. Interaction: Tooltip on hover. Justification: Visual comparison is faster to grasp than text. 2. Strengths & Risks: Presented as two parallel, expandable lists. Goal: Organize & Compare. Method: Styled HTML/CSS lists with icons. Interaction: Click to expand/collapse details. Justification: Reduces initial information overload while allowing deep dives. 3. Investment Matrix: The report's detailed table is transformed into interactive, filterable cards. Goal: Organize & Explore. Method: HTML cards with JS filtering. Interaction: Buttons to filter cards by risk level. Justification: Empowers users to navigate complex options based on their personal risk tolerance, a core task for any investor. All visual elements are created with HTML/CSS/Unicode, with no SVG or Mermaid used. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+            background-color: #F8F7F4;
+            color: #383838;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .nav-link {
+            transition: color 0.3s;
+        }
+        .nav-link:hover {
+            color: #2563eb;
+        }
+        .filter-btn {
+            transition: all 0.3s;
+        }
+        .filter-btn.active {
+            background-color: #2563eb;
+            color: #ffffff;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .card-enter {
+            animation: fadeIn 0.5s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-2xl font-bold text-blue-600">TUNA</span>
+                    <span class="text-xl font-semibold text-gray-700 ml-2">DefiTuna 投资分析</span>
+                </div>
+                <nav class="hidden md:flex space-x-8">
+                    <a href="#overview" class="text-gray-600 hover:text-blue-600 font-medium nav-link">概览</a>
+                    <a href="#pros-cons" class="text-gray-600 hover:text-blue-600 font-medium nav-link">优势与风险</a>
+                    <a href="#opportunities" class="text-gray-600 hover:text-blue-600 font-medium nav-link">投资机会</a>
+                    <a href="#team-security" class="text-gray-600 hover:text-blue-600 font-medium nav-link">团队与安全</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+
+        <!-- Section 1: Overview -->
+        <section id="overview" class="mb-16 scroll-mt-16">
+            <h2 class="text-3xl font-bold text-center mb-2">投资概览</h2>
+            <p class="text-center text-gray-600 mb-10 max-w-3xl mx-auto">本部分提供对 DefiTuna 项目的核心评估、关键指标和市场定位的快速概览，帮助您迅速建立对该项目的整体认知。</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-200/50 text-center flex flex-col justify-center items-center">
+                    <h3 class="text-lg font-semibold text-gray-500 mb-2">最终投资评级</h3>
+                    <p class="text-3xl font-bold text-blue-600">建议</p>
+                    <p class="text-sm text-gray-500 mt-1">(Speculative Buy)</p>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-200/50 text-center flex flex-col justify-center items-center">
+                    <h3 class="text-lg font-semibold text-gray-500 mb-2">总锁定价值 (TVL)</h3>
+                    <p class="text-3xl font-bold text-gray-800">$25.47M</p>
+                    <p class="text-sm text-gray-500 mt-1">截至报告撰写时</p>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-200/50 text-center flex flex-col justify-center items-center">
+                    <h3 class="text-lg font-semibold text-gray-500 mb-2">代币总供应量</h3>
+                    <p class="text-3xl font-bold text-gray-800">10亿</p>
+                    <p class="text-sm text-gray-500 mt-1">TUNA (固定上限)</p>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-200/50 text-center flex flex-col justify-center items-center">
+                    <h3 class="text-lg font-semibold text-gray-500 mb-2">种子轮融资</h3>
+                    <p class="text-3xl font-bold text-gray-800">$585K</p>
+                    <p class="text-sm text-gray-500 mt-1">由 Orca 领投</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-lg border border-gray-200/50">
+                    <h3 class="text-xl font-bold mb-4">核心观点</h3>
+                    <p class="text-gray-700 mb-4">DefiTuna 的核心价值在于其对成熟DeFi模块的巧妙组合，为专业用户提供了高资本效率的工具。其护城河是团队建立的**卓越诚信品牌**、与**Orca的深度绑定**，以及在TGE前已验证的**有机市场需求**。</p>
+                    <div class="space-y-4">
+                        <div>
+                            <h4 class="font-semibold text-green-600">正面投资论点 (Bull Case)</h4>
+                            <p class="text-sm text-gray-600">卓越团队诚信、已验证的产品市场契合度、强大的生态系统支持、健康的“真实收益”价值捕获模型。</p>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-red-600">负面投资论点 (Bear Case)</h4>
+                            <p class="text-sm text-gray-600">代币经济学信息不透明、激烈的市场竞争、杠杆协议固有的高市场风险。</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="lg:col-span-3 bg-white p-6 rounded-2xl shadow-lg border border-gray-200/50">
+                    <h3 class="text-xl font-bold mb-4 text-center">市场竞争格局：TVL 对比</h3>
+                    <div class="chart-container">
+                        <canvas id="tvlChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Pros & Cons -->
+        <section id="pros-cons" class="mb-16 scroll-mt-16">
+            <h2 class="text-3xl font-bold text-center mb-2">核心优势与主要风险</h2>
+            <p class="text-center text-gray-600 mb-10 max-w-3xl mx-auto">任何投资决策都需要权衡利弊。本部分将 DefiTuna 的核心优势与潜在风险并列展示，为您提供一个平衡的视角。</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-2xl shadow-lg border-green-200/80">
+                    <h3 class="text-2xl font-bold mb-6 text-green-600 flex items-center"><span class="text-3xl mr-3">👍</span>核心优势</h3>
+                    <ul class="space-y-4">
+                        <li class="flex items-start">
+                            <span class="text-green-500 text-2xl mr-3 mt-1">🛡️</span>
+                            <div>
+                                <h4 class="font-semibold text-lg">卓越的团队诚信</h4>
+                                <p class="text-gray-600">通过公开揭露行业黑幕和主动退还问题VC投资，建立了在DeFi领域极为稀缺的“诚信”品牌，显著降低了人为风险。</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-green-500 text-2xl mr-3 mt-1">📈</span>
+                            <div>
+                                <h4 class="font-semibold text-lg">已验证的产品市场契合度</h4>
+                                <p class="text-gray-600">在无代币激励的情况下，协议TVL已超2500万美元，证明其产品满足了市场的真实、有机需求。</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-green-500 text-2xl mr-3 mt-1">🤝</span>
+                            <div>
+                                <h4 class="font-semibold text-lg">强大的生态系统支持</h4>
+                                <p class="text-gray-600">与Solana顶级DEX Orca的深度战略合作（领投种子轮、首发发射台），提供了巨大的初始优势。</p>
+                            </div>
+                        </li>
+                         <li class="flex items-start">
+                            <span class="text-green-500 text-2xl mr-3 mt-1">💰</span>
+                            <div>
+                                <h4 class="font-semibold text-lg">健康的价值捕获模型</h4>
+                                <p class="text-gray-600">TUNA是“真实收益”代币，其价值与协议业务表现直接挂钩，为长期价值提供了坚实基本面支撑。</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="bg-white p-6 rounded-2xl shadow-lg border-red-200/80">
+                    <h3 class="text-2xl font-bold mb-6 text-red-600 flex items-center"><span class="text-3xl mr-3">⚠️</span>主要风险</h3>
+                    <ul class="space-y-4">
+                        <li class="flex items-start">
+                            <span class="text-red-500 text-2xl mr-3 mt-1">❓</span>
+                            <div>
+                                <h4 class="font-semibold text-lg">关键信息不透明</h4>
+                                <p class="text-gray-600">代币分配和解锁时间表等核心经济学信息缺失，构成当前最大的投资不确定性。</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-red-500 text-2xl mr-3 mt-1">⚔️</span>
+                            <div>
+                                <h4 class="font-semibold text-lg">激烈的市场竞争</h4>
+                                <p class="text-gray-600">面对TVL十倍于己的Kamino Liquidity，需要在产品和市场上持续证明自己才能抢占份额。</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-red-500 text-2xl mr-3 mt-1">📉</span>
+                            <div>
+                                <h4 class="font-semibold text-lg">杠杆协议的内生风险</h4>
+                                <p class="text-gray-600">高杠杆业务对市场波动极为敏感，面临放大的无常损失和清算风险，尤其在熊市中压力巨大。</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-red-500 text-2xl mr-3 mt-1">🔒</span>
+                            <div>
+                                <h4 class="font-semibold text-lg">技术与网络风险</h4>
+                                <p class="text-gray-600">尽管经过多轮审计，智能合约风险永不为零。协议的运行也高度依赖Solana网络的稳定性。</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Opportunities -->
+        <section id="opportunities" class="mb-16 scroll-mt-16">
+            <h2 class="text-3xl font-bold text-center mb-2">投资机会矩阵</h2>
+            <p class="text-center text-gray-600 mb-6 max-w-3xl mx-auto">DefiTuna 提供从稳健到激进的多层次投资机会。请根据您的风险偏好进行筛选，以探索最适合您的策略。</p>
+            
+            <div id="risk-filter" class="flex justify-center flex-wrap gap-3 mb-10">
+                <button data-risk="all" class="filter-btn active bg-gray-200 text-gray-800 font-semibold py-2 px-5 rounded-full">所有机会</button>
+                <button data-risk="低" class="filter-btn bg-gray-200 text-gray-800 font-semibold py-2 px-5 rounded-full">低风险</button>
+                <button data-risk="高" class="filter-btn bg-gray-200 text-gray-800 font-semibold py-2 px-5 rounded-full">高风险</button>
+                <button data-risk="非常高" class="filter-btn bg-gray-200 text-gray-800 font-semibold py-2 px-5 rounded-full">非常高</button>
+                <button data-risk="极高" class="filter-btn bg-gray-200 text-gray-800 font-semibold py-2 px-5 rounded-full">极高风险</button>
+            </div>
+
+            <div id="opportunities-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Opportunity cards will be injected here by JavaScript -->
+            </div>
+        </section>
+        
+        <!-- Section 4: Team & Security -->
+        <section id="team-security" class="scroll-mt-16">
+             <h2 class="text-3xl font-bold text-center mb-2">团队信誉与安全保障</h2>
+            <p class="text-center text-gray-600 mb-10 max-w-3xl mx-auto">在DeFi世界，代码和执行代码的人同样重要。了解团队的背景和项目的安全措施是做出明智决策的关键一步。</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-white p-8 rounded-2xl shadow-lg border border-gray-200/50">
+                    <h3 class="text-xl font-bold mb-4">“白帽”团队与创始人</h3>
+                    <p class="text-gray-700 mb-4">DefiTuna由联合创始人 **Moty Povolotski** 和 **Vlad Pozniakov** 创立。团队通过以下关键行动在行业内建立了极高的信誉：</p>
+                    <ul class="space-y-3 list-disc list-inside text-gray-600">
+                        <li>公开揭露Solana链上一个价值2亿美元的大规模市场操纵网络。</li>
+                        <li>在关联VC陷入丑闻后，主动退还其3万美元的种子轮投资，将道德原则置于商业利益之上。</li>
+                    </ul>
+                    <p class="mt-4 text-sm text-gray-500">这些行动表明团队是负责任的长期建设者，显著降低了投资者的“人为风险”。</p>
+                </div>
+                 <div class="bg-white p-8 rounded-2xl shadow-lg border border-gray-200/50">
+                    <h3 class="text-xl font-bold mb-4">多重智能合约审计</h3>
+                    <p class="text-gray-700 mb-4">安全性是DeFi协议的生命线。DefiTuna团队委托了多家业内知名的安全审计公司对其智能合约进行审查，以最大限度地保障用户资产安全。已知的审计机构包括：</p>
+                    <div class="flex flex-wrap gap-4 mt-4">
+                        <span class="bg-blue-100 text-blue-800 text-sm font-medium px-4 py-2 rounded-full">🛡️ Torii Security</span>
+                        <span class="bg-green-100 text-green-800 text-sm font-medium px-4 py-2 rounded-full">🛡️ Sec3</span>
+                        <span class="bg-purple-100 text-purple-800 text-sm font-medium px-4 py-2 rounded-full">🛡️ Zenith</span>
+                    </div>
+                     <p class="mt-4 text-sm text-gray-500">注意：通过审计不等于100%安全，投资者仍需了解并管理协议的固有金融风险。</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-gray-800 text-white mt-16">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center">
+            <p>本交互式报告基于公开信息生成，仅供研究和参考。</p>
+            <p class="text-sm text-gray-400 mt-1">投资有风险，入市需谨慎。请在做出任何决策前进行您自己的独立研究 (DYOR)。</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Chart.js: TVL Comparison Chart
+            const tvlCtx = document.getElementById('tvlChart').getContext('2d');
+            const tvlChart = new Chart(tvlCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['DefiTuna', 'Kamino Liquidity'],
+                    datasets: [{
+                        label: '总锁定价值 (TVL) in Million USD',
+                        data: [25.47, 302],
+                        backgroundColor: [
+                            'rgba(59, 130, 246, 0.7)',
+                            'rgba(209, 213, 219, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(59, 130, 246, 1)',
+                            'rgba(156, 163, 175, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'TVL (百万美元)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.x !== null) {
+                                        label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed.x) + 'M';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Opportunities Data
+            const opportunities = [
+                {
+                    title: 'TUNA 代币投资',
+                    description: '在二级市场购买并持有 TUNA 代币，捕获协议长期增长价值。',
+                    pros: '分享协议增长红利；高增长潜力；代币流动性较好。',
+                    cons: 'TGE 早期价格高波动；代币解锁带来的潜在抛压；价值捕获依赖协议真实收入的增长。',
+                    risk: '高',
+                    user: '所有类型的投资者',
+                    apy: 'N/A (资本利得)'
+                },
+                {
+                    title: '单边资产借贷',
+                    description: '在平台的借贷池中存入 SOL/USDC 等单边资产，赚取利息。',
+                    pros: '操作简单；本金风险极低；收益来源稳定、可预测性强。',
+                    cons: '收益率相对较低；存在机会成本；协议智能合约风险。',
+                    risk: '低',
+                    user: '保守型、风险规避型投资者',
+                    apy: '较低 (例如 5-15%)'
+                },
+                {
+                    title: '杠杆流动性挖矿',
+                    description: '借入资金以放大 CLMM LP 头寸，旨在最大化交易费和挖矿奖励。',
+                    pros: '收益被显著放大；资本效率极高；可获得 TUNA 代币奖励。',
+                    cons: '放大的无常损失；极高的清算风险；需要主动管理；利率风险。',
+                    risk: '非常高',
+                    user: '经验丰富的专业收益农民',
+                    apy: '非常高 (可能 >100%)'
+                },
+                {
+                    title: '德尔塔中性策略',
+                    description: '通过在衍生品市场对冲，剥离 LP 头寸的价格风险，赚取纯粹的挖矿收益和费用。',
+                    pros: '理论上可剥离市场方向性风险；可能实现市场中性的稳定高收益。',
+                    cons: '执行极度复杂；存在跨协议风险；资金费率风险；LP 和对冲头寸均有清算风险。',
+                    risk: '极高',
+                    user: '专业量化投资者、对冲基金',
+                    apy: '中到高 (高度依赖策略执行)'
+                },
+                {
+                    title: '生态系统开发',
+                    description: '利用官方 SDK 构建自动化工具、策略金库或套利/清算机器人。',
+                    pros: '能够创造独特的 Alpha 收益；可扩展为一项业务；潜在收益无上限。',
+                    cons: '需要强大的开发能力和时间投入；面临其他开发者的竞争；技术风险。',
+                    risk: '高',
+                    user: '开发者、技术型投资者',
+                    apy: 'N/A (取决于业务模式)'
+                }
+            ];
+
+            const opportunitiesGrid = document.getElementById('opportunities-grid');
+            const riskFilter = document.getElementById('risk-filter');
+
+            function getRiskColor(risk) {
+                switch (risk) {
+                    case '低': return 'border-green-500';
+                    case '高': return 'border-yellow-500';
+                    case '非常高': return 'border-orange-500';
+                    case '极高': return 'border-red-500';
+                    default: return 'border-gray-300';
+                }
+            }
+            
+            function getRiskTextColor(risk) {
+                switch (risk) {
+                    case '低': return 'text-green-600';
+                    case '高': return 'text-yellow-600';
+                    case '非常高': return 'text-orange-600';
+                    case '极高': return 'text-red-600';
+                    default: return 'text-gray-600';
+                }
+            }
+            
+            function getRiskBgColor(risk) {
+                 switch (risk) {
+                    case '低': return 'bg-green-100';
+                    case '高': return 'bg-yellow-100';
+                    case '非常高': return 'bg-orange-100';
+                    case '极高': return 'bg-red-100';
+                    default: return 'bg-gray-100';
+                }
+            }
+
+            function renderOpportunities(filter = 'all') {
+                opportunitiesGrid.innerHTML = '';
+                const filteredOpportunities = opportunities.filter(op => filter === 'all' || op.risk === filter);
+                
+                filteredOpportunities.forEach(op => {
+                    const card = document.createElement('div');
+                    card.className = `opportunity-card bg-white rounded-2xl shadow-lg overflow-hidden border-t-4 ${getRiskColor(op.risk)} card-enter`;
+                    card.innerHTML = `
+                        <div class="p-6">
+                            <div class="flex justify-between items-start mb-3">
+                                <h4 class="text-xl font-bold text-gray-800">${op.title}</h4>
+                                <span class="text-xs font-bold py-1 px-3 rounded-full ${getRiskBgColor(op.risk)} ${getRiskTextColor(op.risk)}">${op.risk}风险</span>
+                            </div>
+                            <p class="text-gray-600 text-sm mb-4 h-12">${op.description}</p>
+                            
+                            <div class="mb-4">
+                               <h5 class="font-semibold text-sm text-green-600 mb-1">✅ 优势</h5>
+                               <p class="text-xs text-gray-500">${op.pros}</p>
+                            </div>
+
+                            <div class="mb-4">
+                               <h5 class="font-semibold text-sm text-red-600 mb-1">⚠️ 劣势/风险</h5>
+                               <p class="text-xs text-gray-500">${op.cons}</p>
+                            </div>
+                            
+                            <div class="flex justify-between items-center text-xs text-gray-500 pt-4 border-t border-gray-200 mt-4">
+                                <div>
+                                    <span class="font-semibold">👤 目标用户:</span>
+                                    <span>${op.user}</span>
+                                </div>
+                                <div>
+                                    <span class="font-semibold">📈 预期收益:</span>
+                                    <span>${op.apy}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    opportunitiesGrid.appendChild(card);
+                });
+            }
+
+            riskFilter.addEventListener('click', function(e) {
+                if (e.target.tagName === 'BUTTON') {
+                    const risk = e.target.dataset.risk;
+                    
+                    // Update active button style
+                    riskFilter.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+                    e.target.classList.add('active');
+
+                    renderOpportunities(risk);
+                }
+            });
+
+            // Initial render
+            renderOpportunities();
+            
+            // Smooth scrolling for nav links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>

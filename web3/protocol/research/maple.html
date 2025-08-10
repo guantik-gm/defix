@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maple Finance 交互式投资分析仪表板</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+    <!-- Chosen Palette: Warm Neutral Finance -->
+    <!-- Application Structure Plan: The SPA is designed as a top-down, interactive dashboard. It starts with the final investment rating and key metrics for a quick overview. The core narrative of "rebirth" is presented visually to create impact. Subsequent sections are organized by user task: exploring core data, comparing strategies, analyzing risks, and viewing the competitive landscape. Navigation is sticky for easy access. This non-linear, task-oriented structure allows users to explore content based on their interests, which is more engaging than a linear report and enhances usability. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Key Metrics (TVL, Active Loans). Goal: Inform. Viz: Prominent stat cards and a Line Chart (Chart.js) to show change/growth. Interaction: Hover on chart. Justification: Quick, high-impact overview of performance.
+        - Report Info: Investment Strategies table. Goal: Compare & Organize. Viz: Interactive HTML cards. Interaction: Click to toggle details. Justification: More engaging and less overwhelming than a static table.
+        - Report Info: Competitor data. Goal: Compare. Viz: Bar Chart (Chart.js). Interaction: Hover. Justification: Direct visual comparison of market share.
+        - Report Info: SWOT analysis. Goal: Organize. Viz: Four-quadrant HTML/Tailwind grid. Justification: Classic, instantly recognizable format for strategic analysis.
+        - Report Info: Risk details. Goal: Organize/Inform. Viz: Tabbed HTML/CSS component. Interaction: Click to switch tabs. Justification: Segments complex information into digestible chunks.
+        - All choices confirm to NO SVG/Mermaid, using Canvas for charts and structured HTML/CSS for diagrams.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #F8F7F4;
+            color: #333333;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .section-fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+        .section-fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .nav-link {
+            transition: color 0.3s, border-bottom-color 0.3s;
+        }
+        .nav-link.active, .nav-link:hover {
+            color: #2E7D32;
+            border-bottom-color: #2E7D32;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white/80 backdrop-blur-lg shadow-sm sticky top-0 z-50">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="font-bold text-xl text-gray-800">🍁 Maple Finance</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#overview" class="nav-link text-gray-600 px-3 py-2 text-sm font-medium border-b-2 border-transparent">概览</a>
+                        <a href="#metrics" class="nav-link text-gray-600 px-3 py-2 text-sm font-medium border-b-2 border-transparent">核心指标</a>
+                        <a href="#strategies" class="nav-link text-gray-600 px-3 py-2 text-sm font-medium border-b-2 border-transparent">投资策略</a>
+                        <a href="#risk" class="nav-link text-gray-600 px-3 py-2 text-sm font-medium border-b-2 border-transparent">风险分析</a>
+                        <a href="#competition" class="nav-link text-gray-600 px-3 py-2 text-sm font-medium border-b-2 border-transparent">竞争对比</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+
+        <section id="overview" class="text-center mb-16 md:mb-24 section-fade-in">
+            <h1 class="text-3xl md:text-5xl font-bold tracking-tight text-gray-900 mb-4">
+                Maple Finance 交互式投资分析
+            </h1>
+            <p class="max-w-3xl mx-auto text-lg md:text-xl text-gray-600 mb-6">
+                于熊市烈火中重生的链上信贷巨头：一个融合了传统金融风控与DeFi效率的投资机遇。
+            </p>
+            <div class="inline-block bg-green-100 text-green-800 text-2xl font-bold px-8 py-4 rounded-full shadow-lg">
+                综合评级：建议 (Recommended)
+            </div>
+        </section>
+
+        <section class="mb-16 md:mb-24 section-fade-in">
+            <div class="text-center mb-12">
+                <h2 class="text-2xl md:text-3xl font-bold text-gray-800">核心摘要：浴火重生</h2>
+                <p class="mt-2 text-gray-600">Maple Finance 的核心投资故事在于其成功渡过2022年的市场危机。协议通过发布 Maple 2.0，从依赖第三方的低抵押模式，果断转向由内部专业团队主导、以超额抵押为主的稳健模式，证明了其强大的韧性和风险管理能力。</p>
+            </div>
+            <div class="grid md:grid-cols-3 gap-8 items-center">
+                <div class="bg-red-50 border border-red-200 p-6 rounded-lg shadow-md text-center">
+                    <h3 class="text-xl font-semibold text-red-800 mb-2">危机前 (Maple 1.0)</h3>
+                    <ul class="text-left space-y-2 text-red-700">
+                        <li>📉 依赖第三方“池代表”</li>
+                        <li>📉 低抵押/无抵押借贷</li>
+                        <li>📉 遭遇3600万美元违约</li>
+                    </ul>
+                </div>
+                <div class="text-center">
+                    <span class="text-5xl font-bold text-green-600">→</span>
+                    <p class="font-semibold text-gray-700 mt-2">战略转型</p>
+                </div>
+                <div class="bg-green-50 border border-green-200 p-6 rounded-lg shadow-md text-center">
+                    <h3 class="text-xl font-semibold text-green-800 mb-2">进化后 (Maple 2.0)</h3>
+                     <ul class="text-left space-y-2 text-green-700">
+                        <li>📈 内部专业信贷团队 (Maple Direct)</li>
+                        <li>📈 超额抵押为主，风控内化</li>
+                        <li>📈 TVL与收入创历史新高</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="metrics" class="mb-16 md:mb-24 section-fade-in">
+            <div class="text-center mb-12">
+                <h2 class="text-2xl md:text-3xl font-bold text-gray-800">核心业务指标</h2>
+                <p class="mt-2 text-gray-600">转型后的 Maple Finance 在关键业务指标上实现了强劲增长，这些数据是其基本面健康状况的最直接证明。用户可以通过与下方图表的交互，直观感受其增长轨迹。</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 text-center">
+                <div class="bg-white p-6 rounded-lg shadow-lg border-l-4 border-blue-500">
+                    <p class="text-sm font-medium text-gray-500">总锁仓价值 (TVL)</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-1">$15.8 亿+</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-lg border-l-4 border-green-500">
+                    <p class="text-sm font-medium text-gray-500">活跃贷款规模</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-1">$13 亿+</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-lg border-l-4 border-yellow-500">
+                    <p class="text-sm font-medium text-gray-500">年化协议收入</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-1">$750 万+</p>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-lg">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4 text-center">总锁仓价值 (TVL) 增长趋势</h3>
+                <div class="chart-container">
+                    <canvas id="tvlChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section id="strategies" class="mb-16 md:mb-24 section-fade-in">
+            <div class="text-center mb-12">
+                <h2 class="text-2xl md:text-3xl font-bold text-gray-800">投资与收益策略</h2>
+                <p class="mt-2 text-gray-600">Maple 生态系统提供了从低风险到高风险、从简单到复杂的多样化投资策略。下方列出了主要参与方式，您可以点击卡片查看每种策略的优缺点和适用人群，以找到最适合您的投资路径。</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="strategy-card bg-white rounded-lg shadow-lg overflow-hidden cursor-pointer transform hover:scale-105 transition-transform duration-300">
+                    <div class="p-6">
+                        <h3 class="font-bold text-lg text-gray-900">持有 SYRUP 代币</h3>
+                        <p class="text-sm text-gray-500 mt-1">直接押注协议长期增长</p>
+                        <div class="mt-4 text-center">
+                            <span class="inline-block bg-red-100 text-red-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">高风险</span>
+                            <span class="inline-block bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded-full ml-2">初级门槛</span>
+                        </div>
+                    </div>
+                    <div class="details p-6 bg-gray-50 border-t border-gray-200 hidden">
+                        <p><strong>回报来源：</strong>资本增值。</p>
+                        <p><strong>核心逻辑：</strong>协议收入增长通过回购分红机制，直接推动代币价值。</p>
+                        <p><strong>缺点：</strong>价格波动性高，受市场情绪影响大。</p>
+                    </div>
+                </div>
+                <div class="strategy-card bg-white rounded-lg shadow-lg overflow-hidden cursor-pointer transform hover:scale-105 transition-transform duration-300">
+                    <div class="p-6">
+                        <h3 class="font-bold text-lg text-gray-900">被动借贷 (syrupUSDC)</h3>
+                        <p class="text-sm text-gray-500 mt-1">获取稳定的个位数年化收益</p>
+                        <div class="mt-4 text-center">
+                            <span class="inline-block bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">低风险</span>
+                            <span class="inline-block bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded-full ml-2">初级门槛</span>
+                        </div>
+                    </div>
+                     <div class="details p-6 bg-gray-50 border-t border-gray-200 hidden">
+                        <p><strong>预估 APR：</strong>~6.4% APY。</p>
+                        <p><strong>核心逻辑：</strong>将稳定币存入超额抵押池，赚取机构借款人支付的利息。</p>
+                        <p><strong>缺点：</strong>收益率相对较低，存在智能合约和流动性风险。</p>
+                    </div>
+                </div>
+                 <div class="strategy-card bg-white rounded-lg shadow-lg overflow-hidden cursor-pointer transform hover:scale-105 transition-transform duration-300">
+                    <div class="p-6">
+                        <h3 class="font-bold text-lg text-gray-900">高阶组合策略</h3>
+                        <p class="text-sm text-gray-500 mt-1">利用 Pendle/Morpho 增强收益</p>
+                         <div class="mt-4 text-center">
+                            <span class="inline-block bg-red-100 text-red-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">高风险</span>
+                            <span class="inline-block bg-yellow-100 text-yellow-800 text-xs font-semibold px-2.5 py-0.5 rounded-full ml-2">高级门槛</span>
+                        </div>
+                    </div>
+                     <div class="details p-6 bg-gray-50 border-t border-gray-200 hidden">
+                        <p><strong>预估 APR：</strong>高浮动 (可达20%+)。</p>
+                        <p><strong>核心逻辑：</strong>利用 `syrupUSDC` 在其他DeFi协议中构建杠杆头寸或进行收益投机。</p>
+                        <p><strong>缺点：</strong>操作复杂，面临清算风险和多重协议风险。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="risk" class="mb-16 md:mb-24 section-fade-in">
+             <div class="text-center mb-12">
+                <h2 class="text-2xl md:text-3xl font-bold text-gray-800">风险与安全分析</h2>
+                <p class="mt-2 text-gray-600">全面的投资决策离不开对风险的深刻理解。本部分将从信用风险管理、技术安全和战略层面（SWOT）三个维度，剖析 Maple Finance 面临的潜在挑战与机遇。</p>
+            </div>
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                 <div class="mb-4 border-b border-gray-200">
+                    <nav class="flex space-x-4" aria-label="Tabs">
+                        <button class="tab-button active text-green-600 border-green-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" data-target="credit-risk">
+                            信用风险管理
+                        </button>
+                        <button class="tab-button text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" data-target="tech-security">
+                            技术安全与审计
+                        </button>
+                         <button class="tab-button text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" data-target="swot">
+                            SWOT 分析
+                        </button>
+                    </nav>
+                </div>
+                <div id="risk-content">
+                    <div id="credit-risk" class="tab-content">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">核心策略：风险内化与超额抵押</h3>
+                        <p class="text-gray-600">Maple 从2022年违约事件中吸取了深刻教训，其核心风险点已从不可控的外部代理人风险，转变为更专业的内部团队管理。对投资者而言，这意味着现在更依赖于其信贷团队的专业能力而非纯粹的代码信任。</p>
+                        <ul class="list-disc list-inside mt-4 space-y-2 text-gray-700">
+                            <li><strong>责任内化：</strong>成立内部专业信贷团队 Maple Direct，负责尽职调查和信贷评估。</li>
+                            <li><strong>模式转变：</strong>主要借贷产品转为超额抵押模式，由机构级托管方保管抵押品 (BTC, ETH)。</li>
+                             <li><strong>极致透明：</strong>所有贷款条款、抵押品情况均在链上公开可查，任何人均可验证。</li>
+                        </ul>
+                    </div>
+                    <div id="tech-security" class="tab-content hidden">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">安全第一：多层技术防护</h3>
+                        <p class="text-gray-600">作为一个管理数十亿美元资产的协议，Maple 在技术安全上投入巨大，采取了多层次的防护措施以保障用户资金安全。</p>
+                         <ul class="list-disc list-inside mt-4 space-y-2 text-gray-700">
+                           <li><strong>持续审计：</strong>由 Trail of Bits, Spearbit 等多家顶级安全公司进行持续、全面的代码审计。</li>
+                           <li><strong>漏洞悬赏：</strong>与 Immunefi 合作设立漏洞悬赏计划，激励白帽黑客发现潜在问题。</li>
+                           <li><strong>链上监控：</strong>利用 Tenderly 等工具进行7x24小时的智能合约实时监控与警报。</li>
+                           <li><strong>预言机保护：</strong>使用 Chainlink 预言机并增加额外封装器，防范价格操纵和闪电贷攻击。</li>
+                        </ul>
+                    </div>
+                    <div id="swot" class="tab-content hidden">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="bg-green-50 p-4 rounded-lg">
+                                <h4 class="font-bold text-green-800">优势 (Strengths)</h4>
+                                <ul class="list-disc list-inside text-sm text-green-700 mt-2 space-y-1">
+                                    <li>经过实战检验的韧性</li>
+                                    <li>经验丰富的混合型团队</li>
+                                    <li>强劲的财务基本面</li>
+                                    <li>顶级的机构合作伙伴</li>
+                                </ul>
+                            </div>
+                             <div class="bg-red-50 p-4 rounded-lg">
+                                <h4 class="font-bold text-red-800">劣势 (Weaknesses)</h4>
+                                <ul class="list-disc list-inside text-sm text-red-700 mt-2 space-y-1">
+                                    <li>信贷风险决策中心化</li>
+                                    <li>历史声誉影响</li>
+                                    <li>产品对新手有一定复杂性</li>
+                                </ul>
+                            </div>
+                            <div class="bg-blue-50 p-4 rounded-lg">
+                                <h4 class="font-bold text-blue-800">机遇 (Opportunities)</h4>
+                                <ul class="list-disc list-inside text-sm text-blue-700 mt-2 space-y-1">
+                                    <li>巨大的RWA市场潜力</li>
+                                    <li>向Solana等多链扩张</li>
+                                    <li>成为DeFi收益基石</li>
+                                    <li>吸引更广泛的传统机构</li>
+                                </ul>
+                            </div>
+                            <div class="bg-yellow-50 p-4 rounded-lg">
+                                <h4 class="font-bold text-yellow-800">威胁 (Threats)</h4>
+                                <ul class="list-disc list-inside text-sm text-yellow-700 mt-2 space-y-1">
+                                    <li>系统性市场风险</li>
+                                    <li>全球监管不确定性</li>
+                                    <li>激烈的赛道竞争</li>
+                                    <li>信贷业务固有的违约风险</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="competition" class="section-fade-in">
+             <div class="text-center mb-12">
+                <h2 class="text-2xl md:text-3xl font-bold text-gray-800">竞争格局分析</h2>
+                <p class="mt-2 text-gray-600">Maple Finance 在链上信贷赛道面临着来自 Goldfinch, TrueFi 等协议的竞争。然而，凭借其高效的风控模型和市场表现，Maple 在关键指标上已建立起明显优势。</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-lg">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4 text-center">主要协议 TVL 对比</h3>
+                 <div class="chart-container" style="height: 350px;">
+                    <canvas id="competitionChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-gray-800 text-white mt-16">
+        <div class="container mx-auto py-8 px-4 sm:px-6 lg:px-8 text-center">
+            <p>本交互式报告基于《Maple Finance 深度投资评估》报告生成。</p>
+            <p class="text-sm text-gray-400 mt-2">信息仅供参考，不构成任何投资建议。报告日期：2025年7月14日。</p>
+            <div class="mt-4">
+                <a href="https://maple.finance/" target="_blank" rel="noopener noreferrer" class="text-green-400 hover:text-green-300 transition-colors">访问 Maple Finance 官网</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const formatLargeNumber = (num) => {
+                if (num >= 1e9) return (num / 1e9).toFixed(2) + ' B';
+                if (num >= 1e6) return (num / 1e6).toFixed(2) + ' M';
+                if (num >= 1e3) return (num / 1e3).toFixed(2) + ' K';
+                return num;
+            };
+
+            const tvlData = {
+                labels: ['2023 Q1', '2023 Q2', '2023 Q3', '2023 Q4', '2024 Q1', '2024 Q2', '2024 Q3', '2024 Q4', '2025 Q1', '2025 Q2'],
+                datasets: [{
+                    label: 'TVL (USD)',
+                    data: [150000000, 250000000, 300000000, 450000000, 600000000, 850000000, 1100000000, 1300000000, 1450000000, 1580000000],
+                    borderColor: '#2E7D32',
+                    backgroundColor: 'rgba(46, 125, 50, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                }]
+            };
+
+            const tvlChartCtx = document.getElementById('tvlChart').getContext('2d');
+            new Chart(tvlChartCtx, {
+                type: 'line',
+                data: tvlData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + formatLargeNumber(value);
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ` TVL: $${formatLargeNumber(context.raw)}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            const competitionData = {
+                labels: ['Maple Finance', 'Goldfinch', 'TrueFi', 'Centrifuge'],
+                datasets: [{
+                    label: 'TVL (USD)',
+                    data: [1580000000, 450000000, 320000000, 280000000],
+                    backgroundColor: [
+                        'rgba(46, 125, 50, 0.7)',
+                        'rgba(251, 191, 36, 0.7)',
+                        'rgba(59, 130, 246, 0.7)',
+                        'rgba(120, 120, 120, 0.7)'
+                    ],
+                    borderColor: [
+                        '#2E7D32',
+                        '#FBBF24',
+                        '#3B82F6',
+                        '#787878'
+                    ],
+                    borderWidth: 1
+                }]
+            };
+            const competitionChartCtx = document.getElementById('competitionChart').getContext('2d');
+            new Chart(competitionChartCtx, {
+                type: 'bar',
+                data: competitionData,
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                           ticks: {
+                                callback: function(value) {
+                                    return '$' + formatLargeNumber(value);
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                         tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ` TVL: $${formatLargeNumber(context.raw)}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            const strategyCards = document.querySelectorAll('.strategy-card');
+            strategyCards.forEach(card => {
+                card.addEventListener('click', () => {
+                    const details = card.querySelector('.details');
+                    details.classList.toggle('hidden');
+                });
+            });
+
+            const tabs = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(item => {
+                        item.classList.remove('active', 'text-green-600', 'border-green-600');
+                        item.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+                    });
+                    tab.classList.add('active', 'text-green-600', 'border-green-600');
+                    tab.classList.remove('text-gray-500');
+
+                    const target = tab.dataset.target;
+                    tabContents.forEach(content => {
+                        if (content.id === target) {
+                            content.classList.remove('hidden');
+                        } else {
+                            content.classList.add('hidden');
+                        }
+                    });
+                });
+            });
+
+            const sections = document.querySelectorAll('.section-fade-in');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.1 });
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+            
+            const navLinks = document.querySelectorAll('.nav-link');
+            const navObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if(entry.isIntersecting) {
+                        const id = entry.target.id;
+                        navLinks.forEach(link => {
+                           link.classList.toggle('active', link.getAttribute('href') === `#${id}`);
+                        });
+                    }
+                });
+            }, { rootMargin: '-30% 0px -70% 0px', threshold: 0 });
+            
+            document.querySelectorAll('section[id]').forEach(section => {
+                navObserver.observe(section);
+            });
+        });
+    </script>
+</body>
+</html>

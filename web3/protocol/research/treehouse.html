@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Treehouse Finance (TREE) - 交互式投资仪表板</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Slate & Emerald -->
+    <!-- Application Structure Plan: 设计了一个多模块的仪表板式单页应用。顶部导航栏可快速跳转至不同主题区域：1. 概览：提供最终投资评级和核心实时指标，满足快速决策需求。2. 核心机制：通过可视化流程图解析复杂的DOR和tAssets系统，提升理解效率。3. 市场与数据：集中展示代币经济学、TVL增长等关键图表，便于数据对比分析。4. 风险与安全：采用交互式卡片展示风险与审计信息，结构清晰。5. 投资策略：根据不同投资者画像（持币、挖矿、开发）设计标签页，提供清晰的行动指南。此结构将线性报告重构为用户驱动的探索式体验，从“是什么”到“如何运作”再到“如何投资”，逻辑清晰，符合投资者调研习惯。 -->
+    <!-- Visualization & Content Choices: 1. 关键指标 -> 目标: 告知 -> 方式: 动态数据卡片 -> 交互: 悬停提示 -> 理由: 快速获取核心数据 -> 工具: HTML/CSS。 2. 代币分配 -> 目标: 比较 -> 方式: 环形图 -> 交互: 悬停显示详情 -> 理由: 直观展示比例 -> 工具: Chart.js。 3. TVL增长 -> 目标: 变化 -> 方式: 折线图 -> 交互: 悬停查看数据点 -> 理由: 清晰呈现增长趋势 -> 工具: Chart.js。 4. 核心机制 -> 目标: 组织 -> 方式: HTML/CSS流程图 -> 交互: 悬停高亮关联项 -> 理由: 简化复杂系统 -> 工具: HTML/CSS/JS。 5. 风险评估 -> 目标: 告知 -> 方式: 折叠卡片 -> 交互: 点击展开/收起 -> 理由: 有效组织大量文本 -> 工具: HTML/CSS/JS。 6. 投资策略 -> 目标: 告知/比较 -> 方式: 标签页 -> 交互: 点击切换 -> 理由: 针对不同用户提供定制化信息 -> 工具: HTML/CSS/JS。 -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+            color: #1e293b; /* slate-800 */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 320px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .nav-link {
+            transition: color 0.3s, border-bottom-color 0.3s;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #059669; /* emerald-600 */
+            border-bottom-color: #059669;
+        }
+        .tab-btn.active {
+            background-color: #059669;
+            color: white;
+        }
+        .tab-btn {
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .accordion-header {
+            transition: background-color 0.3s;
+        }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out;
+        }
+        code {
+            background-color: #f1f5f9; /* slate-100 */
+            color: #e11d48; /* rose-600 */
+            padding: 0.1em 0.4em;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body class="bg-slate-50">
+
+    <header class="bg-white/80 backdrop-blur-sm sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-2xl font-bold text-emerald-600">Treehouse</span>
+                    <span class="text-2xl font-light text-slate-700 ml-2">投资仪表板</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#overview" class="nav-link px-3 py-2 text-sm font-medium text-slate-600 border-b-2 border-transparent">概览</a>
+                        <a href="#mechanics" class="nav-link px-3 py-2 text-sm font-medium text-slate-600 border-b-2 border-transparent">核心机制</a>
+                        <a href="#market" class="nav-link px-3 py-2 text-sm font-medium text-slate-600 border-b-2 border-transparent">市场与数据</a>
+                        <a href="#risk" class="nav-link px-3 py-2 text-sm font-medium text-slate-600 border-b-2 border-transparent">风险与安全</a>
+                        <a href="#strategies" class="nav-link px-3 py-2 text-sm font-medium text-slate-600 border-b-2 border-transparent">投资策略</a>
+                        <a href="#team" class="nav-link px-3 py-2 text-sm font-medium text-slate-600 border-b-2 border-transparent">团队与伙伴</a>
+                    </div>
+                </div>
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="inline-flex items-center justify-center p-2 rounded-md text-slate-400 hover:text-white hover:bg-emerald-600 focus:outline-none">
+                        <span class="sr-only">Open main menu</span>
+                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </nav>
+        <div id="mobile-menu" class="md:hidden hidden">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="#overview" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-slate-600">概览</a>
+                <a href="#mechanics" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-slate-600">核心机制</a>
+                <a href="#market" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-slate-600">市场与数据</a>
+                <a href="#risk" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-slate-600">风险与安全</a>
+                <a href="#strategies" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-slate-600">投资策略</a>
+                <a href="#team" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-slate-600">团队与伙伴</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+
+        <!-- Section 1: Overview -->
+        <section id="overview" class="scroll-mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-slate-800">项目概览与投资评级</h2>
+                <p class="mt-4 text-lg text-slate-600 max-w-3xl mx-auto">快速了解 Treehouse Finance 的核心价值、关键指标和最终投资建议。</p>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-8 mb-12">
+                <div class="text-center md:text-left">
+                    <p class="text-sm font-semibold text-emerald-600 uppercase">最终投资评级</p>
+                    <p class="text-5xl font-bold text-slate-800 my-2">建议</p>
+                    <p class="text-slate-500 max-w-md">对于寻求高增长潜力的长线风险投资者，Treehouse是一个值得关注的高风险、高回报标的。</p>
+                </div>
+                <div class="w-full md:w-auto border-t md:border-t-0 md:border-l border-slate-200 pt-6 md:pt-0 md:pl-8">
+                    <p class="text-sm font-semibold text-emerald-600 uppercase mb-4 text-center md:text-left">核心摘要</p>
+                    <ul class="space-y-3 text-slate-600">
+                        <li class="flex items-start"><span class="text-emerald-500 mr-2 mt-1">▶</span><span><strong class="text-slate-700">宏大愿景:</strong> 旨在构建DeFi世界的基准利率层，解决利率标准缺失的根本问题。</span></li>
+                        <li class="flex items-start"><span class="text-emerald-500 mr-2 mt-1">▶</span><span><strong class="text-slate-700">顶级支持:</strong> 获Binance, Lightspeed及MassMutual等顶级VC和传统金融巨头投资。</span></li>
+                        <li class="flex items-start"><span class="text-emerald-500 mr-2 mt-1">▶</span><span><strong class="text-slate-700">核心风险:</strong> 成功与否极度依赖其核心产品DOR能否被市场广泛采用，面临巨大采用风险。</span></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 text-center">
+                <div class="bg-white rounded-xl shadow p-4">
+                    <p class="text-sm text-slate-500">总锁仓价值 (TVL)</p>
+                    <p id="tvl-value" class="text-2xl md:text-3xl font-bold text-emerald-600 mt-1">$531.85 M</p>
+                </div>
+                <div class="bg-white rounded-xl shadow p-4">
+                    <p class="text-sm text-slate-500">市值</p>
+                    <p id="marketcap-value" class="text-2xl md:text-3xl font-bold text-emerald-600 mt-1">~$88 M</p>
+                </div>
+                <div class="bg-white rounded-xl shadow p-4">
+                    <p class="text-sm text-slate-500">当前价格 (USD)</p>
+                    <p id="price-value" class="text-2xl md:text-3xl font-bold text-emerald-600 mt-1">~$0.57</p>
+                </div>
+                <div class="bg-white rounded-xl shadow p-4">
+                    <p class="text-sm text-slate-500">24小时交易量</p>
+                    <p id="volume-value" class="text-2xl md:text-3xl font-bold text-emerald-600 mt-1">~$251 M</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Core Mechanics -->
+        <section id="mechanics" class="scroll-mt-20 mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-slate-800">核心运行机制</h2>
+                <p class="mt-4 text-lg text-slate-600 max-w-3xl mx-auto">Treehouse 通过其创新的双引擎系统——DOR利率和tAssets收益资产，构建了一个自我强化的生态闭环。本节将为您可视化解析其复杂的内部工作原理。</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-lg p-6 md:p-8">
+                <div class="flex flex-col md:flex-row gap-8 items-center">
+                    <!-- Left Side: tETH Engine -->
+                    <div class="w-full md:w-1/2 p-6 bg-emerald-50 rounded-lg border border-emerald-200">
+                        <h3 class="text-2xl font-bold text-emerald-700 mb-4 text-center">引擎一: tAssets 收益资产</h3>
+                        <p class="text-center text-slate-600 mb-6">以 <code>tETH</code> 为例，通过杠杆化LST策略，为用户提供超越基础质押率的“真实收益”。</p>
+                        <div class="space-y-4 text-center">
+                            <div class="p-3 bg-white rounded-md shadow-sm"><strong>1. 存入 ETH</strong><br><span class="text-sm text-slate-500">用户将ETH存入协议</span></div>
+                            <div class="text-2xl text-emerald-500 self-center">↓</div>
+                            <div class="p-3 bg-white rounded-md shadow-sm"><strong>2. 整合Lido获取 stETH</strong><br><span class="text-sm text-slate-500">协议将ETH质押换取stETH</span></div>
+                            <div class="text-2xl text-emerald-500 self-center">↓</div>
+                            <div class="p-3 bg-white rounded-md shadow-sm"><strong>3. 整合Aave进行杠杆操作</strong><br><span class="text-sm text-slate-500">抵押stETH借出ETH，再循环质押以放大收益</span></div>
+                            <div class="text-2xl text-emerald-500 self-center">↓</div>
+                            <div class="p-3 bg-white rounded-md shadow-sm"><strong>4. 产生增强收益的 <code>tETH</code></strong><br><span class="text-sm text-slate-500">用户获得代表其份额和增强收益的<code>tETH</code>代币</span></div>
+                        </div>
+                    </div>
+                    <!-- Right Side: DOR Engine -->
+                    <div class="w-full md:w-1/2 p-6 bg-sky-50 rounded-lg border border-sky-200">
+                        <h3 class="text-2xl font-bold text-sky-700 mb-4 text-center">引擎二: DOR 报价利率</h3>
+                        <p class="text-center text-slate-600 mb-6">构建去中心化的链上基准利率，为DeFi世界提供定价“标尺”。</p>
+                        <div class="space-y-4 text-center">
+                             <div class="p-3 bg-white rounded-md shadow-sm"><strong>1. Panelists 质押 <code>$TREE</code> 报价</strong><br><span class="text-sm text-slate-500">可信节点提交对未来利率的预测</span></div>
+                             <div class="text-2xl text-sky-500 self-center">↓</div>
+                             <div class="p-3 bg-white rounded-md shadow-sm"><strong>2. Referencers 提供参考数据</strong><br><span class="text-sm text-slate-500">外部数据源用于验证报价准确性</span></div>
+                             <div class="text-2xl text-sky-500 self-center">↓</div>
+                             <div class="p-3 bg-white rounded-md shadow-sm"><strong>3. Operator 监督与协调</strong><br><span class="text-sm text-slate-500">Treehouse作为首个运营方确保系统稳定</span></div>
+                             <div class="text-2xl text-sky-500 self-center">↓</div>
+                             <div class="p-3 bg-white rounded-md shadow-sm"><strong>4. 生成DOR/TESR利率曲线</strong><br><span class="text-sm text-slate-500">DeFi协议可支付<code>$TREE</code>查询使用</span></div>
+                        </div>
+                    </div>
+                </div>
+                 <div class="mt-8 text-center">
+                    <div class="text-3xl text-slate-400">🔄</div>
+                    <h4 class="text-xl font-bold text-slate-700 mt-2">增长飞轮</h4>
+                    <p class="text-slate-600 max-w-2xl mx-auto mt-2"><code>tETH</code> 的高收益吸引TVL，为DOR提供数据基础；可靠的DOR吸引更多协议集成，增加对<code>$TREE</code>的需求，从而进一步验证生态，形成正向循环。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Market & Data -->
+        <section id="market" class="scroll-mt-20 mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-slate-800">市场与链上数据</h2>
+                <p class="mt-4 text-lg text-slate-600 max-w-3xl mx-auto">通过交互式图表深入了解 <code>$TREE</code> 的代币经济学、TVL增长轨迹以及与主要竞争对手的对比。</p>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-white rounded-xl shadow-lg p-6 md:p-8">
+                    <h3 class="text-xl font-bold text-slate-700 mb-4 text-center"><code>$TREE</code> 代币分配</h3>
+                    <div class="chart-container">
+                        <canvas id="tokenomicsChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-lg p-6 md:p-8">
+                    <h3 class="text-xl font-bold text-slate-700 mb-4 text-center">TVL 增长趋势 (模拟)</h3>
+                     <div class="chart-container">
+                        <canvas id="tvlChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl shadow-lg p-6 md:p-8 mt-8">
+                <h3 class="text-xl font-bold text-slate-700 mb-4 text-center">竞争格局分析</h3>
+                <p class="text-center text-slate-600 mb-6 max-w-2xl mx-auto">Treehouse与Pendle是DeFi收益领域的两大玩家，但其核心逻辑不同。Treehouse构建利率“标准”，而Pendle构建收益“市场”，两者长期看更具互补性。</p>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="bg-slate-100">
+                                <th class="p-4 font-semibold">特性</th>
+                                <th class="p-4 font-semibold">Treehouse Finance</th>
+                                <th class="p-4 font-semibold">Pendle Finance</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200">
+                            <tr>
+                                <td class="p-4 font-medium">核心目标</td>
+                                <td class="p-4">创建和标准化<strong class="text-emerald-600">基准利率</strong> (制造尺子)</td>
+                                <td class="p-4">代币化和交易<strong class="text-indigo-600">未来收益</strong> (交易票息)</td>
+                            </tr>
+                            <tr>
+                                <td class="p-4 font-medium">核心产品</td>
+                                <td class="p-4">DOR (去中心化报价利率)</td>
+                                <td class="p-4">PT (本金代币) & YT (收益代币)</td>
+                            </tr>
+                            <tr>
+                                <td class="p-4 font-medium">市场定位</td>
+                                <td class="p-4">基础设施 (利率制定者)</td>
+                                <td class="p-4">交易市场 (利率交易者)</td>
+                            </tr>
+                             <tr>
+                                <td class="p-4 font-medium">长期关系</td>
+                                <td class="p-4">可为Pendle提供定价基准</td>
+                                <td class="p-4">可为DOR提供市场数据源</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Risk & Security -->
+        <section id="risk" class="scroll-mt-20 mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-slate-800">风险评估与安全保障</h2>
+                <p class="mt-4 text-lg text-slate-600 max-w-3xl mx-auto">全面的风险分析是明智投资的前提。点击下方卡片，了解Treehouse面临的主要风险及其顶级的安全防护措施。</p>
+            </div>
+            <div id="accordion-container" class="space-y-4 max-w-4xl mx-auto">
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div class="accordion-header flex justify-between items-center p-5 cursor-pointer hover:bg-slate-50">
+                        <h3 class="text-lg font-semibold text-slate-700">智能合约与技术安全</h3>
+                        <span class="transform transition-transform duration-300">▼</span>
+                    </div>
+                    <div class="accordion-content">
+                        <div class="p-5 border-t border-slate-200 text-slate-600">
+                            <p class="font-semibold text-emerald-600 mb-2">防护措施：行业顶级标准</p>
+                            <ul class="list-disc list-inside space-y-2">
+                                <li><strong>多重顶级审计:</strong> 已通过 Trail of Bits, Sigma Prime, Fuzzland, 和 WatchPug 等多家顶级公司的全面审计。</li>
+                                <li><strong>高额漏洞赏金:</strong> 在 HackenProof 平台设立高达25万美元的漏洞赏金计划，持续激励白帽黑客寻找潜在漏洞。</li>
+                                <li><strong>DAO保险基金:</strong> 设立专门的保险基金，作为应对极端黑天鹅事件的最后一道防线。</li>
+                            </ul>
+                            <p class="mt-4 text-sm text-slate-500"><strong>结论:</strong> 技术层面安全投入巨大，处于DeFi协议第一梯队，有效降低了代码层面的风险。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div class="accordion-header flex justify-between items-center p-5 cursor-pointer hover:bg-slate-50">
+                        <h3 class="text-lg font-semibold text-slate-700">协议与经济模型风险</h3>
+                        <span class="transform transition-transform duration-300">▼</span>
+                    </div>
+                    <div class="accordion-content">
+                        <div class="p-5 border-t border-slate-200 text-slate-600">
+                             <p class="font-semibold text-red-600 mb-2">主要风险点</p>
+                            <ul class="list-disc list-inside space-y-2">
+                                <li><strong><code>tETH</code>策略风险:</strong> 核心依赖于<code>stETH</code>不与<code>ETH</code>严重脱锚，以及Aave借贷利率保持稳定。尽管回测显示有较强鲁棒性，但极端市场条件下风险依然存在。</li>
+                                <li><strong>DOR预言机风险:</strong> DOR系统本质是一个预言机，若经济激励不足，可能面临Panelists合谋攻击或数据操纵的风险。</li>
+                                <li><strong>采用与网络效应风险:</strong> 这是项目<strong class="text-red-700">最根本的风险</strong>。如果DOR无法被市场广泛采用，整个商业模式将失败，代币价值难以支撑。</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                 <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div class="accordion-header flex justify-between items-center p-5 cursor-pointer hover:bg-slate-50">
+                        <h3 class="text-lg font-semibold text-slate-700">历史事件与尽职调查</h3>
+                        <span class="transform transition-transform duration-300">▼</span>
+                    </div>
+                    <div class="accordion-content">
+                        <div class="p-5 border-t border-slate-200 text-slate-600">
+                            <p>对Treehouse Finance的历史进行全面调查，未发现任何与项目方相关的安全漏洞、欺诈、跑路或重大负面争议。项目从分析平台到基础设施的战略转型清晰、公开，并获得了新一轮融资，表明了投资方的持续信任。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: Investment Strategies -->
+        <section id="strategies" class="scroll-mt-20 mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-slate-800">可行的投资策略</h2>
+                <p class="mt-4 text-lg text-slate-600 max-w-3xl mx-auto">根据您的风险偏好和背景，选择最适合您的参与方式。从简单的代币持有到复杂的收益耕作，再到深度的生态构建，总有一款适合您。</p>
+            </div>
+            <div class="max-w-5xl mx-auto">
+                <div class="mb-6 flex justify-center flex-wrap gap-2">
+                    <button class="tab-btn active px-4 py-2 rounded-full text-sm font-semibold bg-white shadow-sm" data-tab="holder">长期持有者</button>
+                    <button class="tab-btn px-4 py-2 rounded-full text-sm font-semibold bg-white shadow-sm" data-tab="farmer">收益耕作者</button>
+                    <button class="tab-btn px-4 py-2 rounded-full text-sm font-semibold bg-white shadow-sm" data-tab="developer">开发者/建设者</button>
+                </div>
+                <div id="tab-content" class="bg-white rounded-xl shadow-lg p-6 md:p-8">
+                    <!-- Content will be injected by JS -->
+                </div>
+            </div>
+        </section>
+        
+        <!-- Section 6: Team & Partners -->
+        <section id="team" class="scroll-mt-20 mt-20">
+             <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-slate-800">团队与合作伙伴</h2>
+                <p class="mt-4 text-lg text-slate-600 max-w-3xl mx-auto">一个项目的成功离不开强大的团队和顶级的合作伙伴。了解Treehouse背后的力量。</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-white rounded-xl shadow-lg p-6 md:p-8">
+                    <h3 class="text-xl font-bold text-slate-700 mb-6 text-center">核心团队</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-500">BG</div>
+                            <div>
+                                <p class="font-bold text-slate-800">Brandon Goh</p>
+                                <p class="text-sm text-slate-500">联合创始人 & CEO</p>
+                            </div>
+                        </div>
+                         <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-500">BL</div>
+                            <div>
+                                <p class="font-bold text-slate-800">Ben L.</p>
+                                <p class="text-sm text-slate-500">联合创始人 (产品/运营)</p>
+                            </div>
+                        </div>
+                         <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-500">TNA</div>
+                            <div>
+                                <p class="font-bold text-slate-800">Thu Như Anh</p>
+                                <p class="text-sm text-slate-500">技术负责人 (DOR & tAssets)</p>
+                            </div>
+                        </div>
+                    </div>
+                     <p class="text-center mt-6 text-slate-600 bg-slate-50 p-3 rounded-md">团队拥有传统金融、数字资产和链上数据工程的复合背景，部分成员有在Tier-1项目Polkadot的工作经历。</p>
+                </div>
+                 <div class="bg-white rounded-xl shadow-lg p-6 md:p-8">
+                    <h3 class="text-xl font-bold text-slate-700 mb-6 text-center">主要投资者 & 审计方</h3>
+                    <div class="flex flex-wrap justify-center items-center gap-x-8 gap-y-6">
+                        <span class="font-semibold text-slate-600 text-lg">Binance Labs</span>
+                        <span class="font-semibold text-slate-600 text-lg">Lightspeed</span>
+                        <span class="font-semibold text-slate-600 text-lg">Jump Capital</span>
+                        <span class="font-semibold text-slate-600 text-lg">Wintermute</span>
+                        <span class="font-semibold text-slate-600 text-lg">MassMutual</span>
+                        <span class="font-semibold text-slate-600 text-lg">GSR</span>
+                        <hr class="w-full border-slate-200 my-2">
+                        <span class="font-semibold text-emerald-700 text-lg">Trail of Bits</span>
+                        <span class="font-semibold text-emerald-700 text-lg">Sigma Prime</span>
+                        <span class="font-semibold text-emerald-700 text-lg">Fuzzland</span>
+                    </div>
+                     <p class="text-center mt-6 text-slate-600 bg-slate-50 p-3 rounded-md">强大的投资者阵容横跨加密原生VC和传统金融巨头，安全审计均由行业顶级公司完成。</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-slate-800 text-slate-400 mt-16">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center text-sm">
+            <p>&copy; 2025 Treehouse Finance 投资分析仪表板。仅供研究参考，不构成财务建议。</p>
+            <p>数据来源于公开报告，截至2025年7月。</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Data from the report
+            const tokenomicsData = {
+                labels: ['社区奖励', '战略投资者', '核心团队', 'DAO财库', '初始空投', '其他'],
+                datasets: [{
+                    label: '代币分配',
+                    data: [20, 17.5, 12.5, 12.5, 10, 27.5],
+                    backgroundColor: [
+                        '#10b981', // emerald-500
+                        '#3b82f6', // blue-500
+                        '#f97316', // orange-500
+                        '#8b5cf6', // violet-500
+                        '#ec4899', // pink-500
+                        '#64748b'  // slate-500
+                    ],
+                    borderColor: '#f8fafc',
+                    borderWidth: 2,
+                    hoverOffset: 4
+                }]
+            };
+
+            const tvlData = {
+                labels: ['9月', '10月', '11月', '12月', '1月', '2月', '3月'],
+                datasets: [{
+                    label: 'TVL (百万美元)',
+                    data: [10, 55, 120, 250, 380, 450, 531],
+                    fill: true,
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    borderColor: '#059669', // emerald-600
+                    tension: 0.4,
+                    pointBackgroundColor: '#059669',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: '#059669'
+                }]
+            };
+
+            const strategiesData = {
+                holder: {
+                    title: '📈 长期持有者 (VC式押注)',
+                    content: `
+                        <p class="mb-4">适合看好项目长期愿景、风险偏好高的投资者。</p>
+                        <ul class="space-y-3">
+                            <li><strong>策略:</strong> 直接购买并持有 <code>$TREE</code> 代币。</li>
+                            <li><strong>看涨逻辑:</strong> 赌DOR被市场广泛采用，查询费和质押需求将驱动代币价格大幅上涨。</li>
+                            <li><strong>主要风险:</strong> 采用失败风险。如果DOR未能形成网络效应，代币价值可能停滞。</li>
+                            <li><strong>潜在回报:</strong> 极高 (价格增值)。</li>
+                        </ul>
+                    `
+                },
+                farmer: {
+                    title: '🚜 收益耕作者 (寻求高APR)',
+                    content: `
+                        <p class="mb-4">适合经验丰富、追求高复合收益的DeFi玩家。</p>
+                        <div class="space-y-4">
+                            <div>
+                                <h4 class="font-semibold text-emerald-600">基础策略: 持有 <code>tETH</code></h4>
+                                <p class="text-sm">赚取LST基础收益 + 杠杆套利收益。风险相对较低，操作简单。</p>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-emerald-600">进阶策略: 提供流动性 (LP)</h4>
+                                <p class="text-sm">为 <code>TREE/ETH</code> 等交易对提供流动性，赚取高额手续费和挖矿奖励，但需承担无常损失风险。</p>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-emerald-600">高级策略: 质押 <code>$TREE</code></h4>
+                                <p class="text-sm">将 <code>$TREE</code> 质押给可信的DOR Panelist，分享报价奖励，据称APR可高达75%。</p>
+                            </div>
+                        </div>
+                    `
+                },
+                developer: {
+                    title: '🛠️ 开发者/建设者 (生态参与)',
+                    content: `
+                        <p class="mb-4">适合具备开发背景、希望深度参与并创造价值的个人或团队。</p>
+                        <ul class="space-y-3">
+                            <li><strong>机会 1: 申请资助 (Grants)</strong><br><span class="text-sm">项目计划设立超千万美元的生态基金，支持开发者在Treehouse上构建新产品或工具。</span></li>
+                            <li><strong>机会 2: 创建自定义应用</strong><br><span class="text-sm">开发与协议交互的dApp，如自动复投<code>tETH</code>收益的优化器、使用DOR定价的结构化产品等，创造自己的收入来源。</span></li>
+                            <li><strong>资源:</strong> <a href="https://docs.treehouse.finance" target="_blank" rel="noopener noreferrer" class="text-emerald-600 hover:underline">官方开发者文档</a></li>
+                        </ul>
+                    `
+                }
+            };
+            
+            // Chart.js Initialization
+            const ctxTokenomics = document.getElementById('tokenomicsChart').getContext('2d');
+            new Chart(ctxTokenomics, {
+                type: 'doughnut',
+                data: tokenomicsData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                font: {
+                                    family: "'Noto Sans SC', sans-serif"
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += context.parsed + '%';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            const ctxTvl = document.getElementById('tvlChart').getContext('2d');
+            new Chart(ctxTvl, {
+                type: 'line',
+                data: tvlData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value + 'M';
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                           display: false
+                        }
+                    }
+                }
+            });
+
+            // Accordion Logic
+            const accordionContainer = document.getElementById('accordion-container');
+            if (accordionContainer) {
+                const accordionHeaders = accordionContainer.querySelectorAll('.accordion-header');
+                accordionHeaders.forEach(header => {
+                    header.addEventListener('click', () => {
+                        const content = header.nextElementSibling;
+                        const icon = header.querySelector('span');
+                        
+                        // Close other open accordions
+                        accordionHeaders.forEach(otherHeader => {
+                            if (otherHeader !== header) {
+                                otherHeader.nextElementSibling.style.maxHeight = null;
+                                otherHeader.querySelector('span').style.transform = 'rotate(0deg)';
+                            }
+                        });
+
+                        if (content.style.maxHeight) {
+                            content.style.maxHeight = null;
+                            icon.style.transform = 'rotate(0deg)';
+                        } else {
+                            content.style.maxHeight = content.scrollHeight + "px";
+                            icon.style.transform = 'rotate(180deg)';
+                        }
+                    });
+                });
+            }
+
+            // Tabs Logic
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            const tabContentContainer = document.getElementById('tab-content');
+
+            function updateTabContent(tabId) {
+                const data = strategiesData[tabId];
+                tabContentContainer.innerHTML = `
+                    <h3 class="text-xl font-bold text-slate-700 mb-4">${data.title}</h3>
+                    <div class="prose prose-slate max-w-none">${data.content}</div>
+                `;
+            }
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    const tabId = button.dataset.tab;
+                    updateTabContent(tabId);
+                });
+            });
+            
+            // Initialize first tab
+            if(tabButtons.length > 0) {
+                updateTabContent(tabButtons[0].dataset.tab);
+            }
+
+            // Mobile Menu Logic
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+            
+            // Nav link active state on scroll
+            const sections = document.querySelectorAll('section');
+            const navLinks = document.querySelectorAll('.nav-link');
+
+            window.onscroll = () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (pageYOffset >= sectionTop - 80) {
+                        current = section.getAttribute('id');
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href').includes(current)) {
+                        link.classList.add('active');
+                    }
+                });
+            };
+        });
+    </script>
+</body>
+</html>

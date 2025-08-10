@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Chosen Palette: Calm Harmony (Background: slate-50, Text: slate-800, Primary Accent: sky-600, Risk-High: red-500, Risk-Medium: amber-500, Positive: green-500) -->
+    <!-- Application Structure Plan: The SPA is designed as an interactive dashboard, diverging from the linear report format. A sticky sidebar navigation allows users to jump to key analysis areas. The structure prioritizes immediate insight and guided exploration: 1. **Overview & Rating Dashboard:** Delivers the final verdict and key stats upfront for quick decision-making. 2. **Core Analysis Section:** A tabbed or deep-dive area for Technology, Ecosystem, and Competition, using visualizations to simplify complex data. 3. **Risk vs. Opportunity Module:** A visually distinct section presenting risks (color-coded cards) and actionable investment strategies (interactive pathways). This structure transforms passive reading into active exploration, guiding the user from high-level summary to detailed analysis and finally to concrete, actionable strategies, which is more effective for an investor audience than a simple document scroll. -->
+    <!-- Visualization & Content Choices: 
+        - **Goal: Inform (Rating & Stats):** Used bold typography and stat cards (HTML/CSS) for immediate clarity. Interaction: None, designed for quick consumption. Justification: Key findings must be instantly accessible.
+        - **Goal: Compare (Competition):** Used a Radar Chart (Chart.js) to compare Somnia vs. Solana vs. Aptos on multiple metrics. Interaction: Tooltips on hover provide specific data points. Justification: Radar charts are superior for multi-variable comparison. Library: Chart.js (Canvas).
+        - **Goal: Organize & Highlight (Risks):** Used color-coded, expandable cards (HTML/CSS/JS). Interaction: Clicking a card reveals detailed text. Justification: Manages information density and uses visual cues (color) to convey severity.
+        - **Goal: Guide Action (Investment Strategies):** Used interactive "pathway" cards (HTML/CSS/JS). Interaction: Clicking a strategy card reveals its pros, cons, and requirements. Justification: Turns a static table into a user-centric, decision-making tool.
+        - **CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <title>Somnia 交互式投资分析报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f8fafc;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .smooth-scroll {
+            scroll-behavior: smooth;
+        }
+        .nav-link {
+            transition: all 0.2s ease-in-out;
+        }
+        .nav-link.active {
+            background-color: #0284c7;
+            color: white;
+            transform: translateX(4px);
+        }
+        .strategy-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .strategy-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 smooth-scroll">
+    <div class="flex flex-col md:flex-row min-h-screen">
+        <nav id="sidebar" class="w-full md:w-64 bg-white md:h-screen md:sticky md:top-0 p-4 shadow-lg z-20">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-xl font-bold text-slate-900">Somnia 分析导航</h1>
+                <button id="mobile-menu-button" class="md:hidden p-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                </button>
+            </div>
+            <ul id="nav-links-container" class="space-y-2 hidden md:block">
+                <li><a href="#overview" class="nav-link block p-3 rounded-lg font-medium text-slate-700 hover:bg-slate-100">概览与评级</a></li>
+                <li><a href="#tech" class="nav-link block p-3 rounded-lg font-medium text-slate-700 hover:bg-slate-100">技术深度剖析</a></li>
+                <li><a href="#ecosystem" class="nav-link block p-3 rounded-lg font-medium text-slate-700 hover:bg-slate-100">生态系统透视</a></li>
+                <li><a href="#competition" class="nav-link block p-3 rounded-lg font-medium text-slate-700 hover:bg-slate-100">竞争格局</a></li>
+                <li><a href="#risk" class="nav-link block p-3 rounded-lg font-medium text-slate-700 hover:bg-slate-100">综合风险评估</a></li>
+                <li><a href="#strategy" class="nav-link block p-3 rounded-lg font-medium text-slate-700 hover:bg-slate-100">投资机会与路径</a></li>
+                <li><a href="#team" class="nav-link block p-3 rounded-lg font-medium text-slate-700 hover:bg-slate-100">团队与背景</a></li>
+            </ul>
+        </nav>
+        
+        <main class="flex-1 p-4 sm:p-6 lg:p-10">
+            <section id="overview" class="mb-16 scroll-mt-20">
+                <div class="bg-white p-8 rounded-2xl shadow-md border border-slate-100">
+                    <h2 class="text-4xl font-bold text-slate-900 mb-2">Somnia Network 投资分析</h2>
+                    <p class="text-lg text-slate-600 mb-8">一个交互式决策支持工具</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                        <div>
+                            <h3 class="text-2xl font-semibold mb-4 text-slate-800">最终投资评级</h3>
+                            <div class="bg-amber-100 border-l-4 border-amber-500 text-amber-800 p-6 rounded-lg mb-4">
+                                <p class="text-3xl font-bold">中立 (Neutral)</p>
+                                <p class="mt-2">此评级反映了对项目直接进行大规模资本投资的审慎态度。当前关键信息（代币经济学、安全审计）的缺失使得风险/回报评估无法完整。</p>
+                            </div>
+                            <div class="bg-sky-100 border-l-4 border-sky-500 text-sky-800 p-6 rounded-lg">
+                                <p class="text-2xl font-bold">附带建议：强烈建议参与空投</p>
+                                <p class="mt-2">基于该机会的低风险和高潜在回报特性，参与空投是当前最理性的第一步。</p>
+                            </div>
+                        </div>
+                        <div class="bg-slate-50 p-6 rounded-lg border">
+                            <h3 class="text-2xl font-semibold mb-4 text-slate-800">核心投资论点</h3>
+                            <ul class="space-y-3 text-slate-700">
+                                <li class="flex items-start"><span class="bg-sky-500 text-white rounded-full w-6 h-6 text-sm flex items-center justify-center font-bold mr-3 mt-1 flex-shrink-0">1</span><div><strong class="font-semibold">短期 (主网上线前):</strong> 低资本投入、高强度参与其空投激励活动，以捕获非对称收益。</div></li>
+                                <li class="flex items-start"><span class="bg-sky-500 text-white rounded-full w-6 h-6 text-sm flex items-center justify-center font-bold mr-3 mt-1 flex-shrink-0">2</span><div><strong class="font-semibold">中期 (主网上线后):</strong> 对代币采取“等待与观察”策略，等待关键信息披露后再做决策。</div></li>
+                                <li class="flex items-start"><span class="bg-sky-500 text-white rounded-full w-6 h-6 text-sm flex items-center justify-center font-bold mr-3 mt-1 flex-shrink-0">3</span><div><strong class="font-semibold">长期 (生态成熟期):</strong> 开发者可探索生态参与机会；DeFi投资者可关注稳健的收益策略。</div></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="tech" class="mb-16 scroll-mt-20">
+                <div class="bg-white p-8 rounded-2xl shadow-md border border-slate-100">
+                    <h2 class="text-3xl font-bold text-slate-900 mb-4">技术深度剖析</h2>
+                    <p class="text-slate-600 mb-8">Somnia 的技术架构是其宏大愿景的基石，其设计围绕着极致的性能、低廉的成本和对开发者的友好性。项目方声称在 Devnet 的压力测试中实现了超过 100 万的 TPS，这背后的核心是其与众不同的技术选择。</p>
+                    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="bg-slate-50 p-6 rounded-lg border">
+                            <h3 class="text-xl font-semibold text-sky-700 mb-2">MultiStream 共识机制</h3>
+                            <p class="text-slate-600">一种新颖的PoS共识，将数据生产与共识过程解耦。理论上，总吞吐量可随验证者数量增加而横向扩展。</p>
+                        </div>
+                        <div class="bg-slate-50 p-6 rounded-lg border">
+                            <h3 class="text-xl font-semibold text-sky-700 mb-2">加速顺序执行</h3>
+                            <p class="text-slate-600">专注于让单个核心以极高速度顺序执行所有交易，将EVM字节码直接编译成原生机器指令，以简化开发并提升性能。</p>
+                        </div>
+                        <div class="bg-slate-50 p-6 rounded-lg border">
+                            <h3 class="text-xl font-semibold text-sky-700 mb-2">完全EVM兼容</h3>
+                            <p class="text-slate-600">核心卖点之一。开发者可使用熟悉的Solidity和工具链，轻松迁移现有dApp，极大地降低了开发门槛。</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="ecosystem" class="mb-16 scroll-mt-20">
+                <div class="bg-white p-8 rounded-2xl shadow-md border border-slate-100">
+                    <h2 class="text-3xl font-bold text-slate-900 mb-4">生态系统透视</h2>
+                    <p class="text-slate-600 mb-8">Somnia 正通过强大的资本运作和战略合作，在主网上线前就积极构建其生态版图。这种“王者塑造者”策略旨在快速解决新公链的冷启动问题，确保上线时有足够吸引力的应用供用户体验。</p>
+                     <div class="space-y-6">
+                        <div>
+                            <h3 class="text-2xl font-semibold text-slate-800 mb-3">战略基础设施合作伙伴</h3>
+                            <div class="flex flex-wrap gap-4">
+                                <span class="bg-sky-100 text-sky-800 text-sm font-medium px-4 py-2 rounded-full">Ankr</span>
+                                <span class="bg-sky-100 text-sky-800 text-sm font-medium px-4 py-2 rounded-full">The Graph</span>
+                                <span class="bg-sky-100 text-sky-800 text-sm font-medium px-4 py-2 rounded-full">QuickSwap</span>
+                                <span class="bg-sky-100 text-sky-800 text-sm font-medium px-4 py-2 rounded-full">Hyperlane</span>
+                                <span class="bg-sky-100 text-sky-800 text-sm font-medium px-4 py-2 rounded-full">Safe</span>
+                                <span class="bg-sky-100 text-sky-800 text-sm font-medium px-4 py-2 rounded-full">Chainlink (via Protofire)</span>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-2xl font-semibold text-slate-800 mb-3">开发者激励计划</h3>
+                            <div class="grid md:grid-cols-2 gap-6">
+                                <div class="bg-green-50 p-6 rounded-lg border border-green-200">
+                                    <p class="text-2xl font-bold text-green-700">$1000 万</p>
+                                    <p class="font-semibold text-green-800">生态系统资助计划</p>
+                                    <p class="text-sm text-green-600 mt-1">为有潜力的开发者和项目提供非稀释性资金支持。</p>
+                                </div>
+                                <div class="bg-green-50 p-6 rounded-lg border border-green-200">
+                                    <p class="text-2xl font-bold text-green-700">$1000 万</p>
+                                    <p class="font-semibold text-green-800">"Dream Catalyst" 游戏加速器</p>
+                                    <p class="text-sm text-green-600 mt-1">与 Uprising Labs 合作，为游戏工作室提供全方位支持。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="competition" class="mb-16 scroll-mt-20">
+                <div class="bg-white p-8 rounded-2xl shadow-md border border-slate-100">
+                    <h2 class="text-3xl font-bold text-slate-900 mb-4">竞争格局</h2>
+                    <p class="text-slate-600 mb-8">Somnia 的定位非常明确：它不与通用公链全面竞争，而是瞄准高性能应用这一垂直领域，特别是游戏和元宇宙。其主要竞争对手是 Solana 和 Aptos。通过下面的雷达图，我们可以直观地看到它们在关键维度上的差异。</p>
+                    <div class="chart-container">
+                        <canvas id="competitionChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <section id="risk" class="mb-16 scroll-mt-20">
+                <div class="bg-white p-8 rounded-2xl shadow-md border border-slate-100">
+                    <h2 class="text-3xl font-bold text-slate-900 mb-4">综合风险评估</h2>
+                     <p class="text-slate-600 mb-8">对 Somnia 的投资决策必须建立在对其多维度风险的清醒认识之上。点击下方卡片查看各类风险的详细说明。</p>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="risk-card border-l-4 border-red-500 bg-red-50 p-6 rounded-lg cursor-pointer" data-risk="security">
+                            <h3 class="text-xl font-bold text-red-800 mb-2">严重安全风险</h3>
+                            <p class="text-red-700">核心协议审计缺失、生态应用早期漏洞。</p>
+                        </div>
+                        <div class="risk-card border-l-4 border-amber-500 bg-amber-50 p-6 rounded-lg cursor-pointer" data-risk="tech">
+                             <h3 class="text-xl font-bold text-amber-800 mb-2">技术风险</h3>
+                            <p class="text-amber-700">可扩展性承诺能否兑现、潜在的中心化问题。</p>
+                        </div>
+                        <div class="risk-card border-l-4 border-amber-500 bg-amber-50 p-6 rounded-lg cursor-pointer" data-risk="market">
+                            <h3 class="text-xl font-bold text-amber-800 mb-2">市场与金融风险</h3>
+                            <p class="text-amber-700">空投后的巨大抛压、对母公司资金的依赖。</p>
+                        </div>
+                        <div class="risk-card border-l-4 border-amber-500 bg-amber-50 p-6 rounded-lg cursor-pointer" data-risk="reputation">
+                             <h3 class="text-xl font-bold text-amber-800 mb-2">声誉与执行风险</h3>
+                            <p class="text-amber-700">母公司 Improbable 的历史包袱、主网上线延迟。</p>
+                        </div>
+                    </div>
+                    <div id="risk-details" class="mt-6 bg-slate-100 p-6 rounded-lg hidden"></div>
+                </div>
+            </section>
+
+            <section id="strategy" class="mb-16 scroll-mt-20">
+                <div class="bg-white p-8 rounded-2xl shadow-md border border-slate-100">
+                    <h2 class="text-3xl font-bold text-slate-900 mb-4">投资机会与路径</h2>
+                    <p class="text-slate-600 mb-8">针对具备专业背景和不同风险偏好的投资者，我们围绕 Somnia 设计了四条截然不同的战略路径。请点击下方的策略卡片，探索最适合您的参与方式。</p>
+                    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6" id="strategy-cards">
+                    </div>
+                    <div id="strategy-details-container" class="mt-8"></div>
+                </div>
+            </section>
+
+            <section id="team" class="scroll-mt-20">
+                <div class="bg-white p-8 rounded-2xl shadow-md border border-slate-100">
+                    <h2 class="text-3xl font-bold text-slate-900 mb-4">团队与背景</h2>
+                     <p class="text-slate-600 mb-8">一个项目的长期潜力，最终取决于其背后的“人”。Somnia 的成功与否，深度绑定在其孵化母公司 Improbable 的技术实力和商业信誉之上。</p>
+                    <div class="bg-slate-50 border border-slate-200 rounded-lg p-6">
+                        <h3 class="text-2xl font-semibold text-slate-800 mb-3">Improbable 因素：机遇与风险并存</h3>
+                        <p class="text-slate-700 mb-4">Somnia 是 Improbable 十年技术积累和商业探索的产物。这家由 a16z、软银等顶级资本支持的技术独角兽，为 Somnia 提供了强大的技术和资金后盾。然而，Improbable 复杂的商业历史、财务状况和过往争议，也为项目带来了潜在的声誉风险。</p>
+                        <p class="text-slate-700">对投资者而言，这既是最大的机遇（一个成熟技术以加密原生模式推向市场），也是最大的风险（项目可能背负母公司的历史包袱）。投资决策的核心，就在于如何权衡这两者。</p>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const navLinksContainer = document.getElementById('nav-links-container');
+    mobileMenuButton.addEventListener('click', () => {
+        navLinksContainer.classList.toggle('hidden');
+    });
+
+    const navLinks = document.querySelectorAll('.nav-link');
+    const sections = document.querySelectorAll('main section');
+    
+    window.addEventListener('scroll', () => {
+        let current = '';
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop;
+            if (pageYOffset >= sectionTop - 100) {
+                current = section.getAttribute('id');
+            }
+        });
+
+        navLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href').includes(current)) {
+                link.classList.add('active');
+            }
+        });
+    });
+
+    navLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            if(window.innerWidth < 768) {
+                navLinksContainer.classList.add('hidden');
+            }
+        });
+    });
+    
+    const competitionCtx = document.getElementById('competitionChart').getContext('2d');
+    const competitionData = {
+        labels: ['峰值TPS (理论)', '开发者体验 (EVM兼容性)', '交易最终性', '核心技术创新', '资本支持'],
+        datasets: [{
+            label: 'Somnia',
+            data: [5, 5, 4, 5, 5],
+            fill: true,
+            backgroundColor: 'rgba(2, 132, 199, 0.2)',
+            borderColor: 'rgb(2, 132, 199)',
+            pointBackgroundColor: 'rgb(2, 132, 199)',
+            pointBorderColor: '#fff',
+            pointHoverBackgroundColor: '#fff',
+            pointHoverBorderColor: 'rgb(2, 132, 199)'
+        }, {
+            label: 'Solana',
+            data: [3, 2, 5, 4, 4],
+            fill: true,
+            backgroundColor: 'rgba(217, 70, 239, 0.2)',
+            borderColor: 'rgb(217, 70, 239)',
+            pointBackgroundColor: 'rgb(217, 70, 239)',
+            pointBorderColor: '#fff',
+            pointHoverBackgroundColor: '#fff',
+            pointHoverBorderColor: 'rgb(217, 70, 239)'
+        }, {
+            label: 'Aptos',
+            data: [4, 1, 4, 4, 4],
+            fill: true,
+            backgroundColor: 'rgba(132, 204, 22, 0.2)',
+            borderColor: 'rgb(132, 204, 22)',
+            pointBackgroundColor: 'rgb(132, 204, 22)',
+            pointBorderColor: '#fff',
+            pointHoverBackgroundColor: '#fff',
+            pointHoverBorderColor: 'rgb(132, 204, 22)'
+        }]
+    };
+    new Chart(competitionCtx, {
+        type: 'radar',
+        data: competitionData,
+        options: {
+            maintainAspectRatio: false,
+            responsive: true,
+            scales: {
+                r: {
+                    angleLines: { color: 'rgba(0, 0, 0, 0.1)' },
+                    grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                    pointLabels: { font: { size: 12 }, color: '#475569' },
+                    ticks: {
+                        backdropColor: 'transparent',
+                        stepSize: 1,
+                        display: false
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            const value = context.raw;
+                            const ratings = ['低', '中低', '中', '中高', '高'];
+                            label += ratings[value-1] || value;
+                            return label;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    const riskCards = document.querySelectorAll('.risk-card');
+    const riskDetailsContainer = document.getElementById('risk-details');
+    const riskData = {
+        security: `<strong>核心协议审计缺失：</strong>这是目前最严重的红灯信号。项目方尚未公布任何由顶级安全公司出具的、针对其 Layer 1 底层协议的全面、公开的安全审计报告。在一个以安全为基石的行业里，缺乏透明的第三方审计是不可接受的。<br><br><strong>女巫攻击风险：</strong>当前测试网活动中存在大量自动化脚本和机器人参与，这些地址可能在主网上线后用于恶意活动。`,
+        tech: `<strong>可扩展性承诺风险：</strong>百万级 TPS 是在受控的 Devnet 环境中测得，在真实主网中的表现存在巨大不确定性。<br><br><strong>中心化风险：</strong>早期的共识模型依赖有限的验证者集合，且“加速顺序执行”模型可能存在单点故障风险。`,
+        market: `<strong>空投后的抛售压力：</strong>一旦代币上线，大量“空投猎人”可能会立即出售，导致价格剧烈下跌。<br><br><strong>对母公司资金的依赖：</strong>项目财务健康与其孵化方 Improbable 的持续支持深度绑定，母公司的任何负面状况都可能直接影响项目前景。`,
+        reputation: `<strong>Improbable 的历史“包袱”：</strong>母公司复杂的历史，包括战略摇摆、财务亏损和公开纠纷，可能影响机构投资者的信心。<br><br><strong>主网上线延迟风险：</strong>项目延迟交付是常态，但这会消耗市场耐心和信心。`
+    };
+    riskCards.forEach(card => {
+        card.addEventListener('click', () => {
+            const riskKey = card.dataset.risk;
+            riskDetailsContainer.innerHTML = `<h4 class="font-bold text-lg mb-2">${card.querySelector('h3').textContent}</h4><p class="text-slate-700">${riskData[riskKey]}</p>`;
+            riskDetailsContainer.classList.remove('hidden');
+        });
+    });
+
+    const strategyData = [
+        { 
+            id: 'airdrop',
+            title: '空投挖矿', 
+            icon: '🎁',
+            desc: '以最低资本成本，最大化获取未来空投的份额。',
+            details: {
+                '优势': '资本投入极低或为零；潜在ROI极高；能直接体验协议。',
+                '劣势/风险': '无法保证获得空投；耗费时间精力；有被判定为女巫的风险；空投价值可能很低。',
+                '资本/精力要求': '低资本 / 高精力',
+                '潜在回报': '投机性 (高)'
+            }
+        },
+        { 
+            id: 'market',
+            title: '二级市场投资',
+            icon: '📈',
+            desc: '在基本面得到确认后，获取原生代币的长期头寸。',
+            details: {
+                '优势': '若技术成功，想象空间大；流动性好，相对被动。',
+                '劣势/风险': '波动性极高；空投抛压风险巨大；依赖未公布的关键信息（代币经济学/审计）。',
+                '资本/精力要求': '高资本 / 低精力',
+                '潜在回报': '高风险 / 高回报'
+            }
+        },
+        { 
+            id: 'defi',
+            title: 'DeFi收益耕作',
+            icon: '🚜',
+            desc: '通过链上DeFi协议获取收益(APR/APY)。',
+            details: {
+                '优势': '早期 APR/APY 可能非常高；可产生被动现金流。',
+                '劣势/风险': '无常损失风险极高；智能合约风险；需要主动管理和监控。',
+                '资本/精力要求': '高资本 / 中等精力',
+                '潜在回报': '可变 (早期可能很高)'
+            }
+        },
+        { 
+            id: 'dev',
+            title: '开发者参与',
+            icon: '💻',
+            desc: '利用开发技能，直接从生态系统中获取收入或战略性地位。',
+            details: {
+                '优势': '可获得非稀释性资助；可创造直接收入；在新兴生态中建立声誉。',
+                '劣势/风险': '精力投入极大；项目成功率无法保证；需要强大的技术和商业能力。',
+                '资本/精力要求': '可变资本 / 极高精力',
+                '潜在回报': '取决于项目 (可能极高)'
+            }
+        }
+    ];
+
+    const strategyCardsContainer = document.getElementById('strategy-cards');
+    const strategyDetailsContainer = document.getElementById('strategy-details-container');
+
+    strategyData.forEach(strategy => {
+        const card = document.createElement('div');
+        card.className = 'strategy-card bg-slate-50 border border-slate-200 p-6 rounded-xl cursor-pointer hover:border-sky-500 hover:bg-sky-50';
+        card.dataset.strategyId = strategy.id;
+        card.innerHTML = `
+            <div class="text-4xl mb-4">${strategy.icon}</div>
+            <h3 class="text-xl font-bold text-slate-800 mb-2">${strategy.title}</h3>
+            <p class="text-slate-600">${strategy.desc}</p>
+        `;
+        strategyCardsContainer.appendChild(card);
+    });
+
+    strategyCardsContainer.addEventListener('click', (e) => {
+        const card = e.target.closest('.strategy-card');
+        if (card) {
+            const strategyId = card.dataset.strategyId;
+            const strategy = strategyData.find(s => s.id === strategyId);
+            
+            document.querySelectorAll('.strategy-card').forEach(c => c.classList.remove('ring-2', 'ring-sky-500'));
+            card.classList.add('ring-2', 'ring-sky-500');
+
+            let detailsHtml = `<div class="bg-slate-100 p-6 rounded-lg animate-fade-in">
+                <h3 class="text-2xl font-bold mb-4 text-slate-900">${strategy.title} 投资路径详解</h3>
+                <table class="w-full text-left">
+                    <tbody>`;
+            
+            for (const [key, value] of Object.entries(strategy.details)) {
+                detailsHtml += `<tr class="border-b border-slate-200">
+                                    <td class="py-3 pr-4 font-semibold text-slate-600 w-1/3">${key}</td>
+                                    <td class="py-3 text-slate-800">${value}</td>
+                                </tr>`;
+            }
+
+            detailsHtml += `</tbody></table></div>`;
+            strategyDetailsContainer.innerHTML = detailsHtml;
+        }
+    });
+
+});
+</script>
+
+</body>
+</html>

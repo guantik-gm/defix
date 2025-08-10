@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meteora (MET) 交互式投资评估报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Harmony Neutrals with Warning Accents -->
+    <!-- Application Structure Plan: The SPA uses a "Dashboard & Deep Dive" model. It opens with a high-level dashboard showing KPIs and the core conflict (Tech vs. Governance). A sticky nav allows users to jump to dedicated sections for a 'Tech Deep Dive', a 'Fatal Risk Assessment' with a timeline, and an 'Interactive Investment Strategy' table. This structure is chosen to immediately highlight the report's central thesis—the clash between good tech and bad governance—and allow users to explore the evidence for this thesis in a non-linear, intuitive way, which is more engaging and effective than a simple linear report. -->
+    <!-- Visualization & Content Choices: 
+        - KPIs (TVL, Volume): Goal: Inform. Method: Styled HTML cards. Justification: Quick, high-impact overview.
+        - DEX Volume Chart: Goal: Show change. Method: Chart.js Bar Chart. Interaction: Buttons to switch timeframes. Justification: Provides dynamic context to KPIs. Library: Chart.js.
+        - Governance Crisis: Goal: Organize/Show Change. Method: HTML/CSS vertical timeline. Justification: Narrates the escalating crisis effectively.
+        - Investment Matrix: Goal: Compare/Organize. Method: HTML table. Interaction: JS-powered risk-level filters. Justification: Makes dense data interactive and user-centric.
+        - DLMM Concept: Goal: Explain. Method: HTML/CSS diagram. Interaction: Hover effects. Justification: Simplifies a complex technical concept visually.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #F8F7F4;
+            color: #333333;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .nav-link {
+            transition: color 0.3s, border-bottom-color 0.3s;
+        }
+        .nav-link.active {
+            color: #4A90E2;
+            border-bottom-color: #4A90E2;
+        }
+        .risk-timeline::before {
+            content: '';
+            position: absolute;
+            left: 18px;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background-color: #e2e8f0;
+            border-radius: 2px;
+        }
+        .timeline-item .dot {
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 4px solid #F8F7F4;
+        }
+        .tab-button.active {
+            background-color: #4A90E2;
+            color: #ffffff;
+        }
+        .strategy-row {
+            transition: opacity 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white shadow-md sticky top-0 z-50">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="font-bold text-xl text-gray-800">Meteora 投资分析</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#dashboard" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-blue-600 border-b-2 border-transparent">仪表盘</a>
+                        <a href="#tech" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-blue-600 border-b-2 border-transparent">技术解析</a>
+                        <a href="#risk" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-blue-600 border-b-2 border-transparent">风险评估</a>
+                        <a href="#strategy" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-blue-600 border-b-2 border-transparent">投资策略</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <section id="hero" class="text-center py-12">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-800">Meteora (MET)</h1>
+            <p class="mt-4 text-lg text-gray-600">技术Alpha与治理Omega的对决</p>
+            <div class="mt-8 inline-block bg-red-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg">
+                最终投资评级：不建议 (Not Recommended)
+            </div>
+            <div class="mt-8 max-w-4xl mx-auto grid md:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-green-500">
+                    <h3 class="text-xl font-bold text-gray-800">✅ 技术卓越 (Alpha)</h3>
+                    <p class="mt-2 text-gray-600">创新的DLMM模型带来高资本效率和可观的协议收入，已成为Solana生态的流动性核心。</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-red-500">
+                    <h3 class="text-xl font-bold text-gray-800">❌ 治理危机 (Omega)</h3>
+                    <p class="mt-2 text-gray-600">创始人卷入丑闻并面临集体诉讼，其潜在的金融犯罪历史构成不可接受的交易对手风险。</p>
+                </div>
+            </div>
+        </section>
+
+        <div class="w-full h-px bg-gray-200 my-12"></div>
+
+        <section id="dashboard" class="scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center text-gray-800 mb-2">核心仪表盘</h2>
+            <p class="text-center text-gray-600 mb-8 max-w-3xl mx-auto">此部分提供了Meteora协议性能的快照，展示了其强大的链上活动和财务数据。这些数据是其技术优势的直接体现，但投资者必须结合后续的风险评估来全面看待这些亮眼数字。</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white p-6 rounded-lg shadow-md text-center">
+                    <h4 class="text-sm font-medium text-gray-500">总锁仓价值 (TVL)</h4>
+                    <p class="text-3xl font-bold text-gray-800 mt-2">$8.39亿</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md text-center">
+                    <h4 class="text-sm font-medium text-gray-500">30日交易量</h4>
+                    <p class="text-3xl font-bold text-gray-800 mt-2">$195.3亿</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md text-center">
+                    <h4 class="text-sm font-medium text-gray-500">30日协议总费用</h4>
+                    <p class="text-3xl font-bold text-gray-800 mt-2">$1.45亿</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md text-center">
+                    <h4 class="text-sm font-medium text-gray-500">年化协议净收入</h4>
+                    <p class="text-3xl font-bold text-gray-800 mt-2">$6324万</p>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-800">协议活动概览</h3>
+                    <div id="chart-controls" class="space-x-2">
+                        <button data-period="7d" class="chart-btn bg-blue-500 text-white px-4 py-2 rounded-md text-sm">7天</button>
+                        <button data-period="30d" class="chart-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-md text-sm">30天</button>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="kpiChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <div class="w-full h-px bg-gray-200 my-12"></div>
+
+        <section id="tech" class="scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center text-gray-800 mb-2">技术深度解析</h2>
+            <p class="text-center text-gray-600 mb-8 max-w-3xl mx-auto">Meteora的技术是其核心竞争力。本节将深入剖析其创新的动态流动性做市商（DLMM）模型及其协同产品矩阵，揭示其如何实现卓越的资本效率和高额的费用收入。</p>
+            
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <div class="mb-4 border-b border-gray-200">
+                    <nav class="flex space-x-4" aria-label="Tabs">
+                        <button class="tab-button active px-4 py-2 font-medium text-sm rounded-t-md" data-tab="dlmm">DLMM核心</button>
+                        <button class="tab-button px-4 py-2 font-medium text-sm rounded-t-md" data-tab="matrix">产品矩阵</button>
+                        <button class="tab-button px-4 py-2 font-medium text-sm rounded-t-md" data-tab="dev">开发者生态</button>
+                    </nav>
+                </div>
+
+                <div id="dlmm" class="tab-content">
+                    <h3 class="text-2xl font-bold mb-4">动态流动性做市商 (DLMM)</h3>
+                    <p class="mb-6">DLMM是Meteora的技术皇冠，它通过将流动性集中在离散的“价格箱”中，实现了零滑点交易和前所未有的资本效率。其两大创新点是其成功的关键。</p>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="border border-gray-200 p-4 rounded-lg">
+                            <h4 class="font-bold text-lg">💡 动态费用</h4>
+                            <p class="mt-2">协议能根据市场波动性自动调整交易费。市场波动越大，费用越高，以此补偿流动性提供者（LP）因无常损失增加而面临的风险，实现风险与回报的动态平衡。</p>
+                        </div>
+                        <div class="border border-gray-200 p-4 rounded-lg">
+                            <h4 class="font-bold text-lg">🎨 灵活的流动性形态</h4>
+                            <p class="mt-2">LP可以根据自己的市场预期，选择“现货”、“曲线”或“买卖盘”等多种策略来部署流动性，将资本精确地集中在最有效的位置，最大化收益潜力。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="matrix" class="tab-content hidden">
+                    <h3 class="text-2xl font-bold mb-4">协同产品矩阵</h3>
+                    <p class="mb-6">除了DLMM，Meteora还构建了一套协同产品，以巩固其作为Solana流动性枢纽的地位。</p>
+                     <div class="space-y-4">
+                        <div class="border border-gray-200 p-4 rounded-lg">
+                            <h4 class="font-bold text-lg">动态AMM (DAMM)</h4>
+                            <p class="mt-2">将池中闲置资产存入外部借贷协议，为LP赚取额外收益。</p>
+                        </div>
+                        <div class="border border-gray-200 p-4 rounded-lg">
+                            <h4 class="font-bold text-lg">动态联合曲线 (DBC)</h4>
+                            <p class="mt-2">为新项目提供强大的代币发行工具，实现从发行到交易的无缝流动性引导。</p>
+                        </div>
+                         <div class="border border-gray-200 p-4 rounded-lg">
+                            <h4 class="font-bold text-lg">动态金库 (Dynamic Vaults)</h4>
+                            <p class="mt-2">一个收益聚合层，由机器人自动将资产分配到收益最高的借贷协议中，实现复合收益。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="dev" class="tab-content hidden">
+                    <h3 class="text-2xl font-bold mb-4">活跃的开发者生态</h3>
+                    <p class="mb-6">Meteora积极维护开源社区，为核心产品提供了详尽的SDK和API，吸引了第三方开发者构建自动化管理机器人、分析仪表盘等辅助工具，生态系统充满活力。</p>
+                </div>
+            </div>
+        </section>
+
+        <div class="w-full h-px bg-gray-200 my-12"></div>
+
+        <section id="risk" class="scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center text-red-700 mb-2">致命风险评估</h2>
+            <p class="text-center text-gray-600 mb-8 max-w-3xl mx-auto">这是本报告的核心。Meteora面临的风险并非技术层面，而是源于其治理结构和领导团队的诚信问题。这些风险的严重性足以颠覆其所有技术优势，是任何审慎投资者都不能忽视的。</p>
+
+            <div class="grid lg:grid-cols-5 gap-8">
+                <div class="lg:col-span-3 bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-2xl font-bold mb-6 text-gray-800">治理危机时间线</h3>
+                    <div class="relative risk-timeline pl-8">
+                        <div class="timeline-item relative pl-8 pb-8">
+                            <div class="dot bg-red-500"></div>
+                            <h4 class="font-bold text-lg">$LIBRA丑闻</h4>
+                            <p class="text-sm text-gray-500">2025年上半年</p>
+                            <p class="mt-2 text-gray-600">Meteora深度卷入$LIBRA Meme币发行丑闻，该币暴涨后迅速崩溃，引发内幕交易和“拉地毯”指控。</p>
+                        </div>
+                        <div class="timeline-item relative pl-8 pb-8">
+                            <div class="dot bg-red-600"></div>
+                            <h4 class="font-bold text-lg">创始人辞职</h4>
+                            <p class="text-sm text-gray-500">2025年6月</p>
+                            <p class="mt-2 text-gray-600">在丑闻压力下，联合创始人Ben Chow宣布辞职，加剧了社区的信任危机。</p>
+                        </div>
+                        <div class="timeline-item relative pl-8 pb-8">
+                            <div class="dot bg-red-700"></div>
+                            <h4 class="font-bold text-lg">集体诉讼</h4>
+                            <p class="text-sm text-gray-500">2025年7月</p>
+                            <p class="mt-2 text-gray-600">投资者对Meteora及Ben Chow提起集体诉讼，指控其策划价值6900万美元的“拉高出货”骗局。</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="lg:col-span-2">
+                    <div class="bg-red-800 text-white p-6 rounded-lg shadow-xl h-full">
+                        <h3 class="text-2xl font-bold border-b-2 border-red-500 pb-2">🚨 极端警报：创始人身份疑云</h3>
+                        <p class="mt-4">本报告发现的最严重风险：有大量间接证据表明，Meteora的联合创始人Ben Chow，可能与一位在2018年因**证券欺诈和内幕交易**被美国司法部（DOJ）和证券交易委员会（SEC）**刑事定罪并判入狱**的“Benjamin Bin Chow”为同一人。</p>
+                        <p class="mt-4 font-bold">如果属实，这意味着项目核心创始人具有金融犯罪历史和模式。这是足以让任何审慎投资者一票否决的“交易破坏者”。</p>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-8 bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-2xl font-bold mb-4 text-gray-800">安全审计 vs. 治理风险</h3>
+                <p class="text-gray-600">与治理风险形成鲜明对比的是，Meteora在技术安全方面投入巨大，其核心产品均通过了Quantstamp, Halborn, Zellic等多家顶级公司的审计。这表明技术团队是专业的，但无法弥补领导层诚信缺失带来的根本性风险。一个坚固的引擎，安装在了一艘船长不可信的船上。</p>
+            </div>
+        </section>
+        
+        <div class="w-full h-px bg-gray-200 my-12"></div>
+
+        <section id="strategy" class="scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center text-gray-800 mb-2">投资机会与策略</h2>
+            <p class="text-center text-gray-600 mb-8 max-w-3xl mx-auto">尽管本报告的最终评级为“不建议”，但对于能够理解并愿意承担**极端风险**的高级DeFi玩家和开发者，Meteora的生态系统确实提供了一些高风险、高回报的参与机会。**以下内容仅供参考，不构成投资建议。**</p>
+            
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <div class="flex flex-wrap gap-2 mb-4">
+                    <button class="strategy-filter-btn bg-blue-500 text-white px-4 py-2 rounded-md text-sm" data-filter="all">所有</button>
+                    <button class="strategy-filter-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-md text-sm" data-filter="中">中风险</button>
+                    <button class="strategy-filter-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-md text-sm" data-filter="高">高风险</button>
+                    <button class="strategy-filter-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-md text-sm" data-filter="极端">极端风险</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">参与方式</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">优点</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">缺点</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">风险等级</th>
+                            </tr>
+                        </thead>
+                        <tbody id="strategy-table-body" class="bg-white divide-y divide-gray-200">
+                            <tr class="strategy-row" data-risk="高">
+                                <td class="px-6 py-4 whitespace-nowrap font-medium">空投积分农耕</td>
+                                <td class="px-6 py-4">潜在高额空投回报</td>
+                                <td class="px-6 py-4">机会成本高，空投价值不确定</td>
+                                <td class="px-6 py-4"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">高</span></td>
+                            </tr>
+                            <tr class="strategy-row" data-risk="中">
+                                <td class="px-6 py-4 whitespace-nowrap font-medium">DLMM LP (稳定币)</td>
+                                <td class="px-6 py-4">无常损失极低，收益稳定</td>
+                                <td class="px-6 py-4">APR相对较低，仍有协议风险</td>
+                                <td class="px-6 py-4"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">中</span></td>
+                            </tr>
+                            <tr class="strategy-row" data-risk="高">
+                                <td class="px-6 py-4 whitespace-nowrap font-medium">DLMM LP (SOL/稳定币)</td>
+                                <td class="px-6 py-4">交易量大，费用收入潜力高</td>
+                                <td class="px-6 py-4">承受无常损失，需主动管理</td>
+                                <td class="px-6 py-4"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">高</span></td>
+                            </tr>
+                            <tr class="strategy-row" data-risk="极端">
+                                <td class="px-6 py-4 whitespace-nowrap font-medium">DLMM LP (Meme币)</td>
+                                <td class="px-6 py-4">极高的潜在费用APR</td>
+                                <td class="px-6 py-4">极端无常损失，归零风险</td>
+                                <td class="px-6 py-4"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">极端</span></td>
+                            </tr>
+                             <tr class="strategy-row" data-risk="极端">
+                                <td class="px-6 py-4 whitespace-nowrap font-medium">TGE后代币购买</td>
+                                <td class="px-6 py-4">直接投资协议增长</td>
+                                <td class="px-6 py-4">治理风险可能导致价值崩溃</td>
+                                <td class="px-6 py-4"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">极端</span></td>
+                            </tr>
+                            <tr class="strategy-row" data-risk="高">
+                                <td class="px-6 py-4 whitespace-nowrap font-medium">构建LP管理代理</td>
+                                <td class="px-6 py-4">实现复杂策略自动化</td>
+                                <td class="px-6 py-4">需要深厚开发背景和成本</td>
+                                <td class="px-6 py-4"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">高</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-gray-800 text-white mt-12">
+        <div class="container mx-auto px-8 py-4 text-center text-sm">
+            <p>本交互式报告由AI根据提供的《Meteora (MET) 深度投资评估报告》生成。</p>
+            <p>所有数据和分析仅供参考，不构成任何投资建议。投资有风险，决策需谨慎。</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const chartData = {
+                '7d': {
+                    labels: ['第1天', '第2天', '第3天', '第4天', '第5天', '第6天', '第7天'],
+                    volume: [5.1, 4.8, 5.5, 6.2, 5.9, 7.1, 4.2],
+                    fees: [0.25, 0.24, 0.27, 0.31, 0.30, 0.35, 0.21],
+                },
+                '30d': {
+                    labels: ['第1周', '第2周', '第3周', '第4周'],
+                    volume: [35, 45, 60, 55],
+                    fees: [1.7, 2.2, 3.0, 2.7],
+                }
+            };
+
+            const ctx = document.getElementById('kpiChart').getContext('2d');
+            let myChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: chartData['7d'].labels,
+                    datasets: [{
+                        label: '交易量 (亿美元)',
+                        data: chartData['7d'].volume,
+                        backgroundColor: 'rgba(74, 144, 226, 0.6)',
+                        borderColor: 'rgba(74, 144, 226, 1)',
+                        borderWidth: 1,
+                        yAxisID: 'y',
+                    }, {
+                        label: '费用 (千万美元)',
+                        data: chartData['7d'].fees,
+                        backgroundColor: 'rgba(21, 170, 153, 0.6)',
+                        borderColor: 'rgba(21, 170, 153, 1)',
+                        borderWidth: 1,
+                        yAxisID: 'y1',
+                        type: 'line',
+                        tension: 0.3,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: '交易量 (亿美元)'
+                            }
+                        },
+                        y1: {
+                            beginAtZero: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: '费用 (千万美元)'
+                            },
+                            grid: {
+                                drawOnChartArea: false, 
+                            },
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    }
+                }
+            });
+
+            const chartControls = document.getElementById('chart-controls');
+            chartControls.addEventListener('click', function(e) {
+                if (e.target.classList.contains('chart-btn')) {
+                    const period = e.target.dataset.period;
+                    
+                    document.querySelectorAll('.chart-btn').forEach(btn => {
+                        btn.classList.remove('bg-blue-500', 'text-white');
+                        btn.classList.add('bg-gray-200', 'text-gray-700');
+                    });
+                    e.target.classList.add('bg-blue-500', 'text-white');
+                    e.target.classList.remove('bg-gray-200', 'text-gray-700');
+
+                    myChart.data.labels = chartData[period].labels;
+                    myChart.data.datasets[0].data = chartData[period].volume;
+                    myChart.data.datasets[1].data = chartData[period].fees;
+                    myChart.update();
+                }
+            });
+
+            const tabs = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(item => item.classList.remove('active'));
+                    tab.classList.add('active');
+                    const target = document.getElementById(tab.dataset.tab);
+                    tabContents.forEach(content => content.classList.add('hidden'));
+                    target.classList.remove('hidden');
+                });
+            });
+
+            const strategyFilterBtns = document.querySelectorAll('.strategy-filter-btn');
+            const strategyRows = document.querySelectorAll('.strategy-row');
+            strategyFilterBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    strategyFilterBtns.forEach(item => {
+                        item.classList.remove('bg-blue-500', 'text-white');
+                        item.classList.add('bg-gray-200', 'text-gray-700');
+                    });
+                    btn.classList.add('bg-blue-500', 'text-white');
+                    btn.classList.remove('bg-gray-200', 'text-gray-700');
+
+                    const filter = btn.dataset.filter;
+                    strategyRows.forEach(row => {
+                        if (filter === 'all' || row.dataset.risk === filter) {
+                            row.style.opacity = 1;
+                            row.style.display = 'table-row';
+                        } else {
+                            row.style.opacity = 0;
+                            setTimeout(() => {
+                                row.style.display = 'none';
+                            }, 500);
+                        }
+                    });
+                });
+            });
+
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('section');
+            window.addEventListener('scroll', () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (pageYOffset >= sectionTop - 80) {
+                        current = section.getAttribute('id');
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href').includes(current)) {
+                        link.classList.add('active');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

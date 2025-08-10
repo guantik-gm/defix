@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Harmonix Finance (harmonix.fi) - 交互式投资仪表盘</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Chosen Palette: Warm Neutral Harmony -->
+    <!-- Application Structure Plan: A single-page dashboard designed to guide investor decision-making. It starts with a high-level summary and overall verdict, then allows users to navigate through thematic sections: a quantitative 'Dashboard' with key metrics, an 'Opportunity' section for the bull case, a 'Risk' section for the bear case (highlighting the critical audit issue), a 'Competition' comparison, and a final interactive 'Verdict' section tailored to different investor profiles. This structure prioritizes user flow and decision support over simply replicating the report's linear format, making complex information digestible and actionable. -->
+    <!-- Visualization & Content Choices: 
+        - TVL Growth: Report Info -> Show momentum/hype -> Goal: Visualize Change -> Viz: Line Chart -> Interaction: Hover for details -> Justification: Best for time-series data -> Library: Chart.js.
+        - TVL Distribution: Report Info -> Show asset allocation -> Goal: Inform Proportions -> Viz: Donut Chart -> Interaction: Hover for details -> Justification: Clear proportional view -> Library: Chart.js.
+        - Risk Factors: Report Info -> Emphasize severity & variety of risks -> Goal: Organize & Inform -> Viz: Grid of styled cards with icons -> Interaction: Static, visual emphasis -> Justification: Scannable and visually impactful. The critical audit risk uses a prominent, red-themed alert box for maximum emphasis.
+        - Competitor Comparison: Report Info -> Compare Harmonix's position -> Goal: Compare -> Viz: Interactive HTML Table -> Interaction: Click row to highlight -> Justification: More engaging and clearer than a static table -> Library: HTML/JS/Tailwind.
+        - Investment Verdicts: Report Info -> Provide tailored advice -> Goal: Guide Decision -> Viz: Tabbed Interface -> Interaction: Click tab to switch profile -> Justification: Personalizes the conclusion for different user risk tolerances -> Library: HTML/JS/Tailwind.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+            background-color: #F8F7F4;
+            color: #4A4A4A;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 40vh;
+        }
+        .nav-link {
+            transition: color 0.3s, border-bottom-color 0.3s;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #3B6A7E;
+            border-bottom-color: #3B6A7E;
+        }
+        .tab-button {
+            transition: all 0.3s;
+        }
+        .tab-button.active {
+            background-color: #3B6A7E;
+            color: #FFFFFF;
+        }
+        .competitor-row:hover {
+            background-color: #eef2f5;
+        }
+        .competitor-row.selected {
+            background-color: #dbe8ef;
+            transform: scale(1.01);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        .smooth-scroll {
+            scroll-behavior: smooth;
+        }
+        .card-shadow {
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+        }
+        .card-shadow-hover:hover {
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.08);
+            transform: translateY(-2px);
+            transition: all 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="smooth-scroll">
+
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-6 py-3 flex justify-between items-center">
+            <h1 class="text-xl md:text-2xl font-bold text-[#3B6A7E]">Harmonix 投资仪表盘</h1>
+            <div class="hidden md:flex space-x-8">
+                <a href="#dashboard" class="nav-link font-medium pb-1">仪表盘</a>
+                <a href="#opportunity" class="nav-link font-medium pb-1">机遇分析</a>
+                <a href="#risk" class="nav-link font-medium pb-1">风险评估</a>
+                <a href="#competition" class="nav-link font-medium pb-1">竞争格局</a>
+                <a href="#verdict" class="nav-link font-medium pb-1">投资决策</a>
+            </div>
+            <div class="md:hidden">
+                <select id="mobile-nav" class="bg-gray-200 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                    <option value="#dashboard">仪表盘</option>
+                    <option value="#opportunity">机遇分析</option>
+                    <option value="#risk">风险评估</option>
+                    <option value="#competition">竞争格局</option>
+                    <option value="#verdict">投资决策</option>
+                </select>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-6 py-8 md:py-12">
+
+        <section id="summary" class="mb-16 text-center">
+            <h2 class="text-3xl md:text-4xl font-bold mb-4">Harmonix Finance 投资分析</h2>
+            <p class="max-w-3xl mx-auto text-gray-600 mb-8">
+                一个将复杂金融策略引入DeFi的高潜力项目，但其创新光环被致命的安全风险所笼罩。本仪表盘旨在为您提供决策所需的核心数据与深度洞察。
+            </p>
+            <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+                <h3 class="text-lg font-semibold mb-2 text-gray-800">综合投资评级</h3>
+                <div id="overall-rating-display" class="bg-amber-100 text-amber-800 text-2xl font-bold py-3 px-6 rounded-lg inline-block">
+                    不建议 (NOT RECOMMENDED)
+                </div>
+                <p class="mt-4 text-gray-600 text-sm">
+                    核心原因：在项目完成并公开发布一份或多份来自信誉良好安全公司的全面审计报告之前，其所包含的根本性安全风险，远远超过了其可能带来的潜在回报。
+                </p>
+            </div>
+        </section>
+
+        <section id="dashboard" class="pt-16 -mt-16 mb-16">
+            <h2 class="text-2xl md:text-3xl font-bold mb-8 text-center">数据仪表盘</h2>
+             <p class="text-center text-gray-600 max-w-3xl mx-auto mb-10">
+                此仪表盘展示了Harmonix Finance的关键链上指标和核心数据。通过这些图表，您可以快速了解项目的当前规模、增长趋势和资产分布，为深入分析奠定基础。
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                <div class="bg-white p-6 rounded-xl card-shadow">
+                    <h4 class="text-gray-500 text-sm font-medium">总锁仓价值 (TVL)</h4>
+                    <p class="text-3xl font-bold text-gray-800">$9.64 M</p>
+                    <p class="text-xs text-gray-400">数据来源: DeFi Llama</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl card-shadow">
+                    <h4 class="text-gray-500 text-sm font-medium">核心策略</h4>
+                    <p class="text-3xl font-bold text-gray-800">Delta中性</p>
+                    <p class="text-xs text-gray-400">自动化对冲基金策略</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl card-shadow">
+                    <h4 class="text-gray-500 text-sm font-medium">原生代币</h4>
+                    <p class="text-3xl font-bold text-gray-800">$HAR</p>
+                    <p class="text-xs text-gray-400">预计 2025 Q3 TGE</p>
+                </div>
+                 <div class="bg-white p-6 rounded-xl card-shadow">
+                    <h4 class="text-gray-500 text-sm font-medium">主要生态</h4>
+                    <p class="text-3xl font-bold text-gray-800">Hyperliquid</p>
+                    <p class="text-xs text-gray-400">新兴高性能L1</p>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                <div class="lg:col-span-3 bg-white p-6 rounded-xl card-shadow">
+                    <h3 class="font-bold mb-4 text-center">TVL 增长趋势 (>1000% in 3 months)</h3>
+                    <div class="chart-container mx-auto">
+                        <canvas id="tvlGrowthChart"></canvas>
+                    </div>
+                </div>
+                <div class="lg:col-span-2 bg-white p-6 rounded-xl card-shadow flex flex-col justify-center">
+                    <h3 class="font-bold mb-4 text-center">TVL 分布</h3>
+                    <div class="chart-container mx-auto" style="height: 300px; max-height: 35vh;">
+                        <canvas id="tvlDistributionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="opportunity" class="pt-16 -mt-16 mb-16">
+            <h2 class="text-2xl md:text-3xl font-bold mb-8 text-center">机遇分析：为何值得关注？</h2>
+            <p class="text-center text-gray-600 max-w-3xl mx-auto mb-10">
+                本节深入探讨Harmonix Finance的投资潜力（“牛市观点”）。我们将剖析其核心价值主张、战略定位以及为投资者（尤其是具有开发背景的投资者）提供的潜在高回报机会。
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="bg-white p-6 rounded-xl card-shadow card-shadow-hover">
+                    <h3 class="font-bold text-lg mb-2 text-[#3B6A7E]">💡 创新策略民主化</h3>
+                    <p class="text-gray-600">项目核心价值在于将Delta中性等复杂、高门槛的对冲基金策略，打包成自动化、一键式的DeFi产品，让普通用户也能获取与市场波动低相关的Alpha收益。</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl card-shadow card-shadow-hover">
+                    <h3 class="font-bold text-lg mb-2 text-[#3B6A7E]">🚀 抢占新兴生态</h3>
+                    <p class="text-gray-600">Harmonix战略性地深耕Hyperliquid L1生态。作为原生收益层，它有望在一个快速增长但竞争尚不激烈的平台中占据先发优势，捕获生态早期红利。</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl card-shadow card-shadow-hover">
+                    <h3 class="font-bold text-lg mb-2 text-[#3B6A7E]">🎁 明确的空投预期</h3>
+                    <p class="text-gray-600">通过“存入资金赚积分”的模式，项目方明确了积分将与未来的$HAR代币空投挂钩。这为早期参与者提供了清晰、高赔率的投机机会，是驱动TVL增长的核心动力。</p>
+                </div>
+            </div>
+             <div class="mt-12 bg-white p-6 rounded-xl card-shadow">
+                <h3 class="font-bold text-xl mb-6 text-center">潜在投资途径与收益分析</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="p-4 font-semibold">投资机会</th>
+                                <th class="p-4 font-semibold">优点</th>
+                                <th class="p-4 font-semibold">缺点</th>
+                                <th class="p-4 font-semibold">潜在回报 (APY/预期)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-b hover:bg-gray-50">
+                                <td class="p-4 font-medium">空投挖矿</td>
+                                <td class="p-4 text-green-600">潜在高额空投回报；同时赚取基础APY。</td>
+                                <td class="p-4 text-red-600"><strong>致命风险：合约未经审计。</strong>资本安全无保障。</td>
+                                <td class="p-4 font-mono">投机性 + 12%-32% (可变)</td>
+                            </tr>
+                            <tr class="border-b hover:bg-gray-50">
+                                <td class="p-4 font-medium">TGE后购买代币</td>
+                                <td class="p-4 text-green-600">获得协议增长的流动性敞口。</td>
+                                <td class="p-4 text-red-600">面临巨大抛压；初始估值可能过高。</td>
+                                <td class="p-4 font-mono">投机性价格增值</td>
+                            </tr>
+                             <tr class="hover:bg-gray-50">
+                                <td class="p-4 font-medium">开发者参与</td>
+                                <td class="p-4 text-green-600">若平台开放，可创建自定义策略赚取收益。</td>
+                                <td class="p-4 text-red-600">目前无明确SDK；核心合约不透明。</td>
+                                <td class="p-4 font-mono">费用分成或Grant</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="risk" class="pt-16 -mt-16 mb-16">
+            <h2 class="text-2xl md:text-3xl font-bold mb-8 text-center">风险评估：致命的缺陷</h2>
+            <p class="text-center text-gray-600 max-w-3xl mx-auto mb-10">
+                本节将揭示Harmonix Finance面临的多重风险（“熊市观点”）。投资者必须清醒地认识到，任何潜在的回报都伴随着巨大的不确定性，尤其是其中一项风险是决定性的。
+            </p>
+            <div class="bg-red-50 border-l-4 border-red-500 text-red-800 p-6 rounded-r-lg mb-12 shadow-lg">
+                <h3 class="text-xl font-bold flex items-center">
+                    <span class="text-3xl mr-3">⚠️</span> 关键风险：缺失的公开审计报告
+                </h3>
+                <p class="mt-2">
+                    这是评估此项目时最核心、最严重的风险。尽管DeFi Llama标记为“已审计”，但在所有公开渠道均**未能找到任何由信誉良好第三方安全公司发布的公开审计报告**。对于一个处理数百万美元用户资金的协议，这构成了对投资者资本的直接且无法量化的威胁。投资一个未经审计的协议，无异于将资金的安全性完全寄希望于项目方开发人员的能力和道德，这是极不明智的。
+                </p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="bg-white p-6 rounded-xl card-shadow">
+                    <h4 class="font-bold mb-2">📉 市场风险</h4>
+                    <p class="text-gray-600">Delta中性策略依赖正向资金费率。若市场转熊，资金费率变为负值，策略库将持续亏损。</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl card-shadow">
+                    <h4 class="font-bold mb-2">🔗 系统性风险</h4>
+                    <p class="text-gray-600">项目与Hyperliquid L1深度绑定。Hyperliquid的任何安全漏洞或网络中断都将对Harmonix造成灾难性影响。</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl card-shadow">
+                    <h4 class="font-bold mb-2">💧 清算风险</h4>
+                    <p class="text-gray-600">策略涉及杠杆。在极端市场波动下，可能因滑点或再平衡失败而触发连锁清算，导致本金重大损失。</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl card-shadow">
+                    <h4 class="font-bold mb-2">🔐 中心化风险</h4>
+                    <p class="text-gray-600">由于合约不透明，无法评估是否存在拥有特殊权限的管理密钥，这些密钥可能被用于暂停合约或提取资金。</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl card-shadow">
+                    <h4 class="font-bold mb-2">🎭 半匿名团队</h4>
+                    <p class="text-gray-600">团队信息未在官网主动公开，降低了其问责制和透明度，在出现问题时可能承担更小的声誉压力。</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl card-shadow">
+                    <h4 class="font-bold mb-2">💸 “雇佣兵”资本</h4>
+                    <p class="text-gray-600">TVL由空投预期驱动，这些资金可能在TGE后迅速撤离，导致流动性枯竭和币价剧烈波动。</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="competition" class="pt-16 -mt-16 mb-16">
+            <h2 class="text-2xl md:text-3xl font-bold mb-8 text-center">竞争格局分析</h2>
+             <p class="text-center text-gray-600 max-w-3xl mx-auto mb-10">
+                结构化产品赛道竞争激烈。下表将Harmonix与其主要竞争对手进行对比，突显其相对优势和致命短板。点击任意一行以高亮显示，进行更清晰的比较。
+            </p>
+            <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow overflow-x-auto">
+                <table class="w-full min-w-[800px] text-left" id="competition-table">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="p-4 font-semibold">特性</th>
+                            <th class="p-4 font-semibold text-[#3B6A7E]">Harmonix Finance</th>
+                            <th class="p-4 font-semibold">Vertex Protocol</th>
+                            <th class="p-4 font-semibold">Aperture Finance</th>
+                            <th class="p-4 font-semibold">Thetanuts Finance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="border-b competitor-row transition-all duration-300">
+                            <td class="p-4 font-medium">核心策略</td>
+                            <td class="p-4">Delta中性策略库</td>
+                            <td class="p-4">混合订单簿/AMM DEX</td>
+                            <td class="p-4">AI驱动的流动性管理</td>
+                            <td class="p-4">多链期权策略库</td>
+                        </tr>
+                        <tr class="border-b competitor-row transition-all duration-300">
+                            <td class="p-4 font-medium">总锁仓价值 (TVL)</td>
+                            <td class="p-4">~ $9.6 M</td>
+                            <td class="p-4">~ $45.3 M</td>
+                            <td class="p-4">> $2.7 B (交易量)</td>
+                            <td class="p-4">~ $5.2 M</td>
+                        </tr>
+                        <tr class="border-b competitor-row transition-all duration-300">
+                            <td class="p-4 font-medium">公开审计</td>
+                            <td class="p-4 font-bold text-red-600">否 (重大风险)</td>
+                            <td class="p-4 text-green-600">是</td>
+                            <td class="p-4 text-green-600">是</td>
+                            <td class="p-4 text-green-600">是</td>
+                        </tr>
+                        <tr class="competitor-row transition-all duration-300">
+                            <td class="p-4 font-medium">独特价值</td>
+                            <td class="p-4">Hyperliquid生态先发优势</td>
+                            <td class="p-4">垂直整合交易平台</td>
+                            <td class="p-4">基于“意图”的AI执行</td>
+                            <td class="p-4">广泛的多链产品选择</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="verdict" class="pt-16 -mt-16">
+            <h2 class="text-2xl md:text-3xl font-bold mb-8 text-center">最终结论与投资决策</h2>
+            <p class="text-center text-gray-600 max-w-3xl mx-auto mb-10">
+                综合所有机遇与风险，我们为不同风险偏好的投资者提供量身定制的投资建议。请根据您的个人情况，选择对应的投资者画像，查看最终评级和决策依据。
+            </p>
+            <div class="max-w-3xl mx-auto bg-white rounded-xl card-shadow p-6 md:p-8">
+                <div class="flex justify-center mb-6 border-b border-gray-200">
+                    <button data-tab="conservative" class="tab-button flex-1 p-3 font-medium text-gray-600">保守型投资者</button>
+                    <button data-tab="speculator" class="tab-button flex-1 p-3 font-medium text-gray-600">投机型“农民”</button>
+                    <button data-tab="overall" class="tab-button active flex-1 p-3 font-medium text-gray-600">综合评级</button>
+                </div>
+                <div id="verdict-content">
+                    <!-- Content will be injected by JS -->
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-center py-8 mt-12 border-t border-gray-200">
+        <p class="text-gray-500 text-sm">&copy; 2025 交互式投资仪表盘。仅供研究分析，不构成财务建议。</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const appData = {
+                tvlGrowth: {
+                    labels: ['-90d', '-60d', '-30d', 'Today'],
+                    data: [0.8, 2.5, 5.1, 9.64]
+                },
+                tvlDistribution: {
+                    labels: ['Arbitrum', 'Hyperliquid L1'],
+                    data: [6.18, 3.44],
+                    colors: ['#5D7D8B', '#A5C4D4']
+                },
+                verdicts: {
+                    conservative: {
+                        title: '强烈不建议 (STRONGLY NOT RECOMMENDED)',
+                        colorClasses: 'bg-red-100 text-red-800',
+                        reason: '从安全第一的角度出发，缺乏公开审计使得该协议完全不具备可投资性。任何审慎的投资者都不应将资金置于如此巨大且未经评估的风险之中。'
+                    },
+                    speculator: {
+                        title: '中立 (NEUTRAL)',
+                        colorClasses: 'bg-yellow-100 text-yellow-800',
+                        reason: '对于专门从事高风险空投挖矿，并且完全理解其投入的资本是在对未经审计的代码进行押注的投资者来说，这个机会是存在的。但投资规模必须严格控制在“可以完全损失”的范围内。'
+                    },
+                    overall: {
+                        title: '不建议 (NOT RECOMMENDED)',
+                        colorClasses: 'bg-amber-100 text-amber-800',
+                        reason: '综合来看，在Harmonix Finance完成并公开发布一份或多份来自信誉良好安全公司的全面审计报告之前，其所包含的根本性安全风险，远远超过了其可能带来的潜在回报。'
+                    }
+                }
+            };
+
+            // TVL Growth Chart
+            const tvlGrowthCtx = document.getElementById('tvlGrowthChart').getContext('2d');
+            new Chart(tvlGrowthCtx, {
+                type: 'line',
+                data: {
+                    labels: appData.tvlGrowth.labels,
+                    datasets: [{
+                        label: 'TVL (in millions USD)',
+                        data: appData.tvlGrowth.data,
+                        backgroundColor: 'rgba(93, 125, 139, 0.1)',
+                        borderColor: '#3B6A7E',
+                        tension: 0.4,
+                        fill: true,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value + 'M';
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+
+            // TVL Distribution Chart
+            const tvlDistributionCtx = document.getElementById('tvlDistributionChart').getContext('2d');
+            new Chart(tvlDistributionCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: appData.tvlDistribution.labels,
+                    datasets: [{
+                        label: 'TVL Distribution',
+                        data: appData.tvlDistribution.data,
+                        backgroundColor: appData.tvlDistribution.colors,
+                        borderColor: '#F8F7F4',
+                        borderWidth: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                        },
+                        tooltip: {
+                             callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += '$' + context.parsed.toFixed(2) + 'M';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Verdict Tabs
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const verdictContent = document.getElementById('verdict-content');
+            const overallRatingDisplay = document.getElementById('overall-rating-display');
+
+            function updateVerdict(tabName) {
+                const verdict = appData.verdicts[tabName];
+                verdictContent.innerHTML = `
+                    <div class="text-center">
+                        <h4 class="text-2xl font-bold py-3 px-6 rounded-lg inline-block ${verdict.colorClasses}">${verdict.title}</h4>
+                        <p class="mt-4 text-gray-600 text-left">${verdict.reason}</p>
+                    </div>
+                `;
+                tabButtons.forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.tab === tabName);
+                });
+
+                if (tabName === 'overall') {
+                    overallRatingDisplay.className = `text-2xl font-bold py-3 px-6 rounded-lg inline-block ${verdict.colorClasses}`;
+                    overallRatingDisplay.textContent = verdict.title;
+                }
+            }
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    updateVerdict(button.dataset.tab);
+                });
+            });
+
+            updateVerdict('overall');
+
+            // Competition Table Interaction
+            const competitionTableRows = document.querySelectorAll('#competition-table tbody tr');
+            competitionTableRows.forEach(row => {
+                row.addEventListener('click', () => {
+                    competitionTableRows.forEach(r => r.classList.remove('selected'));
+                    row.classList.add('selected');
+                });
+            });
+
+            // Smooth scrolling for nav links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+            
+            // Mobile navigation
+            document.getElementById('mobile-nav').addEventListener('change', function(e) {
+                const targetId = e.target.value;
+                document.querySelector(targetId).scrollIntoView({ behavior: 'smooth' });
+            });
+            
+            // Active nav link on scroll
+            const sections = document.querySelectorAll('section');
+            const navLinks = document.querySelectorAll('.nav-link');
+
+            window.addEventListener('scroll', () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (pageYOffset >= sectionTop - 80) {
+                        current = section.getAttribute('id');
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href').includes(current)) {
+                        link.classList.add('active');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

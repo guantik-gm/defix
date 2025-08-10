@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NX Finance (NX) - 交互式投资评估报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Slate & Amber Tones -->
+    <!-- Application Structure Plan: The application is designed as a top-down "decision funnel". It starts with the final, unequivocal investment rating ("强烈不建议") to immediately inform the user of the core conclusion. Below this, a dashboard layout presents the primary conflict: "Key Opportunities" vs. "Critical Risks," visualized as balanced cards. This structure allows users to grasp the report's essence instantly. A sticky navigation bar then guides users to deeper, thematic sections: Market Data, Risk Deep-Dive, and Investment Strategies. This flow is chosen over a linear report structure because it prioritizes the user's decision-making process, presenting the conclusion first, then the evidence, and finally the actionable (or in this case, non-actionable) strategies. This non-linear exploration, powered by interactive charts and filterable content, is more engaging and effective for synthesizing complex financial analysis. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Final Investment Rating -> Goal: Immediate Verdict -> Viz/Method: Large, color-coded banner (HTML/Tailwind) -> Interaction: None, static emphasis -> Justification: Delivers the most critical information upfront.
+        - Report Info: TVL & Trading Volume -> Goal: Show contrast between adoption and liquidity -> Viz/Method: Line chart for TVL (growth), Bar chart for Volume (stagnation) (Chart.js/Canvas) -> Interaction: Tooltips on hover -> Justification: Visual storytelling highlights the dangerous disconnect between locked value and market interest.
+        - Report Info: Competitive Landscape -> Goal: Contextualize market position -> Viz/Method: Interactive HTML Table -> Interaction: Hover effects on rows -> Justification: Clear, direct comparison of key metrics.
+        - Report Info: Security & Founder Risks -> Goal: Emphasize extreme danger -> Viz/Method: Color-coded alert cards with icons (HTML/Tailwind) -> Interaction: Click/hover to reveal detailed text -> Justification: Uses strong visual cues (red color, warning icons) to draw attention to the most severe issues, making them impossible to ignore.
+        - Report Info: Investment Strategies -> Goal: Detail potential actions and their risks -> Viz/Method: A grid of interactive cards -> Interaction: Clicking a card reveals pros, cons, and APY details -> Justification: Organizes complex options into a digestible, task-oriented format, allowing users to evaluate each strategy's risk/reward profile individually.
+        - Library/Method: Chart.js for all charts, rendered on Canvas. All other visuals are pure HTML/Tailwind. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+            color: #1e293b; /* slate-800 */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 320px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .nav-link {
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link.active, .nav-link:hover {
+            color: #ca8a04; /* yellow-600 */
+            border-bottom-color: #ca8a04;
+        }
+        .card-reveal > div {
+            transition: max-height 0.5s ease-in-out, opacity 0.5s ease-in-out;
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+        }
+        .card-reveal.open > div {
+            max-height: 1000px;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="bg-slate-50">
+
+    <header class="bg-slate-800 text-white p-4 text-center shadow-lg">
+        <h1 class="text-2xl md:text-3xl font-bold">NX Finance (NX)</h1>
+        <p class="text-slate-300">交互式投资评估报告</p>
+    </header>
+
+    <nav id="navbar" class="sticky top-0 bg-white/80 backdrop-blur-sm shadow-md z-50">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-center items-center space-x-4 md:space-x-8 py-3 text-sm md:text-base font-medium">
+                <a href="#conclusion" class="nav-link px-2 py-1">最终结论</a>
+                <a href="#market" class="nav-link px-2 py-1">市场数据</a>
+                <a href="#risk" class="nav-link px-2 py-1">风险评估</a>
+                <a href="#strategy" class="nav-link px-2 py-1">投资策略</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto p-4 md:p-8">
+
+        <!-- Section: Final Conclusion -->
+        <section id="conclusion" class="mb-12 scroll-mt-20">
+            <div class="bg-red-800 text-white p-6 rounded-lg shadow-2xl text-center">
+                <h2 class="text-3xl font-bold mb-2">最终投资评级：强烈不建议</h2>
+                <p class="text-lg text-red-200">综合评估，该项目未经缓解的治理、安全和市场风险远超其潜在财务回报。</p>
+            </div>
+            
+            <div class="mt-8 text-center">
+                 <h3 class="text-2xl font-bold text-slate-800 mb-2">核心观点：机遇与风险的对决</h3>
+                 <p class="text-slate-600 max-w-3xl mx-auto">NX Finance 是一个典型的“高诱惑、高陷阱”项目。它通过创新的杠杆策略吸引了大量资本，但其底层却建立在极不稳固的基础之上。以下是本报告的核心发现，帮助您快速了解其内在的矛盾。</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-8 mt-8">
+                <!-- Opportunities -->
+                <div class="bg-white p-6 rounded-lg shadow-lg border-l-4 border-green-500">
+                    <h4 class="text-xl font-bold text-green-700 mb-4 flex items-center">
+                        <span class="text-2xl mr-3">💡</span>
+                        主要机遇
+                    </h4>
+                    <ul class="space-y-3 text-slate-700">
+                        <li class="flex items-start">
+                            <span class="text-green-500 font-bold mr-2">1.</span>
+                            <div>
+                                <strong class="font-semibold">杠杆积分挖矿 (PointFi):</strong> 协议核心吸引力。允许用户通过高达10倍杠杆“预挖”Solayer等热门项目的空投积分，满足了市场对空投套利的强烈需求。
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-green-500 font-bold mr-2">2.</span>
+                             <div>
+                                <strong class="font-semibold">高 APR/APY 策略:</strong> 针对 JLP 等成熟生息资产提供高达 67% 的潜在年化收益，对追求极致资本效率的激进型收益农民极具诱惑力。
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-green-500 font-bold mr-2">3.</span>
+                            <div>
+                                <strong class="font-semibold">TVL 快速增长:</strong> 总锁仓价值在短期内迅速突破1000万美元，证明其产品在特定细分市场（高风险偏好用户）中具有强大的吸引力。
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Risks -->
+                <div class="bg-white p-6 rounded-lg shadow-lg border-l-4 border-red-500">
+                    <h4 class="text-xl font-bold text-red-700 mb-4 flex items-center">
+                        <span class="text-2xl mr-3">⚠️</span>
+                        致命风险
+                    </h4>
+                    <ul class="space-y-3 text-slate-700">
+                        <li class="flex items-start">
+                             <span class="text-red-500 font-bold mr-2">1.</span>
+                             <div>
+                                <strong class="font-semibold">创始人风险:</strong> 核心创始人 TIN Yi KUNG 被指控有多次创建项目并在融资后放弃（软跑路）的不良记录，构成严重的信任危机。
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                             <span class="text-red-500 font-bold mr-2">2.</span>
+                             <div>
+                                <strong class="font-semibold">安全风险 (黑盒):</strong> 尽管声称已审计，但无任何公开可验证的审计报告。智能合约代码不开源，用户资金如同置于一个无法审查的黑盒中。
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                             <span class="text-red-500 font-bold mr-2">3.</span>
+                             <div>
+                                <strong class="font-semibold">市场风险 (流动性枯竭):</strong> 原生代币 $NX 日交易量极低（常低于$2000），市场流动性严重不足。任何稍大额的卖单都可能导致价格崩盘，投资者无法退出。
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Market Data -->
+        <section id="market" class="mb-12 scroll-mt-20">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-slate-800">市场数据分析</h2>
+                <p class="mt-2 text-slate-600 max-w-3xl mx-auto">本部分通过交互式图表展示 NX Finance 的链上表现。数据揭示了一个危险的信号：尽管协议吸引了千万级别的资金（TVL），但其原生代币的市场交易几乎停滞，这表明用户只愿“用”它，不愿“持有”它。</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <h3 class="text-xl font-bold mb-4 text-center">总锁仓价值 (TVL) 增长趋势</h3>
+                    <div class="chart-container">
+                        <canvas id="tvlChart"></canvas>
+                    </div>
+                    <p class="text-sm text-slate-500 mt-4 text-center">TVL的快速增长显示了产品对高风险用户的吸引力，但这背后是“雇佣兵资本”的驱动。</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <h3 class="text-xl font-bold mb-4 text-center">日交易量 vs 市值</h3>
+                    <div class="chart-container">
+                        <canvas id="volumeChart"></canvas>
+                    </div>
+                     <p class="text-sm text-slate-500 mt-4 text-center">极低的交易量是致命弱点，表明代币缺乏真实的市场需求和流动性。</p>
+                </div>
+            </div>
+            
+            <div class="bg-white p-6 rounded-lg shadow-lg mt-8">
+                <h3 class="text-xl font-bold mb-4 text-center">Solana 杠杆收益赛道竞争矩阵</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-100">
+                            <tr>
+                                <th class="p-3 font-semibold">协议</th>
+                                <th class="p-3 font-semibold">TVL (美元)</th>
+                                <th class="p-3 font-semibold">市值 / FDV (美元)</th>
+                                <th class="p-3 font-semibold">核心差异化</th>
+                            </tr>
+                        </thead>
+                        <tbody id="competitor-table">
+                        </tbody>
+                    </table>
+                </div>
+                 <p class="text-sm text-slate-500 mt-4 text-center">NX Finance的独特卖点是“杠杆积分挖矿”，这使其在拥挤的赛道中吸引了千万级TVL，但其代币价值远低于同TVL级别的对手。</p>
+            </div>
+        </section>
+
+        <!-- Section: Risk Assessment -->
+        <section id="risk" class="mb-12 scroll-mt-20">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-slate-800">深度风险评估</h2>
+                <p class="mt-2 text-slate-600 max-w-3xl mx-auto">这是本报告最重要的部分。NX Finance 面临的风险并非普通的市场波动，而是源于其根基的结构性缺陷。我们将其归纳为三个“致命风险”，任何一个都足以构成不投资的理由。</p>
+            </div>
+
+            <div class="space-y-6">
+                <div class="bg-red-50 border border-red-200 p-6 rounded-lg shadow-md card-reveal cursor-pointer" onclick="this.classList.toggle('open')">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-xl font-bold text-red-800 flex items-center"><span class="text-3xl mr-3">👤</span>创始人与团队风险</h3>
+                        <span class="text-red-600 font-bold text-sm transform transition-transform">点击展开 ▼</span>
+                    </div>
+                    <div class="mt-4 text-red-700">
+                        <p class="font-semibold">核心指控：加密研究员 `0xmcraider` 指控创始人 TIN Yi KUNG (又名 Timmy) 存在一种重复性的“软跑路”行为模式。</p>
+                        <ul class="list-decimal list-inside mt-2 space-y-1 pl-2">
+                            <li>开发低成本的聚合器类项目。</li>
+                            <li>通过激励措施吸引用户存款，拉高 TVL。</li>
+                            <li>利用KOL进行IDO，且仅在DEX上线代币。</li>
+                            <li>项目启动后不久便逐渐放弃，转而开始下一个新项目。</li>
+                        </ul>
+                        <p class="mt-2"><strong class="font-semibold">项目方回应：</strong>团队仅在社区内部含糊承认“犯过错误”，从未在公开场合正面回应或驳斥指控。</p>
+                        <p class="mt-2 text-red-900 bg-red-200 p-2 rounded"><strong class="font-semibold">风险含义：</strong>这暗示了项目存在极高的被运营团队主动放弃的概率，导致代币价值归零，投资者将蒙受全部损失。</p>
+                    </div>
+                </div>
+
+                <div class="bg-red-50 border border-red-200 p-6 rounded-lg shadow-md card-reveal cursor-pointer" onclick="this.classList.toggle('open')">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-xl font-bold text-red-800 flex items-center"><span class="text-3xl mr-3">🛡️</span>安全与智能合约风险</h3>
+                        <span class="text-red-600 font-bold text-sm transform transition-transform">点击展开 ▼</span>
+                    </div>
+                     <div class="mt-4 text-red-700">
+                        <p class="font-semibold">NX Finance 的安全状况是一个充满矛盾和危险信号的“黑盒”。</p>
+                        <ul class="list-none mt-2 space-y-2">
+                            <li class="flex items-center"><span class="text-2xl mr-2">❌</span><strong class="font-semibold mr-2">无公开审计报告:</strong> 尽管项目方声称通过了 SlowMist 审计，但在全网无法找到任何公开可验证的报告。这比未审计更危险，因为它提供虚假安全感。</li>
+                            <li class="flex items-center"><span class="text-2xl mr-2">❌</span><strong class="font-semibold mr-2">代码不开源:</strong> 项目没有提供任何公开的 GitHub 代码库，完全违背了 Web3 的透明精神。独立研究员无法审查代码是否存在漏洞。</li>
+                        </ul>
+                        <p class="mt-2 text-red-900 bg-red-200 p-2 rounded"><strong class="font-semibold">风险含义：</strong>用户的资金完全依赖于一个不透明、未经公开验证的智能合约。潜在的漏洞（如重入攻击、逻辑错误）完全被隐藏，资金随时可能因未知漏洞被盗。</p>
+                    </div>
+                </div>
+
+                <div class="bg-amber-50 border border-amber-200 p-6 rounded-lg shadow-md card-reveal cursor-pointer" onclick="this.classList.toggle('open')">
+                     <div class="flex justify-between items-center">
+                        <h3 class="text-xl font-bold text-amber-800 flex items-center"><span class="text-3xl mr-3">📉</span>协议与市场风险</h3>
+                        <span class="text-amber-600 font-bold text-sm transform transition-transform">点击展开 ▼</span>
+                    </div>
+                     <div class="mt-4 text-amber-700">
+                        <p class="font-semibold">除了创始人和安全两大核心风险外，协议本身也存在多重市场风险。</p>
+                        <ul class="list-none mt-2 space-y-2">
+                            <li><strong class="font-semibold">清算风险:</strong> 高达10倍的杠杆极大地放大了市场风险。抵押品价格中等程度的下跌就可能触发大规模连锁清算，导致本金完全损失。</li>
+                            <li><strong class="font-semibold">系统性风险:</strong> 协议严重依赖 Jupiter 和 Solayer 等外部协议。这些外部系统若出现故障或被攻击，风险将直接传导至 NX Finance。</li>
+                             <li><strong class="font-semibold">流动性风险:</strong> $NX 代币交易量极低，构成严重的流动性陷阱。投资者可能在需要时无法以合理价格退出头寸，面临巨大的滑点损失或完全无法卖出。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Investment Strategies -->
+        <section id="strategy" class="scroll-mt-20">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-slate-800">投资策略矩阵分析</h2>
+                <p class="mt-2 text-slate-600 max-w-3xl mx-auto">本节详细拆解了参与 NX Finance 的所有可能途径。请注意，尽管某些策略提供了诱人的潜在回报，但它们都建立在上述极高的基础风险之上。点击卡片查看每种策略的优缺点。</p>
+            </div>
+
+            <div id="strategy-grid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Strategy cards will be injected here by JavaScript -->
+            </div>
+            
+            <div class="bg-white p-6 rounded-lg shadow-lg mt-8">
+                 <h3 class="text-xl font-bold mb-4 text-center">开发者机会评估</h3>
+                 <div class="text-center">
+                    <p class="text-slate-700">经过广泛搜索，<strong class="text-red-600">没有发现 NX Finance 提供任何公开的SDK、API、开发者资助计划或任何形式的生态系统建设计划。</strong></p>
+                    <p class="mt-2 text-slate-500">这表明项目目前是一个完全封闭的、由内部团队驱动的产品。对于希望通过开发贡献来参与项目生态的投资者来说，目前没有任何可行途径。</p>
+                 </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-slate-800 text-white mt-12 py-6">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <p class="text-sm text-slate-400">免责声明：本报告仅供参考，不构成任何投资建议。所有信息均基于公开数据整理分析，但无法保证其绝对准确性。加密货币投资存在极高风险，请在做出任何投资决策前进行自己的深入研究（DYOR）。</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Data from the report
+            const marketData = {
+                tvl: {
+                    labels: ['第一周', '第二周', '第三周', '第四周', '第五周', '第六周'],
+                    data: [50, 200, 1500, 4500, 8000, 10120], // in thousands USD
+                },
+                volume: {
+                    labels: ['市值', '24小时交易量'],
+                    data: [1400000, 1500], // Example data
+                },
+                competitors: [
+                    { name: 'NX Finance', tvl: '约 1012 万', mcap: '约 140 万 / 360 万', usp: '杠杆积分挖矿 (PointFi)' },
+                    { name: 'Meteora', tvl: '约 8.36 亿', mcap: 'N/A', usp: '动态流动性做市商 (AMM)' },
+                    { name: 'Lulo', tvl: '约 8423 万', mcap: 'N/A', usp: '收益聚合器' },
+                    { name: 'Francium', tvl: '约 1052 万', mcap: 'N/A', usp: '通用型杠杆收益挖矿' },
+                    { name: 'Tulip Protocol', tvl: '约 8077 万', mcap: '约 13.1 万', usp: '自动复利金库' },
+                ],
+            };
+
+            const investmentStrategies = [
+                {
+                    title: '直接购买 $NX 代币',
+                    riskLevel: '极高',
+                    riskColor: 'red',
+                    apy: 'N/A',
+                    advantages: '若协议成功，代币有高增长潜力。',
+                    disadvantages: '代币流动性极低，价格波动剧烈；创始人跑路风险；智能合约漏洞风险。',
+                    profile: '极度激进的投机者。'
+                },
+                {
+                    title: '被动借贷 (USDC/SOL)',
+                    riskLevel: '高',
+                    riskColor: 'red',
+                    apy: '8-14%',
+                    advantages: '收益相对稳定，高于市场平均水平；操作简单，无需主动管理。',
+                    disadvantages: '协议智能合约风险（资金可能被盗）；协议失败导致借款人违约。',
+                    profile: '中高风险承受能力的收益型投资者。'
+                },
+                {
+                    title: '杠杆 JLP 挖矿',
+                    riskLevel: '极高',
+                    riskColor: 'red',
+                    apy: '最高 ~67%',
+                    advantages: '极高的资本效率，放大 JLP 基础收益。',
+                    disadvantages: 'JLP 价格下跌导致的清算风险；协议智能合约风险；高昂的借贷成本。',
+                    profile: '资深、激进的 DeFi 收益农民。'
+                },
+                {
+                    title: '杠杆积分挖矿 (Solayer)',
+                    riskLevel: '极高',
+                    riskColor: 'red',
+                    apy: '10倍积分放大',
+                    advantages: '放大潜在空投价值，是协议的核心吸引力。',
+                    disadvantages: '空投可能毫无价值或不及预期；清算风险；智能合约风险；创始人跑路风险。',
+                    profile: '专注于空投套利的激进型玩家 (“Degen”)。'
+                },
+                {
+                    title: 'JLP 对冲策略',
+                    riskLevel: '高',
+                    riskColor: 'red',
+                    apy: '变动',
+                    advantages: '存入 JLP，借出 SOL，可降低 JLP 池中 SOL 的风险敞口，实现对冲。',
+                    disadvantages: '复杂的策略，涉及多重风险；清算风险；智能合约风险。',
+                    profile: '精通 DeFi 对冲策略的高级用户。'
+                }
+            ];
+
+            // Render TVL Chart
+            const tvlCtx = document.getElementById('tvlChart').getContext('2d');
+            new Chart(tvlCtx, {
+                type: 'line',
+                data: {
+                    labels: marketData.tvl.labels,
+                    datasets: [{
+                        label: 'TVL (千美元)',
+                        data: marketData.tvl.data,
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value + 'k';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Render Volume Chart
+            const volumeCtx = document.getElementById('volumeChart').getContext('2d');
+            new Chart(volumeCtx, {
+                type: 'bar',
+                data: {
+                    labels: marketData.volume.labels,
+                    datasets: [{
+                        label: '美元',
+                        data: marketData.volume.data,
+                        backgroundColor: [
+                            'rgba(251, 146, 60, 0.6)',
+                            'rgba(239, 68, 68, 0.6)'
+                        ],
+                        borderColor: [
+                            'rgba(251, 146, 60, 1)',
+                            'rgba(239, 68, 68, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                           type: 'logarithmic',
+                           ticks: {
+                                callback: function(value, index, values) {
+                                    if (value === 1000000) return '$1M';
+                                    if (value === 100000) return '$100k';
+                                    if (value === 10000) return '$10k';
+                                    if (value === 1000) return '$1k';
+                                    if (value === 100) return '$100';
+                                    return null;
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+            
+            // Render Competitor Table
+            const competitorTable = document.getElementById('competitor-table');
+            marketData.competitors.forEach(comp => {
+                const row = document.createElement('tr');
+                row.className = 'border-b border-slate-200 hover:bg-slate-50 transition-colors';
+                row.innerHTML = `
+                    <td class="p-3 font-medium ${comp.name === 'NX Finance' ? 'text-blue-600' : ''}">${comp.name}</td>
+                    <td class="p-3">${comp.tvl}</td>
+                    <td class="p-3">${comp.mcap}</td>
+                    <td class="p-3">${comp.usp}</td>
+                `;
+                competitorTable.appendChild(row);
+            });
+
+            // Render Investment Strategies
+            const strategyGrid = document.getElementById('strategy-grid');
+            investmentStrategies.forEach(strat => {
+                const card = document.createElement('div');
+                card.className = `bg-white rounded-lg shadow-md overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 card-reveal border-t-4 border-${strat.riskColor}-500`;
+                card.innerHTML = `
+                    <div class="p-4" onclick="this.parentElement.classList.toggle('open')">
+                        <div class="flex justify-between items-center">
+                            <h4 class="font-bold text-lg">${strat.title}</h4>
+                            <span class="text-xs font-bold text-${strat.riskColor}-600 bg-${strat.riskColor}-100 px-2 py-1 rounded-full">${strat.riskLevel}</span>
+                        </div>
+                        <p class="text-sm text-slate-500 mt-1">潜在APY: <span class="font-semibold text-slate-700">${strat.apy}</span></p>
+                    </div>
+                    <div class="bg-slate-50 px-4 py-3 text-sm">
+                        <p class="font-semibold text-green-700">优势:</p>
+                        <p class="mb-2 text-slate-600">${strat.advantages}</p>
+                        <p class="font-semibold text-red-700">劣势:</p>
+                        <p class="mb-2 text-slate-600">${strat.disadvantages}</p>
+                        <p class="font-semibold text-slate-800">适合人群:</p>
+                        <p class="text-slate-600">${strat.profile}</p>
+                    </div>
+                `;
+                strategyGrid.appendChild(card);
+            });
+
+            // Navbar scroll behavior
+            const navbar = document.getElementById('navbar');
+            const sections = document.querySelectorAll('section');
+            const navLinks = document.querySelectorAll('.nav-link');
+
+            const observerOptions = {
+                root: null,
+                rootMargin: '0px',
+                threshold: 0.3
+            };
+
+            const observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        navLinks.forEach(link => {
+                            link.classList.remove('active');
+                            if (link.getAttribute('href').substring(1) === entry.target.id) {
+                                link.classList.add('active');
+                            }
+                        });
+                    }
+                });
+            }, observerOptions);
+
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+            
+            navLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    document.querySelector(link.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>

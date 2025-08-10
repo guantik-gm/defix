@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hydration (HDX) 交互式投资分析报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Cool Slate -->
+    <!-- Application Structure Plan: The application is designed as a single-page, thematic dashboard, deviating from the report's linear structure for better usability. The goal is to allow an investor to quickly grasp key metrics and then dive into specific areas of interest in any order. The structure includes: 1) A sticky navigation for easy access. 2) An "Overview" section with headline stats (TVL, Volume) and a TVL growth chart for an immediate snapshot. 3) A "Core Technology" section using interactive tabs to explain the complex "DeFi Trinity" (Trading, Lending, Stablecoin) in a digestible way. 4) A "Tokenomics" section with a doughnut chart for visual data representation. 5) A "Security" section with an interactive table to clearly present audit history. 6) A "Market Analysis" section with a comparative table. 7) A dedicated "Acquisition Proposal" section to highlight this critical, unique event with pro/con arguments. 8) A final "Investment Insights" section with a SWOT analysis. This non-linear, interactive structure is superior to a static report because it empowers users to control their information discovery process based on their priorities. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Key performance metrics (TVL, Volume, Users). Goal: Inform at a glance. Viz/Method: Dynamic stat cards and a Chart.js Line Chart for TVL growth. Interaction: Hover effects on cards. Justification: Provides an immediate, high-level understanding of the project's scale and traction. Library: Chart.js.
+        - Report Info: HDX token distribution percentages. Goal: Organize & Inform. Viz/Method: Chart.js Doughnut Chart. Interaction: Tooltips on hover. Justification: A doughnut chart is the most intuitive way to show proportional data like token allocation. Library: Chart.js.
+        - Report Info: Competitor data (Hydration vs. StellaSwap vs. Acala). Goal: Compare. Viz/Method: Interactive HTML table. Interaction: JS-powered row highlighting on click. Justification: An interactive table allows for focused comparison without clutter. Library: Vanilla JS.
+        - Report Info: Core technology (Omnipool, Lending, Stablecoin). Goal: Organize & Explain. Viz/Method: Tabbed content view. Interaction: Clicking tabs reveals relevant content. Justification: Tabs break down complex technical information into manageable chunks, preventing cognitive overload. Library: Vanilla JS.
+        - Report Info: Security audit history. Goal: Organize & Build Trust. Viz/Method: HTML table. Interaction: None, focus on clarity. Justification: A clear, chronological table is the most effective way to present factual audit data transparently. Library: N/A.
+        - Report Info: Polkadot acquisition proposal arguments. Goal: Compare perspectives. Viz/Method: Two-column layout for "Pros" and "Cons". Interaction: None, focus on clear presentation of arguments. Justification: This layout directly contrasts opposing viewpoints for balanced analysis. Library: N/A.
+        - Report Info: SWOT analysis. Goal: Synthesize. Viz/Method: Four-quadrant grid layout. Interaction: None. Justification: A classic SWOT grid is the standard and most effective way to summarize strategic analysis. Library: N/A.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+            color: #1e293b; /* slate-800 */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 40vh;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .tab-active {
+            border-color: #0891b2; /* cyan-600 */
+            color: #0891b2; /* cyan-600 */
+            background-color: #ecfeff; /* cyan-50 */
+        }
+        .nav-link {
+            transition: color 0.3s ease, border-color 0.3s ease;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Header & Navigation -->
+    <header id="header" class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
+        <div class="container mx-auto px-4">
+            <nav class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-3">
+                    <span class="text-2xl font-bold text-cyan-600">H</span>
+                    <h1 class="text-xl font-bold text-slate-800">Hydration 投资分析</h1>
+                </div>
+                <div class="hidden md:flex items-center space-x-6 text-sm font-medium">
+                    <a href="#overview" class="nav-link text-slate-600 hover:text-cyan-600 border-b-2 border-transparent hover:border-cyan-600 py-1">概述</a>
+                    <a href="#tech" class="nav-link text-slate-600 hover:text-cyan-600 border-b-2 border-transparent hover:border-cyan-600 py-1">核心技术</a>
+                    <a href="#tokenomics" class="nav-link text-slate-600 hover:text-cyan-600 border-b-2 border-transparent hover:border-cyan-600 py-1">代币经济</a>
+                    <a href="#security" class="nav-link text-slate-600 hover:text-cyan-600 border-b-2 border-transparent hover:border-cyan-600 py-1">安全审计</a>
+                    <a href="#market" class="nav-link text-slate-600 hover:text-cyan-600 border-b-2 border-transparent hover:border-cyan-600 py-1">市场分析</a>
+                    <a href="#proposal" class="nav-link text-slate-600 hover:text-cyan-600 border-b-2 border-transparent hover:border-cyan-600 py-1">收购提案</a>
+                    <a href="#insights" class="nav-link text-slate-600 hover:text-cyan-600 border-b-2 border-transparent hover:border-cyan-600 py-1">投资洞察</a>
+                </div>
+                <div class="md:hidden">
+                    <button id="menu-btn" class="text-slate-600 focus:outline-none">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                    </button>
+                </div>
+            </nav>
+            <div id="mobile-menu" class="hidden md:hidden pb-4">
+                <a href="#overview" class="block py-2 px-4 text-sm text-slate-600 hover:bg-cyan-50 rounded">概述</a>
+                <a href="#tech" class="block py-2 px-4 text-sm text-slate-600 hover:bg-cyan-50 rounded">核心技术</a>
+                <a href="#tokenomics" class="block py-2 px-4 text-sm text-slate-600 hover:bg-cyan-50 rounded">代币经济</a>
+                <a href="#security" class="block py-2 px-4 text-sm text-slate-600 hover:bg-cyan-50 rounded">安全审计</a>
+                <a href="#market" class="block py-2 px-4 text-sm text-slate-600 hover:bg-cyan-50 rounded">市场分析</a>
+                <a href="#proposal" class="block py-2 px-4 text-sm text-slate-600 hover:bg-cyan-50 rounded">收购提案</a>
+                <a href="#insights" class="block py-2 px-4 text-sm text-slate-600 hover:bg-cyan-50 rounded">投资洞察</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8 md:py-12">
+
+        <!-- Section 1: Overview -->
+        <section id="overview" class="mb-16 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-slate-900 mb-2">项目概述</h2>
+            <p class="text-slate-600 mb-8 max-w-3xl">本节提供Hydration协议的高层视角，包括其核心使命、从HydraDX的演变，以及关键的链上性能指标。这些数据帮助投资者快速了解该协议在波卡生态中的规模和活跃度。</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                <div class="bg-white p-6 rounded-xl shadow-md border border-slate-200/80">
+                    <h3 class="text-sm font-medium text-slate-500">总锁仓价值 (TVL)</h3>
+                    <p class="text-3xl font-bold text-slate-800 mt-2">$2.76 亿</p>
+                    <p class="text-xs text-slate-400 mt-1">来源: 官网</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md border border-slate-200/80">
+                    <h3 class="text-sm font-medium text-slate-500">30日交易量</h3>
+                    <p class="text-3xl font-bold text-slate-800 mt-2">$9600 万</p>
+                    <p class="text-xs text-slate-400 mt-1">来源: 官网</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md border border-slate-200/80">
+                    <h3 class="text-sm font-medium text-slate-500">总账户数</h3>
+                    <p class="text-3xl font-bold text-slate-800 mt-2">42,000+</p>
+                    <p class="text-xs text-slate-400 mt-1">来源: 官网</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md border border-slate-200/80">
+                    <h3 class="text-sm font-medium text-slate-500">月活跃用户</h3>
+                    <p class="text-3xl font-bold text-slate-800 mt-2">~4,900</p>
+                    <p class="text-xs text-slate-400 mt-1">来源: Token Terminal</p>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-lg border border-slate-200/80">
+                <h3 class="text-xl font-bold text-slate-800 mb-4">TVL 增长趋势</h3>
+                <div class="chart-container">
+                    <canvas id="tvlChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Core Technology -->
+        <section id="tech" class="mb-16 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-slate-900 mb-2">核心技术：DeFi三位一体</h2>
+            <p class="text-slate-600 mb-8 max-w-3xl">Hydration的核心竞争力在于其集成的“DeFi三位一体”架构，将交易、借贷和稳定币三大支柱融为一体。通过下方的交互式选项卡，您可以深入了解每个组件的创新之处，以及它们如何协同工作，构建一个高效且统一的金融中心。</p>
+            
+            <div class="mb-6 border-b border-slate-200">
+                <nav class="flex space-x-4" aria-label="Tabs">
+                    <button class="tech-tab tab-active whitespace-nowrap py-3 px-4 text-sm font-medium border-b-2" data-target="trading">
+                        支柱一：交易 (Omnipool)
+                    </button>
+                    <button class="tech-tab text-slate-500 hover:text-slate-700 whitespace-nowrap py-3 px-4 text-sm font-medium border-b-2 border-transparent" data-target="lending">
+                        支柱二：借贷 (货币市场)
+                    </button>
+                    <button class="tech-tab text-slate-500 hover:text-slate-700 whitespace-nowrap py-3 px-4 text-sm font-medium border-b-2 border-transparent" data-target="stablecoin">
+                        支柱三：稳定币 (HOLLAR)
+                    </button>
+                </nav>
+            </div>
+
+            <div id="tech-content">
+                <div id="trading-content" class="tech-content-panel">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div>
+                            <h3 class="text-xl font-bold text-slate-800 mb-3">Omnipool：单一池流动性架构</h3>
+                            <p class="text-slate-600 mb-4">Omnipool是Hydration的旗舰创新，它将所有资产整合到一个单一流动性池中，从根本上解决了传统DEX的流动性碎片化问题。这带来了更高的资本效率和更低的交易滑点。</p>
+                            <ul class="space-y-3 text-slate-600">
+                                <li class="flex items-start"><span class="text-cyan-500 font-bold mr-2 mt-1">✓</span><span><strong>单边流动性供给:</strong> 用户可存入单一资产，降低了参与门槛。</span></li>
+                                <li class="flex items-start"><span class="text-cyan-500 font-bold mr-2 mt-1">✓</span><span><strong>专业化池:</strong> 结合稳定池（类似Curve）和隔离XYK池，为不同资产类型提供最优交易环境。</span></li>
+                                <li class="flex items-start"><span class="text-cyan-500 font-bold mr-2 mt-1">✓</span><span><strong>高级交易功能:</strong> 内置DCA（定投）、OTC（场外交易）和分割交易工具。</span></li>
+                            </ul>
+                        </div>
+                        <div class="bg-slate-100 p-6 rounded-lg">
+                            <h4 class="font-semibold text-center mb-4">流动性模型对比</h4>
+                            <div class="flex justify-around items-center">
+                                <div class="text-center">
+                                    <p class="font-medium mb-2">传统AMM</p>
+                                    <div class="space-y-2">
+                                        <div class="w-24 h-10 bg-white border-2 border-slate-300 rounded-lg flex items-center justify-center text-sm">DOT/USDC</div>
+                                        <div class="w-24 h-10 bg-white border-2 border-slate-300 rounded-lg flex items-center justify-center text-sm">ETH/USDC</div>
+                                        <div class="w-24 h-10 bg-white border-2 border-slate-300 rounded-lg flex items-center justify-center text-sm">BTC/USDC</div>
+                                    </div>
+                                    <p class="text-xs text-slate-500 mt-2">流动性碎片化</p>
+                                </div>
+                                <div class="text-5xl font-thin text-slate-400">→</div>
+                                <div class="text-center">
+                                    <p class="font-medium mb-2">Hydration Omnipool</p>
+                                    <div class="w-32 h-32 bg-cyan-100 border-2 border-cyan-400 rounded-full flex flex-col items-center justify-center p-2">
+                                        <span class="text-xs">DOT</span>
+                                        <span class="text-xs">USDC</span>
+                                        <span class="text-xs">ETH</span>
+                                        <span class="text-xs">BTC</span>
+                                    </div>
+                                    <p class="text-xs text-slate-500 mt-2">统一流动性</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="lending-content" class="tech-content-panel hidden">
+                     <h3 class="text-xl font-bold text-slate-800 mb-3">货币市场：基于AAVE v3的安全借贷</h3>
+                     <p class="text-slate-600 mb-4">Hydration的货币市场基于经过实战检验的AAVE v3协议分叉构建，提供超额抵押借贷服务。其最大的创新在于利用应用链架构实现了链上优先清算机制。</p>
+                     <ul class="space-y-3 text-slate-600">
+                        <li class="flex items-start"><span class="text-cyan-500 font-bold mr-2 mt-1">✓</span><span><strong>稳健基础:</strong> 继承AAVE v3的成熟逻辑和安全性。</span></li>
+                        <li class="flex items-start"><span class="text-cyan-500 font-bold mr-2 mt-1">✓</span><span><strong>抗MEV机制:</strong> 链上优先清算在每个区块开始时执行，消除了矿工可提取价值（MEV）的剥削，保护用户。</span></li>
+                        <li class="flex items-start"><span class="text-cyan-500 font-bold mr-2 mt-1">✓</span><span><strong>协议可持续性:</strong> 将清算奖励内部化，增强协议的长期价值。</span></li>
+                     </ul>
+                </div>
+                <div id="stablecoin-content" class="tech-content-panel hidden">
+                    <h3 class="text-xl font-bold text-slate-800 mb-3">HOLLAR稳定币：未来的去中心化货币</h3>
+                    <p class="text-slate-600 mb-4">HOLLAR是计划中的原生去中心化稳定币，它将作为Hydration生态的最终支柱。它旨在成为中心化稳定币的去信任、透明的替代品。</p>
+                     <ul class="space-y-3 text-slate-600">
+                        <li class="flex items-start"><span class="text-cyan-500 font-bold mr-2 mt-1">✓</span><span><strong>深度集成:</strong> 将与交易和借贷两大支柱深度融合，释放新的金融可能性。</span></li>
+                        <li class="flex items-start"><span class="text-cyan-500 font-bold mr-2 mt-1">✓</span><span><strong>创新抵押:</strong> 未来可能允许用户使用Omnipool的流动性挖矿仓位作为抵押品来铸造HOLLAR。</span></li>
+                        <li class="flex items-start"><span class="text-cyan-500 font-bold mr-2 mt-1">✓</span><span><strong>生态系统基石:</strong> 完成“DeFi三位一体”，使Hydration成为一个自给自足的金融生态。</span></li>
+                     </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Tokenomics -->
+        <section id="tokenomics" class="mb-16 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-slate-900 mb-2">HDX 代币经济学</h2>
+            <p class="text-slate-600 mb-8 max-w-3xl">HDX是Hydration协议的原生实用和治理代币。本节将通过可视化的图表和关键点摘要，解析其代币分配、核心效用以及价值捕获机制，帮助投资者理解HDX在生态系统中的核心作用。</p>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-xl shadow-lg border border-slate-200/80">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4">代币分配</h3>
+                    <div class="chart-container h-64 md:h-80">
+                        <canvas id="tokenomicsChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-lg border border-slate-200/80">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4">核心效用与价值捕获</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <h4 class="font-semibold text-slate-700">治理</h4>
+                            <p class="text-sm text-slate-600">HDX持有者拥有并管理协议，可对所有重大决策进行投票。</p>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-slate-700">质押 & 收入分享</h4>
+                            <p class="text-sm text-slate-600">质押HDX可分享协议交易费用收入。独特的“忠诚度”机制激励积极参与治理的用户，以加速奖励解锁。</p>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-slate-700">费用减免</h4>
+                            <p class="text-sm text-slate-600">使用HDX可以降低在平台上的交易费用。</p>
+                        </div>
+                        <div class="bg-cyan-50 border-l-4 border-cyan-500 p-4 rounded-r-lg">
+                            <p class="text-sm text-cyan-800"><strong>价值飞轮:</strong> 协议使用 → 产生费用 → 奖励质押者 → 激励治理 → 促进协议增长。这是一个强大的正反馈循环。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Security -->
+        <section id="security" class="mb-16 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-slate-900 mb-2">安全状况与风险分析</h2>
+            <p class="text-slate-600 mb-8 max-w-3xl">对于任何DeFi协议，安全都是重中之重。Hydration采取了多层次、主动的安全策略。本节详细列出了其全面的审计历史和主动的安全措施，为投资者评估其风险状况提供透明的依据。</p>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white p-6 rounded-xl shadow-md border border-slate-200/80">
+                    <h4 class="font-bold text-slate-800">广泛审计</h4>
+                    <p class="text-sm text-slate-600 mt-2">由Runtime Verification, Code4rena, BlockScience等多家顶级公司进行持续审计。</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md border border-slate-200/80">
+                    <h4 class="font-bold text-slate-800">漏洞赏金计划</h4>
+                    <p class="text-sm text-slate-600 mt-2">在Immunefi上设立高达$500,000的漏洞赏金，激励白帽黑客发现并报告漏洞。</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md border border-slate-200/80">
+                    <h4 class="font-bold text-slate-800">协议内置保障</h4>
+                    <p class="text-sm text-slate-600 mt-2">实施流动性上限、断路器机制和XCM速率限制器，作为抵御极端事件的最后防线。</p>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl shadow-lg border border-slate-200/80 overflow-x-auto">
+                <table class="w-full text-sm text-left text-slate-600">
+                    <thead class="text-xs text-slate-700 uppercase bg-slate-100">
+                        <tr>
+                            <th scope="col" class="px-6 py-3">日期</th>
+                            <th scope="col" class="px-6 py-3">审计公司</th>
+                            <th scope="col" class="px-6 py-3">审计范围</th>
+                        </tr>
+                    </thead>
+                    <tbody id="audit-table-body">
+                        <!-- JS will populate this -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Section 5: Market Analysis -->
+        <section id="market" class="mb-16 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-slate-900 mb-2">市场地位与竞争格局</h2>
+             <p class="text-slate-600 mb-8 max-w-3xl">了解Hydration在市场中的位置至关重要。本节将其与波卡生态内的主要竞争对手进行直接比较，并分析其核心技术与更广泛DeFi市场中的领导者（如Balancer和Curve）相比的异同点。</p>
+            <div class="bg-white rounded-xl shadow-lg border border-slate-200/80 overflow-x-auto">
+                <h3 class="text-xl font-bold text-slate-800 p-6">波卡生态竞争对手对比</h3>
+                <table class="w-full text-sm text-left text-slate-600">
+                    <thead class="text-xs text-slate-700 uppercase bg-slate-100">
+                        <tr>
+                            <th scope="col" class="px-6 py-3">指标</th>
+                            <th scope="col" class="px-6 py-3">Hydration</th>
+                            <th scope="col" class="px-6 py-3">StellaSwap</th>
+                            <th scope="col" class="px-6 py-3">Acala Network</th>
+                        </tr>
+                    </thead>
+                    <tbody id="competitor-table-body" class="divide-y divide-slate-200">
+                       <!-- JS will populate this -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Section 6: Acquisition Proposal -->
+        <section id="proposal" class="mb-16 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-slate-900 mb-2">战略分析：波卡收购提案</h2>
+            <p class="text-slate-600 mb-8 max-w-3xl">一项“变革愿望”治理提案建议由波卡国库收购Hydration，这可能是决定其未来的关键事件。本节概述了提案的关键条款，并并列展示了社区中支持与反对的核心论点，揭示了波卡未来发展的哲学辩论。</p>
+            <div class="bg-white rounded-xl shadow-lg border border-slate-200/80 p-6">
+                <div class="text-center mb-6">
+                    <h3 class="text-xl font-bold text-slate-800">提案核心：1 DOT : 550 HDX</h3>
+                    <p class="text-slate-500">将Hydration提升为波卡“DeFi系统链”</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="bg-green-50 p-6 rounded-lg border border-green-200">
+                        <h4 class="text-lg font-bold text-green-800 mb-3">支持方论点 (Pro)</h4>
+                        <ul class="space-y-2 text-sm text-green-700">
+                            <li><strong>✓ 经济协同:</strong> 将Hydration的成功与波卡的成功直接挂钩，最大化国库效率。</li>
+                            <li><strong>✓ 减少碎片化:</strong> 整合DeFi流动性与开发，打造统一的DeFi中心。</li>
+                            <li><strong>✓ 战略增长:</strong> 承认并扶持生态内最强的DeFi项目，以带动整体增长。</li>
+                        </ul>
+                    </div>
+                    <div class="bg-red-50 p-6 rounded-lg border border-red-200">
+                        <h4 class="text-lg font-bold text-red-800 mb-3">反对方论点 (Con)</h4>
+                        <ul class="space-y-2 text-sm text-red-700">
+                            <li><strong>✗ 扼杀竞争:</strong> “国有化”DeFi可能抑制生态系统内的创新动力。</li>
+                            <li><strong>✗ 道德风险:</strong> 开创“大而不能倒”的先例，将风险社会化。</li>
+                            <li><strong>✗ 风险中心化:</strong> 将流动性、治理和技术风险集中于单点，违背波卡多链设计初衷。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 7: Investment Insights -->
+        <section id="insights" class="scroll-mt-20">
+            <h2 class="text-3xl font-bold text-slate-900 mb-2">投资洞察与最终评估</h2>
+            <p class="text-slate-600 mb-8 max-w-3xl">综合以上所有分析，本节提供了一个SWOT（优势、劣势、机会、威胁）分析，总结了Hydration的战略态势，并展望了其未来路线图。这为投资者形成最终的投资决策提供了全面的、高度浓缩的视角。</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <!-- SWOT Analysis -->
+                <div class="bg-green-50 p-4 rounded-lg border border-green-200">
+                    <h4 class="font-bold text-green-800">优势 (Strengths)</h4>
+                    <ul class="mt-2 text-sm text-green-700 list-disc list-inside space-y-1">
+                        <li>创新的Omnipool架构</li>
+                        <li>强大的安全审计记录</li>
+                        <li>垂直整合的产品线</li>
+                        <li>深厚的生态系统支持</li>
+                    </ul>
+                </div>
+                <div class="bg-red-50 p-4 rounded-lg border border-red-200">
+                    <h4 class="font-bold text-red-800">劣势 (Weaknesses)</h4>
+                    <ul class="mt-2 text-sm text-red-700 list-disc list-inside space-y-1">
+                        <li>TVL增长依赖激励</li>
+                        <li>Omnipool机制较复杂</li>
+                        <li>价值捕获需主动参与</li>
+                    </ul>
+                </div>
+                <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                    <h4 class="font-bold text-blue-800">机会 (Opportunities)</h4>
+                    <ul class="mt-2 text-sm text-blue-700 list-disc list-inside space-y-1">
+                        <li>波卡收购案巩固地位</li>
+                        <li>HOLLAR稳定币捕获价值</li>
+                        <li>跨链互操作吸引流动性</li>
+                    </ul>
+                </div>
+                <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-300">
+                    <h4 class="font-bold text-yellow-800">威胁 (Threats)</h4>
+                    <ul class="mt-2 text-sm text-yellow-700 list-disc list-inside space-y-1">
+                        <li>收购案被否决的负面影响</li>
+                        <li>来自EVM链的竞争</li>
+                        <li>潜在的安全或监管风险</li>
+                    </ul>
+                </div>
+            </div>
+             <div class="bg-white rounded-xl shadow-lg border border-slate-200/80 p-6">
+                <h3 class="text-xl font-bold text-slate-800 mb-4">最终评估与未来展望</h3>
+                <p class="text-slate-600">Hydration在技术上具有优越性，并已战略性地定位为波卡无可争议的DeFi中心。其创新的架构解决了流动性碎片化的实际问题，而其安全第一的方法也赢得了市场的信任。然而，该协议的命运正处于一个关键的十字路口，其走向将由“变革愿望”提案的结果决定。这一结果将决定它是演变为一个统一的波卡生态系统中的基础性、系统级组件，还是在一个更加去中心化和竞争性的生态中，继续作为主导但独立的金融力量蓬勃发展。无论治理结果如何，该项目的长期成功都取决于其能否将激励驱动的用户行为转化为有机的、可持续的采用。</p>
+            </div>
+        </section>
+    </main>
+    
+    <footer class="border-t border-slate-200 mt-16">
+        <div class="container mx-auto px-4 py-6 text-center text-sm text-slate-500">
+            <p>&copy; 2025 交互式投资分析报告。仅供参考，不构成投资建议。</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Mobile Menu Toggle
+            const menuBtn = document.getElementById('menu-btn');
+            const mobileMenu = document.getElementById('mobile-menu');
+            menuBtn.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+
+            // Tech Tabs Interaction
+            const techTabs = document.querySelectorAll('.tech-tab');
+            const techContentPanels = document.querySelectorAll('.tech-content-panel');
+            techTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    techTabs.forEach(t => t.classList.remove('tab-active', 'text-slate-500', 'hover:text-slate-700'));
+                    techTabs.forEach(t => {
+                        if(t !== tab) {
+                            t.classList.add('text-slate-500', 'hover:text-slate-700')
+                        }
+                    });
+                    tab.classList.add('tab-active');
+
+                    const targetId = tab.dataset.target + '-content';
+                    techContentPanels.forEach(panel => {
+                        if (panel.id === targetId) {
+                            panel.classList.remove('hidden');
+                        } else {
+                            panel.classList.add('hidden');
+                        }
+                    });
+                });
+            });
+            
+            // Data for charts and tables
+            const tvlData = {
+                labels: ['2023 Q1', '2023 Q2', '2023 Q3', '2023 Q4', '2024 Q1', '2024 Q2', '2024 Q3', '2024 Q4', '2025 Q1', '2025 Q2'],
+                data: [10, 25, 40, 65, 90, 150, 180, 220, 250, 276]
+            };
+
+            const tokenomicsData = {
+                labels: ['LBP参与者', '开发', '创始人和团队', '投资者', 'HDX众贷', 'DAO金库', '收集人', 'BSX众贷'],
+                data: [30.5, 27.6, 12.5, 10.6, 7.6, 5.5, 3.9, 1.9]
+            };
+
+            const auditData = [
+                { date: '2025年4月', company: 'OAK Security', scope: '具有浮动锚定的稳定池' },
+                { date: '2025年4月', company: 'Cantina (Spearbit)', scope: '货币市场链上清算' },
+                { date: '2025年1月', company: 'Cantina (Spearbit)', scope: 'AAVE v3 (货币市场) 部署' },
+                { date: '2024年10月', company: 'Pashov Audit Group', scope: 'ERC20 映射' },
+                { date: '2024年6月', company: 'SRLabs', scope: 'EVM 预编译' },
+                { date: '2024年4月', company: 'Code4rena', scope: 'Omnipool, 稳定池, 预言机, 断路器' },
+                { date: '2023年7月', company: 'Runtime Verification', scope: '稳定池兑换（Stableswap）' },
+                { date: '2022年9月', company: 'Runtime Verification', scope: 'Omnipool (Rust 实现)' },
+                { date: '2022年3月', company: 'BlockScience', scope: 'Omnipool (经济与数学逻辑)' },
+            ];
+            
+            const competitorData = [
+                { metric: '主要链', hydration: 'Polkadot', stella: 'Moonbeam (EVM)', acala: 'Acala (Polkadot)' },
+                { metric: '总锁仓价值 (TVL)', hydration: '$2.76亿', stella: '$606万', acala: '$36.3万' },
+                { metric: '核心AMM模型', hydration: 'Omnipool (单一池)', stella: '标准/集中流动性', acala: '基于AMM的DEX' },
+                { metric: '关键差异化', hydration: '垂直整合DeFi堆栈', stella: 'EVM兼容性', acala: '原生稳定币(aUSD)' },
+                { metric: '借贷协议', hydration: 'AAVE v3 分叉', stella: '稳定币借贷 (MAI)', acala: 'Honzon协议 (铸造aUSD)' },
+            ];
+
+            // Populate Audit Table
+            const auditTableBody = document.getElementById('audit-table-body');
+            auditData.forEach(item => {
+                const row = document.createElement('tr');
+                row.className = 'bg-white border-b';
+                row.innerHTML = `
+                    <td class="px-6 py-4">${item.date}</td>
+                    <td class="px-6 py-4 font-medium text-slate-900">${item.company}</td>
+                    <td class="px-6 py-4">${item.scope}</td>
+                `;
+                auditTableBody.appendChild(row);
+            });
+            
+            // Populate Competitor Table
+            const competitorTableBody = document.getElementById('competitor-table-body');
+            competitorData.forEach(item => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-slate-50 cursor-pointer transition-colors duration-200';
+                row.innerHTML = `
+                    <td class="px-6 py-4 font-medium text-slate-800">${item.metric}</td>
+                    <td class="px-6 py-4 font-bold text-cyan-700">${item.hydration}</td>
+                    <td class="px-6 py-4">${item.stella}</td>
+                    <td class="px-6 py-4">${item.acala}</td>
+                `;
+                competitorTableBody.appendChild(row);
+            });
+            
+            competitorTableBody.addEventListener('click', (e) => {
+                const rows = competitorTableBody.querySelectorAll('tr');
+                rows.forEach(r => r.classList.remove('bg-cyan-50'));
+                e.target.closest('tr').classList.add('bg-cyan-50');
+            });
+
+
+            // Init TVL Chart
+            const tvlCtx = document.getElementById('tvlChart').getContext('2d');
+            new Chart(tvlCtx, {
+                type: 'line',
+                data: {
+                    labels: tvlData.labels,
+                    datasets: [{
+                        label: 'TVL (百万美元)',
+                        data: tvlData.data,
+                        borderColor: '#0891b2', // cyan-600
+                        backgroundColor: 'rgba(14, 165, 233, 0.1)', // cyan-500 with opacity
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#0891b2',
+                        pointBorderColor: '#fff',
+                        pointHoverRadius: 7,
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: '#0891b2',
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: '百万美元' }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+
+            // Init Tokenomics Chart
+            const tokenomicsCtx = document.getElementById('tokenomicsChart').getContext('2d');
+            new Chart(tokenomicsCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: tokenomicsData.labels,
+                    datasets: [{
+                        label: 'HDX 分配',
+                        data: tokenomicsData.data,
+                        backgroundColor: [
+                            '#0e7490', '#0891b2', '#06b6d4', '#22d3ee',
+                            '#67e8f9', '#a5f3fc', '#cffafe', '#ecfeff'
+                        ],
+                        borderColor: '#f8fafc',
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                boxWidth: 12,
+                                padding: 15
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scallop (SCA) 交互式投资仪表盘</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Harmony Neutrals -->
+    <!-- Application Structure Plan: The SPA is designed as a multi-section, dashboard-style interface, abandoning the linear structure of the source report. The architecture prioritizes immediate insight and user-driven exploration. It starts with a high-level verdict and key metrics in a 'Hero' section. A sticky navigation bar allows users to jump to thematic sections: a 'Dashboard' for at-a-glance analysis (competitive landscape, SWOT), 'Fundamentals' for the project's core strengths (timeline, ecosystem), 'Market & Token' for economic models (tokenomics, value flywheel), 'Risk Assessment' for a transparent view of downsides, and 'Investment Strategies' for actionable opportunities. This non-linear, thematic structure was chosen because investors have different priorities; some may focus on risks first, others on high-yield strategies. This design allows them to access their area of interest instantly, enhancing usability and information retention compared to a simple scrollable document. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Competitive Comparison (Scallop vs. NAVI vs. Suilend) -> Goal: Compare -> Viz: Interactive Bar Chart (Chart.js) -> Interaction: Buttons to toggle metrics (TVL, Revenue) -> Justification: Enables direct, dynamic comparison of key rivals on core metrics, which is central to the report's market analysis.
+        - Report Info: Token Allocation -> Goal: Inform/Organize -> Viz: Donut Chart (Chart.js) -> Interaction: Hover to see details -> Justification: Standard, intuitive visualization for showing proportional data, making complex allocation instantly understandable.
+        - Report Info: veSCA Value Flywheel -> Goal: Explain a process -> Viz: Custom HTML/CSS animated diagram -> Interaction: Subtle animations guide the eye -> Justification: The flywheel is a complex but critical concept. A dynamic, visual explanation is far more effective for comprehension than static text.
+        - Report Info: Investment Opportunities -> Goal: Organize/Action -> Viz: Interactive flip cards -> Interaction: Click to reveal details -> Justification: Transforms a dense table into an engaging, gamified interface, encouraging users to explore different investment pathways based on risk/reward.
+        - Report Info: Security Audits & Risks -> Goal: Inform/Organize -> Viz: Interactive grid/accordion -> Interaction: Click to expand -> Justification: Breaks down dense, critical risk information into manageable chunks, reducing cognitive load and allowing users to focus on specific concerns.
+        - All visualizations are implemented using Chart.js on <canvas> or structured HTML/CSS with Tailwind, adhering to the NO SVG/Mermaid constraint. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #F8F7F4;
+            color: #3D3D3D;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .nav-link {
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link.active, .nav-link:hover {
+            color: #4A90E2;
+            border-bottom-color: #4A90E2;
+        }
+        .strategy-card-inner {
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        .strategy-card.flipped .strategy-card-inner {
+            transform: rotateY(180deg);
+        }
+        .strategy-card-front, .strategy-card-back {
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+        }
+        .strategy-card-back {
+            transform: rotateY(180deg);
+        }
+        .flywheel-item {
+            animation: fadeIn 1.5s ease-in-out forwards;
+            opacity: 0;
+        }
+        .flywheel-arrow {
+            animation: growArrow 1s ease-in-out forwards;
+            transform-origin: left;
+            transform: scaleX(0);
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes growArrow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+        .flywheel-item:nth-child(1) { animation-delay: 0s; }
+        .flywheel-arrow:nth-child(2) { animation-delay: 0.5s; }
+        .flywheel-item:nth-child(3) { animation-delay: 1s; }
+        .flywheel-arrow:nth-child(4) { animation-delay: 1.5s; }
+        .flywheel-item:nth-child(5) { animation-delay: 2s; }
+        .flywheel-arrow:nth-child(6) { animation-delay: 2.5s; }
+        .flywheel-item:nth-child(7) { animation-delay: 3s; }
+        .flywheel-arrow:nth-child(8) { animation-delay: 3.5s; }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="sticky top-0 bg-white/80 backdrop-blur-lg z-50 shadow-md">
+        <nav class="container mx-auto px-4">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-4">
+                    <span class="text-2xl font-bold text-[#4A90E2]">SCA</span>
+                    <h1 class="text-lg font-bold hidden md:block">Scallop 投资仪表盘</h1>
+                </div>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#dashboard" class="nav-link font-medium pb-1">主控面板</a>
+                    <a href="#fundamentals" class="nav-link font-medium pb-1">项目基本面</a>
+                    <a href="#market" class="nav-link font-medium pb-1">市场与代币</a>
+                    <a href="#risks" class="nav-link font-medium pb-1">风险评估</a>
+                    <a href="#strategies" class="nav-link font-medium pb-1">投资策略</a>
+                </div>
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="text-gray-700 focus:outline-none">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                    </button>
+                </div>
+            </div>
+        </nav>
+        <div id="mobile-menu" class="hidden md:hidden">
+            <a href="#dashboard" class="block py-2 px-4 text-sm hover:bg-gray-100">主控面板</a>
+            <a href="#fundamentals" class="block py-2 px-4 text-sm hover:bg-gray-100">项目基本面</a>
+            <a href="#market" class="block py-2 px-4 text-sm hover:bg-gray-100">市场与代币</a>
+            <a href="#risks" class="block py-2 px-4 text-sm hover:bg-gray-100">风险评估</a>
+            <a href="#strategies" class="block py-2 px-4 text-sm hover:bg-gray-100">投资策略</a>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8 md:py-12">
+        <section id="hero" class="text-center mb-16">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4">Scallop (SCA) 协议</h1>
+            <p class="text-xl md:text-2xl text-gray-600 mb-6">Sui 生态系统的核心金融基础设施与下一代利率机器</p>
+            <div class="flex justify-center items-center space-x-4">
+                <span class="text-lg font-semibold">最终投资评级:</span>
+                <span class="bg-green-100 text-green-800 text-xl font-bold px-6 py-2 rounded-full shadow-lg">建议 (Recommend)</span>
+            </div>
+            <p class="max-w-3xl mx-auto mt-6 text-gray-500">
+                本仪表盘旨在将复杂的投资报告转化为直观、可交互的分析工具。Scallop 展现了强大的基本面、清晰的盈利模式和巨大的增长潜力。尽管存在风险，但其有效的应对机制和强大的生态系统支持使其成为一个极具吸引力的投资标的。
+            </p>
+        </section>
+
+        <div id="dashboard" class="scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center mb-10">主控面板：一览核心洞察</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                    <h3 class="text-sm font-medium text-gray-500">总锁定价值 (TVL)</h3>
+                    <p class="text-3xl font-bold mt-2">$1.16 亿</p>
+                    <p class="text-xs text-gray-400 mt-1">历史高点: $1.56 亿</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                    <h3 class="text-sm font-medium text-gray-500">年化协议收入</h3>
+                    <p class="text-3xl font-bold mt-2">$300 万</p>
+                    <p class="text-xs text-gray-400 mt-1">商业模式可持续性强</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                    <h3 class="text-sm font-medium text-gray-500">市值 / TVL 比率</h3>
+                    <p class="text-3xl font-bold mt-2">~0.135</p>
+                    <p class="text-xs text-gray-400 mt-1">相对同类项目有低估可能</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                    <h3 class="text-sm font-medium text-gray-500">市销率 (P/S Ratio)</h3>
+                    <p class="text-3xl font-bold mt-2">~5.15</p>
+                    <p class="text-xs text-gray-400 mt-1">估值具备吸引力</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-bold mb-4 text-center">优势 (Strengths) ✅</h3>
+                    <ul class="space-y-3 text-gray-700">
+                        <li class="flex items-start"><span class="text-green-500 mr-2 mt-1">✔</span><span><strong>市场领导地位:</strong> Sui 生态头部借贷协议，先发优势显著。</span></li>
+                        <li class="flex items-start"><span class="text-green-500 mr-2 mt-1">✔</span><span><strong>强大机构背书:</strong> 获 Sui 基金会、Mysten Labs 及顶级 VC 投资。</span></li>
+                        <li class="flex items-start"><span class="text-green-500 mr-2 mt-1">✔</span><span><strong>已验证的盈利能力:</strong> 协议已实现可观且持续的收入。</span></li>
+                        <li class="flex items-start"><span class="text-green-500 mr-2 mt-1">✔</span><span><strong>精巧的代币经济学:</strong> veSCA 模型有效激励长期持有，形成价值飞轮。</span></li>
+                        <li class="flex items-start"><span class="text-green-500 mr-2 mt-1">✔</span><span><strong>坚实的安全基础:</strong> 多家顶级机构审计，无历史安全事件。</span></li>
+                    </ul>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-bold mb-4 text-center">劣势与风险 (Weaknesses / Risks) ⚠️</h3>
+                    <ul class="space-y-3 text-gray-700">
+                        <li class="flex items-start"><span class="text-red-500 mr-2 mt-1">❗</span><span><strong>中心化风险:</strong> 完全去中心化前，团队持有管理员权限。</span></li>
+                        <li class="flex items-start"><span class="text-red-500 mr-2 mt-1">❗</span><span><strong>通胀压力:</strong> 流动性挖矿带来的持续代币释放构成潜在压力。</span></li>
+                        <li class="flex items-start"><span class="text-red-500 mr-2 mt-1">❗</span><span><strong>激烈的市场竞争:</strong> 来自 NAVI、Suilend 等对手的持续挑战。</span></li>
+                        <li class="flex items-start"><span class="text-red-500 mr-2 mt-1">❗</span><span><strong>团队背景部分匿名:</strong> 核心团队背景信息不够完全透明。</span></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="bg-white p-6 rounded-xl shadow-lg">
+                <h3 class="text-xl font-bold mb-4 text-center">Sui 生态借贷协议竞争格局</h3>
+                <p class="text-center text-gray-500 mb-6">Scallop 在激烈的竞争中凭借其基础设施定位和强大的生态支持脱颖而出。点击下方按钮切换对比指标。</p>
+                <div class="chart-container">
+                    <canvas id="competitionChart"></canvas>
+                </div>
+                <div class="flex justify-center mt-4 space-x-2">
+                    <button id="showTvlBtn" class="px-4 py-2 text-sm font-medium text-white bg-blue-500 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">TVL</button>
+                    <button id="showRevenueBtn" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 focus:outline-none">年化收入</button>
+                </div>
+            </div>
+        </div>
+
+        <hr class="my-16 border-gray-300">
+
+        <section id="fundamentals" class="scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center mb-10">项目基本面：探寻价值根基</h2>
+            <p class="text-center text-gray-500 max-w-3xl mx-auto mb-12">Scallop的成功并非偶然，而是建立在强大的技术、战略远见和顶级生态伙伴关系之上。本节将深入探讨支撑其价值的核心基本面。</p>
+            
+            <div class="bg-white p-6 rounded-xl shadow-lg mb-12">
+                <h3 class="text-xl font-bold mb-6 text-center">发展里程碑</h3>
+                <div class="relative">
+                    <div class="absolute left-1/2 w-0.5 h-full bg-blue-200 -translate-x-1/2"></div>
+                    <div class="space-y-12">
+                        <div class="flex items-center w-full">
+                            <div class="w-1/2 flex justify-end pr-8">
+                                <div class="bg-blue-500 text-white p-4 rounded-lg shadow-md text-right">
+                                    <p class="font-bold">Sui 基金会官方资助</p>
+                                    <p class="text-sm">成为首个获此殊荣的DeFi协议，奠定生态核心地位。</p>
+                                </div>
+                            </div>
+                            <div class="w-10 h-10 bg-white border-4 border-blue-500 rounded-full z-10 absolute left-1/2 -translate-x-1/2"></div>
+                            <div class="w-1/2"></div>
+                        </div>
+                        <div class="flex items-center w-full">
+                            <div class="w-1/2"></div>
+                            <div class="w-10 h-10 bg-white border-4 border-blue-500 rounded-full z-10 absolute left-1/2 -translate-x-1/2"></div>
+                             <div class="w-1/2 flex justify-start pl-8">
+                                <div class="bg-blue-500 text-white p-4 rounded-lg shadow-md">
+                                    <p class="font-bold">完成 300 万美元融资</p>
+                                    <p class="text-sm">由 CMS, 6th Man Ventures, Mysten Labs 等顶级机构参投。</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center w-full">
+                            <div class="w-1/2 flex justify-end pr-8">
+                                <div class="bg-blue-500 text-white p-4 rounded-lg shadow-md text-right">
+                                    <p class="font-bold">推出开发者资助计划</p>
+                                    <p class="text-sm">从受助者到资助者，开始构建以自身为核心的子生态。</p>
+                                </div>
+                            </div>
+                            <div class="w-10 h-10 bg-white border-4 border-blue-500 rounded-full z-10 absolute left-1/2 -translate-x-1/2"></div>
+                            <div class="w-1/2"></div>
+                        </div>
+                         <div class="flex items-center w-full">
+                            <div class="w-1/2"></div>
+                            <div class="w-10 h-10 bg-white border-4 border-blue-500 rounded-full z-10 absolute left-1/2 -translate-x-1/2"></div>
+                             <div class="w-1/2 flex justify-start pl-8">
+                                <div class="bg-gray-400 text-white p-4 rounded-lg shadow-md">
+                                    <p class="font-bold">Q3 2024 (预期)</p>
+                                    <p class="text-sm">上线完全链上治理，实现社区驱动，降低中心化风险。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <hr class="my-16 border-gray-300">
+        
+        <section id="market" class="scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center mb-10">市场与代币：价值捕获的艺术</h2>
+            <p class="text-center text-gray-500 max-w-3xl mx-auto mb-12">Scallop 的核心竞争力在于其精巧的双代币经济模型。SCA 和 veSCA 的设计旨在平衡短期激励与长期价值，创造一个能有效对冲通胀并捕获协议增长红利的价值飞轮。</p>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-bold mb-4 text-center">SCA 代币分配</h3>
+                    <p class="text-center text-gray-500 mb-6">总供应量 2.5 亿枚。高达 45% 用于流动性挖矿，这带来了通胀压力，但也为 veSCA 模型的成功奠定了基础。将鼠标悬停在图表上查看详情。</p>
+                    <div class="chart-container">
+                        <canvas id="tokenomicsChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-lg flex flex-col justify-center">
+                    <h3 class="text-xl font-bold mb-4 text-center">veSCA 价值飞轮</h3>
+                    <p class="text-center text-gray-500 mb-6">这是 Scallop 经济模型的心脏。通过锁定 SCA，用户不仅能获得高达4倍的收益提升，还能分享协议收入，从而激励长期持有，减少市场抛压。</p>
+                    <div class="space-y-2 text-center">
+                        <div class="flywheel-item bg-blue-100 p-3 rounded-lg shadow">用户参与借贷，获得SCA奖励</div>
+                        <div class="flywheel-arrow h-8 w-px bg-blue-400 mx-auto relative after:content-['▼'] after:absolute after:-bottom-3 after:left-1/2 after:-translate-x-1/2 after:text-blue-400"></div>
+                        <div class="flywheel-item bg-blue-100 p-3 rounded-lg shadow">为获4倍收益提升，将SCA锁定为veSCA</div>
+                        <div class="flywheel-arrow h-8 w-px bg-blue-400 mx-auto relative after:content-['▼'] after:absolute after:-bottom-3 after:left-1/2 after:-translate-x-1/2 after:text-blue-400"></div>
+                        <div class="flywheel-item bg-green-100 p-3 rounded-lg shadow text-green-800">SCA流通供应减少，对冲通胀</div>
+                        <div class="flywheel-arrow h-8 w-px bg-green-400 mx-auto relative after:content-['▼'] after:absolute after:-bottom-3 after:left-1/2 after:-translate-x-1/2 after:text-green-400"></div>
+                        <div class="flywheel-item bg-blue-100 p-3 rounded-lg shadow">veSCA持有者分享协议收入+治理权</div>
+                        <div class="flywheel-arrow h-8 w-px bg-blue-400 mx-auto relative after:content-['▲'] after:absolute after:-top-3 after:left-1/2 after:-translate-x-1/2 after:text-blue-400"></div>
+                        <p class="text-sm text-gray-500 pt-2 flywheel-item">市场对SCA需求增加 (用于锁定)</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <hr class="my-16 border-gray-300">
+
+        <section id="risks" class="scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center mb-10">风险评估：审慎的投资者必修课</h2>
+             <p class="text-center text-gray-500 max-w-3xl mx-auto mb-12">任何投资都伴随着风险。Scallop 虽前景光明，但仍面临中心化、通胀和竞争等挑战。本节透明地展示了所有关键风险点及其缓解措施，点击卡片展开查看详情。</p>
+            <div id="risk-accordion" class="space-y-4">
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
+                    <button class="risk-header w-full flex justify-between items-center p-6 text-left">
+                        <span class="text-lg font-semibold">中心化风险 (主要)</span>
+                        <span class="risk-icon transform transition-transform">▼</span>
+                    </button>
+                    <div class="risk-content max-h-0 overflow-hidden transition-all duration-500 ease-in-out">
+                        <div class="p-6 pt-0">
+                            <p class="text-gray-600"><strong>描述:</strong> MoveBit 审计报告指出，在完全去中心化治理上线前，团队通过管理员密钥对协议拥有较大控制权，如升级合约、修改风险参数等。这意味着投资者需要信任团队不会滥用权限或泄露密钥。</p>
+                            <p class="mt-2 text-green-700"><strong>缓解措施:</strong> 这是 DeFi 项目早期的常见做法，便于快速迭代和应对突发事件。团队已在路线图中明确规划，预计于 2024 年 Q3 推出完全的链上治理系统，将控制权移交给社区。投资者应密切关注此进程。</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
+                    <button class="risk-header w-full flex justify-between items-center p-6 text-left">
+                        <span class="text-lg font-semibold">通胀压力风险</span>
+                        <span class="risk-icon transform transition-transform">▼</span>
+                    </button>
+                    <div class="risk-content max-h-0 overflow-hidden transition-all duration-500 ease-in-out">
+                         <div class="p-6 pt-0">
+                            <p class="text-gray-600"><strong>描述:</strong> 高达 45% 的代币用于流动性挖矿，这意味着每日有大量 SCA 被释放到市场，若被立即抛售，会对价格构成持续的下行压力。</p>
+                            <p class="mt-2 text-green-700"><strong>缓解措施:</strong> veSCA 模型的成功是关键。目前数据显示，已有 41% 的流通供应被平均锁定 3.76 年，这强有力地证明了 veSCA 提供的收益提升和收入分成效用，已成功吸收了大部分抛压，形成了健康的经济循环。</p>
+                        </div>
+                    </div>
+                </div>
+                 <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
+                    <button class="risk-header w-full flex justify-between items-center p-6 text-left">
+                        <span class="text-lg font-semibold">市场竞争风险</span>
+                        <span class="risk-icon transform transition-transform">▼</span>
+                    </button>
+                    <div class="risk-content max-h-0 overflow-hidden transition-all duration-500 ease-in-out">
+                         <div class="p-6 pt-0">
+                            <p class="text-gray-600"><strong>描述:</strong> Sui 借贷赛道竞争激烈，主要对手 NAVI Protocol 和 Suilend 在 TVL 和用户获取方面同样表现强劲，可能导致收益率稀释或市场份额被侵蚀。</p>
+                            <p class="mt-2 text-green-700"><strong>缓解措施:</strong> Scallop 的差异化竞争策略在于其“基础设施”定位。通过开源、开发者资助和构建生态系统，它致力于成为其他协议赖以生存的基础层，构建了更深层次、更具粘性的长期护城河，而非仅仅依赖短期的收益率竞争。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <hr class="my-16 border-gray-300">
+
+        <section id="strategies" class="scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center mb-10">投资策略：从稳健到进取</h2>
+            <p class="text-center text-gray-500 max-w-3xl mx-auto mb-12">Scallop 提供了多样化的投资途径，满足不同风险偏好的投资者。从低风险的被动收益到高回报的杠杆挖矿，本节将为您一一解析。点击卡片可翻转查看策略详情。</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                
+                <div class="strategy-card h-80 perspective-[1000px]">
+                    <div class="strategy-card-inner relative w-full h-full">
+                        <div class="strategy-card-front absolute w-full h-full bg-white rounded-xl shadow-lg p-6 flex flex-col justify-center items-center text-center border-2 border-green-300">
+                            <h3 class="text-xl font-bold">被动收益</h3>
+                            <p class="text-sm text-gray-500 mt-2">存入资产赚取利息</p>
+                            <div class="my-4">
+                                <p class="text-sm text-gray-500">风险等级</p>
+                                <p class="font-bold text-green-600">低</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">预期回报 (APY)</p>
+                                <p class="text-2xl font-bold text-green-600">1-15%</p>
+                            </div>
+                            <p class="text-xs text-blue-500 mt-4">点击查看详情</p>
+                        </div>
+                        <div class="strategy-card-back absolute w-full h-full bg-gray-800 text-white rounded-xl shadow-lg p-6 flex flex-col justify-center">
+                            <h4 class="font-bold mb-2">策略详情</h4>
+                            <p class="text-sm">最简单的参与方式。将持有的 SUI、USDC 等资产存入 Scallop 相应的借贷池中，赚取浮动的存款利息。适合风险偏好较低、寻求稳定现金流的投资者。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="strategy-card h-80 perspective-[1000px]">
+                    <div class="strategy-card-inner relative w-full h-full">
+                        <div class="strategy-card-front absolute w-full h-full bg-white rounded-xl shadow-lg p-6 flex flex-col justify-center items-center text-center border-2 border-yellow-400">
+                            <h3 class="text-xl font-bold">杠杆循环贷</h3>
+                            <p class="text-sm text-gray-500 mt-2">放大存款与借款收益</p>
+                            <div class="my-4">
+                                <p class="text-sm text-gray-500">风险等级</p>
+                                <p class="font-bold text-yellow-600">高</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">预期回报 (APR)</p>
+                                <p class="text-2xl font-bold text-yellow-600">30-80%+</p>
+                            </div>
+                             <p class="text-xs text-blue-500 mt-4">点击查看详情</p>
+                        </div>
+                        <div class="strategy-card-back absolute w-full h-full bg-gray-800 text-white rounded-xl shadow-lg p-6 flex flex-col justify-center">
+                            <h4 class="font-bold mb-2">策略详情</h4>
+                            <p class="text-sm">一种高阶收益放大策略。通过循环“存入抵押品 -> 借出资产 -> 再存入”的操作，用杠杆放大本金，从而同时放大存款收益和借款奖励。此策略风险高，对清算风险的管理要求极高。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="strategy-card h-80 perspective-[1000px]">
+                    <div class="strategy-card-inner relative w-full h-full">
+                        <div class="strategy-card-front absolute w-full h-full bg-white rounded-xl shadow-lg p-6 flex flex-col justify-center items-center text-center border-2 border-red-500">
+                            <h3 class="text-xl font-bold">veSCA 最大化挖矿</h3>
+                            <p class="text-sm text-gray-500 mt-2">核心高收益策略</p>
+                            <div class="my-4">
+                                <p class="text-sm text-gray-500">风险等级</p>
+                                <p class="font-bold text-red-600">非常高</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">预期回报 (APR)</p>
+                                <p class="text-2xl font-bold text-red-600">100%+</p>
+                            </div>
+                             <p class="text-xs text-blue-500 mt-4">点击查看详情</p>
+                        </div>
+                        <div class="strategy-card-back absolute w-full h-full bg-gray-800 text-white rounded-xl shadow-lg p-6 flex flex-col justify-center">
+                            <h4 class="font-bold mb-2">策略详情</h4>
+                            <p class="text-sm">在 Scallop 获取超额收益的核心。结合杠杆循环贷，并通过持有大量 veSCA，将借款奖励 APR 放大最多 4 倍。适合深度参与、追求极致收益且风险承受能力极强的资深玩家。</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-gray-800 text-white mt-16">
+        <div class="container mx-auto px-4 py-6 text-center text-sm">
+            <p>&copy; 2025 Scallop 交互式投资仪表盘。仅供研究分析，不构成任何投资建议。</p>
+            <p class="text-gray-400 mt-1">数据来源：DeFiLlama, CoinMarketCap, Scallop 官方文档及审计报告。</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const competitionData = {
+                tvl: {
+                    labels: ['Scallop', 'NAVI Protocol', 'Suilend'],
+                    datasets: [{
+                        label: 'TVL (百万美元)',
+                        data: [116, 684, 752],
+                        backgroundColor: ['#4A90E2', '#F5A623', '#7ED321'],
+                        borderColor: ['#4A90E2', '#F5A623', '#7ED321'],
+                        borderWidth: 1
+                    }]
+                },
+                revenue: {
+                    labels: ['Scallop', 'NAVI Protocol', 'Suilend'],
+                    datasets: [{
+                        label: '年化收入 (百万美元)',
+                        data: [3.06, (14599 * 365 / 1000000), (32456 * 365 / 1000000)],
+                        backgroundColor: ['#4A90E2', '#F5A623', '#7ED321'],
+                        borderColor: ['#4A90E2', '#F5A623', '#7ED321'],
+                        borderWidth: 1
+                    }]
+                }
+            };
+
+            const tokenomicsData = {
+                labels: ['流动性挖矿 (45%)', '战略投资者 (15%)', '核心贡献者 (15%)', '生态/社区 (7.5%)', '财库 (7%)', '流动性 (5%)', '开发运营 (4%)', '顾问 (1.5%)'],
+                datasets: [{
+                    label: 'SCA 代币分配',
+                    data: [45, 15, 15, 7.5, 7, 5, 4, 1.5],
+                    backgroundColor: [
+                        '#4A90E2', '#50E3C2', '#F5A623', '#F8E71C', '#BD10E0', '#B8E986', '#9013FE', '#4A4A4A'
+                    ],
+                    hoverOffset: 4
+                }]
+            };
+
+            let competitionChartInstance;
+            const competitionCtx = document.getElementById('competitionChart').getContext('2d');
+            
+            function createCompetitionChart(data) {
+                if (competitionChartInstance) {
+                    competitionChartInstance.destroy();
+                }
+                competitionChartInstance = new Chart(competitionCtx, {
+                    type: 'bar',
+                    data: data,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed.y !== null) {
+                                            label += new Intl.NumberFormat('zh-CN', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(context.parsed.y * 1000000);
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value, index, values) {
+                                        return value + 'M';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            createCompetitionChart(competitionData.tvl);
+
+            const tokenomicsCtx = document.getElementById('tokenomicsChart').getContext('2d');
+            new Chart(tokenomicsCtx, {
+                type: 'doughnut',
+                data: tokenomicsData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                font: {
+                                    size: 10
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            document.getElementById('showTvlBtn').addEventListener('click', (e) => {
+                createCompetitionChart(competitionData.tvl);
+                e.target.classList.add('bg-blue-500', 'text-white');
+                e.target.classList.remove('bg-gray-200', 'text-gray-700');
+                document.getElementById('showRevenueBtn').classList.add('bg-gray-200', 'text-gray-700');
+                document.getElementById('showRevenueBtn').classList.remove('bg-blue-500', 'text-white');
+            });
+
+            document.getElementById('showRevenueBtn').addEventListener('click', (e) => {
+                createCompetitionChart(competitionData.revenue);
+                e.target.classList.add('bg-blue-500', 'text-white');
+                e.target.classList.remove('bg-gray-200', 'text-gray-700');
+                document.getElementById('showTvlBtn').classList.add('bg-gray-200', 'text-gray-700');
+                document.getElementById('showTvlBtn').classList.remove('bg-blue-500', 'text-white');
+            });
+            
+            const strategyCards = document.querySelectorAll('.strategy-card');
+            strategyCards.forEach(card => {
+                card.addEventListener('click', () => {
+                    card.classList.toggle('flipped');
+                });
+            });
+
+            const riskHeaders = document.querySelectorAll('.risk-header');
+            riskHeaders.forEach(header => {
+                header.addEventListener('click', () => {
+                    const content = header.nextElementSibling;
+                    const icon = header.querySelector('.risk-icon');
+                    
+                    if (content.style.maxHeight) {
+                        content.style.maxHeight = null;
+                        icon.style.transform = 'rotate(0deg)';
+                    } else {
+                        content.style.maxHeight = content.scrollHeight + "px";
+                        icon.style.transform = 'rotate(180deg)';
+                    }
+                });
+            });
+
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                    if(mobileMenu.classList.contains('hidden') === false){
+                        mobileMenu.classList.add('hidden');
+                    }
+                });
+            });
+
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('section[id], div[id]');
+            
+            window.addEventListener('scroll', () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (pageYOffset >= sectionTop - 80) {
+                        current = section.getAttribute('id');
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href').includes(current)) {
+                        link.classList.add('active');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

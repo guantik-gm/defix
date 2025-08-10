@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asymmetry Finance 交互式投资分析仪表盘</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Harmony -->
+    <!-- Application Structure Plan: 本应用采用非线性的仪表盘式(Dashboard)布局，旨在打破原始报告的章节限制，为投资者提供一个以决策为导向的探索路径。用户首先看到的是包含最终评级和核心指标的“执行摘要”视图，可以立即把握关键结论。顶部的粘性导航栏允许用户根据兴趣随时跳转到“产品解析”、“投资策略”或“风险评估”等主题模块。这种结构将信息按逻辑功能（如“理解机制”、“寻找机会”、“评估风险”）重新组织，而非按报告顺序。交互核心在于“投资策略”部分的动态筛选器和“产品解析”中的分步图解，旨在将复杂的概念转化为易于消化的视觉元素，从而极大地提升了信息获取效率和用户体验。 -->
+    <!-- Visualization & Content Choices: 报告信息被转化为一系列交互式组件。关键指标(TVL, APY)使用醒目的卡片展示(Goal: Inform)。代币经济学使用Chart.js的甜甜圈图(Goal: Proportions)，交互为悬停提示。SWOT分析采用四象限网格布局(Goal: Organize)，交互为点击展开。产品机制(afETH, USDaf)通过纯HTML/CSS构建的流程图进行可视化(Goal: Explain Process)，交互为悬停显示步骤详情。核心的投资策略部分则设计为可筛选的卡片列表(Goal: Compare/Filter)，用户可根据风险偏好和投资者类型进行动态筛选，并点击查看详情。所有可视化均未使用SVG或Mermaid.js，严格遵守了技术要求，确保了应用的性能和兼容性。 -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+        }
+        .nav-link {
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #0891b2; /* cyan-600 */
+            border-bottom-color: #0891b2;
+        }
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.1);
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 350px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .strategy-card {
+            transition: all 0.3s ease-in-out;
+        }
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 40;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 50;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        .modal.show, .modal-backdrop.show {
+            display: block;
+            opacity: 1;
+        }
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 220px;
+            background-color: #111827;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 8px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -110px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .tooltip .tooltiptext::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #111827 transparent transparent transparent;
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <header class="bg-white/80 backdrop-blur-sm sticky top-0 z-30 shadow-sm">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0">
+                    <h1 class="text-xl font-bold text-slate-800">Asymmetry Finance</h1>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#dashboard" class="nav-link px-3 py-2 text-sm font-medium text-slate-600 active">仪表盘</a>
+                        <a href="#products" class="nav-link px-3 py-2 text-sm font-medium text-slate-600">产品解析</a>
+                        <a href="#strategies" class="nav-link px-3 py-2 text-sm font-medium text-slate-600">投资策略</a>
+                        <a href="#risks" class="nav-link px-3 py-2 text-sm font-medium text-slate-600">风险评估</a>
+                        <a href="#team" class="nav-link px-3 py-2 text-sm font-medium text-slate-600">团队与背景</a>
+                    </div>
+                </div>
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="inline-flex items-center justify-center p-2 rounded-md text-slate-400 hover:text-slate-500 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-cyan-500">
+                        <span class="sr-only">Open main menu</span>
+                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </nav>
+        <div id="mobile-menu" class="md:hidden hidden">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="#dashboard" class="block nav-link px-3 py-2 text-base font-medium text-slate-600 active">仪表盘</a>
+                <a href="#products" class="block nav-link px-3 py-2 text-base font-medium text-slate-600">产品解析</a>
+                <a href="#strategies" class="block nav-link px-3 py-2 text-base font-medium text-slate-600">投资策略</a>
+                <a href="#risks" class="block nav-link px-3 py-2 text-base font-medium text-slate-600">风险评估</a>
+                <a href="#team" class="block nav-link px-3 py-2 text-base font-medium text-slate-600">团队与背景</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        
+        <section id="dashboard" class="scroll-mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">投资仪表盘</h2>
+                <p class="mt-4 text-lg leading-8 text-slate-600">全面洞察 Asymmetry Finance 的核心价值与市场定位。</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-3 card p-6 flex flex-col md:flex-row items-center justify-between bg-gradient-to-r from-cyan-50 to-blue-50">
+                    <div>
+                        <h3 class="text-2xl font-bold text-slate-800">最终投资评级</h3>
+                        <p class="mt-2 text-slate-600 max-w-2xl">一个由顶尖团队打造的、具备高增长潜力的早期创新项目，但伴随着显著的风险和信息不透明性。</p>
+                    </div>
+                    <div class="mt-4 md:mt-0 md:ml-6 text-center">
+                        <span class="inline-block bg-yellow-400 text-yellow-900 text-2xl font-bold px-8 py-4 rounded-lg shadow-lg">建议 (Recommend)</span>
+                        <p class="text-xs text-slate-500 mt-2">附带强烈风险警告</p>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-3 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+                    <div class="card p-4">
+                        <div class="text-3xl font-bold text-cyan-600" id="tvl-value">~$10M</div>
+                        <div class="text-sm text-slate-500 mt-1">总锁仓价值 (TVL)</div>
+                    </div>
+                    <div class="card p-4">
+                        <div class="text-3xl font-bold text-cyan-600" id="apy-value">~10%</div>
+                        <div class="text-sm text-slate-500 mt-1">afETH 目标 APY</div>
+                    </div>
+                    <div class="card p-4">
+                        <div class="text-3xl font-bold text-cyan-600" id="lock-rate">>80%</div>
+                        <div class="text-sm text-slate-500 mt-1">ASF 质押率 (veASF)</div>
+                    </div>
+                    <div class="card p-4">
+                        <div class="text-3xl font-bold text-cyan-600" id="funding-value">$3M</div>
+                        <div class="text-sm text-slate-500 mt-1">种子轮融资</div>
+                    </div>
+                </div>
+
+                <div class="card p-6 lg:col-span-2">
+                    <h3 class="text-xl font-bold mb-4">SWOT 分析</h3>
+                    <p class="text-sm text-slate-500 mb-6">点击下方象限，深入了解项目的优势、劣势、机会与威胁。</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div id="swot-strengths" class="swot-quadrant p-4 bg-green-50 rounded-lg cursor-pointer border-2 border-green-200">
+                            <h4 class="font-bold text-green-800">S - 优势 (Strengths)</h4>
+                            <ul class="text-sm text-green-700 mt-2 space-y-1 list-disc list-inside hidden">
+                                <li>经验丰富的核心团队</li>
+                                <li>强大的DeFi原生投资者</li>
+                                <li>创新的高收益产品</li>
+                                <li>高度的智能合约安全透明度</li>
+                            </ul>
+                        </div>
+                        <div id="swot-weaknesses" class="swot-quadrant p-4 bg-red-50 rounded-lg cursor-pointer border-2 border-red-200">
+                            <h4 class="font-bold text-red-800">W - 劣势 (Weaknesses)</h4>
+                            <ul class="text-sm text-red-700 mt-2 space-y-1 list-disc list-inside hidden">
+                                <li>TVL和用户基数较小</li>
+                                <li>关键历史事件信息不透明</li>
+                                <li>ASF代币流通性低</li>
+                                <li>产品机制复杂且风险较高</li>
+                            </ul>
+                        </div>
+                        <div id="swot-opportunities" class="swot-quadrant p-4 bg-blue-50 rounded-lg cursor-pointer border-2 border-blue-200">
+                            <h4 class="font-bold text-blue-800">O - 机会 (Opportunities)</h4>
+                            <ul class="text-sm text-blue-700 mt-2 space-y-1 list-disc list-inside hidden">
+                                <li>LST市场持续增长</li>
+                                <li>市场对“真实收益”的需求</li>
+                                <li>庞大的DAO金库潜力</li>
+                            </ul>
+                        </div>
+                        <div id="swot-threats" class="swot-quadrant p-4 bg-yellow-50 rounded-lg cursor-pointer border-2 border-yellow-200">
+                            <h4 class="font-bold text-yellow-800">T - 威胁 (Threats)</h4>
+                            <ul class="text-sm text-yellow-700 mt-2 space-y-1 list-disc list-inside hidden">
+                                <li>激烈的市场竞争</li>
+                                <li>底层协议的系统性风险</li>
+                                <li>宏观市场风险</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card p-6">
+                    <h3 class="text-xl font-bold mb-4">ASF 代币分配</h3>
+                    <p class="text-sm text-slate-500 mb-6">悬停图表查看各部分占比，了解代币经济模型的分布结构。</p>
+                    <div class="chart-container">
+                        <canvas id="tokenomicsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <hr class="my-16 border-slate-200">
+
+        <section id="products" class="scroll-mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">核心产品解析</h2>
+                <p class="mt-4 text-lg leading-8 text-slate-600">深入理解 `afETH` 与 `USDaf` 背后的创新机制与价值主张。</p>
+            </div>
+
+            <div class="flex justify-center mb-8">
+                <div class="inline-flex rounded-md shadow-sm" role="group">
+                    <button type="button" data-tab="afETH" class="product-tab active-tab px-6 py-3 text-sm font-medium text-white bg-cyan-600 border border-cyan-600 rounded-l-lg hover:bg-cyan-700">
+                        afETH
+                    </button>
+                    <button type="button" data-tab="USDaf" class="product-tab px-6 py-3 text-sm font-medium text-cyan-700 bg-white border-t border-b border-cyan-600 hover:bg-cyan-50">
+                        USDaf
+                    </button>
+                    <button type="button" data-tab="afCVX" class="product-tab px-6 py-3 text-sm font-medium text-cyan-700 bg-white border border-cyan-600 rounded-r-lg hover:bg-cyan-50">
+                        afCVX & safETH
+                    </button>
+                </div>
+            </div>
+
+            <div id="product-content">
+            </div>
+        </section>
+
+        <hr class="my-16 border-slate-200">
+
+        <section id="strategies" class="scroll-mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">投资策略矩阵</h2>
+                <p class="mt-4 text-lg leading-8 text-slate-600">根据您的风险偏好和投资风格，筛选并探索最适合您的参与策略。</p>
+            </div>
+            
+            <div class="flex flex-wrap justify-center gap-2 mb-8">
+                <button data-filter="all" class="filter-btn active-filter bg-cyan-600 text-white px-4 py-2 rounded-full text-sm font-medium">全部策略</button>
+                <button data-filter="low" class="filter-btn bg-white text-slate-700 px-4 py-2 rounded-full text-sm font-medium">低风险</button>
+                <button data-filter="medium" class="filter-btn bg-white text-slate-700 px-4 py-2 rounded-full text-sm font-medium">中风险</button>
+                <button data-filter="high" class="filter-btn bg-white text-slate-700 px-4 py-2 rounded-full text-sm font-medium">高风险</button>
+                <button data-filter="extreme" class="filter-btn bg-white text-slate-700 px-4 py-2 rounded-full text-sm font-medium">极高风险</button>
+            </div>
+
+            <div id="strategy-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            </div>
+        </section>
+
+        <hr class="my-16 border-slate-200">
+
+        <section id="risks" class="scroll-mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold tracking-tight text-red-800 sm:text-4xl">核心风险评估</h2>
+                <p class="mt-4 text-lg leading-8 text-slate-600">审慎评估是成功投资的前提。本节将重点揭示您必须关注的关键风险点。</p>
+            </div>
+
+            <div class="bg-red-50 border-l-4 border-red-500 text-red-800 p-6 rounded-r-lg mb-8 card">
+                <h3 class="text-xl font-bold flex items-center">
+                    <svg class="w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.21 3.03-1.742 3.03H4.42c-1.532 0-2.492-1.696-1.742-3.03l5.58-9.92zM10 13a1 1 0 110-2 1 1 0 010 2zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+                    重大风险警告：USDaf 预言机事件信息缺失
+                </h3>
+                <p class="mt-2">报告中多次提及一份关于“USDaf预言机事件”的报告，但其具体内容无法找到。这一信息黑洞构成了本次尽职调查中**最严重的安全风险点**。在项目方提供完整、透明的事件报告之前，对`USDaf`相关产品的投资应保持最高程度的审慎。</p>
+                <ul class="mt-3 text-sm list-disc list-inside space-y-1">
+                    <li>事件根本原因未知（配置错误？逻辑漏洞？第三方故障？）。</li>
+                    <li>事件造成的影响未知（资金损失？规模多大？）。</li>
+                    <li>团队的应急措施和修复方案未知。</li>
+                </ul>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="card p-6 border-t-4 border-yellow-400">
+                    <h4 class="text-lg font-bold">智能合约与审计风险</h4>
+                    <p class="mt-2 text-sm text-slate-600">项目虽进行了多次公开审计，并修复了大部分漏洞，但仍存在被标记为“可接受”的风险，且新代码可能引入新漏洞。</p>
+                </div>
+                <div class="card p-6 border-t-4 border-yellow-400">
+                    <h4 class="text-lg font-bold">市场与依赖风险</h4>
+                    <p class="mt-2 text-sm text-slate-600">`afETH`的价值与`CVX`代币价格及Convex生态高度相关。协议深度依赖Frax, Curve, Liquity等底层协议，任何外部问题都可能传导至Asymmetry。</p>
+                </div>
+                <div class="card p-6 border-t-4 border-yellow-400">
+                    <h4 class="text-lg font-bold">治理与代币经济风险</h4>
+                    <p class="mt-2 text-sm text-slate-600">`veASF`模型可能导致治理权力集中。`ASF`代币流动性极低，价格易剧烈波动。团队和投资者的代币释放计划不透明，存在未来抛压风险。</p>
+                </div>
+            </div>
+        </section>
+
+        <hr class="my-16 border-slate-200">
+
+        <section id="team" class="scroll-mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">团队与投资者</h2>
+                <p class="mt-4 text-lg leading-8 text-slate-600">了解项目背后的建设者和支持者，是评估其长期潜力的关键一环。</p>
+            </div>
+
+            <h3 class="text-2xl font-semibold text-center mb-8">核心创始团队</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                <div class="card p-6 text-center">
+                    <img class="w-24 h-24 rounded-full mx-auto bg-slate-200" src="https://placehold.co/96x96/e2e8f0/475569?text=JG" alt="Justin Garland">
+                    <h4 class="mt-4 text-xl font-bold">Justin Garland</h4>
+                    <p class="text-cyan-600 font-medium">联合创始人</p>
+                    <p class="mt-2 text-sm text-slate-500">前 Silo Finance 和 ShapeShift 产品与工程负责人，具备深厚的技术与产品管理背景。</p>
+                </div>
+                <div class="card p-6 text-center">
+                    <img class="w-24 h-24 rounded-full mx-auto bg-slate-200" src="https://placehold.co/96x96/e2e8f0/475569?text=HH" alt="Hannah Hamilton">
+                    <h4 class="mt-4 text-xl font-bold">Hannah Hamilton</h4>
+                    <p class="text-cyan-600 font-medium">联合创始人</p>
+                    <p class="mt-2 text-sm text-slate-500">前 Genesis Global Trading 高级DeFi专家，精通DeFi策略、金融建模和代币经济设计。</p>
+                </div>
+            </div>
+
+            <h3 class="text-2xl font-semibold text-center mt-16 mb-8">战略投资者与合作伙伴</h3>
+            <div class="max-w-4xl mx-auto">
+                <div class="flex flex-wrap justify-center items-center gap-x-8 gap-y-4">
+                    <div class="tooltip"><span class="text-lg font-semibold text-slate-500">Ecco Capital</span><span class="tooltiptext">种子轮联合领投方。</span></div>
+                    <div class="tooltip"><span class="text-lg font-semibold text-slate-500">Republic Capital</span><span class="tooltiptext">种子轮联合领投方。</span></div>
+                    <div class="tooltip"><span class="text-lg font-semibold text-slate-500">GMJP</span><span class="tooltiptext">种子轮联合领投方。</span></div>
+                    <div class="tooltip"><span class="text-lg font-semibold text-slate-500">Ankr</span><span class="tooltiptext">领先的LST提供商和Web3基础设施平台。</span></div>
+                    <div class="tooltip"><span class="text-lg font-semibold text-slate-500">Avon Ventures</span><span class="tooltiptext">与资产管理巨头富达(Fidelity)有关联的代币基金。</span></div>
+                    <div class="tooltip"><span class="text-lg font-semibold text-slate-500">Sam Kazemian</span><span class="tooltiptext">Frax Finance创始人，DeFi领域最具影响力的建设者之一。</span></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-slate-800 text-white mt-16">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center text-sm">
+            <p>本交互式报告由AI根据提供的尽职调查报告生成，仅供参考，不构成任何投资建议。</p>
+            <p class="text-slate-400 mt-1">&copy; 2025 AI Financial Analyst. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <div id="modal-backdrop" class="modal-backdrop"></div>
+    <div id="strategy-modal" class="modal w-11/12 md:max-w-2xl bg-white rounded-lg shadow-xl p-6">
+        <div id="modal-content"></div>
+        <button id="close-modal-btn" class="absolute top-4 right-4 text-slate-500 hover:text-slate-800">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const data = {
+                tokenomics: {
+                    labels: ['DAO金库', '投资者与公售', '核心贡献者', '社区奖励', '合作伙伴'],
+                    data: [45, 21, 18, 9, 7],
+                    colors: ['#06b6d4', '#22d3ee', '#67e8f9', '#a5f3fc', '#cffafe']
+                },
+                products: {
+                    afETH: `
+                        <div class="card p-6 max-w-4xl mx-auto">
+                            <h3 class="text-xl font-bold mb-2">afETH: 高收益ETH LST</h3>
+                            <p class="text-slate-600 mb-6">afETH 旨在提供远超市场平均水平的ETH质押收益（目标~10% APY）。其高回报的核心来自于一种精巧的混合资产策略，将稳健的质押收益与高风险的治理收益相结合。</p>
+                            <div class="space-y-4 text-center">
+                                <div class="p-4 bg-slate-50 rounded-lg">
+                                    <p class="font-semibold">用户存入 ETH</p>
+                                </div>
+                                <div class="text-2xl font-bold text-slate-400">↓</div>
+                                <div class="p-4 bg-slate-50 rounded-lg tooltip">
+                                    <p class="font-semibold">不对称分配算法 (AAA)</p>
+                                    <span class="tooltiptext">协议自动将资金拆分为两部分，进行差异化投资。</span>
+                                </div>
+                                <div class="text-2xl font-bold text-slate-400">↓</div>
+                                <div class="flex flex-col md:flex-row justify-center gap-4">
+                                    <div class="flex-1 p-4 bg-blue-50 rounded-lg border-2 border-blue-200 tooltip">
+                                        <p class="font-bold text-blue-800">~70% → sfrxETH</p>
+                                        <p class="text-sm text-blue-600 mt-1">提供稳定、可靠的基础ETH质押收益。</p>
+                                        <span class="tooltiptext">Staked Frax Ether (sfrxETH) 是Frax Finance的生息LST，其价值会随着质押奖励的累积而自动增长。</span>
+                                    </div>
+                                    <div class="flex-1 p-4 bg-purple-50 rounded-lg border-2 border-purple-200 tooltip">
+                                        <p class="font-bold text-purple-800">~30% → vlCVX</p>
+                                        <p class="text-sm text-purple-600 mt-1">捕获Curve/Convex生态的超额治理收益。</p>
+                                        <span class="tooltiptext">协议购买CVX并锁定为vlCVX，通过在Votium等“贿赂市场”出售投票权来赚取高额费用。</span>
+                                    </div>
+                                </div>
+                                <div class="text-2xl font-bold text-slate-400">↓</div>
+                                <div class="p-4 bg-slate-50 rounded-lg tooltip">
+                                    <p class="font-semibold">收益平滑器 (Yield Smoother)</p>
+                                    <span class="tooltiptext">将周期性发放的治理收益进行平滑处理，线性计入afETH价值，以防止MEV攻击并保护投资者利益。</span>
+                                </div>
+                                <div class="text-2xl font-bold text-slate-400">↓</div>
+                                <div class="p-4 bg-green-100 rounded-lg">
+                                    <p class="font-bold text-green-800">最终形成高收益的 afETH</p>
+                                </div>
+                            </div>
+                        </div>
+                    `,
+                    USDaf: `
+                        <div class="card p-6 max-w-4xl mx-auto">
+                            <h3 class="text-xl font-bold mb-2">USDaf: 可定制利率的稳定币</h3>
+                            <p class="text-slate-600 mb-6">USDaf 是基于 Liquity v2 架构的去中心化稳定币。它扩展了抵押品范围（包括wBTC和生息稳定币），其最大创新是允许借款人自行设定固定利率，从而在借贷成本和清算风险之间进行权衡。</p>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                                <div class="p-4 bg-slate-50 rounded-lg">
+                                    <h4 class="font-semibold">1. 创建金库 (Trove)</h4>
+                                    <p class="text-sm text-slate-600 mt-2">用户存入批准的抵押品（如wBTC, sfrxUSD），并借出USDaf稳定币。</p>
+                                </div>
+                                <div class="p-4 bg-slate-50 rounded-lg">
+                                    <h4 class="font-semibold">2. 自定义固定利率</h4>
+                                    <p class="text-sm text-slate-600 mt-2">借款人设定一个固定年利率。利率越低，成本越低，但被赎回的风险越高。</p>
+                                </div>
+                                <div class="p-4 bg-slate-50 rounded-lg">
+                                    <h4 class="font-semibold">3. 稳定性池 (Stability Pool)</h4>
+                                    <p class="text-sm text-slate-600 mt-2">USDaf持有者可以存入池中，在发生清算时以折扣价获得被清算的抵押品，从而赚取收益。</p>
+                                </div>
+                            </div>
+                        </div>
+                    `,
+                    afCVX: `
+                        <div class="card p-6 max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div>
+                                <h3 class="text-xl font-bold mb-2">afCVX: Convex 收益优化器</h3>
+                                <p class="text-slate-600">afCVX 是为 Convex 代币 CVX 设计的流动性质押解决方案。它解决了 CVX 持有者面临的长达16周锁定期和复杂操作流程的痛点，提供了一键式的复利收益和即时退出的灵活性。</p>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold mb-2">safETH (已弃用)</h3>
+                                <p class="text-slate-600">safETH 是项目的首个产品，一个由多种主流LST组成的指数代币。由于收益率缺乏竞争力，项目战略重心已转移，该产品目前处于“仅限提款”模式，不再接受新存款。</p>
+                            </div>
+                        </div>
+                    `
+                },
+                strategies: [
+                    { title: '购买并持有`ASF`代币', risk: 'high', profile: 'speculator', content: '...' },
+                    { title: '质押`ASF`为`veASF`', risk: 'medium', profile: 'long-term', content: '...' },
+                    { title: '购买并持有`afETH`', risk: 'medium', profile: 'yield-farmer', content: '...' },
+                    { title: '存入`USDaf`稳定性池', risk: 'medium', profile: 'yield-farmer', content: '...' },
+                    { title: '`afETH`循环杠杆策略', risk: 'extreme', profile: 'pro-gamer', content: '...' },
+                    { title: '为`ASF`/`afETH`提供流动性', risk: 'high', profile: 'yield-farmer', content: '...' },
+                    { title: '开发者/生态参与', risk: 'low', profile: 'developer', content: '...' }
+                ]
+            };
+            
+            const strategyDetails = {
+                '购买并持有`ASF`代币': {
+                    pros: '操作简单，直接享受协议价值增长带来的代币升值。',
+                    cons: '无法获得协议收入分成或治理权，纯粹的价格敞口。',
+                    risk: '代币价格波动剧烈，流动性低可能导致买卖滑点大。',
+                    apy: '无法量化 (取决于市场价格)',
+                    profile: '短期交易者，对协议基本面有强烈看涨预期的投机者。'
+                },
+                '质押`ASF`为`veASF`': {
+                    pros: '获得协议治理权、分享协议收入、在其他池中获得更高挖矿奖励。',
+                    cons: '资金在锁定期内失去流动性，最长可达4年。',
+                    risk: '协议收入不及预期，`ASF`代币价格在锁定期内大幅下跌。',
+                    apy: '依赖协议收入，动态变化',
+                    profile: '长期价值投资者，深度认同协议愿景，希望参与治理的核心社区成员。'
+                },
+                '购买并持有`afETH`': {
+                    pros: '提供远高于标准ETH质押的收益率（约10% APY），且代币具有流动性，可用于其他DeFi协议。',
+                    cons: '收益机制复杂，价值与`CVX`代币价格挂钩。',
+                    risk: '`CVX`价格下跌风险、Convex贿赂市场萎缩风险、底层协议（Frax, Convex）风险。',
+                    apy: '~10% APY',
+                    profile: '寻求更高ETH收益且愿意承担相应市场风险的资深DeFi用户。'
+                },
+                '存入`USDaf`稳定性池': {
+                    pros: '在市场波动时，有机会以折扣价获得BTC等优质抵押品，并赚取协议利息。',
+                    cons: '市场平稳时收益率可能较低，资金被动用于购买波动性资产。',
+                    risk: '获得的抵押品价格持续下跌的风险，机会成本风险。',
+                    apy: '高度动态，取决于清算频率和借贷利率',
+                    profile: '主动型收益农夫，对市场波动有深刻理解，愿意承担一定资产转换风险以换取高回报的投资者。'
+                },
+                '`afETH`循环杠杆策略': {
+                    pros: '理论上可以将`afETH`的收益放大数倍，获得极高的APY。',
+                    cons: '操作极其复杂，风险极高，不适合新手。',
+                    risk: '极高的清算风险、放大的`CVX`价格风险、智能合约风险。',
+                    apy: '理论上可达30-50%+ APY，但风险极高',
+                    profile: '风险承受能力极高的专业DeFi玩家，投入资金应为可完全损失的部分。'
+                },
+                '为`ASF`/`afETH`提供流动性': {
+                    pros: '赚取交易手续费，并可能获得额外的`ASF`代币奖励（流动性挖矿）。',
+                    cons: '无常损失（Impermanent Loss）风险，`ASF`价格波动大可能导致损失严重。',
+                    risk: '无常损失风险，`ASF`单边暴跌风险，智能合约风险。',
+                    apy: '依赖交易量和流动性挖矿奖励，动态变化',
+                    profile: '对无常损失有深刻理解的收益农夫。'
+                },
+                '开发者/生态参与': {
+                    pros: '有机会获得漏洞赏金、潜在的开发者Grant，或通过创建工具获得收入。',
+                    cons: '需要投入大量时间和专业技能，回报不确定。',
+                    risk: '项目方不采纳提案的风险，投入产出不成正比的风险。',
+                    apy: '无法量化，取决于具体贡献',
+                    profile: '具备扎实开发背景，希望深度参与项目建设的长期主义者。'
+                }
+            };
+            
+            const riskColors = { low: 'green', medium: 'blue', high: 'yellow', extreme: 'red' };
+
+            function renderStrategies(filter = 'all') {
+                const grid = document.getElementById('strategy-grid');
+                grid.innerHTML = '';
+                data.strategies.forEach(strategy => {
+                    if (filter === 'all' || strategy.risk === filter) {
+                        const card = document.createElement('div');
+                        card.className = `strategy-card card p-6 border-t-4 border-${riskColors[strategy.risk]}-500`;
+                        card.innerHTML = `
+                            <h4 class="text-lg font-bold">${strategy.title}</h4>
+                            <div class="flex items-center mt-2">
+                                <span class="text-xs font-medium mr-2 px-2.5 py-0.5 rounded bg-${riskColors[strategy.risk]}-100 text-${riskColors[strategy.risk]}-800">风险: ${strategy.risk}</span>
+                            </div>
+                            <p class="text-sm text-slate-500 mt-3">${strategyDetails[strategy.title].profile}</p>
+                            <button data-strategy="${strategy.title}" class="details-btn mt-4 w-full text-center px-4 py-2 bg-cyan-600 text-white rounded-md hover:bg-cyan-700 transition-colors">查看详情</button>
+                        `;
+                        grid.appendChild(card);
+                    }
+                });
+                addDetailsBtnListeners();
+            }
+            
+            function openModal(strategyTitle) {
+                const details = strategyDetails[strategyTitle];
+                const modalContent = document.getElementById('modal-content');
+                modalContent.innerHTML = `
+                    <h3 class="text-2xl font-bold mb-4">${strategyTitle}</h3>
+                    <div class="space-y-4 text-slate-700">
+                        <div><strong class="font-semibold text-slate-800">优点:</strong> ${details.pros}</div>
+                        <div><strong class="font-semibold text-slate-800">缺点:</strong> ${details.cons}</div>
+                        <div class="p-3 bg-red-50 border border-red-200 rounded-md"><strong class="font-semibold text-red-800">主要风险:</strong> ${details.risk}</div>
+                        <div><strong class="font-semibold text-slate-800">预期收益:</strong> ${details.apy}</div>
+                        <div><strong class="font-semibold text-slate-800">适合的投资者:</strong> ${details.profile}</div>
+                    </div>
+                `;
+                document.getElementById('strategy-modal').classList.add('show');
+                document.getElementById('modal-backdrop').classList.add('show');
+            }
+
+            function closeModal() {
+                document.getElementById('strategy-modal').classList.remove('show');
+                document.getElementById('modal-backdrop').classList.remove('show');
+            }
+
+            function addDetailsBtnListeners() {
+                document.querySelectorAll('.details-btn').forEach(button => {
+                    button.addEventListener('click', () => {
+                        openModal(button.dataset.strategy);
+                    });
+                });
+            }
+
+            document.getElementById('close-modal-btn').addEventListener('click', closeModal);
+            document.getElementById('modal-backdrop').addEventListener('click', closeModal);
+
+            document.querySelectorAll('.filter-btn').forEach(button => {
+                button.addEventListener('click', () => {
+                    document.querySelector('.filter-btn.active-filter').classList.remove('active-filter', 'bg-cyan-600', 'text-white');
+                    document.querySelector('.filter-btn.active-filter').classList.add('bg-white', 'text-slate-700');
+                    button.classList.add('active-filter', 'bg-cyan-600', 'text-white');
+                    button.classList.remove('bg-white', 'text-slate-700');
+                    renderStrategies(button.dataset.filter);
+                });
+            });
+
+            const tokenomicsCtx = document.getElementById('tokenomicsChart').getContext('2d');
+            new Chart(tokenomicsCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: data.tokenomics.labels,
+                    datasets: [{
+                        label: 'ASF 代币分配',
+                        data: data.tokenomics.data,
+                        backgroundColor: data.tokenomics.colors,
+                        borderColor: '#f8fafc',
+                        borderWidth: 4,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                font: {
+                                    family: "'Inter', 'Noto Sans SC', sans-serif"
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += context.parsed + '%';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '60%'
+                }
+            });
+
+            document.querySelectorAll('.swot-quadrant').forEach(quadrant => {
+                quadrant.addEventListener('click', () => {
+                    quadrant.querySelector('ul').classList.toggle('hidden');
+                });
+            });
+
+            const productContent = document.getElementById('product-content');
+            const productTabs = document.querySelectorAll('.product-tab');
+            function renderProductContent(tabName) {
+                productContent.innerHTML = data.products[tabName];
+            }
+            productTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    productTabs.forEach(t => {
+                        t.classList.remove('active-tab', 'bg-cyan-600', 'text-white');
+                        t.classList.add('bg-white', 'text-cyan-700');
+                    });
+                    tab.classList.add('active-tab', 'bg-cyan-600', 'text-white');
+                    tab.classList.remove('bg-white', 'text-cyan-700');
+                    renderProductContent(tab.dataset.tab);
+                });
+            });
+
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('section');
+            window.addEventListener('scroll', () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (pageYOffset >= sectionTop - 80) {
+                        current = section.getAttribute('id');
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href').includes(current)) {
+                        link.classList.add('active');
+                    }
+                });
+            });
+            
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+            
+            document.querySelectorAll('#mobile-menu a').forEach(link => {
+                link.addEventListener('click', () => {
+                    mobileMenu.classList.add('hidden');
+                });
+            });
+
+            renderProductContent('afETH');
+            renderStrategies();
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kamino Finance 交互式投资分析仪表盘</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Harmony -->
+    <!-- Application Structure Plan: The SPA is designed as an interactive dashboard to explore the core investment thesis of Kamino Finance. The structure prioritizes user understanding by starting with the central conflict (strong fundamentals vs. weak token), then allowing users to drill down into supporting data. The flow is: 1. Overview & Core Thesis (the "what"), 2. Protocol Strength & Market Position (the "why it's good"), 3. Tokenomics & Unlock Risk (the "why it's cheap"), 4. Comprehensive Risk Analysis (the "what to watch out for"), and 5. Actionable Investment Strategies (the "how to play it"). This non-linear, thematic structure is more intuitive for an investor than a simple linear report, enabling them to quickly grasp the key points and explore areas of interest. -->
+    <!-- Visualization & Content Choices: Key data points from the report are transformed into interactive visualizations to enhance comprehension. 1. TVL vs. Price Chart (Goal: Inform) - A dual-axis line chart (Chart.js) immediately shows the core "disconnect" thesis. 2. Token Allocation (Goal: Organize) - A donut chart (Chart.js) for a quick breakdown of token distribution. 3. Unlock Schedule (Goal: Change) - A stacked area chart (Chart.js) visualizes the immense future sell pressure, a critical risk factor. 4. Competitor TVL (Goal: Compare) - A bar chart (Chart.js) demonstrates Kamino's market dominance. 5. Investment Strategies (Goal: Organize) - An interactive HTML table with JS-powered filtering allows users to find strategies matching their risk profile and technical skill. All diagrams and icons are built with HTML/CSS/Unicode to adhere to the NO SVG/Mermaid constraint. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #F8F9FA; /* Light neutral background */
+            color: #212529;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 40vh;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .nav-link {
+            transition: color 0.3s, border-bottom-color 0.3s;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #4A5568; /* Darker Gray-Blue */
+            border-bottom-color: #4A5568;
+        }
+        .kpi-card {
+            background-color: #FFFFFF;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .kpi-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.1);
+        }
+        .tab-button {
+            transition: all 0.3s;
+        }
+        .tab-button.active {
+            background-color: #343A40;
+            color: #FFFFFF;
+        }
+        .table-sortable th {
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Header & Navigation -->
+    <header class="bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="text-2xl font-bold text-gray-800">
+                Kamino <span class="text-blue-600">Finance</span>
+            </div>
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="#overview" class="nav-link text-gray-600 font-medium">总览</a>
+                <a href="#protocol" class="nav-link text-gray-600 font-medium">协议实力</a>
+                <a href="#tokenomics" class="nav-link text-gray-600 font-medium">代币经济学</a>
+                <a href="#risk" class="nav-link text-gray-600 font-medium">风险剖析</a>
+                <a href="#strategies" class="nav-link text-gray-600 font-medium">投资策略</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-6 py-12">
+
+        <!-- Section 1: Overview & Core Thesis -->
+        <section id="overview" class="mb-24 text-center">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Solana的DeFi巨擘，价值洼地的博弈</h1>
+            <p class="max-w-3xl mx-auto text-lg text-gray-600 mb-2">
+                本报告深入剖析Kamino Finance的核心投资逻辑：一个基本面极其强劲的协议，其代币价值却被严重低估。这为投资者提供了一个独特的“价值回归”博弈机会。
+            </p>
+            <div class="inline-block bg-yellow-100 text-yellow-800 text-lg font-bold px-6 py-2 rounded-full mb-12">
+                综合投资评级: <span class="text-xl">建议 (Suggest)</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12 text-left">
+                <div class="kpi-card">
+                    <h3 class="text-gray-500 text-sm font-medium">总锁定价值 (TVL)</h3>
+                    <p class="text-3xl font-bold text-gray-900 mt-2">$28.5亿</p>
+                    <p class="text-green-600 text-sm mt-1">▲ 市场领导者</p>
+                </div>
+                <div class="kpi-card">
+                    <h3 class="text-gray-500 text-sm font-medium">年化协议收入</h3>
+                    <p class="text-3xl font-bold text-gray-900 mt-2">$2100万</p>
+                    <p class="text-green-600 text-sm mt-1">▲ 商业模式健康</p>
+                </div>
+                <div class="kpi-card">
+                    <h3 class="text-gray-500 text-sm font-medium">$KMNO 流通市值</h3>
+                    <p class="text-3xl font-bold text-gray-900 mt-2">~$1.5亿</p>
+                    <p class="text-gray-500 text-sm mt-1">相对协议规模较小</p>
+                </div>
+                <div class="kpi-card">
+                    <h3 class="text-gray-500 text-sm font-medium">$KMNO 完全稀释估值 (FDV)</h3>
+                    <p class="text-3xl font-bold text-gray-900 mt-2">~$6亿</p>
+                    <p class="text-gray-500 text-sm mt-1">存在未来解锁压力</p>
+                </div>
+            </div>
+
+            <h2 class="text-3xl font-bold text-gray-800 mb-4 mt-16">核心矛盾：协议增长 vs 代币表现</h2>
+            <p class="max-w-3xl mx-auto text-gray-600 mb-8">
+                下图直观展示了Kamino自TGE（代币生成事件）以来的核心矛盾：协议的TVL持续攀升，证明了其强大的市场吸引力；而$KMNO代币价格却表现疲软。这种脱节是当前投资机会的关键所在。
+            </p>
+            <div class="bg-white p-4 sm:p-6 rounded-xl shadow-lg">
+                <div class="chart-container">
+                    <canvas id="tvlVsPriceChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Protocol Strength -->
+        <section id="protocol" class="mb-24">
+            <h2 class="text-3xl font-bold text-center text-gray-800 mb-4">协议实力：为何Kamino能主导市场？</h2>
+            <p class="max-w-3xl mx-auto text-center text-gray-600 mb-12">
+                Kamino的成功并非偶然，而是建立在创新的产品架构、卓越的风险管理和清晰的未来愿景之上。它不仅是一个应用，更致力于成为Solana生态的基础信贷设施。
+            </p>
+
+            <div class="bg-white rounded-xl shadow-lg p-4 sm:p-8">
+                <div class="mb-8 border-b border-gray-200">
+                    <nav class="flex space-x-1 sm:space-x-4 -mb-px" id="protocolTabs">
+                        <button data-tab="architecture" class="tab-button active py-4 px-1 sm:px-6 text-center font-medium text-sm sm:text-base rounded-t-lg">产品架构</button>
+                        <button data-tab="market" class="tab-button py-4 px-1 sm:px-6 text-center font-medium text-sm sm:text-base rounded-t-lg">市场地位</button>
+                        <button data-tab="vision" class="tab-button py-4 px-1 sm:px-6 text-center font-medium text-sm sm:text-base rounded-t-lg">V2 愿景</button>
+                    </nav>
+                </div>
+
+                <div id="protocolContent">
+                    <!-- Architecture Tab -->
+                    <div data-tab-content="architecture" class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <div class="p-6 bg-gray-50 rounded-lg">
+                            <h3 class="font-bold text-xl mb-2">K-Lend & kTokens</h3>
+                            <p class="text-gray-600">统一流动性借贷市场，通过创新的kTokens（可替代的LP代币）将流动性头寸转化为标准抵押品，极大提升资本效率。</p>
+                        </div>
+                        <div class="p-6 bg-gray-50 rounded-lg">
+                            <h3 class="font-bold text-xl mb-2">自动化流动性金库</h3>
+                            <p class="text-gray-600">为用户提供一键式的集中流动性做市策略，自动完成范围重设和费用复投，降低了高级DeFi策略的参与门槛。</p>
+                        </div>
+                        <div class="p-6 bg-gray-50 rounded-lg">
+                            <h3 class="font-bold text-xl mb-2">Multiply & 杠杆</h3>
+                            <p class="text-gray-600">利用eMode（提升模式），用户可以对高度相关的资产（如SOL-LSTs）进行高达10倍的循环杠杆，一键放大收益。</p>
+                        </div>
+                    </div>
+                    <!-- Market Position Tab -->
+                    <div data-tab-content="market" class="hidden">
+                        <p class="text-center text-gray-600 mb-4">Kamino在与MarginFi和Solend的竞争中取得决定性胜利，成为Solana上TVL最高的借贷协议。</p>
+                        <div class="chart-container h-96">
+                            <canvas id="competitorTvlChart"></canvas>
+                        </div>
+                    </div>
+                    <!-- V2 Vision Tab -->
+                    <div data-tab-content="vision" class="hidden text-center">
+                         <h3 class="font-bold text-2xl mb-4">通往百亿之路 (Road to $10B)</h3>
+                         <p class="text-gray-600 max-w-2xl mx-auto mb-8">V2标志着Kamino向模块化架构的演进，旨在成为Solana的基础信貸层。其核心是无需许可的市场层和自动化的金库层，将商业模式从B2C扩展至B2B2C，为RWA、合规市场等开启大门。</p>
+                         <div class="flex flex-col md:flex-row justify-center items-center gap-4">
+                            <div class="p-4 border border-gray-200 rounded-lg">市场层 (Market Layer)</div>
+                            <div class="text-2xl text-gray-400">→</div>
+                            <div class="p-4 border border-gray-200 rounded-lg">金库层 (Vault Layer)</div>
+                            <div class="text-2xl text-gray-400">→</div>
+                            <div class="p-4 bg-blue-100 text-blue-800 rounded-lg font-bold">指数级增长</div>
+                         </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- Section 3: Tokenomics -->
+        <section id="tokenomics" class="mb-24">
+            <h2 class="text-3xl font-bold text-center text-gray-800 mb-4">代币经济学：$KMNO的机遇与枷锁</h2>
+            <p class="max-w-3xl mx-auto text-center text-gray-600 mb-12">
+                理解$KMNO的代币经济学是评估其投资价值的关键。虽然当前效用有限，但最大的挑战来自于未来可预见的巨大解锁抛压。
+            </p>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                <div class="bg-white p-4 sm:p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-bold text-center mb-4">代币分配 (总供应量: 100亿)</h3>
+                    <div class="chart-container h-80">
+                        <canvas id="tokenAllocationChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-4 sm:p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-bold text-center mb-4 text-red-600">解锁计划：未来的抛压之墙</h3>
+                    <p class="text-center text-gray-600 text-sm mb-4">下图展示了$KMNO的流通供应量增长曲线。关键节点在2025年5月，届时团队与投资者的代币开始线性解锁，将带来持续24个月的巨大抛售压力。</p>
+                    <div class="chart-container h-80">
+                        <canvas id="unlockScheduleChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Risk Analysis -->
+        <section id="risk" class="mb-24">
+            <h2 class="text-3xl font-bold text-center text-gray-800 mb-4">风险剖析：安全堡垒与运营短板</h2>
+            <p class="max-w-3xl mx-auto text-center text-gray-600 mb-12">
+                Kamino在风险管理上呈现出鲜明的二元性：技术层面堪称顶级，但社区与运营层面曾暴露风险。
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-white p-8 rounded-xl shadow-lg border-l-4 border-green-500">
+                    <h3 class="text-2xl font-bold mb-4">技术安全优势 ✓</h3>
+                    <ul class="space-y-3 text-gray-700">
+                        <li class="flex items-start"><span class="text-green-500 font-bold mr-2">▶</span> <strong>零坏账记录:</strong> 自成立以来，协议从未遭受攻击或产生坏账。</li>
+                        <li class="flex items-start"><span class="text-green-500 font-bold mr-2">▶</span> <strong>多重审计:</strong> 超过14次外部安全审计，审计方均为业内知名机构。</li>
+                        <li class="flex items-start"><span class="text-green-500 font-bold mr-2">▶</span> <strong>顶级风控:</strong> 创始人拥有顶级TradFi衍生品风控背景，自研的多层预言机系统能有效抵御价格操纵。</li>
+                        <li class="flex items-start"><span class="text-green-500 font-bold mr-2">▶</span> <strong>漏洞赏金:</strong> 高达50万美元的漏洞赏金计划，体现主动防御文化。</li>
+                    </ul>
+                </div>
+                <div class="bg-white p-8 rounded-xl shadow-lg border-l-4 border-red-500">
+                    <h3 class="text-2xl font-bold mb-4">运营与社区风险 ✗</h3>
+                    <ul class="space-y-3 text-gray-700">
+                        <li class="flex items-start"><span class="text-red-500 font-bold mr-2">▶</span> <strong>空投争议:</strong> 初始空投方案引发社区强烈不满，损害了早期支持者的情绪。</li>
+                        <li class="flex items-start"><span class="text-red-500 font-bold mr-2">▶</span> <strong>币安钱包事件:</strong> TGE后与币安钱包的集成问题导致用户体验不佳和负面舆论。</li>
+                        <li class="flex items-start"><span class="text-red-500 font-bold mr-2">▶</span> <strong>价值捕获不足:</strong> 当前$KMNO代币的核心效用较为单一，主要与积分激励挂钩，尚未与协议收入直接关联。</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: Investment Strategies -->
+        <section id="strategies" class="mb-24">
+            <h2 class="text-3xl font-bold text-center text-gray-800 mb-4">投资策略：如何在Kamino中发掘Alpha？</h2>
+            <p class="max-w-3xl mx-auto text-center text-gray-600 mb-12">
+                Kamino提供从基础到高级的多种收益策略。下表汇总了各类机会的风险、回报与技术要求。您可以通过筛选器找到最适合您的策略。
+            </p>
+
+            <div class="bg-white rounded-xl shadow-lg p-4 sm:p-8 overflow-x-auto">
+                <div class="mb-6 flex flex-wrap gap-2 justify-center" id="strategyFilters">
+                    <button data-filter="all" class="px-4 py-2 text-sm font-medium rounded-full bg-gray-800 text-white">全部策略</button>
+                    <button data-filter="low" class="px-4 py-2 text-sm font-medium rounded-full bg-gray-200 text-gray-800">低复杂度</button>
+                    <button data-filter="medium" class="px-4 py-2 text-sm font-medium rounded-full bg-gray-200 text-gray-800">中等复杂度</button>
+                    <button data-filter="high" class="px-4 py-2 text-sm font-medium rounded-full bg-gray-200 text-gray-800">高复杂度</button>
+                    <button data-filter="dev" class="px-4 py-2 text-sm font-medium rounded-full bg-gray-200 text-gray-800">开发者机遇</button>
+                </div>
+                <table class="w-full text-left table-auto">
+                    <thead class="bg-gray-50 text-gray-600 uppercase text-sm">
+                        <tr>
+                            <th class="p-4">策略名称</th>
+                            <th class="p-4">核心风险</th>
+                            <th class="p-4">潜在APY</th>
+                            <th class="p-4 table-sortable" data-sort="complexity">技术复杂度 ↓</th>
+                        </tr>
+                    </thead>
+                    <tbody id="strategyTableBody">
+                        <!-- JS will populate this -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+    
+    <footer class="bg-gray-800 text-white mt-16">
+        <div class="container mx-auto px-6 py-8 text-center">
+            <p>本报告由AI根据公开信息生成，仅供研究参考，不构成任何投资建议。</p>
+            <p class="text-sm text-gray-400 mt-2">数据截止日期：2024年7月</p>
+        </div>
+    </footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Data
+    const strategyData = [
+        { name: '供应资产至 K-Lend', risk: '智能合约, 机会成本', apy: '2% - 30%+', complexity: 1, type: 'low', description: '将单边资产存入借贷池赚取浮动利息。' },
+        { name: 'LP (SOL-LST 金库)', risk: 'SOL价格下跌, LST脱锚', apy: '5% - 15%', complexity: 2, type: 'medium', description: '为SOL及其LST变体提供流动性。' },
+        { name: 'LP (波动-稳定金库)', risk: '极高的无常损失', apy: '20% - 100%+', complexity: 2, type: 'medium', description: '为SOL-USDC等交易对提供流动性。' },
+        { name: 'Multiply 循环杠杆', risk: '清算风险, 利率风险', apy: '15% - 30%+', complexity: 3, type: 'high', description: '一键式循环存贷，放大LST资产收益。' },
+        { name: '抵押 xStocks 借款', risk: 'RWA监管, 预言机', apy: '借款成本', complexity: 3, type: 'high', description: '将代币化股票作为抵押品借出稳定币。' },
+        { name: '创建自定义金库/市场', risk: '所有风险叠加', apy: '不确定', complexity: 4, type: 'dev', description: '利用V2市场层设计并部署自己的策略或市场。' }
+    ];
+
+    // Chart 1: TVL vs Price
+    const tvlVsPriceCtx = document.getElementById('tvlVsPriceChart').getContext('2d');
+    new Chart(tvlVsPriceCtx, {
+        type: 'line',
+        data: {
+            labels: ['May 1', 'May 15', 'Jun 1', 'Jun 15', 'Jul 1', 'Jul 15'],
+            datasets: [{
+                label: 'TVL (亿美元)',
+                data: [12, 11, 15, 18, 25, 28.5],
+                borderColor: 'rgba(54, 162, 235, 1)',
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                yAxisID: 'y',
+                tension: 0.4,
+                fill: true,
+            }, {
+                label: '$KMNO 价格 (美元)',
+                data: [0.11, 0.08, 0.05, 0.04, 0.06, 0.065],
+                borderColor: 'rgba(255, 99, 132, 1)',
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                yAxisID: 'y1',
+                tension: 0.4,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            scales: {
+                y: { type: 'linear', display: true, position: 'left', title: { display: true, text: 'TVL (亿美元)' } },
+                y1: { type: 'linear', display: true, position: 'right', title: { display: true, text: '$KMNO 价格' }, grid: { drawOnChartArea: false } },
+            }
+        }
+    });
+
+    // Chart 2: Token Allocation
+    const tokenAllocationCtx = document.getElementById('tokenAllocationChart').getContext('2d');
+    new Chart(tokenAllocationCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['社区与生态激励', '核心利益相关者与顾问', '核心贡献者', '流动性与财库'],
+            datasets: [{
+                data: [35, 35, 20, 10],
+                backgroundColor: ['#4ade80', '#facc15', '#fb923c', '#60a5fa'],
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+
+    // Chart 3: Unlock Schedule
+    const unlockScheduleCtx = document.getElementById('unlockScheduleChart').getContext('2d');
+    new Chart(unlockScheduleCtx, {
+        type: 'line',
+        data: {
+            labels: ['2024-05', '2024-11', '2025-05', '2025-11', '2026-05', '2026-11', '2027-05'],
+            datasets: [{
+                label: '初始流通与社区激励',
+                data: [10, 15, 20, 25, 30, 35, 42.5],
+                fill: true,
+                borderColor: '#4ade80',
+                backgroundColor: '#4ade8033',
+                tension: 0.1
+            }, {
+                label: '团队与投资者解锁',
+                data: [0, 0, 2.29, 16.03, 29.77, 43.51, 55],
+                fill: true,
+                borderColor: '#fb923c',
+                backgroundColor: '#fb923c33',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { title: { display: true, text: '累计解锁代币 (亿枚)' } },
+            scales: { x: { stacked: true }, y: { stacked: true, min: 0, max: 100, title: {display: true, text: '占总供应量 %'} } }
+        }
+    });
+    
+    // Chart 4: Competitor TVL
+    const competitorTvlCtx = document.getElementById('competitorTvlChart').getContext('2d');
+    new Chart(competitorTvlCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Kamino', 'MarginFi', 'Solend'],
+            datasets: [{
+                label: 'TVL (亿美元)',
+                data: [28.5, 5, 4.5], // Example data
+                backgroundColor: ['#3b82f6', '#a8a29e', '#a8a29e'],
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y',
+            plugins: { legend: { display: false } }
+        }
+    });
+
+    // Protocol Tabs
+    const protocolTabs = document.getElementById('protocolTabs');
+    const protocolContents = document.getElementById('protocolContent').querySelectorAll('[data-tab-content]');
+    protocolTabs.addEventListener('click', (e) => {
+        if (e.target.tagName === 'BUTTON') {
+            const tabId = e.target.dataset.tab;
+            protocolTabs.querySelector('.active').classList.remove('active');
+            e.target.classList.add('active');
+            protocolContents.forEach(content => {
+                content.classList.toggle('hidden', content.dataset.tabContent !== tabId);
+            });
+        }
+    });
+
+    // Strategy Table
+    const tableBody = document.getElementById('strategyTableBody');
+    const filters = document.getElementById('strategyFilters');
+    let currentSort = { key: 'complexity', asc: true };
+
+    const complexityMap = { 1: '低', 2: '中', 3: '高', 4: '极高 (开发者)' };
+
+    function renderTable(data) {
+        tableBody.innerHTML = '';
+        data.forEach(item => {
+            const row = document.createElement('tr');
+            row.className = 'border-b border-gray-200 hover:bg-gray-50';
+            row.innerHTML = `
+                <td class="p-4 font-medium">${item.name}<p class="text-xs text-gray-500 font-normal">${item.description}</p></td>
+                <td class="p-4 text-red-600">${item.risk}</td>
+                <td class="p-4 text-green-600 font-bold">${item.apy}</td>
+                <td class="p-4">${complexityMap[item.complexity]}</td>
+            `;
+            tableBody.appendChild(row);
+        });
+    }
+
+    function sortData(key) {
+        if (currentSort.key === key) {
+            currentSort.asc = !currentSort.asc;
+        } else {
+            currentSort.key = key;
+            currentSort.asc = true;
+        }
+        
+        const sortedData = [...strategyData].sort((a, b) => {
+            if (a[key] < b[key]) return currentSort.asc ? -1 : 1;
+            if (a[key] > b[key]) return currentSort.asc ? 1 : -1;
+            return 0;
+        });
+
+        document.querySelectorAll('.table-sortable').forEach(th => {
+            th.textContent = th.textContent.replace(' ↓', '').replace(' ↑', '');
+            if(th.dataset.sort === key) {
+                th.textContent += currentSort.asc ? ' ↓' : ' ↑';
+            }
+        })
+        
+        renderTable(sortedData);
+    }
+
+    document.querySelectorAll('.table-sortable').forEach(th => {
+        th.addEventListener('click', () => sortData(th.dataset.sort));
+    });
+
+    filters.addEventListener('click', (e) => {
+        if (e.target.tagName === 'BUTTON') {
+            const filter = e.target.dataset.filter;
+            filters.querySelector('.bg-gray-800').classList.replace('bg-gray-800', 'bg-gray-200');
+            filters.querySelector('.text-white').classList.replace('text-white', 'text-gray-800');
+            e.target.classList.replace('bg-gray-200', 'bg-gray-800');
+            e.target.classList.replace('text-gray-800', 'text-white');
+
+            if (filter === 'all') {
+                renderTable(strategyData);
+            } else {
+                const filteredData = strategyData.filter(item => item.type === filter || (filter==='high' && item.type==='dev'));
+                renderTable(filteredData);
+            }
+        }
+    });
+
+    // Initial render
+    renderTable(strategyData);
+
+    // Smooth scrolling for nav links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            document.querySelector(this.getAttribute('href')).scrollIntoView({
+                behavior: 'smooth'
+            });
+        });
+    });
+});
+</script>
+</body>
+</html>

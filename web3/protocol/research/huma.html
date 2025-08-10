@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Huma Finance (HUMA) - 交互式投资评估报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Harmony -->
+    <!-- Application Structure Plan: 本应用采用基于选项卡的仪表板布局，而非报告的线性结构。这种设计允许用户根据其角色（如DeFi收益农夫、开发者、代币投资者）和兴趣，直接跳转到最相关的部分。顶部导航栏固定，提供在“概览”、“项目解析”、“投资机会”、“代币经济学”、“风险评估”和“市场格局”之间的快速切换。这种非线性探索路径将复杂的报告内容分解为易于消化的主题模块，通过交互式图表和可切换卡片增强用户参与度，从而极大地提升了信息获取的效率和体验。 -->
+    <!-- Visualization & Content Choices: 
+        - 关键指标 (概览): Goal: Inform -> Method: 动态数字卡片 (HTML/CSS) -> Interaction: 悬停显示简要说明，快速传递核心业绩。
+        - 代币分配 (代币经济学): Goal: Proportions -> Method: 甜甜圈图 (Chart.js/Canvas) -> Interaction: 悬停图表分块高亮并显示详细信息，直观展示分配结构。
+        - 投资策略 (投资机会): Goal: Compare/Inform -> Method: 可切换的选项卡 (HTML/JS) -> Interaction: 点击切换不同策略（LP、代币、开发者），并展示对应的风险、回报和技术要求，帮助用户决策。
+        - 竞争格局 (市场格局): Goal: Compare -> Method: 交互式对比表格 (HTML/JS) -> Interaction: 鼠标悬停高亮行，清晰对比Huma与竞品的差异化优势。
+        - 风险评估 (风险评估): Goal: Organize -> Method: 风险矩阵网格 (HTML/CSS) -> Interaction: 鼠标悬停卡片放大并显示详细解释，将抽象风险具体化。
+        - PayFi技术栈 (项目解析): Goal: Organize -> Method: 垂直流程图 (HTML/CSS) -> Interaction: 悬停图层显示解释，结构化展示复杂技术架构。
+        - 确认NO SVG/Mermaid: 所有图表和视觉元素均通过Chart.js或纯HTML/CSS实现。
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { font-family: 'Noto Sans SC', sans-serif; }
+        .tab-btn.active { 
+            border-color: #3B82F6; 
+            background-color: #EFF6FF;
+            color: #2563EB;
+            font-weight: 600;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 450px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .content-section { display: none; }
+        .content-section.active { display: block; }
+        .strategy-tab.active {
+            background-color: #E0E7FF;
+            border-color: #6366F1;
+        }
+    </style>
+</head>
+<body class="bg-stone-50 text-gray-800">
+
+    <div id="app" class="container mx-auto p-4 md:p-6 lg:p-8">
+        
+        <header class="text-center mb-8 border-b pb-6 border-gray-200">
+            <div class="flex justify-center items-center gap-4">
+                <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white text-2xl font-bold">H</div>
+                <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Huma Finance (HUMA)</h1>
+            </div>
+            <p class="text-lg text-gray-600 mt-2">交互式投资评估报告</p>
+            <div id="final-rating-badge" class="mt-4 inline-block px-6 py-2 rounded-full text-lg font-semibold">
+                <!-- Final rating will be populated by JS -->
+            </div>
+        </header>
+
+        <nav class="sticky top-0 bg-stone-50/80 backdrop-blur-sm z-10 py-3 mb-8 overflow-x-auto whitespace-nowrap">
+            <div id="tabs-container" class="flex justify-center items-center border border-gray-200 rounded-lg p-1 bg-white shadow-sm space-x-1">
+                <!-- Tabs will be populated by JS -->
+            </div>
+        </nav>
+
+        <main id="main-content">
+            <!-- Sections will be populated by JS -->
+        </main>
+
+    </div>
+
+    <script>
+        const appData = {
+            finalRating: {
+                text: "建议 (Recommend)",
+                reason: "凭借其在PayFi市场的开创性地位、已验证的商业模式、强大的生态系统支持以及为开发者提供的独特机会，展现出巨大的增长潜力。尽管存在代币价值捕获机制待落地和交易对手信用风险，但其上行潜力显著大于下行风险。",
+                color: "bg-green-100 text-green-800 border border-green-200"
+            },
+            tabs: [
+                { id: "overview", name: "概览" },
+                { id: "deepDive", name: "项目解析" },
+                { id: "investmentOps", name: "投资机会" },
+                { id: "tokenomics", name: "代币经济学" },
+                { id: "risk", name: "风险评估" },
+                { id: "market", name: "市场格局" },
+            ],
+            sections: {
+                overview: {
+                    title: "核心摘要与业绩概览",
+                    intro: "本部分旨在提供对 Huma Finance 的高层次理解，快速掌握其核心价值主张、关键业绩指标和最终投资评级。这是整个报告的“执行摘要”，帮助您在最短时间内做出初步判断。",
+                    keyMetrics: [
+                        { label: "总交易量", value: "> $4.5 亿", detail: "协议处理的累计支付融资金额，反映了其市场采纳度和业务规模。" },
+                        { label: "年化收入", value: "$900 万", detail: "协议当前为流动性提供者产生的年化收益，是其真实创收能力的直接体现。" },
+                        { label: "活跃流动性", value: "~$1.03 亿", detail: "当前锁定在协议中用于提供融资的资金总量，代表了市场信心。" },
+                        { label: "信用违约率", value: "0%", detail: "自成立以来的信用违约记录，是其结构化风险管理有效性的关键指标。" },
+                    ],
+                    summary: {
+                        bull: [
+                            "PayFi赛道领导者，抢占万亿级市场先机。",
+                            "拥有真实商业活动支撑的可持续、高APR稳定币收益。",
+                            "强大的开发者生态和可组合性资产($PST)构成护城河。",
+                            "顶级机构背书和强大的安全审计记录。",
+                        ],
+                        bear: [
+                            "代币价值捕获机制尚待落地，当前投资依赖未来预期。",
+                            "核心信用风险依赖链下合作伙伴，对DeFi用户不透明。",
+                            "面临不确定的全球RWA和DeFi监管环境。",
+                        ]
+                    }
+                },
+                deepDive: {
+                    title: "项目深度解析",
+                    intro: "理解 Huma 的本质是做出明智投资决策的基础。本部分将深入剖析 Huma 的核心理念 (PayFi)、其创新的双平台架构、技术堆栈以及关键产品 ($PST)，为您揭示其商业模式的精妙之处。",
+                    payFiConcept: {
+                        title: "PayFi理论：用RWA变革全球支付",
+                        text: "Huma 将自身定位为首个“PayFi”（支付金融）网络，旨在解决传统金融中支付结算缓慢、成本高昂的问题。它允许企业将未来的应收账款（如发票、支付订单）代币化，作为链上抵押品，从DeFi流动性池中获得即时融资。这为企业提供了现金流，同时为DeFi用户创造了源自真实世界商业活动的收益。"
+                    },
+                    architecture: {
+                        title: "双平台架构：连接合规与开放",
+                        platforms: [
+                            { name: "Huma Institutional (机构端)", icon: "🏛️", description: "一个需许可、受监管的平台，专为机构和金融科技公司设计，负责引入高质量、合规的真实世界资产。", color: "bg-blue-50" },
+                            { name: "Huma 2.0 (DeFi端)", icon: "🌊", description: "一个无需许可的DeFi平台，允许任何用户存入USDC，获取由机构端产生的收益，实现了对机构级资产的民主化访问。", color: "bg-green-50" }
+                        ],
+                        bridgeText: "这种设计巧妙地解决了RWA领域的合规难题：机构端作为“合规入口”，DeFi端作为“流动性层”，形成强大的飞轮效应。"
+                    },
+                    pstToken: {
+                        title: "PayFi策略代币 ($PST)",
+                        text: "$PST 是一种计息的流动性凭证代币。当用户存入USDC时会收到它，它代表用户在池中的份额并自动累积收益。更重要的是，$PST被设计为Solana上的可组合DeFi资产，可在DEX交易，或作为借贷抵押品，极大地提升了RWA投资的资本效率和流动性。"
+                    }
+                },
+                investmentOps: {
+                    title: "可行的投资与参与策略",
+                    intro: "本部分是报告的核心，旨在将所有分析转化为具体、可操作的投资建议，特别是为不同风险偏好和技术背景的投资者提供量身定制的参与路径。无论您是寻求稳定收益的LP、看好代币增值的投资者，还是希望深度参与的开发者，都可以在这里找到适合您的机会。",
+                    strategies: [
+                        { 
+                            id: 'lp',
+                            name: 'DeFi 收益策略 (LP)',
+                            icon: '💧',
+                            details: {
+                                title: "作为流动性提供者 (LP) 赚取稳定收益",
+                                description: "最直接的参与方式是向 Huma 2.0 的资金池提供 USDC 流动性，以赚取目前约为 10.5% APY 的稳定币真实收益。",
+                                options: [
+                                    { name: '经典模式 (Classic)', detail: '赚取完整的 10.5% USDC APY 及基础积分奖励。适合追求稳定现金流的投资者。' },
+                                    { name: '极限模式 (Maxi)', detail: '放弃 USDC 收益，换取极高的积分倍数（用于未来空投）。适合高信念、看好 $HUMA 代币价值的投资者。' }
+                                ],
+                                advanced: "更高级的玩法包括：利用 $PST 在Kamino等平台进行杠杆收益耕作，或在Jupiter上为 PST/USDC 提供流动性以赚取交易费。这些策略收益更高，但伴随着清算和无常损失风险。"
+                            },
+                            expertise: "基础至高级 DeFi 知识",
+                            risk: "中至高"
+                        },
+                        { 
+                            id: 'token',
+                            name: '$HUMA 代币投资',
+                            icon: '💎',
+                            details: {
+                                title: "投资 $HUMA 代币",
+                                description: "直接购买并持有 $HUMA 代币，押注协议的长期成功和价值捕获机制的实现。",
+                                pros: "若协议成功实施将收入与代币挂钩的机制，代币价值有望迎来巨大重估。",
+                                cons: "当前价值捕获机制尚未落地，代币价格波动性高，依赖未来预期。"
+                            },
+                            expertise: "基础加密货币交易知识",
+                            risk: "高"
+                        },
+                        { 
+                            id: 'developer',
+                            name: '开发者参与机会',
+                            icon: '🛠️',
+                            details: {
+                                title: "作为开发者构建与盈利",
+                                description: "对于有技术背景的投资者，Huma 提供了最具非对称性的机会。通过其开放的SDK，您可以超越普通投资者，成为生态的建设者和价值捕获者。",
+                                opportunities: [
+                                    "创建新的“评估代理”，为新型应收账款提供承销服务并收费。",
+                                    "构建新的“信号适配器”，将独特的数据源（如SaaS订阅）接入协议。",
+                                    "与Huma合作创建自定义流动性池，扮演资产发起方角色。",
+                                    "基于 $PST 这一收益资产，构建新的结构化DeFi产品。"
+                                ]
+                            },
+                            expertise: "高级开发技能 & 特定信贷领域知识",
+                            risk: "极高（商业风险）"
+                        }
+                    ]
+                },
+                tokenomics: {
+                    title: "代币经济学分析 ($HUMA)",
+                    intro: "代币经济学是评估一个项目长期价值和可持续性的核心。本部分将深入分析 $HUMA 代币的总量、分配比例、归属时间表以及核心效用，帮助您判断其经济模型是否健康，以及未来的价值捕获潜力。",
+                    totalSupply: "100亿枚 (固定)",
+                    chartData: {
+                        labels: ['LP & 生态激励', '投资者', '团队与顾问', '协议财库', 'CEX & 市场营销', '初始空投', '做市商 & 流动性', '预售'],
+                        data: [31, 20.6, 19.3, 11.1, 7, 5, 4, 2]
+                    },
+                    utility: [
+                        { name: "治理", detail: "质押 $HUMA 获得投票权，参与协议关键决策。" },
+                        { name: "激励", detail: "质押 $HUMA 可为LP头寸提供收益“增益”(boost)。" },
+                        { name: "生态货币", detail: "未来用于解锁协议高级功能。" },
+                    ],
+                    valueCapture: {
+                        title: "价值捕获的关键问题",
+                        text: "当前代币价值捕获是间接的（通过激励）。其长期价值，最终取决于能否建立一个直接的价值捕获机制（如费用分享、回购销毁），将代币与协议产生的$900万年化收入挂钩。这是当前投资 $HUMA 的核心赌注，也是未来最大的潜在催化剂。"
+                    }
+                },
+                risk: {
+                    title: "综合风险与安全评估",
+                    intro: "任何投资都伴随着风险。本部分将对 Huma Finance 面临的各类风险进行坦诚布公的评估，包括其智能合约的安全性、核心的信用风险、以及不可忽视的监管和市场风险。理解这些风险是做出全面投资决策的必要前提。",
+                    risks: [
+                        { name: "智能合约风险", level: "低", detail: "已通过Halborn, Spearbit, Certora等多家顶级机构审计，公开报告显示无高危漏洞。持续的漏洞赏金计划也增强了安全性。", color: "bg-green-100 text-green-800" },
+                        { name: "信用风险", level: "中", detail: "这是协议的核心风险。风险主要来自其资产发起方（如Arf）的承销和履约能力，而非协议本身。尽管有第一损失资本保护，但主要合作伙伴的系统性失败仍可能对LP造成损失。", color: "bg-yellow-100 text-yellow-800" },
+                        { name: "监管风险", level: "高", detail: "作为RWA领域的先行者，Huma面临全球范围内不断变化的监管环境。任何针对DeFi或RWA的突发性监管收紧都可能对其业务模式构成潜在威胁。", color: "bg-red-100 text-red-800" },
+                        { name: "价值捕获风险", level: "中", detail: "代币的价值捕获机制尚未最终确定并实施。如果未来推出的机制不及预期，可能影响代币的长期价值支撑。", color: "bg-yellow-100 text-yellow-800" },
+                        { name: "中心化风险", level: "中", detail: "项目早期，治理和资产来源不可避免地依赖于团队和少数关键合作伙伴。向真正去中心化的过渡路径至关重要。", color: "bg-yellow-100 text-yellow-800" }
+                    ]
+                },
+                market: {
+                    title: "市场与竞争格局",
+                    intro: "一个项目能否成功，不仅取决于自身实力，也取决于其所处的市场环境和竞争格局。本部分将分析 Huma 所处的 RWA 赛道巨大机遇，并将其与 Centrifuge, Goldfinch 等主要竞争对手进行横向对比，以凸显其独特的差异化优势。",
+                    marketOpportunity: {
+                        title: "巨大的市场机遇",
+                        text: "Huma所处的PayFi市场总规模超30万亿美元，而更广泛的RWA市场预计在2030年代初将达到数万亿美元。随着贝莱德等传统金融巨头入场，RWA赛道正迎来爆发式增长，为Huma提供了强劲的宏观顺风。"
+                    },
+                    competitors: [
+                        { name: 'Huma Finance', useCase: '短期支付融资(PayFi)', yieldSource: '支付交易费用', differentiation: 'PayFi专注,高频周转,真实收益,Solana可组合性', isHuma: true },
+                        { name: 'Centrifuge', useCase: 'RWA债务代币化', yieldSource: '借款人利息', differentiation: '资产证券化,多级风险分层', isHuma: false },
+                        { name: 'Goldfinch', useCase: '新兴市场无抵押贷款', yieldSource: '借款人利息', differentiation: '社区承销,新兴市场专注', isHuma: false },
+                        { name: 'Maple Finance', useCase: '加密原生机构贷款', yieldSource: '借款人利息', differentiation: '专注于加密原生机构', isHuma: false }
+                    ],
+                    analysis: "Huma的商业模式更接近金融市场的“管道工”，专注于解决高频的支付清算，而非直接从事低频的“放贷”业务。这使其模型比许多RWA同行更具可扩展性，风险也更可控，收益来源与宏观经济活动关联更紧密，而非加密市场周期。"
+                }
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const tabsContainer = document.getElementById('tabs-container');
+            const mainContent = document.getElementById('main-content');
+            const finalRatingBadge = document.getElementById('final-rating-badge');
+
+            finalRatingBadge.className = `mt-4 inline-block px-6 py-2 rounded-full text-lg font-semibold ${appData.finalRating.color}`;
+            finalRatingBadge.innerHTML = `${appData.finalRating.text} <span class="text-sm font-normal ml-2 opacity-75 hidden md:inline">- 点击查看理由</span>`;
+            finalRatingBadge.addEventListener('click', () => {
+                alert(`投资等级理由：\n${appData.finalRating.reason}`);
+            });
+
+
+            appData.tabs.forEach((tab, index) => {
+                const button = document.createElement('button');
+                button.className = 'tab-btn px-4 py-2 text-sm md:text-base rounded-md border-2 border-transparent transition-all duration-200 ease-in-out';
+                button.textContent = tab.name;
+                button.dataset.target = tab.id;
+                tabsContainer.appendChild(button);
+
+                if (index === 0) {
+                    button.classList.add('active');
+                }
+            });
+
+            Object.keys(appData.sections).forEach((key, index) => {
+                const sectionData = appData.sections[key];
+                const section = document.createElement('div');
+                section.id = key;
+                section.className = 'content-section bg-white p-6 md:p-8 rounded-2xl shadow-lg ring-1 ring-gray-900/5';
+                
+                let content = `
+                    <h2 class="text-2xl font-bold mb-2 text-gray-800">${sectionData.title}</h2>
+                    <p class="text-gray-600 mb-8">${sectionData.intro}</p>
+                `;
+
+                if (key === 'overview') {
+                    content += `
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-8">
+                            ${sectionData.keyMetrics.map(metric => `
+                                <div class="bg-gray-50 p-4 rounded-xl text-center transition-transform duration-300 hover:scale-105 hover:shadow-md cursor-help" title="${metric.detail}">
+                                    <p class="text-sm text-gray-500">${metric.label}</p>
+                                    <p class="text-2xl md:text-3xl font-bold text-blue-600">${metric.value}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div class="grid md:grid-cols-2 gap-8">
+                            <div class="bg-green-50 p-6 rounded-xl border border-green-200">
+                                <h3 class="font-bold text-lg text-green-800 mb-3 flex items-center"><span class="text-2xl mr-2">👍</span>看涨理由 (The Bull Case)</h3>
+                                <ul class="list-disc list-inside space-y-2 text-green-700">
+                                    ${sectionData.summary.bull.map(item => `<li>${item}</li>`).join('')}
+                                </ul>
+                            </div>
+                            <div class="bg-red-50 p-6 rounded-xl border border-red-200">
+                                <h3 class="font-bold text-lg text-red-800 mb-3 flex items-center"><span class="text-2xl mr-2">👎</span>看跌理由 (The Bear Case)</h3>
+                                <ul class="list-disc list-inside space-y-2 text-red-700">
+                                    ${sectionData.summary.bear.map(item => `<li>${item}</li>`).join('')}
+                                </ul>
+                            </div>
+                        </div>`;
+                } else if (key === 'deepDive') {
+                    content += `
+                        <div class="space-y-12">
+                            <div class="bg-indigo-50 p-6 rounded-xl">
+                                <h3 class="text-xl font-semibold mb-2 text-indigo-800">${sectionData.payFiConcept.title}</h3>
+                                <p class="text-indigo-700">${sectionData.payFiConcept.text}</p>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-semibold mb-4 text-center text-gray-700">${sectionData.architecture.title}</h3>
+                                <div class="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-0">
+                                    ${sectionData.architecture.platforms.map(p => `
+                                    <div class="${p.color} p-6 rounded-xl shadow-sm w-full md:w-2/5 text-center">
+                                        <div class="text-4xl mb-2">${p.icon}</div>
+                                        <h4 class="font-bold text-lg">${p.name}</h4>
+                                        <p class="text-sm text-gray-600">${p.description}</p>
+                                    </div>`).join('<div class="text-4xl font-bold text-gray-400 mx-4 my-4 md:my-0 transform md:-rotate-90">➔</div>')}
+                                </div>
+                                <p class="text-center mt-4 text-gray-600 max-w-2xl mx-auto">${sectionData.architecture.bridgeText}</p>
+                            </div>
+                            <div class="bg-teal-50 p-6 rounded-xl">
+                                <h3 class="text-xl font-semibold mb-2 text-teal-800">${sectionData.pstToken.title}</h3>
+                                <p class="text-teal-700">${sectionData.pstToken.text}</p>
+                            </div>
+                        </div>`;
+                } else if (key === 'investmentOps') {
+                     content += `
+                        <div class="flex flex-col md:flex-row gap-8">
+                            <div class="w-full md:w-1/3 space-y-2">
+                                ${sectionData.strategies.map((s, i) => `
+                                    <button class="strategy-tab w-full text-left p-4 rounded-lg border-2 transition ${i === 0 ? 'active' : 'border-gray-200'}" data-strategy="${s.id}">
+                                        <div class="flex items-center">
+                                            <span class="text-2xl mr-3">${s.icon}</span>
+                                            <div>
+                                                <p class="font-bold">${s.name}</p>
+                                                <p class="text-xs text-gray-500">风险: ${s.risk}</p>
+                                            </div>
+                                        </div>
+                                    </button>
+                                `).join('')}
+                            </div>
+                            <div class="w-full md:w-2/3">
+                                ${sectionData.strategies.map((s, i) => `
+                                    <div id="strategy-content-${s.id}" class="strategy-content-pane ${i > 0 ? 'hidden' : ''}">
+                                        <div class="bg-gray-50 p-6 rounded-xl">
+                                            <h3 class="text-xl font-bold mb-3">${s.details.title}</h3>
+                                            <p class="text-gray-600 mb-4">${s.details.description}</p>
+                                            ${s.details.options ? s.details.options.map(opt => `
+                                                <div class="p-4 bg-white rounded-lg mb-2 shadow-sm">
+                                                    <p class="font-semibold text-blue-700">${opt.name}</p>
+                                                    <p class="text-sm text-gray-600">${opt.detail}</p>
+                                                </div>
+                                            `).join('') : ''}
+                                            ${s.details.pros ? `<p class="mt-4 text-sm text-green-700"><b>优点:</b> ${s.details.pros}</p>` : ''}
+                                            ${s.details.cons ? `<p class="mt-2 text-sm text-red-700"><b>缺点:</b> ${s.details.cons}</p>` : ''}
+                                            ${s.details.advanced ? `<div class="mt-4 p-3 bg-amber-100 rounded-lg text-amber-800 text-sm"><b>高级玩法:</b> ${s.details.advanced}</div>` : ''}
+                                            ${s.details.opportunities ? `<ul class="list-disc list-inside space-y-2 mt-4 text-gray-700">${s.details.opportunities.map(opp => `<li>${opp}</li>`).join('')}</ul>` : ''}
+                                            <p class="text-right text-xs mt-4 text-gray-500">所需专业知识: ${s.expertise}</p>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>`;
+                } else if (key === 'tokenomics') {
+                     content += `
+                        <div class="text-center mb-8">
+                            <p class="text-gray-500">总供应量</p>
+                            <p class="text-4xl font-bold text-blue-600">${sectionData.totalSupply}</p>
+                        </div>
+                        <div class="grid md:grid-cols-2 gap-8 items-center">
+                            <div>
+                                <h3 class="text-xl font-semibold mb-4 text-center">代币分配</h3>
+                                <div class="chart-container">
+                                    <canvas id="tokenomics-chart"></canvas>
+                                </div>
+                            </div>
+                            <div class="space-y-6">
+                                <div>
+                                    <h3 class="text-xl font-semibold mb-3">核心效用</h3>
+                                    <div class="space-y-3">
+                                    ${sectionData.utility.map(u => `
+                                        <div class="p-3 bg-gray-100 rounded-lg">
+                                            <p class="font-bold text-gray-700">${u.name}</p>
+                                            <p class="text-sm text-gray-600">${u.detail}</p>
+                                        </div>
+                                    `).join('')}
+                                    </div>
+                                </div>
+                                <div class="p-4 bg-amber-50 border-l-4 border-amber-400">
+                                    <h3 class="font-bold text-amber-800">${sectionData.valueCapture.title}</h3>
+                                    <p class="text-sm text-amber-700">${sectionData.valueCapture.text}</p>
+                                </div>
+                            </div>
+                        </div>`;
+                } else if (key === 'risk') {
+                    content += `
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            ${sectionData.risks.map(risk => `
+                                <div class="p-6 rounded-xl border-2 transition-all duration-300 hover:shadow-xl hover:scale-105 ${risk.color}">
+                                    <div class="flex justify-between items-start">
+                                        <h3 class="font-bold text-lg">${risk.name}</h3>
+                                        <span class="text-sm font-semibold px-3 py-1 rounded-full ${risk.color}">${risk.level}</span>
+                                    </div>
+                                    <p class="mt-2 text-sm">${risk.detail}</p>
+                                </div>
+                            `).join('')}
+                        </div>`;
+                } else if (key === 'market') {
+                    content += `
+                        <div class="space-y-12">
+                            <div class="bg-blue-50 p-6 rounded-xl">
+                                <h3 class="text-xl font-semibold mb-2 text-blue-800">${sectionData.marketOpportunity.title}</h3>
+                                <p class="text-blue-700">${sectionData.marketOpportunity.text}</p>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-semibold mb-4 text-center">竞争格局对比</h3>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-sm text-left">
+                                        <thead class="bg-gray-100 text-gray-600 uppercase">
+                                            <tr>
+                                                <th scope="col" class="px-6 py-3 rounded-l-lg">项目</th>
+                                                <th scope="col" class="px-6 py-3">主要用例</th>
+                                                <th scope="col" class="px-6 py-3">收益来源</th>
+                                                <th scope="col" class="px-6 py-3 rounded-r-lg">核心差异点</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                        ${sectionData.competitors.map(c => `
+                                            <tr class="border-b transition duration-300 ${c.isHuma ? 'bg-blue-100 font-bold' : 'hover:bg-gray-50'}">
+                                                <td class="px-6 py-4">${c.name} ${c.isHuma ? '⭐' : ''}</td>
+                                                <td class="px-6 py-4">${c.useCase}</td>
+                                                <td class="px-6 py-4">${c.yieldSource}</td>
+                                                <td class="px-6 py-4">${c.differentiation}</td>
+                                            </tr>
+                                        `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="p-4 bg-gray-100 border-l-4 border-gray-400">
+                                <h3 class="font-bold text-gray-800">分析师观点</h3>
+                                <p class="text-sm text-gray-700">${sectionData.analysis}</p>
+                            </div>
+                        </div>`;
+                }
+
+                section.innerHTML = content;
+                mainContent.appendChild(section);
+
+                if (index === 0) {
+                    section.classList.add('active');
+                }
+            });
+
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    const targetId = button.dataset.target;
+                    document.querySelectorAll('.content-section').forEach(section => {
+                        section.classList.remove('active');
+                        if (section.id === targetId) {
+                            section.classList.add('active');
+                        }
+                    });
+                });
+            });
+
+            if(document.getElementById('tokenomics-chart')) {
+                renderTokenomicsChart();
+            }
+
+            if(document.querySelector('.strategy-tab')) {
+                const strategyTabs = document.querySelectorAll('.strategy-tab');
+                strategyTabs.forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        strategyTabs.forEach(t => t.classList.remove('active'));
+                        tab.classList.add('active');
+                        
+                        document.querySelectorAll('.strategy-content-pane').forEach(pane => pane.classList.add('hidden'));
+                        document.getElementById(`strategy-content-${tab.dataset.strategy}`).classList.remove('hidden');
+                    });
+                });
+            }
+        });
+
+        function renderTokenomicsChart() {
+            const ctx = document.getElementById('tokenomics-chart').getContext('2d');
+            const data = appData.sections.tokenomics.chartData;
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: '代币分配',
+                        data: data.data,
+                        backgroundColor: [
+                            '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899',
+                            '#6366F1', '#14B8A6', '#D97706'
+                        ],
+                        borderColor: '#FFFFFF',
+                        borderWidth: 2,
+                        hoverOffset: 12
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                font: {
+                                   size: 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += context.parsed + '%';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '60%'
+                }
+            });
+        }
+        
+        function alert(message) {
+            const modal = document.createElement('div');
+            modal.style.position = 'fixed';
+            modal.style.left = '0';
+            modal.style.top = '0';
+            modal.style.width = '100%';
+            modal.style.height = '100%';
+            modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+            modal.style.display = 'flex';
+            modal.style.justifyContent = 'center';
+            modal.style.alignItems = 'center';
+            modal.style.zIndex = '1000';
+
+            const modalContent = document.createElement('div');
+            modalContent.style.backgroundColor = 'white';
+            modalContent.style.padding = '30px';
+            modalContent.style.borderRadius = '12px';
+            modalContent.style.maxWidth = '500px';
+            modalContent.style.width = '90%';
+            modalContent.style.textAlign = 'center';
+            modalContent.style.boxShadow = '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)';
+            
+            const text = document.createElement('p');
+            text.innerText = message;
+            text.style.whiteSpace = 'pre-wrap';
+            text.style.marginBottom = '20px';
+            text.style.lineHeight = '1.6';
+            
+            const closeButton = document.createElement('button');
+            closeButton.innerText = '关闭';
+            closeButton.style.padding = '10px 20px';
+            closeButton.style.border = 'none';
+            closeButton.style.backgroundColor = '#3B82F6';
+            closeButton.style.color = 'white';
+            closeButton.style.borderRadius = '8px';
+            closeButton.style.cursor = 'pointer';
+
+            closeButton.onclick = () => {
+                document.body.removeChild(modal);
+            };
+
+            modalContent.appendChild(text);
+            modalContent.appendChild(closeButton);
+            modal.appendChild(modalContent);
+            document.body.appendChild(modal);
+        }
+
+    </script>
+</body>
+</html>

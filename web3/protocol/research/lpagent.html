@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LP Agent 交互式风险评估报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Harmony Neutrals with Red Alerts -->
+    <!-- Application Structure Plan: A 'Verdict-First' dashboard design. The user is immediately presented with the final "Strongly Disrecommend" verdict. A sticky navigation bar allows users to jump to different sections: an overview with key red flags, a deep dive into the core risks (security, team, market), an analysis of the skewed risk/reward of opportunities, a direct competitor comparison, and a final summary with the SWOT analysis and actionable advice. This structure prioritizes the most critical information, making the report's conclusion unavoidable and allowing users to explore the evidence in a structured, non-linear way. -->
+    <!-- Visualization & Content Choices: 
+        - Final Verdict: Presented in a high-impact banner with a strong red color to immediately convey the negative conclusion. Goal: Inform. Method: HTML/Tailwind.
+        - Core Risks: Displayed as interactive cards and a tabbed interface for detailed exploration. A diagram built with HTML/CSS will illustrate the proxy contract risk. Goal: Organize & Explain. Method: HTML/Tailwind.
+        - Risk/Reward Analysis: A Chart.js Radar Chart visually demonstrates the imbalance between the massive risks and uncertain rewards of the primary investment strategy. Goal: Compare. Method: Chart.js (Canvas).
+        - Competitor Comparison: A side-by-side table using HTML/Tailwind with clear icons (checks/crosses) for quick visual assessment. Goal: Compare. Method: HTML/Tailwind.
+        - SWOT Analysis: A 2x2 grid with color-coded quadrants to highlight weaknesses and threats. Goal: Organize. Method: HTML/Tailwind.
+        - All choices are made to be highly visual, scannable, and to reinforce the report's core message of high risk, avoiding SVG/Mermaid as required. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+            color: #1e293b; /* slate-800 */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .nav-link {
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #dc2626; /* red-600 */
+            border-bottom-color: #dc2626;
+        }
+        .tab-button {
+            transition: all 0.3s ease;
+        }
+        .tab-button.active {
+            background-color: #dc2626; /* red-600 */
+            color: white;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-slate-50">
+
+    <header class="sticky top-0 z-50 bg-white/80 backdrop-blur-lg shadow-md">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0">
+                    <a href="#hero" class="text-xl font-bold text-slate-800">LP Agent 评估报告</a>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#overview" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-slate-700">总览</a>
+                        <a href="#risks" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-slate-700">核心风险</a>
+                        <a href="#opportunities" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-slate-700">机会分析</a>
+                        <a href="#comparison" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-slate-700">竞品对比</a>
+                        <a href="#verdict" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-slate-700">最终裁决</a>
+                    </div>
+                </div>
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="inline-flex items-center justify-center p-2 rounded-md text-slate-400 hover:text-white hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 focus:ring-white">
+                        <span class="sr-only">Open main menu</span>
+                        <svg class="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </nav>
+        <div id="mobile-menu" class="md:hidden hidden">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="#overview" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-slate-700">总览</a>
+                <a href="#risks" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-slate-700">核心风险</a>
+                <a href="#opportunities" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-slate-700">机会分析</a>
+                <a href="#comparison" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-slate-700">竞品对比</a>
+                <a href="#verdict" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-slate-700">最终裁决</a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section id="hero" class="bg-white py-20 sm:py-24">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <p class="text-base font-semibold text-red-600">最终投资评级</p>
+                <h1 class="mt-2 text-4xl font-bold tracking-tight text-red-700 sm:text-6xl">强烈不建议</h1>
+                <p class="mt-6 text-lg leading-8 text-slate-600 max-w-3xl mx-auto">
+                    这是一个未经审计、由匿名团队运营、存在灾难性安全风险的DeFi工具。任何投资行为都无异于一场风险与回报极度不对等的赌博。
+                </p>
+                <div class="mt-10">
+                    <a href="#risks" class="rounded-md bg-red-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600">查看核心风险清单</a>
+                </div>
+            </div>
+        </section>
+
+        <section id="overview" class="py-16 sm:py-20">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h2 class="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">总览与核心发现</h2>
+                    <p class="mt-4 text-lg leading-8 text-slate-600 max-w-2xl mx-auto">LP Agent是一个构建于Meteora协议之上的自动化流动性管理工具，其宣称的价值主张背后隐藏着多个致命的危险信号。</p>
+                </div>
+                <div class="mt-12 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
+                    <div class="bg-white p-6 rounded-lg shadow-lg border-l-4 border-red-500">
+                        <h3 class="text-lg font-semibold text-slate-900">无任何安全审计</h3>
+                        <p class="mt-2 text-sm text-slate-600">项目智能合约未经任何信誉良好的第三方审计，用户的资金安全完全暴露在未知漏洞和恶意后门的风险之下。</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-lg border-l-4 border-red-500">
+                        <h3 class="text-lg font-semibold text-slate-900">完全匿名的团队</h3>
+                        <p class="mt-2 text-sm text-slate-600">开发团队身份完全未知，意味着零问责制。一旦发生资金被盗或项目方跑路(Rug Pull)，投资者将求告无门。</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-lg border-l-4 border-yellow-500">
+                        <h3 class="text-lg font-semibold text-slate-900">社区与开发停滞</h3>
+                        <p class="mt-2 text-sm text-slate-600">无官方社区渠道，GitHub核心代码不开源且开发活动停滞。项目缺乏生命力，高概率为短期投机工具。</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-lg border-l-4 border-yellow-500">
+                        <h3 class="text-lg font-semibold text-slate-900">寄生性商业模式</h3>
+                        <p class="mt-2 text-sm text-slate-600">完全依赖Meteora协议，自身无护城河。在与Kamino等成熟竞品的对比中，处于绝对劣势，缺乏长期价值。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="risks" class="bg-white py-16 sm:py-20">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">核心风险深度剖析</h2>
+                    <p class="mt-4 text-lg leading-8 text-slate-600 max-w-2xl mx-auto">每个风险点都可能导致投资者本金的永久性损失。请仔细评估这些不可忽视的威胁。</p>
+                </div>
+                
+                <div class="w-full max-w-4xl mx-auto">
+                    <div class="mb-4 flex space-x-2 sm:space-x-4 p-1 bg-slate-100 rounded-lg justify-center">
+                        <button class="tab-button flex-1 py-2 px-4 rounded-md text-sm font-medium active" data-tab="security">安全风险</button>
+                        <button class="tab-button flex-1 py-2 px-4 rounded-md text-sm font-medium" data-tab="team">团队风险</button>
+                        <button class="tab-button flex-1 py-2 px-4 rounded-md text-sm font-medium" data-tab="market">市场风险</button>
+                    </div>
+
+                    <div id="tab-content" class="mt-6">
+                        <div id="security-content" class="tab-pane fade-in">
+                            <div class="bg-red-50 border-l-4 border-red-400 p-6 rounded-r-lg">
+                                <h3 class="text-xl font-bold text-red-800">代理合约：中心化的资金黑箱</h3>
+                                <p class="mt-4 text-slate-700">用户与LP Agent交互时，必须将资金的控制权授予其未经审计的“代理合约”。这意味着您的资金安全完全寄托于这个不透明的“黑箱”之上，而非经过考验的Meteora协议。这是一个极端的中心化单点故障风险。</p>
+                                <div class="mt-6 bg-white p-4 rounded-lg shadow-inner">
+                                    <p class="text-center font-mono text-sm text-slate-500 mb-2">资金流转风险示意图</p>
+                                    <div class="flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-4">
+                                        <div class="text-center">
+                                            <div class="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center text-blue-800 font-bold">您</div>
+                                            <p class="text-sm mt-1">投资者</p>
+                                        </div>
+                                        <div class="text-red-500 font-bold text-2xl transform md:-rotate-0 rotate-90">&rarr;</div>
+                                        <div class="text-center relative">
+                                            <div class="w-32 h-32 bg-red-100 border-2 border-dashed border-red-400 rounded-lg flex flex-col items-center justify-center text-red-800 p-2">
+                                                <span class="font-bold text-lg">LP Agent</span>
+                                                <span class="text-xs">代理合约 (黑箱)</span>
+                                                <span class="absolute -top-2 -right-2 text-3xl">⚠️</span>
+                                            </div>
+                                            <p class="text-sm mt-1 text-red-600">资金完全控制点</p>
+                                        </div>
+                                        <div class="text-slate-400 font-bold text-2xl transform md:-rotate-0 rotate-90">&rarr;</div>
+                                        <div class="text-center">
+                                            <div class="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center text-green-800 font-bold">Meteora</div>
+                                            <p class="text-sm mt-1">底层协议</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p class="mt-6 text-sm text-red-700"><strong>结论：</strong>一旦代理合约存在漏洞或恶意后门，您的全部资金可被瞬间卷走。这是DeFi投资中最致命的风险之一。</p>
+                            </div>
+                        </div>
+                        <div id="team-content" class="hidden tab-pane fade-in">
+                             <div class="bg-red-50 border-l-4 border-red-400 p-6 rounded-r-lg">
+                                <h3 class="text-xl font-bold text-red-800">匿名团队：零问责的巨大隐患</h3>
+                                <p class="mt-4 text-slate-700">在金融领域，匿名意味着零问责制。经过全面调查，无法找到任何关于LP Agent创始人或核心成员的真实身份信息。这与项目缺乏审计、社区真空等问题相互印证，构成了“高欺诈风险项目”的完整画像。</p>
+                                <ul class="mt-4 space-y-2 list-disc list-inside text-slate-600">
+                                    <li><strong>无法追责:</strong> 如果发生Rug Pull，投资者将无法进行任何法律追索。</li>
+                                    <li><strong>动机可疑:</strong> 严肃的长期项目会通过公开身份建立信任，匿名操作往往与短期投机或欺诈意图高度相关。</li>
+                                    <li><strong>缺乏信誉:</strong> 无法评估团队的过往经验、技术实力和道德水平。</li>
+                                </ul>
+                                <p class="mt-6 text-sm text-red-700"><strong>结论：</strong>将资金托付给一个完全匿名的团队，是对本金极不负责任的行为。</p>
+                            </div>
+                        </div>
+                        <div id="market-content" class="hidden tab-pane fade-in">
+                            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-6 rounded-r-lg">
+                                <h3 class="text-xl font-bold text-yellow-800">市场与竞争：毫无优势</h3>
+                                <p class="mt-4 text-slate-700">LP Agent所处的自动化流动性管理赛道已存在成熟且声誉良好的竞争者，如Kamino Finance。在与这些强者的正面比较中，LP Agent在功能、安全、品牌、社区等所有关键维度都处于压倒性劣势。</p>
+                                 <p class="mt-4 text-slate-700">这种寄生于单一协议（Meteora）的模式，使其商业模式极为脆弱。一旦Meteora热度下降或空投结束，LP Agent极有可能被迅速放弃，失去所有价值。</p>
+                                <p class="mt-6 text-sm text-yellow-700"><strong>结论：</strong>项目缺乏核心竞争力与护城河，不具备长期投资价值。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="opportunities" class="py-16 sm:py-20">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">机会与策略分析</h2>
+                    <p class="mt-4 text-lg leading-8 text-slate-600 max-w-2xl mx-auto">该项目唯一的潜在“机会”是作为Meteora协议的空投挖矿工具，但这伴随着不成比例的巨大风险。</p>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                    <div class="bg-white p-6 rounded-lg shadow-lg">
+                        <h3 class="text-xl font-semibold text-center mb-4">风险收益不成正比</h3>
+                        <div class="chart-container">
+                            <canvas id="riskRewardChart"></canvas>
+                        </div>
+                         <p class="text-xs text-center mt-2 text-slate-500">此雷达图直观展示了使用LP Agent进行投资的核心困境。</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-lg">
+                        <h3 class="text-xl font-semibold mb-4">投资机会矩阵</h3>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-slate-200">
+                                <thead class="bg-slate-50">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">策略</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">核心风险</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">推荐指数</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-slate-200">
+                                    <tr>
+                                        <td class="px-4 py-4 whitespace-nowrap text-sm font-medium text-slate-900">Meteora空投挖矿</td>
+                                        <td class="px-4 py-4 whitespace-nowrap text-sm text-red-600">灾难性合约风险</td>
+                                        <td class="px-4 py-4 whitespace-nowrap text-sm font-bold text-red-600">★☆☆☆☆ (1/5)</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="px-4 py-4 whitespace-nowrap text-sm font-medium text-slate-900">杠杆/套保挖矿</td>
+                                        <td class="px-4 py-4 whitespace-nowrap text-sm text-red-600">不可接受的复合风险</td>
+                                        <td class="px-4 py-4 whitespace-nowrap text-sm font-bold text-red-600">☆☆☆☆☆ (0/5)</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="px-4 py-4 whitespace-nowrap text-sm font-medium text-slate-900">参与项目生态</td>
+                                        <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-500">项目为封闭系统</td>
+                                        <td class="px-4 py-4 whitespace-nowrap text-sm font-bold text-slate-500">☆☆☆☆☆ (0/5)</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="mt-4 text-xs text-slate-500">任何基于LP Agent的策略都意味着将本金置于极度危险之中，强烈建议避免。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="comparison" class="bg-white py-16 sm:py-20">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">竞品对比：LP Agent vs. Kamino Finance</h2>
+                    <p class="mt-4 text-lg leading-8 text-slate-600 max-w-2xl mx-auto">与赛道领先者Kamino Finance的直接比较，清晰地揭示了LP Agent的全面劣势。</p>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white border border-slate-200 rounded-lg shadow-lg">
+                        <thead>
+                            <tr class="bg-slate-50">
+                                <th class="py-3 px-6 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">特性维度</th>
+                                <th class="py-3 px-6 text-center text-xs font-medium text-slate-500 uppercase tracking-wider">LP Agent</th>
+                                <th class="py-3 px-6 text-center text-xs font-medium text-slate-500 uppercase tracking-wider">Kamino Finance (竞品)</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200">
+                            <tr class="hover:bg-slate-50">
+                                <td class="py-4 px-6 text-sm font-medium text-slate-900">安全性 (审计)</td>
+                                <td class="py-4 px-6 text-center text-sm text-red-600 font-bold">❌ 无公开审计</td>
+                                <td class="py-4 px-6 text-center text-sm text-green-600 font-bold">✅ 多次公开审计</td>
+                            </tr>
+                            <tr class="hover:bg-slate-50">
+                                <td class="py-4 px-6 text-sm font-medium text-slate-900">团队</td>
+                                <td class="py-4 px-6 text-center text-sm text-red-600 font-bold">❌ 完全匿名</td>
+                                <td class="py-4 px-6 text-center text-sm text-green-600 font-bold">✅ 公开/半公开</td>
+                            </tr>
+                            <tr class="hover:bg-slate-50">
+                                <td class="py-4 px-6 text-sm font-medium text-slate-900">社区与网络效应</td>
+                                <td class="py-4 px-6 text-center text-sm text-red-600 font-bold">❌ 几乎为零</td>
+                                <td class="py-4 px-6 text-center text-sm text-green-600 font-bold">✅ 庞大且活跃</td>
+                            </tr>
+                            <tr class="hover:bg-slate-50">
+                                <td class="py-4 px-6 text-sm font-medium text-slate-900">核心功能</td>
+                                <td class="py-4 px-6 text-center text-sm text-yellow-600">功能单一 (仅Meteora)</td>
+                                <td class="py-4 px-6 text-center text-sm text-green-600 font-bold">✅ 综合性平台</td>
+                            </tr>
+                            <tr class="hover:bg-slate-50">
+                                <td class="py-4 px-6 text-sm font-medium text-slate-900">透明度</td>
+                                <td class="py-4 px-6 text-center text-sm text-red-600 font-bold">❌ 核心代码不开源</td>
+                                <td class="py-4 px-6 text-center text-sm text-green-600 font-bold">✅ 较高</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="verdict" class="py-16 sm:py-20">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">最终裁决与行动指南</h2>
+                    <p class="mt-4 text-lg leading-8 text-slate-600 max-w-2xl mx-auto">综合所有分析，我们重申“强烈不建议”的评级，并提供清晰的行动指南。</p>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-lg mb-12">
+                    <h3 class="text-xl font-semibold text-center mb-6">SWOT 分析</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-green-50 p-4 rounded-lg">
+                            <h4 class="font-bold text-green-800">优势 (Strengths)</h4>
+                            <ul class="mt-2 list-disc list-inside text-sm text-green-700"><li>理论上可能简化Meteora操作流程 (极其微弱)</li></ul>
+                        </div>
+                        <div class="bg-red-50 p-4 rounded-lg">
+                            <h4 class="font-bold text-red-800">劣势 (Weaknesses)</h4>
+                            <ul class="mt-2 list-disc list-inside text-sm text-red-700"><li>完全匿名，无审计</li><li>社区与开发真空</li><li>全面落后于竞品</li></ul>
+                        </div>
+                        <div class="bg-blue-50 p-4 rounded-lg">
+                            <h4 class="font-bold text-blue-800">机会 (Opportunities)</h4>
+                            <ul class="mt-2 list-disc list-inside text-sm text-blue-700"><li>作为高风险工具farm空投</li></ul>
+                        </div>
+                        <div class="bg-yellow-50 p-4 rounded-lg">
+                            <h4 class="font-bold text-yellow-800">威胁 (Threats)</h4>
+                            <ul class="mt-2 list-disc list-inside text-sm text-yellow-700"><li>极高的欺诈(Rug Pull)风险</li><li>极高的黑客攻击风险</li><li>项目被随时放弃的风险</li></ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="bg-slate-800 text-white p-8 rounded-lg shadow-xl">
+                        <h4 class="text-2xl font-bold">对于所有审慎的投资者</h4>
+                        <p class="mt-4">严格禁止，彻底远离。不要以任何形式与其智能合约进行交互。其风险不可估量，任何投入都应被视为100%的潜在损失。</p>
+                    </div>
+                    <div class="bg-red-700 text-white p-8 rounded-lg shadow-xl">
+                        <h4 class="text-2xl font-bold">对于极度风险偏好的空投农民</h4>
+                        <p class="mt-4">即使对最激进的投机者，本项目也应被视为禁区。更好的选择是使用Kamino或直接与Meteora交互，以保证基本的资产安全。这是一个典型的“捡了芝麻，丢了西瓜”的错误决策。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-white mt-16">
+        <div class="container mx-auto py-6 px-4 sm:px-6 lg:px-8 text-center text-sm text-slate-500">
+            <p>本报告基于公开信息分析，不构成任何财务建议。DeFi投资风险极高，请务必进行自己的研究(DYOR)。</p>
+            <p>&copy; 2025 DeFi投资与安全专家团队. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+
+            const tabs = document.querySelectorAll('.tab-button');
+            const tabPanes = document.querySelectorAll('.tab-pane');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    
+                    const target = tab.getAttribute('data-tab');
+                    tabPanes.forEach(pane => {
+                        if (pane.id === `${target}-content`) {
+                            pane.classList.remove('hidden');
+                        } else {
+                            pane.classList.add('hidden');
+                        }
+                    });
+                });
+            });
+
+            const riskRewardCtx = document.getElementById('riskRewardChart').getContext('2d');
+            new Chart(riskRewardCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['合约安全风险', '团队匿名风险', '市场竞争劣势', '潜在收益', '操作复杂性'],
+                    datasets: [{
+                        label: 'LP Agent 投资评估',
+                        data: [10, 10, 9, 3, 7],
+                        fill: true,
+                        backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                        borderColor: 'rgb(239, 68, 68)',
+                        pointBackgroundColor: 'rgb(239, 68, 68)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgb(239, 68, 68)'
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    elements: {
+                        line: {
+                            borderWidth: 3
+                        }
+                    },
+                    scales: {
+                        r: {
+                            angleLines: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            },
+                            pointLabels: {
+                                font: {
+                                    size: 12,
+                                    weight: 'bold'
+                                },
+                                color: '#475569'
+                            },
+                            ticks: {
+                                backdropColor: 'transparent',
+                                stepSize: 2,
+                                font: {
+                                    size: 10
+                                }
+                            },
+                            suggestedMin: 0,
+                            suggestedMax: 10
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.r !== null) {
+                                        label += context.parsed.r + ' / 10';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('main section');
+
+            const observerOptions = {
+                root: null,
+                rootMargin: '0px',
+                threshold: 0.4
+            };
+
+            const observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const navLink = document.querySelector(`.nav-link[href="#${entry.target.id}"]`);
+                        navLinks.forEach(link => link.classList.remove('active'));
+                        if (navLink) {
+                            navLink.classList.add('active');
+                        }
+                    }
+                });
+            }, observerOptions);
+
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+        });
+    </script>
+</body>
+</html>

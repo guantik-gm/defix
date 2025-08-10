@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ether.fi (ETHFI) - 交互式投资分析报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Professional Finance -->
+    <!-- Application Structure Plan: The SPA is designed as a top-down decision-making funnel. It starts with a high-level "Investment Dashboard" for a quick 60-second assessment, featuring the final rating, key metrics, and a balanced view of risks vs. strengths. The user can then navigate to the "Deep Dive Analysis" section, which uses interactive tabs to explore Market Competition, Tokenomics, and Technology/Team, preventing information overload. The third section, "Actionable Investment Strategies," transforms the report's table into an interactive tool filterable by investor skill level, directly addressing the "how to invest" question. Finally, the "Comprehensive Risk & Security" section consolidates all potential downsides, including audit findings and systemic risks, for due diligence. This structure guides the user from a quick "what" and "why" to a practical "how," while ensuring risks are clearly accessible, optimizing for usability and informed decision-making. -->
+    <!-- Visualization & Content Choices: 
+        - Key Metrics (Dashboard): Goal: Inform. Method: Styled HTML cards with large numbers for immediate impact. Justification: Provides a quick, digestible snapshot of the protocol's scale.
+        - TVL Comparison Chart: Goal: Compare. Method: Bar Chart (Chart.js/Canvas). Interaction: Tooltips on hover. Justification: Visually demonstrates ether.fi's market dominance against its direct competitors, which is a core part of the investment thesis.
+        - Token Allocation Chart: Goal: Organize/Inform. Method: Donut Chart (Chart.js/Canvas). Interaction: Tooltips on hover. Justification: Clearly illustrates the token distribution, allowing users to quickly assess insider/investor allocation, a key risk factor.
+        - Investment Strategies Table: Goal: Inform/Organize. Method: Interactive HTML Table. Interaction: JS-powered buttons to filter strategies by user expertise (Beginner, Advanced, Developer). Justification: Makes the dense strategy information actionable and personalized for different user profiles.
+        - Risk Breakdown: Goal: Inform. Method: Styled HTML cards with icons. Justification: Breaks down complex risks (Slashing, De-peg) into easily understandable components, enhancing risk awareness.
+        - Technology Diagram: Goal: Organize. Method: HTML/CSS/Tailwind (Flexbox/Grid). Justification: Visually represents the non-custodial architecture (e.g., NFT key separation) in a simplified manner without using prohibited SVG graphics.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+            background-color: #f8f9fa;
+            color: #1a202c;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .nav-link {
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #4f46e5;
+            border-bottom-color: #4f46e5;
+        }
+        .tab-button {
+            transition: all 0.3s ease;
+        }
+        .tab-button.active {
+            background-color: #4f46e5;
+            color: white;
+        }
+        .strategy-filter.active {
+            background-color: #3730a3;
+            color: white;
+            border-color: #3730a3;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-2xl font-bold text-gray-800">ether.fi</span>
+                    <span class="ml-2 text-xs font-semibold text-gray-500">投资分析</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#dashboard" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700">投资仪表盘</a>
+                        <a href="#deep-dive" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700">深度分析</a>
+                        <a href="#strategies" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700">投资策略</a>
+                        <a href="#risks" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700">风险与安全</a>
+                    </div>
+                </div>
+                <div class="md:hidden">
+                     <select id="mobile-nav" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        <option value="#dashboard">投资仪表盘</option>
+                        <option value="#deep-dive">深度分析</option>
+                        <option value="#strategies">投资策略</option>
+                        <option value="#risks">风险与安全</option>
+                    </select>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        
+        <!-- Section 1: Investment Dashboard -->
+        <section id="dashboard" class="scroll-mt-20">
+            <div class="text-center mb-12">
+                <h1 class="text-4xl md:text-5xl font-extrabold text-gray-900">ether.fi (ETHFI) 投资仪表盘</h1>
+                <p class="mt-4 max-w-2xl mx-auto text-lg text-gray-600">60秒快速评估：核心数据、投资论点与最终评级一览。</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-200 text-center">
+                    <h3 class="text-sm font-medium text-gray-500">最终投资评级</h3>
+                    <p class="mt-2 text-3xl font-bold text-green-600">建议</p>
+                    <p class="text-xs text-gray-400 mt-1">面向高风险承受能力投资者</p>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-200 text-center">
+                    <h3 class="text-sm font-medium text-gray-500">总锁定价值 (TVL)</h3>
+                    <p class="mt-2 text-3xl font-bold text-gray-800">$101.6 亿+</p>
+                    <p class="text-xs text-gray-400 mt-1">LRT赛道领导者</p>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-200 text-center">
+                    <h3 class="text-sm font-medium text-gray-500">ETHFI 流通市值</h3>
+                    <p class="mt-2 text-3xl font-bold text-gray-800">$5.13 亿</p>
+                    <p class="text-xs text-gray-400 mt-1">截至报告撰写时</p>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-200 text-center">
+                    <h3 class="text-sm font-medium text-gray-500">市值 / TVL 比率</h3>
+                    <p class="mt-2 text-3xl font-bold text-gray-800">~0.05</p>
+                    <p class="text-xs text-gray-400 mt-1">相对其资产规模存在折价</p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-lg p-8 mb-12 border border-gray-200">
+                <h2 class="text-2xl font-bold text-gray-900 mb-4">核心投资论点</h2>
+                <p class="text-gray-700 leading-relaxed">ether.fi 作为流动性再质押（LRT）赛道的市场领导者，凭借其独特的**非托管架构**，成功吸引了对安全和去中心化有高度要求的资本，实现了TVL的爆发式增长。协议正从单一基础设施向包含自动化收益和现实支付的**“DeFi银行”生态**演进，为其长期价值捕获奠定了基础。投资ether.fi本质上是**对整个EigenLayer生态系统未来发展的一次高Beta押注**。</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-green-50 border-l-4 border-green-500 p-6 rounded-lg">
+                    <h3 class="text-xl font-bold text-green-800 mb-3 flex items-center">
+                        <span class="mr-2">👍</span>核心优势 (Strengths)
+                    </h3>
+                    <ul class="space-y-2 text-green-700">
+                        <li><strong>市场领导地位:</strong> LRT赛道TVL绝对领先，规模效应显著。</li>
+                        <li><strong>非托管安全模型:</strong> 用户掌握私钥，吸引对安全敏感的大额资本。</li>
+                        <li><strong>强大团队与背书:</strong> 资深创始人与顶级VC（CoinFund, Bullish）支持。</li>
+                        <li><strong>清晰生态愿景:</strong> 积极扩展至自动化收益(Liquid)和支付(Cash)。</li>
+                    </ul>
+                </div>
+                <div class="bg-red-50 border-l-4 border-red-500 p-6 rounded-lg">
+                    <h3 class="text-xl font-bold text-red-800 mb-3 flex items-center">
+                        <span class="mr-2">👎</span>主要风险 (Risks)
+                    </h3>
+                    <ul class="space-y-2 text-red-700">
+                        <li><strong>2025代币解锁:</strong> 投资者与团队份额巨大，届时面临显著抛压。</li>
+                        <li><strong>系统性风险:</strong> 深度绑定EigenLayer，面临未知Slashing和LRT脱锚风险。</li>
+                        <li><strong>合约复杂性:</strong> 尽管经过审计，复杂的系统仍存在潜在技术漏洞。</li>
+                        <li><strong>治理代币效用:</strong> 早期价值捕获机制尚在发展中。</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Deep Dive -->
+        <section id="deep-dive" class="scroll-mt-20 pt-16">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl md:text-5xl font-extrabold text-gray-900">深度分析</h2>
+                <p class="mt-4 max-w-2xl mx-auto text-lg text-gray-600">深入探索市场竞争、代币经济学与技术团队，理解ether.fi的内在价值。</p>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-lg p-4 sm:p-6 md:p-8 border border-gray-200">
+                <div class="mb-6 border-b border-gray-200">
+                    <div id="tabs-container" class="flex flex-wrap -mb-px space-x-2 sm:space-x-4" aria-label="Tabs">
+                        <button class="tab-button inline-block p-3 sm:p-4 rounded-t-lg font-medium text-sm sm:text-base" data-tab="market">市场与竞争</button>
+                        <button class="tab-button inline-block p-3 sm:p-4 rounded-t-lg font-medium text-sm sm:text-base" data-tab="tokenomics">代币经济学</button>
+                        <button class="tab-button inline-block p-3 sm:p-4 rounded-t-lg font-medium text-sm sm:text-base" data-tab="tech">技术与团队</button>
+                    </div>
+                </div>
+
+                <div id="tab-content">
+                    <div id="market-content" class="tab-pane">
+                        <h3 class="text-2xl font-bold text-gray-800 mb-4">LRT 赛道 TVL 对比</h3>
+                        <p class="text-gray-600 mb-6">ether.fi 在流动性再质押（LRT）赛道中建立了显著的领先优势，其总锁定价值（TVL）远超主要竞争对手，展示了强大的市场吸引力和资本聚集能力。</p>
+                        <div class="chart-container mx-auto mb-8">
+                            <canvas id="tvlChart"></canvas>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-800 mb-4 mt-12">横向对比分析</h3>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">协议</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TVL (美元)</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">流通市值 (美元)</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TVL/市值</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="competition-table" class="bg-white divide-y divide-gray-200">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div id="tokenomics-content" class="tab-pane hidden">
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                            <div>
+                                <h3 class="text-2xl font-bold text-gray-800 mb-4">ETHFI 代币分配</h3>
+                                <p class="text-gray-600 mb-6">ETHFI总供应量为10亿枚。代币分配向早期投资者和核心团队倾斜较大，这是评估长期持有的一个关键考量点。超过50%的代币将在2025年3月后开始逐步解锁。</p>
+                                <div class="chart-container mx-auto">
+                                    <canvas id="tokenomicsChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="bg-yellow-50 border-l-4 border-yellow-500 p-6 rounded-lg">
+                                <h4 class="text-xl font-bold text-yellow-800 mb-3 flex items-center">
+                                    <span class="mr-2">⚠️</span>关键事件：2025年3月解锁悬崖
+                                </h4>
+                                <p class="text-yellow-700 mb-4">自TGE（2024年3月）起一年后，投资者与核心贡献者持有的**超过50%的总供应量**代币将结束1年锁仓期，开始线性解锁。这可能在未来对市场造成显著的抛售压力。</p>
+                                <h4 class="text-xl font-bold text-yellow-800 mb-3">代币核心效用</h4>
+                                <ul class="space-y-2 text-yellow-700">
+                                    <li><strong>治理:</strong> 对协议升级、费用结构等进行投票。</li>
+                                    <li><strong>经济安全:</strong> 未来节点运营商需质押ETHFI作为保证金。</li>
+                                    <li><strong>价值捕获:</strong> 协议收入部分用于回购ETHFI并奖励质押者。</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="tech-content" class="tab-pane hidden">
+                        <h3 class="text-2xl font-bold text-gray-800 mb-4">技术创新与团队实力</h3>
+                        <p class="text-gray-600 mb-8">ether.fi 的核心竞争力源于其非托管的技术架构和经验丰富的领导团队。</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div>
+                                <h4 class="text-xl font-semibold text-gray-700 mb-4">核心技术架构</h4>
+                                <div class="space-y-4">
+                                    <div class="bg-gray-100 p-4 rounded-lg">
+                                        <h5 class="font-bold">非托管密钥管理</h5>
+                                        <p class="text-sm text-gray-600">用户始终持有其ETH的私钥，从根本上消除了交易对手风险。</p>
+                                    </div>
+                                    <div class="bg-gray-100 p-4 rounded-lg">
+                                        <h5 class="font-bold">分布式验证器技术 (DVT)</h5>
+                                        <p class="text-sm text-gray-600">与Obol Labs合作，分散验证器职责，显著降低单点故障和slashing风险。</p>
+                                    </div>
+                                    <div class="bg-gray-100 p-4 rounded-lg">
+                                        <h5 class="font-bold">NFT化的验证器资产</h5>
+                                        <p class="text-sm text-gray-600">通过T-NFT（经济权）和B-NFT（控制权）分离，实现了可编程的非托管委托质押。</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <h4 class="text-xl font-semibold text-gray-700 mb-4">领导团队与投资者</h4>
+                                <div class="space-y-4">
+                                    <div class="bg-indigo-50 p-4 rounded-lg border-l-4 border-indigo-400">
+                                        <h5 class="font-bold">创始人: Mike Silagadze</h5>
+                                        <p class="text-sm text-gray-600">连续创业者，曾成功创办并退出教育科技公司Top Hat，具备丰富的商业扩张经验。</p>
+                                    </div>
+                                    <div class="bg-indigo-50 p-4 rounded-lg border-l-4 border-indigo-400">
+                                        <h5 class="font-bold">顶级投资者</h5>
+                                        <p class="text-sm text-gray-600">获CoinFund, Bullish Capital, Arthur Hayes, OKX Ventures等顶级加密原生资本支持，总融资超3200万美元。</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- Section 3: Investment Strategies -->
+        <section id="strategies" class="scroll-mt-20 pt-16">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl md:text-5xl font-extrabold text-gray-900">可行的投资策略</h2>
+                <p class="mt-4 max-w-2xl mx-auto text-lg text-gray-600">根据您的风险偏好和专业水平，探索参与ether.fi生态的不同方式。</p>
+            </div>
+            
+            <div class="bg-white rounded-2xl shadow-lg p-4 sm:p-6 md:p-8 border border-gray-200">
+                <div class="flex justify-center space-x-2 mb-6">
+                    <button class="strategy-filter px-4 py-2 text-sm font-medium border rounded-full transition" data-filter="all">全部</button>
+                    <button class="strategy-filter px-4 py-2 text-sm font-medium border rounded-full transition" data-filter="初级">初级</button>
+                    <button class="strategy-filter px-4 py-2 text-sm font-medium border rounded-full transition" data-filter="中级">中级</button>
+                    <button class="strategy-filter px-4 py-2 text-sm font-medium border rounded-full transition" data-filter="高级">高级</button>
+                    <button class="strategy-filter px-4 py-2 text-sm font-medium border rounded-full transition" data-filter="开发者">开发者</button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">策略</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">描述</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">优点</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">关键风险</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">预估APY</th>
+                            </tr>
+                        </thead>
+                        <tbody id="strategies-table" class="bg-white divide-y divide-gray-200">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Risks & Security -->
+        <section id="risks" class="scroll-mt-20 pt-16">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl md:text-5xl font-extrabold text-gray-900">风险与安全审计</h2>
+                <p class="mt-4 max-w-2xl mx-auto text-lg text-gray-600">全面的风险评估是做出明智投资决策的基石。</p>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-lg p-8 border border-gray-200">
+                <h3 class="text-2xl font-bold text-gray-800 mb-6">综合风险评估</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="bg-red-50 p-5 rounded-lg">
+                        <h4 class="font-bold text-red-800">智能合约风险</h4>
+                        <p class="text-sm text-red-700 mt-2">尽管经过多家公司（Solidified, CertiK等）审计，但早期审计曾发现严重漏洞（已修复）。协议的复杂性意味着零日漏洞风险依然存在。</p>
+                    </div>
+                    <div class="bg-red-50 p-5 rounded-lg">
+                        <h4 class="font-bold text-red-800">Slashing 风险</h4>
+                        <p class="text-sm text-red-700 mt-2">资产同时暴露于以太坊共识层和多个EigenLayer AVS的slashing风险之下，这是一个累积且难以量化的新风险向量。</p>
+                    </div>
+                    <div class="bg-red-50 p-5 rounded-lg">
+                        <h4 class="font-bold text-red-800">LRT 脱锚风险</h4>
+                        <p class="text-sm text-red-700 mt-2">在极端市场压力下，eETH/weETH可能与其锚定的ETH价值脱钩，导致流动性危机和资产损失。</p>
+                    </div>
+                    <div class="bg-yellow-50 p-5 rounded-lg col-span-1 md:col-span-2 lg:col-span-3">
+                        <h4 class="font-bold text-yellow-800">2025年代币解锁压力</h4>
+                        <p class="text-sm text-yellow-700 mt-2">这是最可预见的重大风险。2025年3月后，投资者和团队持有的大量代币将开始解锁，可能对市场造成持续的抛售压力，考验协议价值捕获机制的有效性。</p>
+                    </div>
+                </div>
+                 <div class="mt-8">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">历史安全事件</h3>
+                    <div class="bg-gray-100 p-4 rounded-lg">
+                        <p class="text-sm text-gray-700"><strong>Discord服务器入侵 (2025年6月):</strong> 官方Discord曾遭入侵并发布钓鱼链接。团队反应迅速，<strong class="text-green-600">未造成任何协议资金损失</strong>。此事件暴露了社区运营层面的风险，但也体现了团队的应急响应能力。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-gray-800 text-white mt-16">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center">
+            <p class="text-sm text-gray-400">本报告仅为信息分享，不构成任何投资建议。加密货币投资存在高风险，请您进行独立研究并自负盈亏。</p>
+            <p class="text-xs text-gray-500 mt-2">数据来源：DeFi Llama, CoinMarketCap, ether.fi官方文档等公开信息。</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            
+            const competitionData = [
+                { name: 'ether.fi', tvl: 101.67, mcap: 513, ratio: 19.82 },
+                { name: 'Renzo', tvl: 13.27, mcap: 145, ratio: 9.15 },
+                { name: 'Lido', tvl: 339.74, mcap: 1350, ratio: 25.17 },
+                { name: 'Puffer Finance', tvl: 1.88, mcap: 125, ratio: 1.50 },
+                { name: 'Kelp DAO', tvl: 16.76, mcap: null, ratio: null },
+                { name: 'Rocket Pool', tvl: 25.12, mcap: 449, ratio: 5.60 },
+            ];
+
+            const tokenomicsData = {
+                labels: ['投资者', '核心贡献者', 'DAO国库与合作', '用户空投'],
+                data: [32.5, 23.26, 28.94, 15.3],
+            };
+
+            const strategiesData = [
+                { level: '初级', name: '直接投资 (ETHFI)', desc: '购买并持有ETHFI治理代币。', pros: '直接分享协议成功；潜在升值空间大。', risk: '市场风险、代币解锁风险。', apy: '资本利得' },
+                { level: '初级', name: '基础收益 (质押 ETH)', desc: '将ETH质押为eETH/weETH。', pros: '风险相对较低；多层次收益来源。', risk: '智能合约风险、Slashing风险。', apy: '~3.3% + 积分' },
+                { level: '中级', name: '高级收益 (DEX LP)', desc: '为weETH交易对提供流动性。', pros: '赚取额外交易费和激励。', risk: '无常损失、智能合约风险。', apy: '5-20%+' },
+                { level: '高级', name: '杠杆收益 (Aave循环贷)', desc: '在Aave上循环借贷放大收益。', pros: '可显著放大基础收益率。', risk: '清算风险极高、利率风险。', apy: '7-20%+' },
+                { level: '高级', name: '结构化产品 (Pendle)', desc: '拆分本金和收益代币进行交易。', pros: '可实现固定收益或对收益率投机。', risk: '产品复杂、市场判断失误风险。', apy: '可变' },
+                { level: '开发者', name: '开发者机会', desc: '申请生态基金资助或构建应用。', pros: '直接从生态增长中获利。', risk: '项目失败风险、时间成本高。', apy: '项目回报' },
+            ];
+
+            function populateCompetitionTable() {
+                const tableBody = document.getElementById('competition-table');
+                tableBody.innerHTML = '';
+                competitionData.forEach(item => {
+                    const row = `
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${item.name}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.tvl} 亿</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.mcap ? `${item.mcap / 100} 亿` : 'N/A'}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.ratio || 'N/A'}</td>
+                        </tr>
+                    `;
+                    tableBody.innerHTML += row;
+                });
+            }
+
+            function populateStrategiesTable(filter = 'all') {
+                const tableBody = document.getElementById('strategies-table');
+                tableBody.innerHTML = '';
+                const filteredData = filter === 'all' ? strategiesData : strategiesData.filter(s => s.level === filter);
+
+                filteredData.forEach(s => {
+                    const row = `
+                        <tr class="hover:bg-gray-50" data-level="${s.level}">
+                            <td class="px-4 py-4 whitespace-nowrap text-sm font-semibold text-gray-800">${s.name} <span class="text-xs font-normal text-indigo-600 bg-indigo-100 px-2 py-0.5 rounded-full">${s.level}</span></td>
+                            <td class="px-4 py-4 text-sm text-gray-600 max-w-xs">${s.desc}</td>
+                            <td class="px-4 py-4 text-sm text-green-600 max-w-xs">${s.pros}</td>
+                            <td class="px-4 py-4 text-sm text-red-600 max-w-xs">${s.risk}</td>
+                            <td class="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-700">${s.apy}</td>
+                        </tr>
+                    `;
+                    tableBody.innerHTML += row;
+                });
+            }
+
+            const tvlChartCtx = document.getElementById('tvlChart').getContext('2d');
+            new Chart(tvlChartCtx, {
+                type: 'bar',
+                data: {
+                    labels: competitionData.filter(d => d.name !== 'Lido' && d.name !== 'Rocket Pool').map(d => d.name),
+                    datasets: [{
+                        label: 'TVL (亿美元)',
+                        data: competitionData.filter(d => d.name !== 'Lido' && d.name !== 'Rocket Pool').map(d => d.tvl),
+                        backgroundColor: 'rgba(79, 70, 229, 0.8)',
+                        borderColor: 'rgba(79, 70, 229, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: true, text: 'LRT协议 TVL 对比 (亿美元)' }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+
+            const tokenomicsChartCtx = document.getElementById('tokenomicsChart').getContext('2d');
+            new Chart(tokenomicsChartCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: tokenomicsData.labels,
+                    datasets: [{
+                        label: '代币分配',
+                        data: tokenomicsData.data,
+                        backgroundColor: [
+                            'rgba(239, 68, 68, 0.7)',
+                            'rgba(249, 115, 22, 0.7)',
+                            'rgba(59, 130, 246, 0.7)',
+                            'rgba(34, 197, 94, 0.7)',
+                        ],
+                        borderColor: [
+                            'rgba(239, 68, 68, 1)',
+                            'rgba(249, 115, 22, 1)',
+                            'rgba(59, 130, 246, 1)',
+                            'rgba(34, 197, 94, 1)',
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        title: { display: true, text: 'ETHFI 代币分配 (%)' }
+                    }
+                }
+            });
+
+            const tabs = document.querySelectorAll('.tab-button');
+            const tabPanes = document.querySelectorAll('.tab-pane');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active', 'bg-indigo-600', 'text-white'));
+                    tab.classList.add('active', 'bg-indigo-600', 'text-white');
+                    
+                    tabPanes.forEach(pane => pane.classList.add('hidden'));
+                    document.getElementById(`${tab.dataset.tab}-content`).classList.remove('hidden');
+                });
+            });
+            tabs[0].click();
+
+            const strategyFilters = document.querySelectorAll('.strategy-filter');
+            strategyFilters.forEach(button => {
+                button.addEventListener('click', () => {
+                    strategyFilters.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    populateStrategiesTable(button.dataset.filter);
+                });
+            });
+            strategyFilters[0].click();
+
+            const navLinks = document.querySelectorAll('.nav-link');
+            const mobileNav = document.getElementById('mobile-nav');
+            
+            function setActiveLink(hash) {
+                navLinks.forEach(link => {
+                    if (link.getAttribute('href') === hash) {
+                        link.classList.add('active');
+                    } else {
+                        link.classList.remove('active');
+                    }
+                });
+                mobileNav.value = hash;
+            }
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        setActiveLink(`#${entry.target.id}`);
+                    }
+                });
+            }, { rootMargin: "-50% 0px -50% 0px" });
+
+            document.querySelectorAll('section').forEach(section => {
+                observer.observe(section);
+            });
+
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+            
+            mobileNav.addEventListener('change', (e) => {
+                window.location.hash = e.target.value;
+            });
+
+
+            populateCompetitionTable();
+        });
+    </script>
+
+</body>
+</html>

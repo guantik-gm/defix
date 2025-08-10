@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navi Protocol 交互式投资分析报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Harmony (Light Slate/Gray background, Dark Slate text, Muted Blue/Teal accent, Soft Red/Orange for warnings) -->
+    <!-- Application Structure Plan: A single-page, thematic dashboard design. Sections include: Overview (key stats & thesis), Core Metrics (interactive charts), Competitive Analysis (comparison chart), Ecosystem (component cards), Risk Assessment (highlighting centralization), and Investment Opportunities (interactive filterable matrix). This non-linear structure allows users to quickly access information relevant to their interests (e.g., risks vs. rewards), improving usability over a simple report-to-webpage conversion. -->
+    <!-- Visualization & Content Choices:
+    - TVL/Revenue: Goal=Change -> Viz=Line/Bar Chart -> Interaction=Tooltips -> Justification=Clearly shows trends -> Library=Chart.js.
+    - Competitive Data: Goal=Compare -> Viz=Grouped Bar Chart -> Interaction=Tooltips -> Justification=Direct visual comparison of key metrics -> Library=Chart.js.
+    - Token Supply: Goal=Inform -> Viz=Donut Chart -> Interaction=Tooltips -> Justification=Simple visualization of proportions -> Library=Chart.js.
+    - Ecosystem: Goal=Organize -> Viz=HTML/CSS Cards -> Interaction=Click-to-expand -> Justification=Breaks down complex structure into digestible parts.
+    - Risks: Goal=Warn/Inform -> Viz=HTML/CSS Cards with color coding -> Interaction=Click-to-expand -> Justification=Highlights critical risks while keeping UI clean.
+    - Investment Matrix: Goal=Compare/Guide -> Viz=Interactive HTML Table/Cards -> Interaction=Filtering -> Justification=Allows users to find strategies matching their risk/skill profile. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 320px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .nav-link {
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #0891b2;
+            border-bottom-color: #0891b2;
+        }
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.1);
+        }
+        .tag {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        .tag-blue { background-color: #e0f2fe; color: #0c4a6e; }
+        .tag-green { background-color: #dcfce7; color: #166534; }
+        .tag-yellow { background-color: #fef9c3; color: #854d0e; }
+        .tag-red { background-color: #fee2e2; color: #991b1b; }
+        .details-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-2xl font-bold text-cyan-700">NAVI</span>
+                    <span class="text-2xl font-light text-slate-600">Protocol</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#overview" class="nav-link px-3 py-2 text-sm font-medium text-slate-600">概览</a>
+                        <a href="#metrics" class="nav-link px-3 py-2 text-sm font-medium text-slate-600">核心指标</a>
+                        <a href="#competition" class="nav-link px-3 py-2 text-sm font-medium text-slate-600">竞争分析</a>
+                        <a href="#ecosystem" class="nav-link px-3 py-2 text-sm font-medium text-slate-600">生态系统</a>
+                        <a href="#risks" class="nav-link px-3 py-2 text-sm font-medium text-slate-600">风险评估</a>
+                        <a href="#opportunities" class="nav-link px-3 py-2 text-sm font-medium text-slate-600">投资机会</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+
+        <section id="overview" class="mb-16 scroll-mt-24">
+            <h1 class="text-4xl md:text-5xl font-bold text-center mb-4 text-slate-800">Navi Protocol 投资分析</h1>
+            <p class="text-center text-lg text-slate-500 max-w-3xl mx-auto mb-10">一个交互式的深度分析报告，助您全面了解Sui生态头部流动性协议。</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                <div class="card p-6 text-center">
+                    <h3 class="text-slate-500 text-sm font-medium mb-2">总锁仓价值 (TVL)</h3>
+                    <p class="text-4xl font-bold text-cyan-600">~$7亿</p>
+                </div>
+                <div class="card p-6 text-center">
+                    <h3 class="text-slate-500 text-sm font-medium mb-2">独立用户数</h3>
+                    <p class="text-4xl font-bold text-cyan-600">>83万</p>
+                </div>
+                <div class="card p-6 text-center">
+                    <h3 class="text-slate-500 text-sm font-medium mb-2">年化协议收入</h3>
+                    <p class="text-4xl font-bold text-cyan-600">~$509万</p>
+                </div>
+                <div class="card p-6 text-center bg-cyan-600 text-white">
+                    <h3 class="text-cyan-100 text-sm font-medium mb-2">最终投资等级</h3>
+                    <p class="text-3xl font-bold">投机性买入</p>
+                    <p class="text-xs text-cyan-200 mt-1">(Speculative Buy)</p>
+                </div>
+            </div>
+
+            <div class="card p-8">
+                <h2 class="text-2xl font-bold mb-4">执行摘要</h2>
+                <p class="text-slate-600 leading-relaxed">Navi Protocol 是一个基本面扎实、战略定位清晰、在Sui生态中具有主导地位的蓝筹项目。其最大的吸引力在于其一体化生态系统带来的强大护城河和网络效应。然而，其中心化风险是投资者必须正视和接受的核心权衡。此评级适用于对Sui生态系统前景看好、风险承受能力较高、并认可协议通过中心化控制换取运营效率和安全响应速度这一战略选择的投资者。</p>
+            </div>
+        </section>
+
+        <section id="metrics" class="mb-16 scroll-mt-24">
+            <h2 class="text-3xl font-bold text-center mb-2">核心数据指标</h2>
+            <p class="text-center text-slate-500 mb-10">通过交互式图表洞察协议的增长与健康度。</p>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="card p-6">
+                    <h3 class="font-bold text-lg mb-4 text-center">总锁仓价值 (TVL) 增长趋势</h3>
+                    <div class="chart-container">
+                        <canvas id="tvlChart"></canvas>
+                    </div>
+                </div>
+                <div class="card p-6">
+                    <h3 class="font-bold text-lg mb-4 text-center">协议季度收入 (美元)</h3>
+                    <div class="chart-container">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="competition" class="mb-16 scroll-mt-24">
+            <h2 class="text-3xl font-bold text-center mb-2">借贷赛道竞争格局</h2>
+            <p class="text-center text-slate-500 mb-10">Navi Protocol 与 Sui 生态主要竞争对手的核心指标对比。</p>
+            <div class="card p-6">
+                <div class="chart-container h-96 md:h-[500px]">
+                    <canvas id="competitionChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section id="ecosystem" class="mb-16 scroll-mt-24">
+            <h2 class="text-3xl font-bold text-center mb-2">一体化的DeFi生态系统</h2>
+            <p class="text-center text-slate-500 mb-10">Navi通过“借贷 + LST + DEX聚合”的三位一体布局，构建了强大的护城河。</p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="card p-8 text-center">
+                    <div class="text-5xl mb-4">🏦</div>
+                    <h3 class="text-xl font-bold mb-2">NAVI 借贷</h3>
+                    <p class="text-slate-600">协议的基石，支持多种主流资产的超额抵押借贷市场，是生态流动性的核心。</p>
+                </div>
+                <div class="card p-8 text-center">
+                    <div class="text-5xl mb-4">💧</div>
+                    <h3 class="text-xl font-bold mb-2">Volo (流动性质押)</h3>
+                    <p class="text-slate-600">通过收购整合的LST协议，使用户能质押SUI获得vSUI，并在生态内无缝用作抵押品。</p>
+                </div>
+                <div class="card p-8 text-center">
+                    <div class="text-5xl mb-4">🔄</div>
+                    <h3 class="text-xl font-bold mb-2">Astros (DEX聚合器)</h3>
+                    <p class="text-slate-600">为用户提供最优的交易路径和报价，提升资本效率，完善生态内价值闭环。</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="risks" class="mb-16 scroll-mt-24">
+            <h2 class="text-3xl font-bold text-center mb-2">全面风险评估</h2>
+            <p class="text-center text-slate-500 mb-10">深入了解投资Navi Protocol前必须知晓的关键风险点。</p>
+            <div class="space-y-4">
+                <div class="card">
+                    <button class="w-full p-6 text-left flex justify-between items-center risk-toggle" data-target="risk-centralization">
+                        <div class="flex items-center">
+                            <div class="text-3xl mr-4">⚠️</div>
+                            <div>
+                                <h3 class="text-xl font-bold text-amber-700">中心化风险 (核心风险)</h3>
+                                <p class="text-slate-500">协议管理员拥有对资金库和预言机的单方面控制权。</p>
+                            </div>
+                        </div>
+                        <span class="transform transition-transform text-2xl text-slate-400 arrow">▶</span>
+                    </button>
+                    <div id="risk-centralization" class="details-content px-6 pb-6 text-slate-600">
+                        <p><strong>审计发现 (MoveBit, POOL-08):</strong> 管理员（合约部署者）可单方面从资金库提取任意数量的代币，并可设置预言机价格，存在滥用权力的风险。</p>
+                        <p><strong>团队回应:</strong> 已知晓 (Acknowledged)。团队选择保留此权限以应对紧急情况和保障未来升级的顺利进行。这是一个在去中心化和运营效率之间的明确权衡。</p>
+                        <p><strong>投资启示:</strong> 投资者的资金安全在某种程度上依赖于对匿名核心团队的信任。虽然团队在Cetus被盗事件中表现出负责任的一面，但该风险本质上依然存在。</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <button class="w-full p-6 text-left flex justify-between items-center risk-toggle" data-target="risk-oracle">
+                        <div class="flex items-center">
+                            <div class="text-3xl mr-4">🔮</div>
+                            <div>
+                                <h3 class="text-xl font-bold">预言机风险</h3>
+                                <p class="text-slate-500">价格信息源的稳定性和抗操纵性。</p>
+                            </div>
+                        </div>
+                        <span class="transform transition-transform text-2xl text-slate-400 arrow">▶</span>
+                    </button>
+                    <div id="risk-oracle" class="details-content px-6 pb-6 text-slate-600">
+                        <p>尽管协议采用了由Pyth和Supra支持的双源预言机系统以增强安全性，但核心的中心化风险（管理员可设置价格）依然是预言机系统最薄弱的环节。日常运作虽去中心化，但后门的存在本身就是一种风险。</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <button class="w-full p-6 text-left flex justify-between items-center risk-toggle" data-target="risk-ecosystem">
+                        <div class="flex items-center">
+                            <div class="text-3xl mr-4">🔗</div>
+                            <div>
+                                <h3 class="text-xl font-bold">Sui生态系统风险</h3>
+                                <p class="text-slate-500">协议的命运与Sui公链的发展高度绑定。</p>
+                            </div>
+                        </div>
+                        <span class="transform transition-transform text-2xl text-slate-400 arrow">▶</span>
+                    </button>
+                    <div id="risk-ecosystem" class="details-content px-6 pb-6 text-slate-600">
+                        <p>作为Sui的原生协议，Navi的成功与Sui公链的健康、安全和市场采纳度紧密相连。任何Sui网络层面的问题，如共识失败、网络中断或核心漏洞，都将直接且严重地影响Navi的正常运行和资产安全。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="opportunities" class="mb-16 scroll-mt-24">
+            <h2 class="text-3xl font-bold text-center mb-2">战略投资机会</h2>
+            <p class="text-center text-slate-500 mb-10">探索参与Navi生态系统以获取回报的多种途径。</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="card p-6 flex flex-col">
+                    <h3 class="text-xl font-bold mb-2">直接代币投资 (NAVX)</h3>
+                    <p class="text-slate-600 flex-grow mb-4">直接押注Sui生态和Navi平台的长期增长，通过治理和质押分享协议收入。</p>
+                    <div><span class="tag tag-blue">回报: 高</span></div>
+                    <div class="mt-2"><span class="tag tag-red">风险: 高</span></div>
+                    <div class="mt-2"><span class="tag tag-green">复杂度: 低</span></div>
+                </div>
+                <div class="card p-6 flex flex-col">
+                    <h3 class="text-xl font-bold mb-2">收益农场 (LP)</h3>
+                    <p class="text-slate-600 flex-grow mb-4">向借贷池提供流动性，赚取闲置资产的被动利息收入，适合DeFi新手。</p>
+                    <div><span class="tag tag-blue">回报: 中</span></div>
+                    <div class="mt-2"><span class="tag tag-yellow">风险: 中</span></div>
+                    <div class="mt-2"><span class="tag tag-green">复杂度: 低</span></div>
+                </div>
+                <div class="card p-6 flex flex-col">
+                    <h3 class="text-xl font-bold mb-2">LST循环策略</h3>
+                    <p class="text-slate-600 flex-grow mb-4">通过杠杆放大LST的质押和借贷收益，是协议的旗舰高级功能。</p>
+                    <div><span class="tag tag-blue">回报: 非常高</span></div>
+                    <div class="mt-2"><span class="tag tag-red">风险: 非常高 (清算风险)</span></div>
+                    <div class="mt-2"><span class="tag tag-red">复杂度: 高</span></div>
+                </div>
+                <div class="card p-6 flex flex-col">
+                    <h3 class="text-xl font-bold mb-2">空投投机</h3>
+                    <p class="text-slate-600 flex-grow mb-4">通过深度参与生态交互，博取未来潜在的代币空投奖励。</p>
+                    <div><span class="tag tag-blue">回报: 不确定</span></div>
+                    <div class="mt-2"><span class="tag tag-yellow">风险: 中 (时间成本)</span></div>
+                    <div class="mt-2"><span class="tag tag-yellow">复杂度: 中</span></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-slate-800 text-slate-400">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center text-sm">
+            <p>本报告仅为信息分享，不构成任何投资建议。所有数据来源于公开信息，请自行研究并承担风险。</p>
+            <p>&copy; 2025 交互式投资分析报告. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const ctxTvl = document.getElementById('tvlChart').getContext('2d');
+            new Chart(ctxTvl, {
+                type: 'line',
+                data: {
+                    labels: ['2023 Q3', '2023 Q4', '2024 Q1', '2024 Q2', '2024 Q3', '2024 Q4', '2025 Q1', '2025 Q2'],
+                    datasets: [{
+                        label: 'TVL (百万美元)',
+                        data: [22, 50, 150, 180, 300, 500, 700, 701],
+                        borderColor: '#0891b2',
+                        backgroundColor: 'rgba(14, 165, 233, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value + 'M';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            const ctxRevenue = document.getElementById('revenueChart').getContext('2d');
+            new Chart(ctxRevenue, {
+                type: 'bar',
+                data: {
+                    labels: ['2024 Q1', '2024 Q2', '2024 Q3', '2024 Q4', '2025 Q1', '2025 Q2'],
+                    datasets: [{
+                        label: '季度收入 (百万美元)',
+                        data: [0.5, 0.8, 1.0, 1.1, 1.17, 1.38],
+                        backgroundColor: '#0d9488',
+                        borderColor: '#0f766e',
+                        borderWidth: 1,
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value + 'M';
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+
+            const ctxCompetition = document.getElementById('competitionChart').getContext('2d');
+            new Chart(ctxCompetition, {
+                type: 'bar',
+                data: {
+                    labels: ['总锁仓价值 (TVL)', '总借款额', '年化协议收入'],
+                    datasets: [
+                        {
+                            label: 'Navi Protocol',
+                            data: [701, 221, 5.09],
+                            backgroundColor: 'rgba(8, 145, 178, 0.7)',
+                            borderColor: '#0891b2',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Suilend',
+                            data: [727, 212, 9.70],
+                            backgroundColor: 'rgba(217, 119, 6, 0.7)',
+                            borderColor: '#d97706',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Scallop Protocol',
+                            data: [110, 46, 2.91],
+                            backgroundColor: 'rgba(107, 114, 128, 0.7)',
+                            borderColor: '#6b7280',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '百万美元'
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.x !== null) {
+                                        label += '$' + context.parsed.x + 'M';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            const riskToggles = document.querySelectorAll('.risk-toggle');
+            riskToggles.forEach(toggle => {
+                toggle.addEventListener('click', () => {
+                    const targetId = toggle.getAttribute('data-target');
+                    const content = document.getElementById(targetId);
+                    const arrow = toggle.querySelector('.arrow');
+
+                    if (content.style.maxHeight && content.style.maxHeight !== '0px') {
+                        content.style.maxHeight = '0px';
+                        arrow.style.transform = 'rotate(0deg)';
+                    } else {
+                        content.style.maxHeight = content.scrollHeight + 'px';
+                        arrow.style.transform = 'rotate(90deg)';
+                    }
+                });
+            });
+            
+            const sections = document.querySelectorAll('section');
+            const navLinks = document.querySelectorAll('.nav-link');
+
+            window.addEventListener('scroll', () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (pageYOffset >= sectionTop - 70) {
+                        current = section.getAttribute('id');
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href').includes(current)) {
+                        link.classList.add('active');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

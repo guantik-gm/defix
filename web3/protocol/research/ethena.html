@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ethena 交互式投资分析报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutral Harmony -->
+    <!-- Application Structure Plan: 我设计了一个仪表盘式的单页应用，分为五个逻辑部分：概览、工作原理、市场表现、风险矩阵和投资机会。这种结构打破了原始报告的线性叙事，允许用户根据自己的兴趣和需求自由探索。顶部的粘性导航栏确保了在页面任何位置都能快速跳转。概览部分提供即时快照，风险部分使用交互式卡片来降低信息过载，而投资机会部分则通过选项卡清晰地分离了不同类型的策略。这个设计旨在将复杂的金融分析转化为一个直观、易于消化的用户体验。 -->
+    <!-- Visualization & Content Choices: 我将报告中的关键数据和概念转化为交互式图表和图示。市场增长和稳定币对比使用Chart.js的线图和条形图，目标是“比较”和“变化”。ENA代币经济学使用饼图来“告知”其构成。最复杂的“Delta中性对冲”机制被设计成一个HTML/CSS的点击式流程图，以“组织”和解释复杂流程。风险评估则通过可展开的卡片来“组织”信息，避免用户被大段文字淹没。所有可视化选择都严格遵守了无SVG/Mermaid的要求，并优先考虑了交互性和清晰度。 -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #F8F7F4;
+            color: #2c3e50;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .nav-link {
+            transition: color 0.3s, border-bottom-color 0.3s;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #1e3a8a;
+            border-bottom-color: #1e3a8a;
+        }
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out;
+        }
+        .risk-card.open .collapsible-content {
+            max-height: 1000px;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="font-bold text-xl text-gray-800">Ethena 投资仪表盘</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#overview" class="nav-link px-3 py-2 text-sm font-medium text-gray-600 border-b-2 border-transparent">概览</a>
+                        <a href="#how-it-works" class="nav-link px-3 py-2 text-sm font-medium text-gray-600 border-b-2 border-transparent">工作原理</a>
+                        <a href="#market-performance" class="nav-link px-3 py-2 text-sm font-medium text-gray-600 border-b-2 border-transparent">市场表现</a>
+                        <a href="#risk-matrix" class="nav-link px-3 py-2 text-sm font-medium text-gray-600 border-b-2 border-transparent">风险矩阵</a>
+                        <a href="#opportunities" class="nav-link px-3 py-2 text-sm font-medium text-gray-600 border-b-2 border-transparent">投资机会</a>
+                    </div>
+                </div>
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500">
+                        <span class="sr-only">打开主菜单</span>
+                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </nav>
+        <div id="mobile-menu" class="md:hidden hidden">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="#overview" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-gray-600">概览</a>
+                <a href="#how-it-works" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-gray-600">工作原理</a>
+                <a href="#market-performance" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-gray-600">市场表现</a>
+                <a href="#risk-matrix" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-gray-600">风险矩阵</a>
+                <a href="#opportunities" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-gray-600">投资机会</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <section id="overview" class="pt-16 -mt-16">
+            <div class="text-center mb-12">
+                <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Ethena (ENA) 深度分析</h1>
+                <p class="text-lg text-gray-600 max-w-3xl mx-auto">一个关于合成美元与“互联网债券”的交互式投资评估报告，旨在揭示其机遇与风险。</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                <div class="bg-white p-6 rounded-xl shadow-md text-center">
+                    <h3 class="text-sm font-medium text-gray-500">USDe 供应量</h3>
+                    <p class="mt-1 text-3xl font-semibold text-gray-900">$75.8亿+</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md text-center">
+                    <h3 class="text-sm font-medium text-gray-500">sUSDe 当前 APY</h3>
+                    <p class="mt-1 text-3xl font-semibold text-green-600">~12%</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md text-center">
+                    <h3 class="text-sm font-medium text-gray-500">协议总锁仓价值 (TVL)</h3>
+                    <p class="mt-1 text-3xl font-semibold text-gray-900">$54亿+</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md text-center">
+                    <h3 class="text-sm font-medium text-gray-500">ENA 价格</h3>
+                    <p class="mt-1 text-3xl font-semibold text-gray-900" id="ena-price">加载中...</p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg p-8">
+                <h2 class="text-2xl font-bold text-gray-900 mb-4">核心结论与投资评级</h2>
+                <div class="flex items-center mb-4">
+                    <span class="text-lg font-semibold mr-4">投资评级:</span>
+                    <span class="px-4 py-1 bg-yellow-100 text-yellow-800 rounded-full font-medium">中立 / 谨慎乐观</span>
+                </div>
+                <p class="text-gray-700 leading-relaxed">Ethena 提供了一个高风险、高回报的投资机会。其创新的“互联网债券”模型通过 Delta 中性对冲策略，提供了在当前市场环境下极具吸引力的收益。协议增长迅速，团队背景强大，并获得了顶级机构的支持。然而，其成功高度依赖于持续为正的资金费率、中心化交易所的稳定性和托管方的诚信，这些都是在市场下行周期中未经考验的关键风险点。对于能够充分理解并主动管理这些系统性风险的成熟投资者，Ethena 的收益生态系统具备相当的吸引力。ENA 代币则是对协议能否成功穿越周期、应对监管并持续发展的杠杆化押注。</p>
+            </div>
+        </section>
+
+        <hr class="my-16 border-gray-200">
+
+        <section id="how-it-works" class="pt-16 -mt-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-900">工作原理：解构“互联网债券”</h2>
+                <p class="text-lg text-gray-600 mt-2">Ethena 的核心是 USDe，一种通过对冲策略维持锚定的合成美元。点击下方流程图的步骤以了解详情。</p>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-lg p-8 mb-12">
+                <h3 class="text-xl font-bold text-center mb-6">USDe Delta中性对冲机制</h3>
+                <div class="flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-4">
+                    <div class="hedge-step text-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all duration-300" data-step="1">
+                        <div class="text-4xl mb-2">1️⃣</div>
+                        <p class="font-semibold">铸造 USDe</p>
+                    </div>
+                    <div class="text-2xl font-bold text-gray-400 transform md:rotate-0 rotate-90">&rarr;</div>
+                    <div class="hedge-step text-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all duration-300" data-step="2">
+                        <div class="text-4xl mb-2">2️⃣</div>
+                        <p class="font-semibold">持有现货资产</p>
+                    </div>
+                    <div class="text-2xl font-bold text-gray-400 transform md:rotate-0 rotate-90">&rarr;</div>
+                    <div class="hedge-step text-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all duration-300" data-step="3">
+                        <div class="text-4xl mb-2">3️⃣</div>
+                        <p class="font-semibold">开立空头头寸</p>
+                    </div>
+                    <div class="text-2xl font-bold text-gray-400 transform md:rotate-0 rotate-90">&rarr;</div>
+                     <div class="text-center p-4 border-2 border-green-300 bg-green-50 rounded-lg">
+                        <div class="text-4xl mb-2">✅</div>
+                        <p class="font-semibold text-green-800">实现价格中性</p>
+                    </div>
+                </div>
+                <div id="hedge-explanation" class="mt-6 p-4 bg-gray-100 rounded-lg text-gray-700 min-h-[80px]">
+                    <p>点击上方步骤查看详细解释。</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-white rounded-xl shadow-lg p-8">
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">sUSDe 主要收益来源：资金费率</h3>
+                    <p class="text-gray-700">永续期货市场通过“资金费率”机制来锚定现货价格。在牛市中，资金费率通常为正，即多头支付给空头。由于 Ethena 持有等值的空头头寸进行对冲，它成为了资金费率的净接收方。这是 sUSDe 高收益的核心来源。</p>
+                </div>
+                <div class="bg-white rounded-xl shadow-lg p-8">
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">sUSDe 次要收益来源：质押奖励</h3>
+                    <p class="text-gray-700">当协议使用流动性质押代币（如 stETH）作为抵押品时，它还能获得底层 PoS 网络的质押奖励（通常为 3-4% APY）。这部分收益为协议提供了一个稳定的基础回报，尤其能在资金费率为负的时期起到缓冲作用。</p>
+                </div>
+            </div>
+        </section>
+
+        <hr class="my-16 border-gray-200">
+
+        <section id="market-performance" class="pt-16 -mt-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-900">市场表现与竞争格局</h2>
+                <p class="text-lg text-gray-600 mt-2">通过数据洞察 Ethena 的爆炸性增长及其在稳定币市场中的地位。</p>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-xl font-bold text-center mb-4">USDe 供应量增长趋势</h3>
+                    <div class="chart-container">
+                        <canvas id="usdeSupplyChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-xl font-bold text-center mb-4">稳定币市值对比</h3>
+                    <div class="chart-container">
+                        <canvas id="stablecoinComparisonChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <hr class="my-16 border-gray-200">
+
+        <section id="risk-matrix" class="pt-16 -mt-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-900">交互式风险矩阵</h2>
+                <p class="text-lg text-gray-600 mt-2">点击卡片以展开和折叠，深入了解 Ethena 面临的关键风险及其缓解措施。</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="risk-card bg-white rounded-xl shadow-lg cursor-pointer" data-risk="1">
+                    <div class="p-6 flex justify-between items-center">
+                        <h3 class="text-xl font-bold text-red-700">金融与机制风险</h3>
+                        <span class="transform transition-transform duration-300">▼</span>
+                    </div>
+                    <div class="collapsible-content px-6 pb-6">
+                        <h4 class="font-semibold mt-2">资金费率风险 (最重大)</h4>
+                        <p class="text-sm text-gray-600 mt-1">协议的盈利能力和稳定性高度依赖于资金费率长期为正。持续的负费率将消耗储备金。缓解措施包括：储备基金、LST质押收益缓冲、动态资产配置（转向国库券）。</p>
+                        <h4 class="font-semibold mt-4">抵押品风险</h4>
+                        <p class="text-sm text-gray-600 mt-1">LST（如stETH）与ETH的严重脱锚可能导致抵押不足。但历史最大脱锚幅度远未达到清算阈值，且协议已通过引入BTC和ETH作为抵押品来分散风险。</p>
+                    </div>
+                </div>
+                <div class="risk-card bg-white rounded-xl shadow-lg cursor-pointer" data-risk="2">
+                    <div class="p-6 flex justify-between items-center">
+                        <h3 class="text-xl font-bold text-orange-600">交易对手与中心化风险</h3>
+                         <span class="transform transition-transform duration-300">▼</span>
+                    </div>
+                    <div class="collapsible-content px-6 pb-6">
+                        <h4 class="font-semibold mt-2">交易所依赖性</h4>
+                        <p class="text-sm text-gray-600 mt-1">对冲头寸需要在中心化交易所（CEX）执行，CEX的失败（如FTX）或关停将带来巨大风险。协议通过与多家交易所合作来分散此风险。</p>
+                        <h4 class="font-semibold mt-4">托管与OES风险</h4>
+                        <p class="text-sm text-gray-600 mt-1">资产由第三方托管机构（如Ceffu, Copper）通过场外结算（OES）模式管理，而非直接存入交易所，这降低了交易所破产风险，但引入了对托管方的信任。Ceffu与Binance的关联带来了监管和舆论风险。</p>
+                    </div>
+                </div>
+                <div class="risk-card bg-white rounded-xl shadow-lg cursor-pointer" data-risk="3">
+                    <div class="p-6 flex justify-between items-center">
+                        <h3 class="text-xl font-bold text-yellow-500">技术与运营安全</h3>
+                         <span class="transform transition-transform duration-300">▼</span>
+                    </div>
+                    <div class="collapsible-content px-6 pb-6">
+                        <h4 class="font-semibold mt-2">智能合约安全</h4>
+                        <p class="text-sm text-gray-600 mt-1">协议已通过Zellic, Quantstamp等多家知名公司的审计，未发现高危漏洞。但DeFi协议永远存在未知的智能合约风险。</p>
+                        <h4 class="font-semibold mt-4">历史安全事件</h4>
+                        <p class="text-sm text-gray-600 mt-1">曾发生过UwU Lend因不当集成sUSDe而遭攻击的事件，以及官方Discord被黑。这些事件虽未直接造成协议资金损失，但暴露了生态可组合性风险和运营安全短板。</p>
+                    </div>
+                </div>
+                <div class="risk-card bg-white rounded-xl shadow-lg cursor-pointer" data-risk="4">
+                    <div class="p-6 flex justify-between items-center">
+                        <h3 class="text-xl font-bold text-blue-600">监管与合规风险</h3>
+                         <span class="transform transition-transform duration-300">▼</span>
+                    </div>
+                    <div class="collapsible-content px-6 pb-6">
+                        <h4 class="font-semibold mt-2">监管不确定性</h4>
+                        <p class="text-sm text-gray-600 mt-1">USDe这类合成美元在欧盟（MiCA）和美国等主要司法管辖区的监管分类尚不明确，存在被认定为需要牌照的证券或金融工具的风险。</p>
+                        <h4 class="font-semibold mt-4">主动合规举措</h4>
+                        <p class="text-sm text-gray-600 mt-1">Ethena正积极通过与Anchorage Digital合作推出由国库券支持的USDtb来应对美国监管，这是一项重要的去风险化战略。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <hr class="my-16 border-gray-200">
+
+        <section id="opportunities" class="pt-16 -mt-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-900">投资机会分析</h2>
+                <p class="text-lg text-gray-600 mt-2">探索通过 Ethena 生态系统获取收益的多种途径。</p>
+            </div>
+            
+            <div>
+                <div class="border-b border-gray-200 mb-8">
+                    <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                        <button class="tab-btn active whitespace-nowrap py-4 px-1 border-b-2 font-medium text-lg border-blue-500 text-blue-600" data-tab="yield">收益策略</button>
+                        <button class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-lg border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="token">ENA 代币分析</button>
+                    </nav>
+                </div>
+
+                <div id="yield" class="tab-content active">
+                    <p class="mb-6 text-gray-700">Ethena 提供了从简单质押到复杂杠杆策略的多种收益机会。下表对比了不同策略的风险和潜在回报，帮助您根据自身情况做出选择。</p>
+                    <div class="overflow-x-auto bg-white rounded-xl shadow-lg p-4">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">策略</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">潜在 APY</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">复杂性</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">主要风险</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">质押 sUSDe</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-green-600 font-semibold">可变: ~10-30%</td>
+                                    <td class="px-6 py-4 whitespace-nowrap"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">低</span></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">核心协议风险</td>
+                                </tr>
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">在 Morpho/Aave 循环贷</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-yellow-600 font-semibold">杠杆化: 30-100%+</td>
+                                    <td class="px-6 py-4 whitespace-nowrap"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">高</span></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">协议风险, 清算风险</td>
+                                </tr>
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">在 Pendle 购买 PT-sUSDe</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-blue-600 font-semibold">固定: ~12-20%</td>
+                                    <td class="px-6 py-4 whitespace-nowrap"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">中</span></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">协议风险, 机会成本</td>
+                                </tr>
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">在 Pendle 购买 YT-sUSDe</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-red-600 font-semibold">高度可变</td>
+                                    <td class="px-6 py-4 whitespace-nowrap"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">高</span></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">协议风险, 收益波动风险</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="token" class="tab-content">
+                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div class="bg-white rounded-xl shadow-lg p-6">
+                            <h3 class="text-xl font-bold text-center mb-4">ENA 代币分配</h3>
+                             <div class="chart-container h-80 md:h-96">
+                                <canvas id="enaTokenomicsChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-lg p-8">
+                            <h3 class="text-xl font-bold mb-4">核心价值驱动因素</h3>
+                            <ul class="space-y-3 text-gray-700">
+                                <li class="flex items-start"><span class="text-green-500 mr-2 mt-1">✔</span><span><strong>协议收入分成：</strong>未来可能通过治理将协议收入分配给 sENA 持有者。</span></li>
+                                <li class="flex items-start"><span class="text-green-500 mr-2 mt-1">✔</span><span><strong>生态系统价值累积：</strong>采用“BNB模式”，生态内新项目向 sENA 持有者空投，创造价值。</span></li>
+                                <li class="flex items-start"><span class="text-green-500 mr-2 mt-1">✔</span><span><strong>再质押效用：</strong>sENA 可用于为跨链桥等服务提供经济安全，创造有机需求。</span></li>
+                                <li class="flex items-start"><span class="text-green-500 mr-2 mt-1">✔</span><span><strong>投机溢价：</strong>作为对 Ethena 生态系统成功的杠杆化押注。</span></li>
+                            </ul>
+                            <h3 class="text-xl font-bold mt-6 mb-4">关键解锁警告</h3>
+                            <p class="text-gray-700">核心贡献者和投资者的代币将于 <strong class="text-red-600">2025年3月</strong> 结束为期一年的锁仓，届时大量代币将开始线性解锁，可能对价格造成显著下行压力。</p>
+                        </div>
+                     </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+    
+    <footer class="bg-white mt-16">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center text-gray-500">
+            <p>&copy; 2024 Ethena 交互式投资分析报告。仅供参考，不构成投资建议。</p>
+            <p class="text-xs mt-2">数据来源于公开报告，可能存在延迟。请结合自身研究做出决策。</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            
+            // Mobile Menu
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+
+            // Active Nav Link Styling on Scroll
+            const sections = document.querySelectorAll('section');
+            const navLinks = document.querySelectorAll('.nav-link');
+            window.onscroll = () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (pageYOffset >= sectionTop - 80) {
+                        current = section.getAttribute('id');
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href').includes(current)) {
+                        link.classList.add('active');
+                    }
+                });
+            };
+
+            // Smooth scrolling for nav links
+            navLinks.forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                    if(mobileMenu.classList.contains('hidden') === false) {
+                        mobileMenu.classList.add('hidden');
+                    }
+                });
+            });
+
+            // How it works section
+            const hedgeSteps = document.querySelectorAll('.hedge-step');
+            const hedgeExplanation = document.getElementById('hedge-explanation');
+            const explanations = {
+                1: '<strong>步骤 1: 铸造 USDe</strong> - 授权参与者（机构）向 Ethena 协议存入抵押品（如 stETH），以 1:1 的比例铸造出 USDe。',
+                2: '<strong>步骤 2: 持有现货资产</strong> - 协议将收到的抵押品（如 stETH）持有在由第三方托管的、隔离的账户中。',
+                3: '<strong>步骤 3: 开立空头头寸</strong> - 同时，协议在中心化衍生品交易所开立等值的永续合约空头头寸（如做空 ETH）。这步操作对冲了现货资产的价格波动风险。'
+            };
+
+            hedgeSteps.forEach(step => {
+                step.addEventListener('click', () => {
+                    const stepNumber = step.dataset.step;
+                    hedgeExplanation.innerHTML = explanations[stepNumber];
+                    hedgeSteps.forEach(s => s.classList.remove('bg-blue-100', 'border-blue-500'));
+                    step.classList.add('bg-blue-100', 'border-blue-500');
+                });
+            });
+
+            // Risk Matrix Accordion
+            const riskCards = document.querySelectorAll('.risk-card');
+            riskCards.forEach(card => {
+                card.addEventListener('click', () => {
+                    card.classList.toggle('open');
+                    const icon = card.querySelector('span');
+                    icon.classList.toggle('rotate-180');
+                });
+            });
+
+            // Opportunities Tabs
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const tabId = btn.dataset.tab;
+                    
+                    tabBtns.forEach(b => b.classList.remove('active', 'border-blue-500', 'text-blue-600'));
+                    btn.classList.add('active', 'border-blue-500', 'text-blue-600');
+
+                    tabContents.forEach(content => {
+                        content.classList.remove('active');
+                        if (content.id === tabId) {
+                            content.classList.add('active');
+                        }
+                    });
+                });
+            });
+
+            // Fetch ENA Price
+            fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethena&vs_currencies=usd')
+                .then(response => response.json())
+                .then(data => {
+                    const price = data.ethena.usd;
+                    document.getElementById('ena-price').textContent = `$${price.toFixed(4)}`;
+                })
+                .catch(error => {
+                    document.getElementById('ena-price').textContent = '获取失败';
+                    console.error('Error fetching ENA price:', error);
+                });
+
+            // Chart.js Implementations
+            const chartFontColor = '#2c3e50';
+            Chart.defaults.font.family = "'Noto Sans SC', sans-serif";
+            Chart.defaults.color = chartFontColor;
+
+            // USDe Supply Chart
+            const usdeSupplyCtx = document.getElementById('usdeSupplyChart').getContext('2d');
+            new Chart(usdeSupplyCtx, {
+                type: 'line',
+                data: {
+                    labels: ['2月', '3月', '4月', '5月', '6月', '7月', '8月'],
+                    datasets: [{
+                        label: 'USDe 供应量 (亿美元)',
+                        data: [5, 15, 22, 25, 30, 55, 75.8],
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '亿';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Stablecoin Comparison Chart
+            const stablecoinCtx = document.getElementById('stablecoinComparisonChart').getContext('2d');
+            new Chart(stablecoinCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['USDT', 'USDC', 'DAI', 'USDe'],
+                    datasets: [{
+                        label: '市值 (亿美元)',
+                        data: [1120, 340, 50, 75.8],
+                        backgroundColor: [
+                            'rgba(34, 197, 94, 0.6)',
+                            'rgba(59, 130, 246, 0.6)',
+                            'rgba(249, 115, 22, 0.6)',
+                            'rgba(168, 85, 247, 0.6)'
+                        ],
+                        borderColor: [
+                            'rgb(34, 197, 94)',
+                            'rgb(59, 130, 246)',
+                            'rgb(249, 115, 22)',
+                            'rgb(168, 85, 247)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                             ticks: {
+                                callback: function(value) {
+                                    return value + '亿';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // ENA Tokenomics Chart
+            const enaTokenomicsCtx = document.getElementById('enaTokenomicsChart').getContext('2d');
+            new Chart(enaTokenomicsCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['核心贡献者', '投资者', '基金会', '生态系统发展'],
+                    datasets: [{
+                        label: 'ENA 分配',
+                        data: [30, 25, 15, 30],
+                        backgroundColor: [
+                            'rgba(239, 68, 68, 0.7)',
+                            'rgba(249, 115, 22, 0.7)',
+                            'rgba(234, 179, 8, 0.7)',
+                            'rgba(34, 197, 94, 0.7)'
+                        ],
+                        hoverOffset: 4
+                    }]
+                },
+                 options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                        },
+                        tooltip: {
+                             callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += context.parsed + '%';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

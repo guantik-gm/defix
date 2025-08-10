@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aerodrome Finance 交互式投资分析终端</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Harmony Neutrals -->
+    <!-- Application Structure Plan: A single-page dashboard design with sticky navigation to thematic sections: Dashboard (key metrics), The Flywheel (interactive model explanation), Strategies (filterable investment options), and Risk Analysis (SWOT/detailed risks). This structure transforms the dense report into an exploratory, task-oriented experience, allowing users to quickly grasp key info or dive deep based on their needs, which is more usable than a linear chapter-based layout. -->
+    <!-- Visualization & Content Choices: 1. Key Metrics (TVL/Price) -> Goal: Inform -> Viz: Chart.js Line Chart -> Interaction: Tooltip -> Justification: Shows trend and performance at a glance. | 2. ve(3,3) Model -> Goal: Explain -> Viz: HTML/CSS interactive diagram -> Interaction: Click-to-reveal text -> Justification: Simplifies a complex system visually. | 3. Investment Strategies -> Goal: Compare/Action -> Viz: Filterable HTML card grid -> Interaction: JS filters/expand -> Justification: Provides a personalized, task-oriented way to find actionable advice. | 4. Tokenomics -> Goal: Inform -> Viz: Chart.js Doughnut Chart -> Interaction: Hover -> Justification: Clear proportional representation. | 5. SWOT -> Goal: Organize -> Viz: HTML/CSS 4-quadrant grid -> Interaction: Static -> Justification: Standard, scannable analysis format. All visualizations are implemented using Chart.js (Canvas) or pure HTML/CSS, confirming NO SVG/Mermaid. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #F8F7F4;
+            color: #333333;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 40vh;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .flywheel-line {
+            position: absolute;
+            background-color: #CBD5E1;
+            z-index: 0;
+        }
+        .flywheel-line-h { height: 2px; }
+        .flywheel-line-v { width: 2px; }
+        .flywheel-arrow::after {
+            content: '▶';
+            position: absolute;
+            color: #CBD5E1;
+            font-size: 10px;
+        }
+        .flywheel-arrow.right::after { right: -5px; top: 50%; transform: translateY(-50%); }
+        .flywheel-arrow.down::after { bottom: -5px; left: 50%; transform: translateX(-50%) rotate(90deg); }
+        .flywheel-arrow.left::after { left: -5px; top: 50%; transform: translateY(-50%) rotate(180deg); }
+        .flywheel-arrow.up::after { top: -5px; left: 50%; transform: translateX(-50%) rotate(-90deg); }
+        .strategy-card {
+            transition: all 0.3s ease-in-out;
+            border: 1px solid transparent;
+        }
+        .strategy-card.hidden {
+            transform: scale(0.9);
+            opacity: 0;
+            height: 0;
+            padding: 0;
+            margin: 0;
+            border: 0;
+            overflow: hidden;
+        }
+        .glassmorphism {
+            background: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Header & Nav -->
+    <header id="header" class="sticky top-0 z-50 w-full glassmorphism transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="font-bold text-xl text-gray-800">Aerodrome 投资终端</span>
+                </div>
+                <nav class="hidden md:flex space-x-8">
+                    <a href="#dashboard" class="text-gray-600 hover:text-blue-600 font-medium">仪表盘</a>
+                    <a href="#flywheel" class="text-gray-600 hover:text-blue-600 font-medium">经济模型</a>
+                    <a href="#strategies" class="text-gray-600 hover:text-blue-600 font-medium">投资策略</a>
+                    <a href="#risks" class="text-gray-600 hover:text-blue-600 font-medium">风险分析</a>
+                    <a href="#data" class="text-gray-600 hover:text-blue-600 font-medium">深度数据</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        
+        <!-- Hero Section -->
+        <section class="text-center mb-16">
+            <h1 class="text-4xl md:text-5xl font-bold tracking-tight text-gray-900 mb-4">Aerodrome Finance (AERO)</h1>
+            <p class="text-lg text-gray-600 max-w-3xl mx-auto mb-6">一个交互式投资评估报告，将复杂的DeFi分析转化为直观的洞察。</p>
+            <div class="inline-flex items-center px-6 py-3 rounded-full bg-amber-100 text-amber-800 font-semibold">
+                <span class="mr-2">最终评级:</span>
+                <span class="font-bold text-lg">建议 (有条件)</span>
+            </div>
+        </section>
+
+        <!-- Dashboard Section -->
+        <section id="dashboard" class="mb-20 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-gray-800 mb-2">项目仪表盘</h2>
+            <p class="text-md text-gray-500 mb-8">此仪表盘展示了 Aerodrome Finance 的核心健康指标，让您快速了解其市场表现和协议活动。所有数据均为报告发布时的快照，用于说明性目的。</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <h3 class="text-sm font-medium text-gray-500">总锁仓价值 (TVL)</h3>
+                    <p class="text-3xl font-bold text-gray-900 mt-2">$9.67 亿</p>
+                    <p class="text-xs text-green-600 mt-1">Base 链第一 (占比 ~46%)</p>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <h3 class="text-sm font-medium text-gray-500">24小时交易量</h3>
+                    <p class="text-3xl font-bold text-gray-900 mt-2">$6.14 亿</p>
+                    <p class="text-xs text-gray-500 mt-1">反映当前市场活跃度</p>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <h3 class="text-sm font-medium text-gray-500">年化协议收入</h3>
+                    <p class="text-3xl font-bold text-gray-900 mt-2">$1.3 亿</p>
+                    <p class="text-xs text-gray-500 mt-1">100% 分配给 veAERO 持有者</p>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <h3 class="text-sm font-medium text-gray-500">AERO 代币价格</h3>
+                    <p class="text-3xl font-bold text-gray-900 mt-2">$0.83</p>
+                    <p class="text-xs text-red-600 mt-1">较历史高点 $2.33 有回落</p>
+                </div>
+            </div>
+            <div class="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-gray-100">
+                <div class="chart-container">
+                    <canvas id="tvlPriceChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Flywheel Section -->
+        <section id="flywheel" class="mb-20 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-gray-800 mb-2">ve(3,3) 经济飞轮</h2>
+            <p class="text-md text-gray-500 mb-12 max-w-4xl">Aerodrome 的核心竞争力在于其精巧的 ve(3,3) 经济模型，它创造了一个强大的正反馈循环，将交易者、流动性提供者 (LP) 和协议治理者 (veAERO 持有者) 的利益绑定在一起。点击下方图表的节点，查看各环节的详细解释。</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+                <div id="flywheel-info" class="md:col-span-4 p-6 rounded-2xl bg-white shadow-sm border border-gray-100 h-full min-h-[300px]">
+                    <h3 class="font-bold text-lg mb-2">飞轮效应解析</h3>
+                    <p class="text-gray-600">点击图中的任意节点，这里将显示该环节在经济模型中的作用和意义。</p>
+                </div>
+                <div class="md:col-span-8 relative h-[450px] md:h-[400px]">
+                    <!-- Nodes -->
+                    <div id="node-lp" data-info="**吸引流动性 (Attract Liquidity):** 高额的 AERO 排放奖励 (LP APR) 会吸引流动性提供者 (LP) 将资金存入高投票率的池子，从而加深池子的流动性，为交易者提供更低的滑点。" class="flywheel-node absolute top-[180px] left-0 transform -translate-y-1/2 cursor-pointer z-10 p-4 bg-teal-100 text-teal-800 rounded-lg shadow-md text-center">
+                        <p class="font-bold">1. 吸引流动性</p><p class="text-sm">(LPs)</p>
+                    </div>
+                    <div id="node-trade" data-info="**提升交易量 (Boost Volume):** 更深的流动性意味着交易者在进行大额交易时可以承受更低的滑点，从而提升了交易体验，吸引更多的交易量流向这些池子。" class="flywheel-node absolute top-0 left-1/2 transform -translate-x-1/2 cursor-pointer z-10 p-4 bg-sky-100 text-sky-800 rounded-lg shadow-md text-center">
+                        <p class="font-bold">2. 提升交易量</p><p class="text-sm">(Traders)</p>
+                    </div>
+                    <div id="node-fee" data-info="**产生协议收入 (Generate Revenue):** 交易量的增加会产生更多的交易费用和贿赂。这些收入 100% 分配给为这些高交易量池子投票的 veAERO 持有者。" class="flywheel-node absolute top-[180px] right-0 transform -translate-y-1/2 cursor-pointer z-10 p-4 bg-amber-100 text-amber-800 rounded-lg shadow-md text-center">
+                        <p class="font-bold">3. 产生收入</p><p class="text-sm">(Fees & Bribes)</p>
+                    </div>
+                    <div id="node-vote" data-info="**引导代币排放 (Direct Emissions):** 高额的交易费和贿赂为 veAERO 投票者提供了极具吸引力的收益率 (APR)，从而吸引他们将选票投给这些高收益的池子，进而将下一周的 AERO 排放引导至此。" class="flywheel-node absolute bottom-0 left-1/2 transform -translate-x-1/2 cursor-pointer z-10 p-4 bg-indigo-100 text-indigo-800 rounded-lg shadow-md text-center">
+                        <p class="font-bold">4. 引导排放</p><p class="text-sm">(veAERO Voters)</p>
+                    </div>
+                    <!-- Lines with Arrows -->
+                    <div class="flywheel-line flywheel-line-h flywheel-arrow right" style="width: 28%; top: 50px; left: 24%;"></div>
+                    <div class="flywheel-line flywheel-line-v flywheel-arrow down" style="height: 120px; top: 50px; right: 26%;"></div>
+                    <div class="flywheel-line flywheel-line-h flywheel-arrow left" style="width: 28%; bottom: 50px; right: 24%;"></div>
+                    <div class="flywheel-line flywheel-line-v flywheel-arrow up" style="height: 120px; bottom: 50px; left: 26%;"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Strategies Section -->
+        <section id="strategies" class="mb-20 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-gray-800 mb-2">投资策略矩阵</h2>
+            <p class="text-md text-gray-500 mb-8">Aerodrome 提供多样化的投资路径。您可以根据自己的风险偏好和技术背景，筛选并探索最适合您的策略。点击卡片查看详细的优缺点和预期收益分析。</p>
+            <div class="flex flex-wrap gap-2 mb-8">
+                <button data-filter="all" class="filter-btn bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-medium">全部策略</button>
+                <button data-filter="低" class="filter-btn bg-white text-gray-700 px-4 py-2 rounded-full text-sm font-medium">低风险</button>
+                <button data-filter="中" class="filter-btn bg-white text-gray-700 px-4 py-2 rounded-full text-sm font-medium">中风险</button>
+                <button data-filter="高" class="filter-btn bg-white text-gray-700 px-4 py-2 rounded-full text-sm font-medium">高风险</button>
+                <button data-filter="专业" class="filter-btn bg-white text-gray-700 px-4 py-2 rounded-full text-sm font-medium">开发者/专业</button>
+            </div>
+            <div id="strategy-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Strategy cards will be injected here by JS -->
+            </div>
+        </section>
+
+        <!-- Risks Section -->
+        <section id="risks" class="mb-20 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-gray-800 mb-2">风险与机遇 (SWOT)</h2>
+            <p class="text-md text-gray-500 mb-8">全面的投资决策需要正视项目的优势、劣势、机遇与威胁。下方的 SWOT 分析为您提供了一个平衡的视角。</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Strengths -->
+                <div class="bg-green-50 p-6 rounded-2xl border border-green-200">
+                    <h3 class="text-xl font-bold text-green-800 mb-3">S / 优势</h3>
+                    <ul id="strengths-list" class="space-y-2 list-disc list-inside text-green-700"></ul>
+                </div>
+                <!-- Weaknesses -->
+                <div class="bg-red-50 p-6 rounded-2xl border border-red-200">
+                    <h3 class="text-xl font-bold text-red-800 mb-3">W / 劣势 & 风险</h3>
+                    <ul id="weaknesses-list" class="space-y-2 list-disc list-inside text-red-700"></ul>
+                </div>
+                <!-- Opportunities -->
+                <div class="bg-sky-50 p-6 rounded-2xl border border-sky-200">
+                    <h3 class="text-xl font-bold text-sky-800 mb-3">O / 机遇</h3>
+                    <ul id="opportunities-list" class="space-y-2 list-disc list-inside text-sky-700"></ul>
+                </div>
+                <!-- Threats -->
+                <div class="bg-yellow-50 p-6 rounded-2xl border border-yellow-200">
+                    <h3 class="text-xl font-bold text-yellow-800 mb-3">T / 威胁</h3>
+                    <ul id="threats-list" class="space-y-2 list-disc list-inside text-yellow-700"></ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Data Deep-Dive Section -->
+        <section id="data" class="scroll-mt-20">
+            <h2 class="text-3xl font-bold text-gray-800 mb-2">深度数据洞察</h2>
+             <p class="text-md text-gray-500 mb-8">本节深入探讨了 Aerodrome 的代币经济学和竞争格局，为您提供更精细的分析维度。</p>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <h3 class="text-xl font-bold mb-4">初始代币分配 (5亿 AERO)</h3>
+                    <p class="text-sm text-gray-500 mb-4">Aerodrome采取了公平启动模式，无预售，90%的初始代币以veAERO形式分发给长期参与者，确保了早期治理的稳定性。</p>
+                    <div class="chart-container h-[300px] max-h-[300px]">
+                        <canvas id="tokenAllocationChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <h3 class="text-xl font-bold mb-4">排放计划：三阶段</h3>
+                     <div class="space-y-4">
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <h4 class="font-bold text-gray-800">1. 起飞期 (Takeoff)</h4>
+                            <p class="text-sm text-gray-600">前14周，排放量每周增加3%，以快速吸引初始流动性。</p>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <h4 class="font-bold text-gray-800">2. 巡航期 (Cruise)</h4>
+                            <p class="text-sm text-gray-600">第15周起，排放量每周衰减1%，以控制长期通胀。</p>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <h4 class="font-bold text-gray-800">3. 航空美联储 (Aero Fed)</h4>
+                            <p class="text-sm text-gray-600">当排放量低于阈值，veAERO持有者可投票调整排放率，实现自适应货币政策。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-gray-800 text-white mt-20">
+        <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 text-center text-sm">
+            <p>本报告仅供参考，不构成任何投资建议。</p>
+            <p class="text-gray-400 mt-2">© 2025 Aerodrome 交互式投资分析终端。数据来源于公开报告。</p>
+        </div>
+    </footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const reportData = {
+        strategies: [
+            {
+                name: "购买并持有 AERO",
+                risk: "高",
+                type: "被动",
+                description: "在交易所或 DEX 直接购买并长期持有 AERO 代币，本质上是押注 Aerodrome 协议和整个 Base 生态系统的长期成功。",
+                pros: ["操作简单，无需主动管理", "可完全捕获 Base 生态增长带来的 Beta 收益"],
+                cons: ["承受代币价格的完全波动风险", "面临长期通胀带来的价值稀释"],
+                apy: "N/A"
+            },
+            {
+                name: "提供流动性 (LP)",
+                risk: "高",
+                type: "农夫",
+                description: "将资产对（如 AERO/USDC）存入 Aerodrome 的流动性池，赚取协议分发的 AERO 排放奖励。",
+                pros: ["通常具有非常高的 APY/APR", "直接参与协议核心业务"],
+                cons: ["面临无常损失 (Impermanent Loss) 的固有风险", "收益（AERO奖励）本身价格波动大"],
+                apy: "可变, 部分池子 >100%"
+            },
+            {
+                name: "质押 AERO 获取 veAERO",
+                risk: "中",
+                type: "主动",
+                description: "锁定 AERO 换取 veAERO NFT，并每周参与投票，捕获协议的现金流（费用和贿赂）。",
+                pros: ["赚取协议的真实收益（交易费+贿赂）", "通过治理直接影响协议发展", "Rebase 奖励可部分对冲通胀"],
+                cons: ["需要每周主动研究和投票，耗费精力", "资金被长期锁定（最长4年），流动性差"],
+                apy: "高度可变, 取决于投票策略"
+            },
+            {
+                name: "杠杆循环",
+                risk: "专业",
+                type: "专业",
+                description: "利用借贷协议对生息资产（如 LP）进行杠杆化，循环借贷并再投资，以追求极致收益率。",
+                pros: ["可能获得数倍于基础策略的超高收益", "极致的资本效率"],
+                cons: ["极高的清算风险，可能导致本金全部损失", "操作复杂，需要时刻监控健康度"],
+                apy: "理论上极高, 风险极大"
+            },
+            {
+                name: "Delta 中性套利",
+                risk: "中",
+                type: "专业",
+                description: "通过衍生品对冲 LP 中的价格风险，纯粹赚取协议收益（交易费和排放奖励）。",
+                pros: ["剥离市场价格波动风险，追求更稳健的回报", "将不确定的价格风险转化为可预测的套利游戏"],
+                cons: ["需要支付资金费率，可能侵蚀收益", "操作复杂，需要精通金融衍生品", "有合约和平台对手方风险"],
+                apy: "LP收益 - 资金费率"
+            },
+            {
+                name: "构建生态工具",
+                risk: "专业",
+                type: "专业",
+                description: "利用官方 API/SDK 开发自动化工具（如投票机器人）或链上代理，提高自身投资效率或提供服务赚取收益。",
+                pros: ["创造独特的 Alpha 机会", "可扩展为商业模式，收取服务费", "深入理解协议运作机制"],
+                cons: ["需要专业的编程能力", "开发和维护需要投入大量时间和精力", "工具的有效性依赖于策略的正确性"],
+                apy: "取决于工具效率和商业模式"
+            }
+        ],
+        swot: {
+            strengths: [
+                "市场领导地位：Base链的TVL与交易量龙头。",
+                "强大的经济模型：ve(3,3)飞轮被证明行之有效。",
+                "强大的生态支持：Coinbase Ventures战略投资。",
+                "经验丰富的团队：Velodrome原班人马打造。",
+                "高现金流捕获：100%收入分配给veAERO持有者。"
+            ],
+            weaknesses: [
+                "安全风险：LP预言机操纵漏洞，影响可组合性。",
+                "通胀与抛压：代币无上限，未来有大量解锁。",
+                "叙事风险：估值与“Base Beta”叙事深度绑定。",
+                "L2依赖性：命运完全依赖于Base链。",
+            ],
+            opportunities: [
+                "Coinbase集成预期：最大的潜在上行催化剂。",
+                "Base生态爆发：将直接受益于生态内项目增长。",
+                "Superchain扩展：理论上可扩展至其他OP系链。",
+            ],
+            threats: [
+                "竞争加剧：来自Uniswap或其他新模型的挑战。",
+                "监管风险：全球对DeFi的监管政策不确定。",
+                "宏观市场环境：熊市将严重影响协议收入和币价。",
+            ]
+        }
+    };
+    
+    // TVL & Price Chart
+    const tvlPriceCtx = document.getElementById('tvlPriceChart').getContext('2d');
+    new Chart(tvlPriceCtx, {
+        type: 'line',
+        data: {
+            labels: ['2024-01', '2024-02', '2024-03', '2024-04', '2024-05', '2024-06'],
+            datasets: [
+                {
+                    label: 'TVL (亿美元)',
+                    data: [1.2, 2.5, 5.8, 5.0, 7.5, 9.67],
+                    borderColor: '#4A90E2',
+                    backgroundColor: 'rgba(74, 144, 226, 0.1)',
+                    yAxisID: 'y',
+                    fill: true,
+                    tension: 0.3
+                },
+                {
+                    label: 'AERO 价格 (美元)',
+                    data: [0.2, 0.8, 2.1, 1.5, 1.1, 0.83],
+                    borderColor: '#E9754B',
+                    backgroundColor: 'transparent',
+                    yAxisID: 'y1',
+                    tension: 0.3
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                title: { display: true, text: 'TVL 与 AERO 价格趋势' },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.y !== null) {
+                                if (context.dataset.yAxisID === 'y') {
+                                    label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed.y) + ' 亿';
+                                } else {
+                                     label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed.y);
+                                }
+                            }
+                            return label;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: { display: true, text: 'TVL (亿美元)' }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    title: { display: true, text: 'AERO 价格 ($)' },
+                    grid: { drawOnChartArea: false }
+                }
+            }
+        }
+    });
+
+    // Token Allocation Chart
+    const tokenAllocationCtx = document.getElementById('tokenAllocationChart').getContext('2d');
+    new Chart(tokenAllocationCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['veVELO锁定者', '生态系统与公共产品', '团队', 'AERO流动性池', '其他'],
+            datasets: [{
+                data: [40, 31, 14, 5, 10],
+                backgroundColor: ['#4A90E2', '#50E3C2', '#F5A623', '#BD10E0', '#9013FE'],
+                borderColor: '#F8F7F4',
+                borderWidth: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.label}: ${context.raw}%`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Flywheel Interaction
+    const flywheelNodes = document.querySelectorAll('.flywheel-node');
+    const flywheelInfoBox = document.getElementById('flywheel-info');
+    flywheelNodes.forEach(node => {
+        node.addEventListener('click', () => {
+            const info = node.getAttribute('data-info');
+            flywheelInfoBox.innerHTML = `<h3 class="font-bold text-lg mb-2">${node.innerText.split('\n')[0]}</h3><p class="text-gray-600">${info}</p>`;
+            flywheelNodes.forEach(n => n.classList.remove('ring-2', 'ring-blue-500'));
+            node.classList.add('ring-2', 'ring-blue-500');
+        });
+    });
+
+    // Strategy Cards
+    const strategyGrid = document.getElementById('strategy-grid');
+    const filterBtns = document.querySelectorAll('.filter-btn');
+
+    const renderStrategies = (filter = 'all') => {
+        strategyGrid.innerHTML = '';
+        const filteredStrategies = reportData.strategies.filter(s => {
+            if (filter === 'all') return true;
+            if (filter === '专业') return s.risk === '专业';
+            return s.risk === filter;
+        });
+
+        filteredStrategies.forEach(s => {
+            const card = document.createElement('div');
+            card.className = 'strategy-card bg-white p-6 rounded-2xl shadow-sm border border-gray-100 cursor-pointer hover:shadow-lg hover:border-blue-300';
+            card.innerHTML = `
+                <div class="flex justify-between items-start">
+                    <h3 class="text-lg font-bold text-gray-800 pr-4">${s.name}</h3>
+                    <span class="text-xs font-semibold px-2 py-1 rounded-full ${
+                        s.risk === '低' ? 'bg-green-100 text-green-800' :
+                        s.risk === '中' ? 'bg-yellow-100 text-yellow-800' :
+                        s.risk === '高' ? 'bg-red-100 text-red-800' :
+                        'bg-purple-100 text-purple-800'
+                    }">${s.risk}风险</span>
+                </div>
+                <p class="text-sm text-gray-600 mt-2">${s.description.substring(0, 60)}...</p>
+                <div class="details hidden mt-4 pt-4 border-t border-gray-200">
+                    <p class="text-sm text-gray-800 font-semibold mb-2">优点:</p>
+                    <ul class="list-disc list-inside space-y-1 text-sm text-green-700 mb-4">${s.pros.map(p => `<li>${p}</li>`).join('')}</ul>
+                    <p class="text-sm text-gray-800 font-semibold mb-2">缺点:</p>
+                    <ul class="list-disc list-inside space-y-1 text-sm text-red-700 mb-4">${s.cons.map(c => `<li>${c}</li>`).join('')}</ul>
+                    <p class="text-sm text-gray-800 font-semibold">预期收益 (APR/APY): <span class="font-normal text-blue-600">${s.apy}</span></p>
+                </div>
+            `;
+            strategyGrid.appendChild(card);
+        });
+
+        // Add click listener to newly created cards
+        document.querySelectorAll('.strategy-card').forEach(card => {
+            card.addEventListener('click', () => {
+                card.querySelector('.details').classList.toggle('hidden');
+            });
+        });
+    };
+
+    filterBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const filter = btn.getAttribute('data-filter');
+            renderStrategies(filter);
+            filterBtns.forEach(b => b.classList.replace('bg-blue-600', 'bg-white') & b.classList.replace('text-white', 'text-gray-700'));
+            btn.classList.replace('bg-white', 'bg-blue-600');
+            btn.classList.replace('text-gray-700', 'text-white');
+        });
+    });
+
+    renderStrategies();
+
+    // SWOT lists
+    const populateList = (elementId, data) => {
+        const list = document.getElementById(elementId);
+        list.innerHTML = data.map(item => `<li>${item}</li>`).join('');
+    };
+
+    populateList('strengths-list', reportData.swot.strengths);
+    populateList('weaknesses-list', reportData.swot.weaknesses);
+    populateList('opportunities-list', reportData.swot.opportunities);
+    populateList('threats-list', reportData.swot.threats);
+    
+    // Smooth scrolling for nav links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            document.querySelector(this.getAttribute('href')).scrollIntoView({
+                behavior: 'smooth'
+            });
+        });
+    });
+
+});
+</script>
+</body>
+</html>

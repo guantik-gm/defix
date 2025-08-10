@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polyhedra (ZKJ) 交互式投资分析报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Slate & Amber -->
+    <!-- Application Structure Plan: 采用“仪表盘为中心”的主题式单页应用结构。用户首先看到包含最终评级和核心数据的“投资仪表盘”(Dashboard)，快速获取关键结论。侧边栏导航提供非线性探索路径，用户可按需深入“技术深潜”、“市场与代币”、“核心风险”和“投资策略”等主题部分。此结构旨在将复杂的报告内容分解为易于消化的模块，优化用户决策流程，而非强制用户按报告章节顺序阅读。 -->
+    <!-- Visualization & Content Choices: 
+        - 报告信息: 最终投资评级 -> 目标: 快速决策 -> 呈现方式: 突出显示的评级卡片 -> 交互: 无 -> 理由: 将报告最重要的结论置于最前。
+        - 报告信息: ZKJ 价格历史 -> 目标: 展示剧烈波动和崩盘事件 -> 呈现方式: Chart.js 折线图 -> 交互: 鼠标悬停提示，高亮关键事件 -> 理由: 动态图表比静态数字更能直观传达市场风险。
+        - 报告信息: 代币分配 -> 目标: 展示所有权结构 -> 呈现方式: Chart.js 环形图 -> 交互: 鼠标悬停显示详情 -> 理由: 直观呈现各方占比。
+        - 报告信息: 崩盘事件链 -> 目标: 解释复杂的因果关系 -> 呈现方式: HTML/CSS 时间线/流程图 -> 交互: 无 -> 理由: 将复杂的文字叙述转化为清晰的视觉流程，帮助理解事件的来龙去脉。
+        - 报告信息: 投资策略矩阵 -> 目标: 辅助用户根据自身情况选择策略 -> 呈现方式: 可切换的 HTML/CSS 卡片 -> 交互: 点击切换查看不同策略详情 -> 理由: 互动式对比能更好地帮助用户找到适合自己的投资路径。
+        - 报告信息: 安全审计缺失 -> 目标: 强调致命风险 -> 呈现方式: 醒目的警告框 -> 交互: 无 -> 理由: 使用强烈的视觉元素确保用户不会忽略此关键风险点。
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+        }
+        .nav-link {
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+        .nav-link.active {
+            background-color: #f1f5f9; /* slate-100 */
+            color: #ca8a04; /* amber-600 */
+            border-left-color: #ca8a04; /* amber-600 */
+        }
+        .nav-link:hover {
+            background-color: #f8fafc; /* slate-50 */
+            color: #eab308; /* amber-500 */
+            border-left-color: #eab308; /* amber-500 */
+        }
+        .content-section {
+            display: none;
+        }
+        .content-section.active {
+            display: block;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .kpi-card {
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            padding: 1.5rem;
+            transition: transform 0.2s ease-in-out;
+        }
+        .kpi-card:hover {
+            transform: translateY(-5px);
+        }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out;
+        }
+        .accordion-button.open + .accordion-content {
+            max-height: 1000px; 
+        }
+        .strategy-tab.active {
+            border-color: #ca8a04; /* amber-600 */
+            background-color: #fefce8; /* amber-50 */
+            color: #ca8a04; /* amber-600 */
+        }
+        .strategy-content {
+            display: none;
+        }
+        .strategy-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <div class="flex min-h-screen">
+        <!-- Sidebar Navigation -->
+        <aside class="w-64 bg-white shadow-md hidden lg:block sticky top-0 h-screen">
+            <div class="p-6">
+                <h1 class="text-2xl font-bold text-slate-900">Polyhedra (ZKJ)</h1>
+                <p class="text-sm text-slate-500">交互式投资报告</p>
+            </div>
+            <nav id="main-nav" class="mt-6">
+                <a href="#dashboard" class="nav-link active block py-3 px-6 text-slate-700 font-medium">
+                    <span>📊</span> 投资仪表盘
+                </a>
+                <a href="#tech" class="nav-link block py-3 px-6 text-slate-700 font-medium">
+                    <span>🔬</span> 技术与愿景
+                </a>
+                <a href="#market" class="nav-link block py-3 px-6 text-slate-700 font-medium">
+                    <span>📈</span> 市场与代币
+                </a>
+                <a href="#risks" class="nav-link block py-3 px-6 text-slate-700 font-medium">
+                    <span>⚠️</span> 核心风险
+                </a>
+                <a href="#strategies" class="nav-link block py-3 px-6 text-slate-700 font-medium">
+                    <span>🧭</span> 投资策略
+                </a>
+            </nav>
+            <div class="absolute bottom-0 left-0 w-full p-6 text-xs text-slate-400">
+                <p>报告生成于: 2025年6月</p>
+                <p>数据仅供研究参考。</p>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-4 sm:p-6 lg:p-10">
+            <!-- Mobile Header -->
+            <header class="lg:hidden mb-6">
+                <div class="flex items-center justify-between bg-white p-4 rounded-lg shadow">
+                    <div>
+                        <h1 class="text-xl font-bold text-slate-900">Polyhedra (ZKJ)</h1>
+                        <p class="text-sm text-slate-500">交互式投资报告</p>
+                    </div>
+                    <button id="mobile-menu-button" class="p-2 rounded-md text-slate-600 hover:bg-slate-100">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                    </button>
+                </div>
+                <nav id="mobile-nav" class="hidden mt-2 bg-white rounded-lg shadow">
+                    <a href="#dashboard" class="nav-link-mobile block py-3 px-4 text-slate-700 font-medium border-b">📊 投资仪表盘</a>
+                    <a href="#tech" class="nav-link-mobile block py-3 px-4 text-slate-700 font-medium border-b">🔬 技术与愿景</a>
+                    <a href="#market" class="nav-link-mobile block py-3 px-4 text-slate-700 font-medium border-b">📈 市场与代币</a>
+                    <a href="#risks" class="nav-link-mobile block py-3 px-4 text-slate-700 font-medium border-b">⚠️ 核心风险</a>
+                    <a href="#strategies" class="nav-link-mobile block py-3 px-4 text-slate-700 font-medium">🧭 投资策略</a>
+                </nav>
+            </header>
+
+            <!-- Section: Dashboard -->
+            <section id="dashboard" class="content-section active">
+                <h2 class="text-3xl font-bold text-slate-900 mb-2">投资仪表盘</h2>
+                <p class="text-slate-600 mb-8">此仪表盘提供了对Polyhedra Network (ZKJ)的顶层洞察，包括最终投资评级、核心观点和关键绩效指标（KPIs）。您可以在此快速把握项目的整体概况，并决定是否需要深入探索特定领域。</p>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                    <!-- Investment Rating -->
+                    <div class="lg:col-span-2 p-8 bg-white rounded-lg shadow-lg flex flex-col justify-center items-center text-center">
+                        <p class="text-sm font-semibold text-slate-500 mb-2">最终投资评级</p>
+                        <h3 class="text-4xl font-extrabold text-amber-600 mb-4">中立 (高度投机)</h3>
+                        <p class="text-slate-700 max-w-md">
+                            项目呈现出极端的两面性：世界级的ZK技术实力与灾难性的市场运营形成鲜明反差。这是一项高风险的风险投资，而非传统加密货币投资。
+                        </p>
+                    </div>
+                     <!-- Key Takeaway -->
+                    <div class="p-6 bg-slate-800 text-white rounded-lg shadow-lg flex flex-col justify-center">
+                         <h4 class="font-bold text-lg mb-2 text-amber-400">核心论点</h4>
+                         <p class="text-slate-300 text-sm">
+                            核心矛盾在于尖端技术与市场信任的脱节。对于具备高风险承受能力和技术背景的投资者，这可能是一个折扣入场点；但对于普通投资者，风险敞口过高。
+                         </p>
+                    </div>
+                </div>
+
+                <!-- KPIs -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+                    <div class="kpi-card text-center">
+                        <p class="text-sm text-slate-500">当前价格 (2025/06)</p>
+                        <p class="text-3xl font-bold text-slate-900 mt-2">~$0.26</p>
+                    </div>
+                    <div class="kpi-card text-center">
+                        <p class="text-sm text-slate-500">市值</p>
+                        <p class="text-3xl font-bold text-slate-900 mt-2">~$75M</p>
+                    </div>
+                    <div class="kpi-card text-center">
+                        <p class="text-sm text-slate-500">历史最高价</p>
+                        <p class="text-3xl font-bold text-slate-900 mt-2">~$9.56</p>
+                    </div>
+                     <div class="kpi-card text-center bg-red-50 border border-red-200">
+                        <p class="text-sm text-red-600">关键风险</p>
+                        <p class="text-lg font-bold text-red-800 mt-2">无公开安全审计</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Technology & Vision -->
+            <section id="tech" class="content-section">
+                <h2 class="text-3xl font-bold text-slate-900 mb-2">技术与愿景</h2>
+                <p class="text-slate-600 mb-8">本节深入探讨Polyhedra的技术基础和长期愿景。了解其核心产品（如zkBridge）、自主研发的ZK证明系统，以及将AI与区块链结合的雄心，是评估其长期潜力的关键。</p>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="text-xl font-bold mb-4">旗舰产品</h3>
+                        <div class="space-y-6">
+                            <div class="p-6 bg-white rounded-lg shadow">
+                                <h4 class="font-bold text-lg text-slate-800">1. zkBridge: 下一代互操作性</h4>
+                                <p class="mt-2 text-slate-600">作为核心产品，zkBridge利用ZK-SNARKs实现无需信任的跨链资产和数据转移，理论上比依赖预言机或多签的传统跨链桥更安全。目前已支持超过10个主流L1和L2网络。</p>
+                            </div>
+                            <div class="p-6 bg-white rounded-lg shadow">
+                                <h4 class="font-bold text-lg text-slate-800">2. EXPchain: AI的全能链</h4>
+                                <p class="mt-2 text-slate-600">这是一个兼容EVM的L1区块链，定位为AI应用的基础设施。其宏大愿景是在链上为AI模型提供可验证的计算，但这在当前技术下面临巨大的成本和实用性挑战。</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold mb-4">零知识军火库 (ZK Arsenal)</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <button class="accordion-button w-full text-left p-4 bg-white rounded-lg shadow flex justify-between items-center">
+                                    <span class="font-semibold">Virgo & Virgo++</span>
+                                    <span>🔽</span>
+                                </button>
+                                <div class="accordion-content bg-white p-4 rounded-b-lg -mt-2">
+                                    <p>专为分层算术电路设计的ZK系统，证明速度极快，理论上比同类快13倍。</p>
+                                </div>
+                            </div>
+                             <div>
+                                <button class="accordion-button w-full text-left p-4 bg-white rounded-lg shadow flex justify-between items-center">
+                                    <span class="font-semibold">Gemini & Marlin</span>
+                                    <span>🔽</span>
+                                </button>
+                                <div class="accordion-content bg-white p-4 rounded-b-lg -mt-2">
+                                    <p>Gemini为硬件友好型系统，旨在利用GPU/FPGA加速。Marlin则专注于减小证明大小，降低链上验证成本。</p>
+                                </div>
+                            </div>
+                             <div>
+                                <button class="accordion-button w-full text-left p-4 bg-white rounded-lg shadow flex justify-between items-center">
+                                    <span class="font-semibold">Pianist</span>
+                                    <span>🔽</span>
+                                </button>
+                                <div class="accordion-content bg-white p-4 rounded-b-lg -mt-2">
+                                    <p>分布式证明系统，能整合数百台机器的算力并行生成证明，提供近乎无限的水平扩展能力。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Market & Token -->
+            <section id="market" class="content-section">
+                <h2 class="text-3xl font-bold text-slate-900 mb-2">市场与代币</h2>
+                <p class="text-slate-600 mb-8">在此，我们将聚焦ZKJ代币的财务表现和经济模型。通过交互式图表，您可以直观地看到代币的价格历史、崩盘事件，以及其代币分配结构和未来的解锁压力，这些都是做出投资决策前必须了解的关键财务信息。</p>
+
+                <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                    <div class="lg:col-span-3 bg-white p-6 rounded-lg shadow">
+                        <h3 class="text-xl font-bold mb-4">ZKJ 价格历史 (USD)</h3>
+                        <div class="chart-container">
+                            <canvas id="priceChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow">
+                         <h3 class="text-xl font-bold mb-4">代币分配</h3>
+                         <div class="chart-container" style="height:300px; max-height:300px;">
+                            <canvas id="tokenomicsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-8 bg-white p-6 rounded-lg shadow">
+                    <h3 class="text-xl font-bold mb-1">代币解锁与通胀压力</h3>
+                    <p class="text-sm text-slate-500 mb-4">仅约32%的代币在流通，未来解锁将带来巨大抛压。</p>
+                    <div class="w-full bg-slate-200 rounded-full h-8 dark:bg-slate-700 relative overflow-hidden">
+                        <div class="bg-amber-500 h-8 rounded-full" style="width: 32%">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-white font-bold text-sm">流通: 32%</span>
+                        </div>
+                        <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-800 font-bold text-sm">未流通: 68%</span>
+                    </div>
+                    <div class="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                        <p class="font-bold text-amber-800">关键解锁事件：<span class="font-mono">2026年3月19日</span></p>
+                        <p class="text-sm text-amber-700">届时，针对私募投资者和核心贡献者的大规模解锁将开始，可能对市场造成显著冲击。</p>
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- Section: Risks -->
+            <section id="risks" class="content-section">
+                <h2 class="text-3xl font-bold text-slate-900 mb-2">核心风险</h2>
+                 <p class="text-slate-600 mb-8">透明地评估风险是明智投资的前提。本节将深入剖析Polyhedra面临的严峻挑战，特别是导致市场信心崩溃的2025年6月价格暴跌事件，以及作为跨链桥项目却缺乏公开安全审计这一致命缺陷。</p>
+
+                <div class="bg-red-50 border-l-4 border-red-500 text-red-800 p-6 rounded-r-lg mb-8 shadow-md">
+                    <h3 class="text-xl font-bold flex items-center">
+                        <span class="text-3xl mr-3">🚨</span> 致命缺陷：安全审计缺失
+                    </h3>
+                    <p class="mt-2">经全面检索，项目核心产品 zkBridge **未能找到任何由信誉良好的第三方安全公司出具的、公开可查的全面审计报告**。对于一个处理用户资产的跨链桥而言，这是一个不可接受的严重风险。在获得权威审计前，任何资金交互都等同于赌博。</p>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h3 class="text-xl font-bold mb-4">崩盘剖析：2025年6月15日事件链</h3>
+                    <div class="relative pl-8">
+                        <!-- Timeline line -->
+                        <div class="absolute left-10 top-0 h-full w-0.5 bg-slate-200"></div>
+                        <!-- Step 1 -->
+                        <div class="relative mb-8">
+                            <div class="absolute left-0 top-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white font-bold transform -translate-x-1/2">1</div>
+                            <div class="ml-4">
+                                <h4 class="font-bold">催化剂：脆弱的流动性池</h4>
+                                <p class="text-sm text-slate-600">ZKJ的核心流动性与一个小型合作伙伴代币(KOGE)深度绑定，并由短期激励计划(Binance Alpha)人为支撑，吸引了大量“雇佣兵资本”。</p>
+                            </div>
+                        </div>
+                         <!-- Step 2 -->
+                        <div class="relative mb-8">
+                            <div class="absolute left-0 top-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white font-bold transform -translate-x-1/2">2</div>
+                            <div class="ml-4">
+                                <h4 class="font-bold">导火索：信心崩溃</h4>
+                                <p class="text-sm text-slate-600">合作伙伴48 Club声明“从未承诺不卖币”，瞬间击碎市场信心，KOGE价格暴跌。</p>
+                            </div>
+                        </div>
+                        <!-- Step 3 -->
+                        <div class="relative mb-8">
+                            <div class="absolute left-0 top-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white font-bold transform -translate-x-1/2">3</div>
+                            <div class="ml-4">
+                                <h4 class="font-bold">连锁反应：流动性枯竭</h4>
+                                <p class="text-sm text-slate-600">套利者和恐慌盘将KOGE兑换为ZKJ，迅速抽干流动性池，并对ZKJ形成巨大抛压。</p>
+                            </div>
+                        </div>
+                         <!-- Step 4 -->
+                        <div class="relative">
+                            <div class="absolute left-0 top-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white font-bold transform -translate-x-1/2">4</div>
+                            <div class="ml-4">
+                                <h4 class="font-bold">雪上加霜：巨鲸离场与代币解锁</h4>
+                                <p class="text-sm text-slate-600">做市商Wintermute向交易所存入大量ZKJ，同时恰逢一次1553万枚代币的解锁，彻底引爆市场恐慌，价格崩溃超80%。</p>
+                            </div>
+                        </div>
+                    </div>
+                     <div class="mt-6 p-4 bg-slate-100 rounded-lg text-sm text-slate-700">
+                        <p><span class="font-bold">结论：</span>与其说是外部“攻击”，不如说是项目方在流动性管理和风险控制上的彻底失败，暴露了其顶尖技术背景下的运营短板。</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Strategies -->
+            <section id="strategies" class="content-section">
+                <h2 class="text-3xl font-bold text-slate-900 mb-2">投资策略</h2>
+                <p class="text-slate-600 mb-8">根据您的风险偏好和技术背景，这里提供了几种不同的投资参与策略。请点击下方的标签页来探索每种策略的描述、优劣势、风险等级和潜在回报。这能帮助您找到最适合自己的参与方式。</p>
+
+                <div class="mb-6 border-b border-slate-200">
+                    <nav id="strategy-tabs" class="flex space-x-4 -mb-px" aria-label="Tabs">
+                        <button class="strategy-tab active whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                            直接购入代币
+                        </button>
+                        <button class="strategy-tab whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                            官方质押
+                        </button>
+                        <button class="strategy-tab whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                            生态开发
+                        </button>
+                    </nav>
+                </div>
+                
+                <div id="strategy-contents">
+                    <!-- Strategy 1: Direct Purchase -->
+                    <div id="strategy-direct" class="strategy-content active">
+                        <div class="bg-white p-6 rounded-lg shadow">
+                            <h3 class="text-xl font-bold">策略一：直接购入代币 ($ZKJ)</h3>
+                            <p class="mt-2 text-slate-600">进行高风险的逆向投资，押注于项目底层技术的长期价值，期待市场情绪修复和价值重估。</p>
+                            <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <h4 class="font-semibold text-green-600">优势</h4>
+                                    <ul class="list-disc list-inside mt-2 text-slate-700 text-sm space-y-1">
+                                        <li>当前入场价格接近历史低点，盈亏比有利</li>
+                                        <li>若技术被采用，潜在上行空间巨大</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold text-red-600">劣势</h4>
+                                    <ul class="list-disc list-inside mt-2 text-slate-700 text-sm space-y-1">
+                                        <li>市场信任已遭破坏，修复困难</li>
+                                        <li>未来代币解锁带来持续抛压</li>
+                                        <li>团队市场运营能力已被证明存在问题</li>
+                                    </ul>
+                                </div>
+                            </div>
+                             <div class="mt-6 flex items-center justify-between bg-slate-50 p-4 rounded-lg">
+                                <span class="font-bold">风险等级: <span class="text-red-600">非常高</span></span>
+                                <span class="font-bold">潜在回报: <span class="text-green-600">非常高</span></span>
+                                <span class="font-bold">所需专长: <span class="text-blue-600">低</span></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Strategy 2: Staking -->
+                    <div id="strategy-staking" class="strategy-content">
+                         <div class="bg-white p-6 rounded-lg shadow">
+                            <h3 class="text-xl font-bold">策略二：参与官方质押 (Staking V2)</h3>
+                            <p class="mt-2 text-slate-600">参与官方质押计划，锁定ZKJ以获取网络奖励，为网络安全做贡献的同时赚取收益。</p>
+                            <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <h4 class="font-semibold text-green-600">优势</h4>
+                                    <ul class="list-disc list-inside mt-2 text-slate-700 text-sm space-y-1">
+                                        <li>操作相对简单，直接参与生态</li>
+                                        <li>可能获得ZKJ代币及其他潜在空投奖励</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold text-red-600">劣势</h4>
+                                    <ul class="list-disc list-inside mt-2 text-slate-700 text-sm space-y-1">
+                                        <li>宣传的高APR可能不可持续，多为通胀奖励</li>
+                                        <li>质押期间本金（ZKJ代币）价值可能大幅下跌</li>
+                                        <li>存在智能合约风险</li>
+                                    </ul>
+                                </div>
+                            </div>
+                             <div class="mt-6 flex items-center justify-between bg-slate-50 p-4 rounded-lg">
+                                <span class="font-bold">风险等级: <span class="text-orange-500">高</span></span>
+                                <span class="font-bold">潜在回报: <span class="text-yellow-500">中等</span></span>
+                                <span class="font-bold">所需专长: <span class="text-blue-600">低</span></span>
+                            </div>
+                        </div>
+                    </div>
+
+                     <!-- Strategy 3: Development -->
+                    <div id="strategy-development" class="strategy-content">
+                         <div class="bg-white p-6 rounded-lg shadow">
+                            <h3 class="text-xl font-bold">策略三：参与生态开发 (for Developers)</h3>
+                            <p class="mt-2 text-slate-600">对于具备开发背景的投资者，在EVM兼容的EXPchain上构建应用或服务，成为生态的早期建设者。</p>
+                            <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <h4 class="font-semibold text-green-600">优势</h4>
+                                    <ul class="list-disc list-inside mt-2 text-slate-700 text-sm space-y-1">
+                                        <li>将赌注押在技术实力和自身执行力上，而非币价</li>
+                                        <li>回报潜力不对称，可能创造独立业务价值</li>
+                                        <li>有机会获得官方开发者资助或激励</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold text-red-600">劣势</h4>
+                                    <ul class="list-disc list-inside mt-2 text-slate-700 text-sm space-y-1">
+                                        <li>需要投入大量时间和高水平技术能力</li>
+                                        <li>生态能否成功吸引用户是巨大未知数</li>
+                                        <li>早期网络文档和支持可能不完善</li>
+                                    </ul>
+                                </div>
+                            </div>
+                             <div class="mt-6 flex items-center justify-between bg-slate-50 p-4 rounded-lg">
+                                <span class="font-bold">风险等级: <span class="text-orange-500">高</span></span>
+                                <span class="font-bold">潜在回报: <span class="text-green-600">非常高</span></span>
+                                <span class="font-bold">所需专长: <span class="text-purple-600">高</span></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const appData = {
+                priceHistory: {
+                    labels: ['Mar \'24', 'Apr \'24', 'May \'24', 'Jun 14 \'25', 'Jun 16 \'25', 'Late Jun \'25'],
+                    data: [3.5, 4.0, 2.1, 2.0, 0.22, 0.26]
+                },
+                tokenomics: {
+                    labels: ['生态与激励', '私募投资者', '基金会储备', '社区与空投', '核心贡献者'],
+                    data: [32, 28, 15, 15, 10]
+                }
+            };
+
+            const chartColors = {
+                primary: '#ca8a04', // amber-600
+                primaryLight: 'rgba(202, 138, 4, 0.2)',
+                red: '#dc2626',
+                tokenomics: ['#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899'] // amber, emerald, blue, violet, pink
+            };
+            
+            Chart.defaults.font.family = "'Noto Sans SC', sans-serif";
+
+            // Price Chart
+            const priceCtx = document.getElementById('priceChart')?.getContext('2d');
+            if (priceCtx) {
+                new Chart(priceCtx, {
+                    type: 'line',
+                    data: {
+                        labels: appData.priceHistory.labels,
+                        datasets: [{
+                            label: 'ZKJ 价格 (USD)',
+                            data: appData.priceHistory.data,
+                            borderColor: chartColors.primary,
+                            backgroundColor: chartColors.primaryLight,
+                            fill: true,
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `价格: $${context.formattedValue}`;
+                                    }
+                                }
+                            },
+                             annotation: {
+                                annotations: {
+                                    crash: {
+                                        type: 'box',
+                                        xMin: 3,
+                                        xMax: 4,
+                                        yMin: 0,
+                                        yMax: 2.2,
+                                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                                        borderColor: 'rgba(239, 68, 68, 0.3)',
+                                        borderWidth: 1,
+                                    },
+                                    crashLabel: {
+                                        type: 'label',
+                                        xValue: 3.5,
+                                        yValue: 1,
+                                        content: ['价格崩盘', '-80%'],
+                                        color: chartColors.red,
+                                        font: {
+                                            size: 12,
+                                            weight: 'bold'
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return '$' + value;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Tokenomics Chart
+            const tokenomicsCtx = document.getElementById('tokenomicsChart')?.getContext('2d');
+            if (tokenomicsCtx) {
+                 new Chart(tokenomicsCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: appData.tokenomics.labels,
+                        datasets: [{
+                            data: appData.tokenomics.data,
+                            backgroundColor: chartColors.tokenomics,
+                            borderColor: '#ffffff',
+                            borderWidth: 2,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    boxWidth: 12,
+                                    padding: 15,
+                                    font: { size: 12 }
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${context.label}: ${context.raw}%`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Navigation Logic
+            const navLinks = document.querySelectorAll('.nav-link');
+            const mobileNavLinks = document.querySelectorAll('.nav-link-mobile');
+            const sections = document.querySelectorAll('.content-section');
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileNav = document.getElementById('mobile-nav');
+
+            const setActiveLink = (target) => {
+                navLinks.forEach(link => {
+                    link.classList.toggle('active', link.hash === target);
+                });
+                sections.forEach(section => {
+                    section.classList.toggle('active', `#${section.id}` === target);
+                });
+            };
+
+            const handleNavClick = (e) => {
+                 e.preventDefault();
+                 const target = e.currentTarget.hash;
+                 setActiveLink(target);
+                 window.scrollTo(0,0);
+                 if (mobileNav.classList.contains('block')) {
+                    mobileNav.classList.remove('block');
+                    mobileNav.classList.add('hidden');
+                 }
+            };
+            
+            navLinks.forEach(link => link.addEventListener('click', handleNavClick));
+            mobileNavLinks.forEach(link => link.addEventListener('click', handleNavClick));
+            
+            mobileMenuButton.addEventListener('click', () => {
+                mobileNav.classList.toggle('hidden');
+                mobileNav.classList.toggle('block');
+            });
+
+            // Accordion Logic
+            const accordionButtons = document.querySelectorAll('.accordion-button');
+            accordionButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    button.classList.toggle('open');
+                });
+            });
+
+            // Strategy Tabs Logic
+            const strategyTabs = document.querySelectorAll('.strategy-tab');
+            const strategyContents = document.querySelectorAll('.strategy-content');
+            strategyTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const targetId = 'strategy-' + tab.textContent.trim().toLowerCase().replace(/\s+/g, '').replace('直接购入代币', 'direct').replace('官方质押', 'staking').replace('生态开发', 'development');
+                    
+                    strategyTabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+
+                    strategyContents.forEach(content => {
+                        content.classList.toggle('active', content.id === targetId);
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>

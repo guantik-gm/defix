@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hyperion (RION) 交互式投资分析报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Tech -->
+    <!-- Application Structure Plan: A single-page dashboard application with a fixed sidebar for navigation. This structure allows users to immediately grasp the key takeaways on the 'Overview' dashboard and then non-linearly explore specific areas of interest like 'Tokenomics', 'Strategies', or 'Risks'. This task-oriented navigation is more user-friendly than a linear report, facilitating quick access to decision-critical information. Interactions like chart hovers and table filtering are designed to make data exploration intuitive and efficient. -->
+    <!-- Visualization & Content Choices: 
+        - Key Metrics (TVL, Volume): Goal: Inform. Viz: Large number cards for immediate impact. Interaction: None, for simplicity. Justification: Provides a quick, high-level summary of the project's health.
+        - Tokenomics: Goal: Organize/Inform. Viz: Chart.js Donut Chart. Interaction: Hover to see details. Justification: Standard, effective visualization for showing parts-of-a-whole distribution.
+        - Competitor Comparison: Goal: Compare. Viz: Styled HTML table. Interaction: None. Justification: Best for direct, multi-attribute comparison of qualitative and quantitative data.
+        - Investment Strategies: Goal: Guide/Organize. Viz: Detailed HTML table. Interaction: JS-powered buttons to filter strategies by risk/type. Justification: Makes the most actionable part of the report highly user-centric.
+        - Roadmap: Goal: Show Change. Viz: Vertical timeline with HTML/CSS. Interaction: None. Justification: More visually engaging than a simple list.
+        - Strengths vs Weaknesses: Goal: Compare. Viz: Two-column layout with icons. Interaction: None. Justification: Provides a high-contrast, easily scannable summary.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 450px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 450px;
+            max-height: 80vh;
+        }
+        .nav-link {
+            transition: all 0.2s ease-in-out;
+        }
+        .nav-link.active {
+            background-color: #0891b2; /* cyan-600 */
+            color: white;
+            transform: translateX(4px);
+        }
+        .content-section {
+            display: none;
+        }
+        .content-section.active {
+            display: block;
+        }
+        .strategy-filter-btn.active {
+            background-color: #0e7490; /* cyan-700 */
+            color: white;
+        }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <div class="flex flex-col md:flex-row min-h-screen">
+        <!-- Sidebar Navigation -->
+        <aside class="w-full md:w-64 bg-slate-800 text-white flex-shrink-0">
+            <div class="p-6 text-center border-b border-slate-700">
+                <h1 class="text-2xl font-bold">Hyperion (RION)</h1>
+                <p class="text-sm text-slate-400">交互式投资报告</p>
+            </div>
+            <nav class="p-4 space-y-2">
+                <a href="#overview" class="nav-link active flex items-center p-3 rounded-lg hover:bg-slate-700">
+                    <span class="mr-3">📊</span> 投资概览
+                </a>
+                <a href="#market" class="nav-link flex items-center p-3 rounded-lg hover:bg-slate-700">
+                    <span class="mr-3">📈</span> 市场数据
+                </a>
+                <a href="#tokenomics" class="nav-link flex items-center p-3 rounded-lg hover:bg-slate-700">
+                    <span class="mr-3">🪙</span> 代币经济
+                </a>
+                <a href="#strategies" class="nav-link flex items-center p-3 rounded-lg hover:bg-slate-700">
+                    <span class="mr-3">💡</span> 投资策略
+                </a>
+                <a href="#risks" class="nav-link flex items-center p-3 rounded-lg hover:bg-slate-700">
+                    <span class="mr-3">⚠️</span> 风险分析
+                </a>
+                <a href="#background" class="nav-link flex items-center p-3 rounded-lg hover:bg-slate-700">
+                    <span class="mr-3">🏛️</span> 项目背景
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-4 sm:p-6 md:p-10 bg-slate-50 overflow-y-auto">
+            
+            <!-- Overview Section -->
+            <section id="overview" class="content-section active">
+                <div class="flex justify-between items-start mb-6">
+                    <div>
+                        <h2 class="text-3xl font-bold text-slate-900">投资概览</h2>
+                        <p class="text-slate-500 mt-1">Hyperion 项目核心指标与最终投资评级。</p>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-sm text-slate-500">最终评级</span>
+                        <div class="bg-green-100 text-green-800 font-bold text-lg px-4 py-2 rounded-lg inline-block mt-1">
+                            建议 (Recommend)
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-md border border-slate-200 mb-8">
+                    <h3 class="text-xl font-semibold mb-1 text-cyan-700">核心论点</h3>
+                    <p class="text-slate-600">投资于一个战略定位清晰、执行力强、并已在快速增长的Layer 1生态（Aptos）中取得主导地位的核心基础设施协议，而其原生代币当前的市场估值尚未完全反映其基本面优势和未来潜力。这项投资是对Aptos DeFi生态系统增长的杠杆化押注。</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-white p-6 rounded-xl shadow-md border border-slate-200">
+                        <h4 class="text-slate-500 font-medium">总锁仓价值 (TVL)</h4>
+                        <p class="text-4xl font-bold text-slate-900 mt-2">$3,145 万</p>
+                        <p class="text-sm text-slate-400 mt-1">峰值曾达 $1.3 亿</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-md border border-slate-200">
+                        <h4 class="text-slate-500 font-medium">累计交易量</h4>
+                        <p class="text-4xl font-bold text-slate-900 mt-2">$70 亿+</p>
+                        <p class="text-sm text-slate-400 mt-1">日均交易量 $1.25亿+</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-md border border-slate-200">
+                        <h4 class="text-slate-500 font-medium">用户增长 (DRIPs)</h4>
+                        <p class="text-4xl font-bold text-slate-900 mt-2">~94 万</p>
+                        <p class="text-sm text-slate-400 mt-1">参与激励计划地址数</p>
+                    </div>
+                </div>
+
+                <div>
+                     <h3 class="text-2xl font-bold text-slate-900 mb-4">项目简介</h3>
+                     <div class="space-y-4 text-slate-700 bg-white p-6 rounded-xl shadow-md border border-slate-200">
+                        <p>Hyperion 定位为原生构建于 Aptos 区块链之上的全链上混合式订单簿-自动做市商（AMM）去中心化交易所（DEX）。其核心目标是成为 Aptos 生态系统的基础“统一流动性与交易层”，旨在通过集成化平台解决DeFi领域普遍存在的流动性碎片化、资本效率低下及用户界面复杂等核心痛点。</p>
+                        <p>通过融合集中流动性做市商（CLMM）、智能聚合器、策略金库以及未来的订单簿引擎，Hyperion能够同时满足零售用户与专业交易者的需求，致力于成为Aptos生态的“流动性黑洞”和核心金融基础设施。</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Market Data Section -->
+            <section id="market" class="content-section">
+                <h2 class="text-3xl font-bold text-slate-900 mb-2">市场数据分析</h2>
+                <p class="text-slate-500 mb-6">深入了解Hyperion的市场表现及其在Aptos生态中的竞争格局。</p>
+
+                <h3 class="text-2xl font-bold text-slate-900 mb-4">竞争对手横向对比</h3>
+                 <div class="bg-white p-4 rounded-xl shadow-md border border-slate-200 overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="border-b-2 border-slate-200">
+                            <tr>
+                                <th class="p-4 font-semibold">协议</th>
+                                <th class="p-4 font-semibold">TVL (美元)</th>
+                                <th class="p-4 font-semibold">24h交易量 (美元)</th>
+                                <th class="p-4 font-semibold">核心特性</th>
+                                <th class="p-4 font-semibold">历史安全事件</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <tr class="bg-cyan-50">
+                                <td class="p-4 font-medium text-cyan-800">Hyperion</td>
+                                <td class="p-4">$3,145万</td>
+                                <td class="p-4">$3,126万 (~0.99x TVL)</td>
+                                <td class="p-4">混合式DEX, 聚合器, 策略金库</td>
+                                <td class="p-4 text-green-600">无已知重大安全事件</td>
+                            </tr>
+                            <tr>
+                                <td class="p-4 font-medium">Thala Labs</td>
+                                <td class="p-4">$1.22亿</td>
+                                <td class="p-4">N/A</td>
+                                <td class="p-4">AMM, 稳定币, 流动性质押</td>
+                                <td class="p-4 text-amber-600">曾发生漏洞攻击 (资金已追回)</td>
+                            </tr>
+                             <tr>
+                                <td class="p-4 font-medium">Amnis Finance</td>
+                                <td class="p-4">$1.86亿+</td>
+                                <td class="p-4">N/A</td>
+                                <td class="p-4">流动性质押 (合作伙伴)</td>
+                                <td class="p-4 text-green-600">无已知重大安全事件</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-4 text-sm text-slate-500 bg-slate-100 p-4 rounded-lg">
+                    <strong>分析结论:</strong> 虽然Thala Labs拥有更高的TVL，但其构成复杂。Hyperion的交易量/TVL比率极高，证明了其卓越的资本效率。作为交易层，Hyperion专注于核心业务，与Amnis等协议形成互补的“货币乐高”战略，而非直接竞争。
+                </div>
+            </section>
+
+            <!-- Tokenomics Section -->
+            <section id="tokenomics" class="content-section">
+                <h2 class="text-3xl font-bold text-slate-900 mb-2">代币经济模型</h2>
+                <p class="text-slate-500 mb-6">解析 RION 与 xRION 的双代币模型、分配机制与价值捕获能力。</p>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="bg-white p-6 rounded-xl shadow-md border border-slate-200">
+                        <h3 class="text-xl font-semibold mb-4 text-cyan-700">RION 代币分配 (总量: 1亿)</h3>
+                        <div class="chart-container">
+                            <canvas id="tokenomicsChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-md border border-slate-200">
+                        <h3 class="text-xl font-semibold mb-4 text-cyan-700">双代币模型：RION & xRION</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <h4 class="font-bold text-lg">RION (功能型代币)</h4>
+                                <ul class="list-disc list-inside text-slate-600 mt-1 space-y-1">
+                                    <li>可自由流通，用于交易激励。</li>
+                                    <li>支付平台手续费并享受折扣。</li>
+                                    <li>获取治理权和收益的基础资产。</li>
+                                </ul>
+                            </div>
+                             <div>
+                                <h4 class="font-bold text-lg">xRION (治理代币)</h4>
+                                <ul class="list-disc list-inside text-slate-600 mt-1 space-y-1">
+                                     <li>通过锁定RION获得，不可转让。</li>
+                                     <li>锁仓期越长，权重越高 (最长52周)。</li>
+                                     <li>核心权益：治理投票、分享协议收入、Launchpad资格。</li>
+                                </ul>
+                            </div>
+                            <div class="mt-4 text-sm text-slate-500 bg-slate-100 p-4 rounded-lg">
+                                <strong>价值捕获核心:</strong> 采用成熟的veToken模型，激励长期持有。对真实收益（手续费分成）和Launchpad资格的需求，将驱动用户购买并锁定RION，减少市场流通供应，为代币提供价值支撑。
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Strategies Section -->
+            <section id="strategies" class="content-section">
+                <h2 class="text-3xl font-bold text-slate-900 mb-2">投资机会与策略</h2>
+                 <p class="text-slate-500 mb-6">根据不同风险偏好和技术背景，探索围绕Hyperion生态的具体投资与收益策略。</p>
+
+                <div class="mb-6 flex flex-wrap gap-2">
+                    <button class="strategy-filter-btn active px-4 py-2 rounded-full text-sm font-medium bg-white border border-slate-300 hover:bg-slate-100" data-filter="all">全部策略</button>
+                    <button class="strategy-filter-btn px-4 py-2 rounded-full text-sm font-medium bg-white border border-slate-300 hover:bg-slate-100" data-filter="low">低风险</button>
+                    <button class="strategy-filter-btn px-4 py-2 rounded-full text-sm font-medium bg-white border border-slate-300 hover:bg-slate-100" data-filter="medium">中风险</button>
+                    <button class="strategy-filter-btn px-4 py-2 rounded-full text-sm font-medium bg-white border border-slate-300 hover:bg-slate-100" data-filter="high">高风险</button>
+                    <button class="strategy-filter-btn px-4 py-2 rounded-full text-sm font-medium bg-white border border-slate-300 hover:bg-slate-100" data-filter="expert">专家/开发者</button>
+                </div>
+
+                <div class="bg-white p-2 sm:p-4 rounded-xl shadow-md border border-slate-200 overflow-x-auto">
+                    <table class="w-full min-w-[1000px] text-left">
+                        <thead class="border-b-2 border-slate-200">
+                            <tr>
+                                <th class="p-4 font-semibold">策略</th>
+                                <th class="p-4 font-semibold">描述</th>
+                                <th class="p-4 font-semibold">潜在APR/APY</th>
+                                <th class="p-4 font-semibold">核心风险</th>
+                            </tr>
+                        </thead>
+                        <tbody id="strategies-table" class="divide-y divide-slate-100">
+                            <tr data-category="low">
+                                <td class="p-4 font-medium">持有RION代币</td>
+                                <td class="p-4">直接购买并持有RION，博取其长期升值潜力。</td>
+                                <td class="p-4">N/A</td>
+                                <td class="p-4">RION价格波动</td>
+                            </tr>
+                            <tr data-category="low">
+                                <td class="p-4 font-medium">质押RION换取xRION</td>
+                                <td class="p-4">锁定RION以获取治理权、手续费分红和Launchpad资格。</td>
+                                <td class="p-4 text-green-600 font-semibold">中-高</td>
+                                <td class="p-4">RION价格波动, 锁仓期流动性丧失</td>
+                            </tr>
+                            <tr data-category="medium">
+                                <td class="p-4 font-medium">提供流动性 (LP)</td>
+                                <td class="p-4">为APT/USDC等交易池提供流动性，赚取交易费和RION奖励。</td>
+                                <td class="p-4 text-green-600 font-semibold">高</td>
+                                <td class="p-4">无常损失, 智能合约风险</td>
+                            </tr>
+                             <tr data-category="medium">
+                                <td class="p-4 font-medium">LST流动性挖矿</td>
+                                <td class="p-4">为amAPT/APT等LST池提供流动性，实现收益叠加。</td>
+                                <td class="p-4 text-green-600 font-semibold">高</td>
+                                <td class="p-4">无常损失, LST脱锚风险, 多重合约风险</td>
+                            </tr>
+                            <tr data-category="high">
+                                <td class="p-4 font-medium">杠杆流动性挖矿</td>
+                                <td class="p-4">通过借贷协议放大LP头寸，追求超额收益。</td>
+                                <td class="p-4 text-red-600 font-semibold">非常高</td>
+                                <td class="p-4">清算风险, 放大的无常损失</td>
+                            </tr>
+                            <tr data-category="expert">
+                                <td class="p-4 font-medium">Delta中性策略</td>
+                                <td class="p-4">对冲LP头寸的价格风险，纯赚取费用和奖励。</td>
+                                <td class="p-4 text-green-600 font-semibold">中</td>
+                                <td class="p-4">对冲成本, 基差风险, 执行复杂</td>
+                            </tr>
+                            <tr data-category="expert">
+                                <td class="p-4 font-medium">开发策略金库</td>
+                                <td class="p-4">创建并部署自己的LP管理策略，赚取绩效费。</td>
+                                <td class="p-4">可变</td>
+                                <td class="p-4">策略失效风险, 智能合约开发风险</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Risks Section -->
+            <section id="risks" class="content-section">
+                <h2 class="text-3xl font-bold text-slate-900 mb-2">风险与优势分析</h2>
+                <p class="text-slate-500 mb-6">全面评估Hyperion项目的潜在风险与核心竞争优势。</p>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="bg-white p-6 rounded-xl shadow-md border border-slate-200">
+                        <h3 class="text-xl font-semibold mb-4 text-green-700 flex items-center"><span class="text-2xl mr-2">✅</span> 核心优势 (Strengths)</h3>
+                        <ul class="space-y-3 text-slate-700">
+                            <li><strong>市场领导地位:</strong> 已成为Aptos生态交易量最高的DEX，具备强大先发优势。</li>
+                            <li><strong>强劲链上数据:</strong> TVL、交易量、用户增长迅速，产品市场契合度高。</li>
+                            <li><strong>顶级机构背书:</strong> OKX Ventures, Aptos Labs, Maelstrom等顶级VC加持。</li>
+                            <li><strong>优秀代币经济学:</strong> 成熟的veToken模型，有效激励长期持有。</li>
+                            <li><strong>清晰未来路线图:</strong> 订单簿、Launchpad等功能有望带来新增长。</li>
+                        </ul>
+                    </div>
+                     <div class="bg-white p-6 rounded-xl shadow-md border border-slate-200">
+                        <h3 class="text-xl font-semibold mb-4 text-red-700 flex items-center"><span class="text-2xl mr-2">❌</span> 主要风险 (Weaknesses)</h3>
+                        <ul class="space-y-3 text-slate-700">
+                            <li><strong>团队匿名:</strong> 核心团队未公开身份，降低了问责制，增加信任成本。</li>
+                            <li><strong>审计透明度不足:</strong> 缺乏公开可查阅的顶级安全公司完整审计报告。</li>
+                            <li><strong>生态系统依赖性:</strong> 项目的成功高度依赖于Aptos公链的整体发展。</li>
+                            <li><strong>潜在通胀压力:</strong> 早期较高的代币释放率可能对RION价格造成抛压。</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Background Section -->
+            <section id="background" class="content-section">
+                <h2 class="text-3xl font-bold text-slate-900 mb-2">项目背景</h2>
+                <p class="text-slate-500 mb-6">了解项目背后的团队、投资者和发展规划。</p>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="text-2xl font-bold text-slate-900 mb-4">发展路线图</h3>
+                        <div class="bg-white p-6 rounded-xl shadow-md border border-slate-200 space-y-6">
+                            <div class="relative pl-8">
+                                <div class="absolute left-0 top-1 w-4 h-4 bg-cyan-500 rounded-full border-4 border-white"></div>
+                                <div class="absolute left-[7px] top-5 h-full border-l-2 border-slate-200"></div>
+                                <p class="font-semibold">2025年2月</p>
+                                <p class="text-slate-600">项目主网上线</p>
+                            </div>
+                             <div class="relative pl-8">
+                                <div class="absolute left-0 top-1 w-4 h-4 bg-cyan-500 rounded-full border-4 border-white"></div>
+                                 <div class="absolute left-[7px] top-5 h-full border-l-2 border-slate-200"></div>
+                                <p class="font-semibold">2025年7月16日</p>
+                                <p class="text-slate-600">RION代币生成事件 (TGE)</p>
+                            </div>
+                             <div class="relative pl-8">
+                                <div class="absolute left-0 top-1 w-4 h-4 bg-slate-400 rounded-full border-4 border-white"></div>
+                                <p class="font-semibold">2025年第四季度 (计划)</p>
+                                <p class="text-slate-600">推出订单簿引擎，引入Launchpad功能</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="text-2xl font-bold text-slate-900 mb-4">战略投资者</h3>
+                        <div class="bg-white p-6 rounded-xl shadow-md border border-slate-200">
+                             <p class="text-slate-600 mb-4">Hyperion拥有星光熠熠的投资者阵容，由顶级VC和生态系统核心参与者共同支持，极大地对冲了团队匿名的风险。</p>
+                             <div class="flex flex-wrap gap-4 items-center justify-center">
+                                 <div class="p-3 bg-slate-100 rounded-lg text-center font-bold text-slate-700">OKX Ventures</div>
+                                 <div class="p-3 bg-slate-100 rounded-lg text-center font-bold text-slate-700">Aptos Labs</div>
+                                 <div class="p-3 bg-slate-100 rounded-lg text-center font-bold text-slate-700">Maelstrom</div>
+                                 <div class="p-3 bg-slate-100 rounded-lg text-center font-bold text-slate-700">Mirana Ventures</div>
+                                 <div class="p-3 bg-slate-100 rounded-lg text-center font-bold text-slate-700">Aptos Foundation</div>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const navLinks = document.querySelectorAll('.nav-link');
+            const contentSections = document.querySelectorAll('.content-section');
+
+            function updateContent(hash) {
+                const targetHash = hash || '#overview';
+                
+                navLinks.forEach(link => {
+                    link.classList.toggle('active', link.getAttribute('href') === targetHash);
+                });
+
+                contentSections.forEach(section => {
+                    section.classList.toggle('active', '#' + section.id === targetHash);
+                });
+            }
+            
+            navLinks.forEach(link => {
+                link.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const targetHash = this.getAttribute('href');
+                    history.pushState(null, null, targetHash);
+                    updateContent(targetHash);
+                });
+            });
+
+            window.addEventListener('popstate', function () {
+                updateContent(window.location.hash);
+            });
+
+            updateContent(window.location.hash);
+
+            const tokenomicsData = {
+                labels: ['流动性挖矿 (30%)', '协议金库 (22.9%)', '团队顾问 (20%)', '公开分发 (9%)', '投资者 (8.1%)', '创世空投 (5%)', '社区激励 (5%)'],
+                datasets: [{
+                    label: 'RION 代币分配',
+                    data: [30, 22.9, 20, 9, 8.1, 5, 5],
+                    backgroundColor: [
+                        '#06b6d4', // cyan-500
+                        '#67e8f9', // cyan-300
+                        '#a5f3fc', // cyan-200
+                        '#cffafe', // cyan-100
+                        '#ecfeff', // cyan-50
+                        '#155e75', // cyan-800
+                        '#0e7490'  // cyan-700
+                    ],
+                    borderColor: '#f8fafc',
+                    borderWidth: 4,
+                    hoverOffset: 16
+                }]
+            };
+
+            const tokenomicsCtx = document.getElementById('tokenomicsChart').getContext('2d');
+            new Chart(tokenomicsCtx, {
+                type: 'doughnut',
+                data: tokenomicsData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                font: {
+                                    family: "'Noto Sans SC', sans-serif",
+                                    size: 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += context.parsed + '%';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '60%'
+                }
+            });
+
+            const filterButtons = document.querySelectorAll('.strategy-filter-btn');
+            const strategiesTableRows = document.querySelectorAll('#strategies-table tr');
+
+            filterButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const filter = this.dataset.filter;
+                    
+                    filterButtons.forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+
+                    strategiesTableRows.forEach(row => {
+                        if (filter === 'all' || row.dataset.category === filter) {
+                            row.style.display = 'table-row';
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+
+</body>
+</html>

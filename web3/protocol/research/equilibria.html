@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Equilibria (EQB) 交互式投资分析仪表板 (AI增强版)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Tech -->
+    <!-- Application Structure Plan: The SPA is designed as a top-down investment decision-making dashboard. It starts with a high-level "Executive Dashboard" (final rating, key metrics, bull/bear cases) to provide an immediate overview. It then guides the user to a "Risk Matrix" for a clear, interactive breakdown of potential downsides. Next, the "Investment Strategies" section uses a tabbed interface to offer actionable ways to engage with the protocol, now enhanced with a Gemini API-powered "AI Strategy Optimizer". Finally, a "Competitive Landscape" section visually explains the "Pendle Wars" context. This structure prioritizes user understanding and decision support. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Final Investment Rating -> Goal: Inform -> Viz/Method: Prominent "Badge" display.
+        - Report Info: Key Metrics -> Goal: Inform -> Viz/Method: Stat Cards.
+        - Report Info: Token Supply Distribution -> Goal: Organize/Inform -> Viz/Method: Chart.js Doughnut Chart.
+        - Report Info: Bull vs. Bear Cases -> Goal: Compare -> Viz/Method: Side-by-side text columns.
+        - Report Info: Risk Categories -> Goal: Organize/Inform -> Viz/Method: Interactive HTML/CSS/JS Cards with modal.
+        - Report Info: Investment Strategies -> Goal: Compare/Organize -> Viz/Method: Interactive Tabs + ✨ Gemini API call for dynamic strategy optimization suggestions. This is the new AI-powered feature.
+        - Report Info: Equilibria vs. Penpie Metrics -> Goal: Compare -> Viz/Method: Chart.js Bar Chart.
+        - Library/Method: Chart.js, Vanilla JS, and the Fetch API to call the Gemini API.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #F8F7F4;
+            color: #34495E;
+        }
+        .chart-container {
+            position: relative;
+            margin: auto;
+            height: 40vh;
+            max-height: 400px;
+            width: 100%;
+            max-width: 400px;
+        }
+        .bar-chart-container {
+            position: relative;
+            margin: auto;
+            height: 50vh;
+            max-height: 500px;
+            width: 100%;
+            max-width: 800px;
+        }
+        .nav-link {
+            transition: color 0.3s ease, border-color 0.3s ease;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #3B82F6;
+            border-bottom-color: #3B82F6;
+        }
+        .strategy-tab {
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+        .strategy-tab.active {
+            border-color: #3B82F6;
+            color: #3B82F6;
+            background-color: #EFF6FF;
+        }
+        .risk-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .risk-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .spinner {
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #3B82F6;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header id="header" class="bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0">
+                    <h1 class="text-xl font-bold text-gray-800">Equilibria (EQB) 投资仪表板</h1>
+                </div>
+                <nav class="hidden md:flex md:space-x-8">
+                    <a href="#dashboard" class="nav-link text-gray-500 hover:text-blue-500 border-b-2 border-transparent pb-1">投资概览</a>
+                    <a href="#risks" class="nav-link text-gray-500 hover:text-blue-500 border-b-2 border-transparent pb-1">风险矩阵</a>
+                    <a href="#strategies" class="nav-link text-gray-500 hover:text-blue-500 border-b-2 border-transparent pb-1">投资策略</a>
+                    <a href="#competition" class="nav-link text-gray-500 hover:text-blue-500 border-b-2 border-transparent pb-1">竞争格局</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+
+        <section id="dashboard" class="scroll-mt-24">
+            <h2 class="text-3xl font-bold text-center mb-2 text-gray-800">投资概览</h2>
+            <p class="text-center text-gray-500 mb-8 max-w-2xl mx-auto">本节提供对Equilibria项目的顶层视图，包括我们的最终投资评级、实时核心指标以及核心的看涨与看跌论点，帮助您快速形成初步判断。</p>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-1 flex flex-col items-center justify-center bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
+                    <h3 class="text-lg font-semibold text-gray-500 mb-2">最终投资评级</h3>
+                    <div class="bg-blue-100 text-blue-800 text-2xl font-bold px-6 py-3 rounded-full">
+                        投机性买入
+                    </div>
+                    <p class="text-center text-sm text-gray-500 mt-4">此评级主要针对具备高风险承受能力、深刻理解DeFi机制且寻求超额回报的专业投资者。</p>
+                </div>
+
+                <div class="lg:col-span-2 grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-white p-4 rounded-2xl shadow-md text-center border border-gray-100">
+                        <p class="text-sm text-gray-500">EQB 价格</p>
+                        <p class="text-2xl font-bold text-gray-800">$0.39</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl shadow-md text-center border border-gray-100">
+                        <p class="text-sm text-gray-500">总锁仓价值 (TVL)</p>
+                        <p class="text-2xl font-bold text-gray-800">$140M</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl shadow-md text-center border border-gray-100">
+                        <p class="text-sm text-gray-500">流通市值</p>
+                        <p class="text-2xl font-bold text-gray-800">$13.2M</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl shadow-md text-center border border-gray-100">
+                        <p class="text-sm text-gray-500">EQB 质押率</p>
+                        <p class="text-2xl font-bold text-green-600">~82%</p>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-3 grid grid-cols-1 md:grid-cols-5 gap-8 items-center mt-8">
+                    <div class="md:col-span-3 bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
+                        <h3 class="text-xl font-bold text-center mb-4 text-gray-800">核心投资论点</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div class="bg-green-50 p-4 rounded-lg border border-green-200">
+                                <h4 class="font-bold text-lg text-green-800 mb-2">看涨情景 (Bull Case)</h4>
+                                <ul class="space-y-2 text-sm text-green-700 list-disc list-inside">
+                                    <li><strong>垄断潜力:</strong> 主要竞争对手Penpie失败，为Equilibria实现"赢家通吃"创造了历史性机遇。</li>
+                                    <li><strong>供应冲击:</strong> 极高的质押率(>80%)和低流通盘，任何新需求都可能引发价格剧烈上涨。</li>
+                                    <li><strong>成熟模式:</strong> 已验证的商业模式，能产生数百万美元的年化协议收入。</li>
+                                    <li><strong>未来催化剂:</strong> 即将推出的原生贿选市场将极大提升vlEQB的价值捕获能力。</li>
+                                </ul>
+                            </div>
+                            <div class="bg-red-50 p-4 rounded-lg border border-red-200">
+                                <h4 class="font-bold text-lg text-red-800 mb-2">看跌情景 (Bear Case)</h4>
+                                <ul class="space-y-2 text-sm text-red-700 list-disc list-inside">
+                                    <li><strong>协议依赖:</strong> 协议命运完全依赖于底层Pendle Finance，是其高Beta杠杆。</li>
+                                    <li><strong>合约风险:</strong> DeFi协议固有风险，任何安全漏洞都可能是致命的。</li>
+                                    <li><strong>流动性陷阱:</strong> 日交易量极低，大资金无法自由进出，价格脆弱易被操纵。</li>
+                                    <li><strong>通胀压力:</strong> 仍有约66%的代币待释放，对市场构成持续抛压。</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="md:col-span-2 bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
+                        <h3 class="text-xl font-bold text-center mb-4 text-gray-800">EQB 代币分布</h3>
+                        <div class="chart-container">
+                            <canvas id="tokenomicsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="risks" class="scroll-mt-24 mt-16 md:mt-24">
+            <h2 class="text-3xl font-bold text-center mb-2 text-gray-800">交互式风险矩阵</h2>
+            <p class="text-center text-gray-500 mb-8 max-w-2xl mx-auto">投资前必须充分理解潜在风险。我们已将报告中复杂的风险评估转化为一个交互式矩阵。点击下方的卡片，可以深入了解每一个风险类别的具体细节、潜在影响以及现有的缓解措施。</p>
+            
+            <div id="risk-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            </div>
+        </section>
+
+        <section id="strategies" class="scroll-mt-24 mt-16 md:mt-24">
+            <h2 class="text-3xl font-bold text-center mb-2 text-gray-800">投资策略工作台 (✨ AI 增强)</h2>
+            <p class="text-center text-gray-500 mb-8 max-w-2xl mx-auto">了解了项目和风险后，下一步是选择合适的参与方式。这里我们提供了多种投资策略。点击下方“获取AI优化建议”按钮，由 Gemini 模型为您提供个性化的策略增强方案。</p>
+
+            <div class="w-full max-w-4xl mx-auto bg-white rounded-2xl shadow-lg border border-gray-100 p-2">
+                <div id="strategy-tabs" class="flex flex-wrap justify-center border-b border-gray-200">
+                </div>
+                <div id="strategy-content" class="p-6">
+                </div>
+            </div>
+        </section>
+
+        <section id="competition" class="scroll-mt-24 mt-16 md:mt-24">
+            <h2 class="text-3xl font-bold text-center mb-2 text-gray-800">竞争格局：“Pendle Wars”</h2>
+            <p class="text-center text-gray-500 mb-8 max-w-2xl mx-auto">Equilibria的崛起并非孤例，而是“Pendle Wars”的一部分。本节将通过数据可视化，展现其与主要竞争对手Penpie在被盗事件前的竞争态势，并阐述Penpie的失败如何从根本上改变了游戏规则。</p>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                 <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
+                    <h3 class="text-xl font-bold text-center mb-4 text-gray-800">核心指标对决 (被盗前)</h3>
+                    <div class="bar-chart-container">
+                        <canvas id="competitionChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
+                    <h3 class="text-xl font-bold text-blue-600 mb-4">游戏规则改变者：Penpie被盗事件</h3>
+                    <div class="space-y-4 text-gray-600">
+                        <p>2024年9月，Equilibria最强劲的竞争对手Penpie因重入漏洞遭受毁灭性攻击，损失约2700万美元。这一黑天鹅事件戏剧性地结束了“Pendle Wars”的白热化阶段。</p>
+                        <p class="font-semibold">对Equilibria的影响：</p>
+                        <ul class="list-disc list-inside space-y-2">
+                            <li><strong class="text-green-600">清除核心对手:</strong> 市场竞争格局被重塑，为Equilibria巩固其作为Pendle生态治理龙头的地位扫清了最大障碍。</li>
+                            <li><strong class="text-green-600">吸收市场份额:</strong> Penpie崩溃后，其TVL和用户信心外流，Equilibria成为最直接的受益者。</li>
+                            <li><strong class="text-red-600">敲响安全警钟:</strong> 事件也凸显了此类协议固有的智能合约风险，强调了持续安全审计的重要性。</li>
+                        </ul>
+                        <p class="mt-4 text-sm text-gray-500">结论：Penpie的失败虽是行业不幸，但从纯粹的竞争角度看，它为Equilibria提供了一个前所未有的、实现“赢家通吃”的历史性机遇。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-gray-800 text-white mt-16">
+        <div class="container mx-auto py-6 px-4 sm:px-6 lg:px-8 text-center text-sm">
+            <p>&copy; 2024 交互式投资分析仪表板。所有数据均来源于公开报告，仅供研究参考，不构成投资建议。</p>
+            <p class="mt-1 text-gray-400">基于“Equilibria Finance (EQB)：一份机构级尽职调查报告”生成。 ✨ AI 功能由 Gemini 强力驱动。</p>
+        </div>
+    </footer>
+
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+        const riskData = [
+            { 
+                title: "智能合约风险", 
+                icon: "🛡️",
+                short: "代码漏洞可能导致资金被盗。",
+                long: "尽管经过多家知名机构审计，但无法100%保证安全。其竞争对手Penpie的被盗事件就是一个惨痛教训，表明新功能的引入可能带来未知漏洞。缓解因素包括：PeckShield和WatchPug审计、漏洞赏金计划、持续审计承诺。",
+                severity: "高"
+            },
+            { 
+                title: "系统性风险", 
+                icon: "🔗",
+                short: "协议命运与Pendle Finance高度绑定。",
+                long: "Equilibria的价值完全附属于Pendle。如果Pendle失败、停滞或遭受攻击，Equilibria将失去其存在的根基。缓解因素是Pendle自身是其赛道的领导者，基本面相对稳固。",
+                severity: "极高"
+            },
+            { 
+                title: "经济风险", 
+                icon: "📉",
+                short: "代币流动性极差，存在脱锚和通胀压力。",
+                long: "EQB日交易量极低，大额交易困难。ePENDLE存在与PENDLE脱锚的风险。未来大量代币解锁会带来持续的抛售压力。缓解因素包括协议的回购计划和未来可能的CEX上币。",
+                severity: "高"
+            },
+            { 
+                title: "运营与团队风险", 
+                icon: "👥",
+                short: "匿名团队与多签钱包控制。",
+                long: "匿名团队在问责方面存在天然风险。协议由2/3多签钱包控制，若私钥被盗则后果严重。缓解因素是多签机制本身分散了风险，时间锁提供了反应窗口，且团队已稳定运营超过一年。",
+                severity: "中"
+            }
+        ];
+
+        const strategyData = {
+            "vlEQB质押": {
+                description: "购买并锁定EQB以获得vlEQB。这是对协议成功的最高信念、最长期的押注，可以捕获协议收入和未来的贿选收益。",
+                assets: "EQB代币",
+                risk: "高",
+                reward: "高",
+                complexity: "低",
+                rating: "B-",
+                riskColor: "text-red-500",
+                rewardColor: "text-green-500"
+            },
+            "增益LP挖矿": {
+                description: "将您在Pendle上的LP代币存入Equilibria的增益池。这是一种风险较低的敞口获取方式，可以在不直接承担过多EQB代币价格风险的情况下获得收益。",
+                assets: "Pendle LP代币",
+                risk: "中",
+                reward: "中",
+                complexity: "中",
+                rating: "B+",
+                riskColor: "text-yellow-500",
+                rewardColor: "text-yellow-500"
+            },
+            "ePENDLE质押": {
+                description: "主要针对已持有PENDLE的用户。将PENDLE转换为ePENDLE并质押，与直接锁定相比提供了流动性并能赚取额外收入。",
+                assets: "PENDLE代币",
+                risk: "中",
+                reward: "中",
+                complexity: "低",
+                rating: "B",
+                riskColor: "text-yellow-500",
+                rewardColor: "text-yellow-500"
+            },
+            "开发者API集成": {
+                description: "适用于有开发背景的投资者。利用协议提供的API构建自动化的投票/贿选策略、数据分析面板或其他工具，以赚取费用或优化个人收益。",
+                assets: "技术能力、少量Gas",
+                risk: "可变",
+                reward: "可变",
+                complexity: "极高",
+                rating: "N/A",
+                riskColor: "text-gray-500",
+                rewardColor: "text-gray-500"
+            }
+        };
+
+        function createTokenomicsChart() {
+            const ctx = document.getElementById('tokenomicsChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['质押中 (vlEQB)', '流通中 (未质押)', '未来释放'],
+                    datasets: [{
+                        data: [82, 18, 66],
+                        backgroundColor: [
+                            '#22C55E', 
+                            '#F97316',
+                            '#6B7280' 
+                        ],
+                        borderColor: '#F8F7F4',
+                        borderWidth: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '60%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                font: {
+                                    family: "'Noto Sans SC', sans-serif"
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        if (label === '质押中 (vlEQB)' || label === '流通中 (未质押)') {
+                                           label += `${context.raw}% (占流通盘)`;
+                                        } else {
+                                           label += `${context.raw}% (占总供应量)`;
+                                        }
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createCompetitionChart() {
+            const ctx = document.getElementById('competitionChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['总锁仓价值 (TVL)', '总PENDLE锁定量'],
+                    datasets: [
+                        {
+                            label: 'Equilibria (EQB)',
+                            data: [30, 1.1],
+                            backgroundColor: '#3B82F6',
+                            borderColor: '#1E40AF',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Penpie (PNP)',
+                            data: [43, 1.0],
+                            backgroundColor: '#A855F7',
+                            borderColor: '#6B21A8',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value, index, values) {
+                                    if (index === 0) return '$' + value + 'M';
+                                    if (index === 1) return value + 'M';
+                                    return value;
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                             callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                       label += context.parsed.y + 'M';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function populateRisks() {
+            const grid = document.getElementById('risk-grid');
+            grid.innerHTML = riskData.map(risk => `
+                <div class="risk-card bg-white p-6 rounded-2xl shadow-md cursor-pointer border border-gray-100" data-risk='${JSON.stringify(risk)}'>
+                    <div class="flex items-center mb-3">
+                        <span class="text-3xl mr-4">${risk.icon}</span>
+                        <div>
+                            <h4 class="font-bold text-lg text-gray-800">${risk.title}</h4>
+                            <span class="text-sm font-semibold ${risk.severity === '高' || risk.severity === '极高' ? 'text-red-500' : 'text-yellow-500'}">潜在影响: ${risk.severity}</span>
+                        </div>
+                    </div>
+                    <p class="text-gray-600 text-sm">${risk.short}</p>
+                </div>
+            `).join('');
+            
+            grid.addEventListener('click', (e) => {
+                const card = e.target.closest('.risk-card');
+                if (card) {
+                    const risk = JSON.parse(card.dataset.risk);
+                    showRiskModal(risk);
+                }
+            });
+        }
+        
+        function showRiskModal(risk) {
+            let existingModal = document.getElementById('risk-modal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+
+            const modalHTML = `
+                <div id="risk-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 fade-in">
+                    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-auto p-8 relative transform transition-all duration-300 scale-95" id="risk-modal-content">
+                        <button id="close-modal" class="absolute top-4 right-4 text-gray-400 hover:text-gray-800 text-2xl">&times;</button>
+                        <div class="flex items-start mb-4">
+                            <span class="text-4xl mr-4">${risk.icon}</span>
+                            <div>
+                                <h3 class="text-2xl font-bold text-gray-800">${risk.title}</h3>
+                                <span class="text-md font-semibold ${risk.severity === '高' || risk.severity === '极高' ? 'text-red-500' : 'text-yellow-500'}">潜在影响: ${risk.severity}</span>
+                            </div>
+                        </div>
+                        <div class="text-gray-600 space-y-3">
+                           <p>${risk.long}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+            
+            setTimeout(() => {
+                document.getElementById('risk-modal-content').classList.remove('scale-95');
+                document.getElementById('risk-modal-content').classList.add('scale-100');
+            }, 10);
+            
+            document.getElementById('risk-modal').addEventListener('click', (e) => {
+                if(e.target.id === 'risk-modal' || e.target.id === 'close-modal') {
+                    closeModal();
+                }
+            });
+        }
+
+        function closeModal() {
+            let modal = document.getElementById('risk-modal');
+            if (modal) {
+                document.getElementById('risk-modal-content').classList.remove('scale-100');
+                document.getElementById('risk-modal-content').classList.add('scale-95');
+                modal.classList.add('opacity-0');
+                setTimeout(() => modal.remove(), 300);
+            }
+        }
+        
+        async function getAiSuggestions(strategyDescription) {
+            const suggestionsContainer = document.getElementById('ai-suggestions-container');
+            suggestionsContainer.innerHTML = `<div class="flex items-center justify-center p-4"><div class="spinner mr-2"></div><p>正在向 Gemini 请求策略建议...</p></div>`;
+            suggestionsContainer.style.display = 'block';
+
+            const prompt = `你是一位顶级的DeFi策略分析师，精通各种收益聚合和风险对冲协议。对于以下投资策略：“${strategyDescription}”，请提供2-3个具体的、可操作的优化建议，以帮助投资者提高收益（APY/APR）或对冲潜在风险。\n\n你的建议应该：\n1. 具有创意，可以结合使用其他DeFi协议（例如借贷、衍生品、再质押等）。\n2. 具有可操作性，清晰地说明步骤。\n3. 以无序列表的形式返回，每个建议点以 '*' 开头。\n\n请直接返回列表内容，不要包含任何额外的问候语或总结。`;
+
+            try {
+                let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+                const payload = { contents: chatHistory };
+                const apiKey = ""; 
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) {
+                   throw new Error(`API 请求失败，状态码: ${response.status}`);
+                }
+
+                const result = await response.json();
+                
+                let text = '无法获取建议，请稍后重试。';
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    text = result.candidates[0].content.parts[0].text;
+                }
+
+                const suggestionsHtml = text.split('*')
+                                          .filter(s => s.trim() !== '')
+                                          .map(s => `<li class="mb-2 text-gray-700">${s.trim()}</li>`)
+                                          .join('');
+
+                suggestionsContainer.innerHTML = `<h4 class="text-lg font-bold text-gray-800 mb-2">✨ Gemini AI 优化建议</h4><ul class="list-disc list-inside space-y-2">${suggestionsHtml}</ul>`;
+
+            } catch (error) {
+                console.error("Gemini API Error:", error);
+                suggestionsContainer.innerHTML = `<div class="text-red-500">获取AI建议时出错: ${error.message}</div>`;
+            }
+        }
+
+
+        function populateStrategies() {
+            const tabsContainer = document.getElementById('strategy-tabs');
+            const contentContainer = document.getElementById('strategy-content');
+            const strategyNames = Object.keys(strategyData);
+
+            tabsContainer.innerHTML = strategyNames.map((name, index) => `
+                <button class="strategy-tab px-4 py-3 text-sm md:text-base font-semibold text-gray-600 ${index === 0 ? 'active' : ''}" data-strategy-name="${name}">
+                    ${name}
+                </button>
+            `).join('');
+            
+            function updateContent(strategyName) {
+                const data = strategyData[strategyName];
+                contentContainer.innerHTML = `
+                    <div class="fade-in">
+                        <p class="text-gray-600 mb-6">${data.description}</p>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center mb-6">
+                            <div>
+                                <p class="text-sm text-gray-500">所需资产</p>
+                                <p class="font-bold text-gray-800">${data.assets}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">风险等级</p>
+                                <p class="font-bold ${data.riskColor}">${data.risk}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">潜在回报</p>
+                                <p class="font-bold ${data.rewardColor}">${data.reward}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">分析师评级</p>
+                                <p class="font-bold text-blue-600">${data.rating}</p>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <button class="ai-suggestion-btn bg-gradient-to-r from-blue-500 to-purple-500 text-white font-bold py-2 px-6 rounded-full hover:scale-105 transition-transform" data-strategy-description="${data.description}">
+                                ✨ 获取AI优化建议
+                            </button>
+                        </div>
+                        <div id="ai-suggestions-container" class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg" style="display: none;"></div>
+                    </div>
+                `;
+            }
+            
+            contentContainer.addEventListener('click', (e) => {
+                 if (e.target.classList.contains('ai-suggestion-btn')) {
+                    const description = e.target.dataset.strategyDescription;
+                    getAiSuggestions(description);
+                }
+            });
+
+            tabsContainer.addEventListener('click', (e) => {
+                const button = e.target.closest('.strategy-tab');
+                if (button) {
+                    const strategyName = button.dataset.strategyName;
+                    tabsContainer.querySelectorAll('.strategy-tab').forEach(tab => tab.classList.remove('active'));
+                    button.classList.add('active');
+                    updateContent(strategyName);
+                }
+            });
+
+            updateContent(strategyNames[0]);
+        }
+
+        function setupSmoothScrolling() {
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+        }
+        
+        function setupNavHighlighting() {
+            const sections = document.querySelectorAll('section');
+            const navLinks = document.querySelectorAll('.nav-link');
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        navLinks.forEach(link => {
+                            link.classList.toggle('active', link.getAttribute('href').substring(1) === entry.target.id);
+                        });
+                    }
+                });
+            }, { rootMargin: '-50% 0px -50% 0px' });
+
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+        }
+
+        createTokenomicsChart();
+        createCompetitionChart();
+        populateRisks();
+        populateStrategies();
+        setupSmoothScrolling();
+        setupNavHighlighting();
+
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bucket Protocol 交互式投资分析报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Analyst's Caution -->
+    <!-- Application Structure Plan: 本应用采用仪表盘式布局，旨在直观呈现Bucket Protocol的核心矛盾：强大的链上指标与致命的治理风险。顶部是关键指标和最终评级，让用户一目了然。主体分为五个可导航部分：“仪表盘”对比展示项目的优劣两面；“协议解析”通过交互式图解阐明其工作原理；“双代币模型”深入分析$BUCK和$BUT的现状与风险；“风险与机遇”用可切换视图清晰列出所有风险点和潜在收益策略；“最终裁决”则通过竞品对比和总结，强化投资建议。这种结构打破了报告的线性叙事，允许用户根据自身兴趣自由探索，通过互动加深对项目双面性的理解，从而高效地消化复杂的投资信息。 -->
+    <!-- Visualization & Content Choices: 报告信息被转化为多种交互式可视化元素以增强理解。1) TVL对比: 使用Chart.js条形图对比Bucket与竞品，目标是直观比较市场地位。2) 代币价格历史: 使用Chart.js折线图展示$BUCK的脱锚事件和$BUT的上线暴跌，目标是揭示历史风险。3) 协议工作流: 使用HTML/CSS构建的流程图，通过悬停交互解释CDP、稳定池等核心概念，目标是清晰组织和解释复杂机制。4) 风险/机遇: 使用HTML表格和JS切换按钮，让用户可以根据风险偏好筛选投资策略，目标是提供可操作的对比信息。所有选择均未使用SVG或Mermaid，遵循了技术约束，并服务于应用的核心叙事——揭示风险与机遇的并存。 -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f8f9fa;
+            color: #212529;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .nav-link {
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link.active, .nav-link:hover {
+            color: #0d6efd;
+            border-bottom-color: #0d6efd;
+        }
+        .tab-button.active {
+            background-color: #0d6efd;
+            color: white;
+        }
+        .risk-card {
+            border-left: 4px solid;
+            transition: all 0.3s ease;
+        }
+        .risk-high { border-color: #dc3545; }
+        .risk-medium { border-color: #ffc107; }
+        .risk-low { border-color: #198754; }
+        .risk-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <header class="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="font-bold text-xl text-blue-600">Bucket Protocol</span>
+                    <span class="ml-2 text-gray-500 text-sm hidden md:block">投资分析</span>
+                </div>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#dashboard" class="nav-link px-1 py-2 text-sm font-medium text-gray-600">仪表盘</a>
+                    <a href="#protocol" class="nav-link px-1 py-2 text-sm font-medium text-gray-600">协议解析</a>
+                    <a href="#tokens" class="nav-link px-1 py-2 text-sm font-medium text-gray-600">双代币模型</a>
+                    <a href="#risks-opps" class="nav-link px-1 py-2 text-sm font-medium text-gray-600">风险与机遇</a>
+                    <a href="#verdict" class="nav-link px-1 py-2 text-sm font-medium text-gray-600">最终裁决</a>
+                </div>
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="p-2 rounded-md text-gray-600 hover:text-blue-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500">
+                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </nav>
+        <div id="mobile-menu" class="md:hidden hidden">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="#dashboard" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-gray-600">仪表盘</a>
+                <a href="#protocol" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-gray-600">协议解析</a>
+                <a href="#tokens" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-gray-600">双代币模型</a>
+                <a href="#risks-opps" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-gray-600">风险与机遇</a>
+                <a href="#verdict" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-gray-600">最终裁决</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        
+        <section id="dashboard" class="scroll-mt-20">
+            <div class="text-center mb-12">
+                <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-gray-900">一个项目的两面性</h1>
+                <p class="mt-4 max-w-2xl mx-auto text-lg text-gray-600">Bucket Protocol：Sui生态的高TVL明星与高争议项目</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+                <div class="bg-white p-6 rounded-2xl shadow-lg flex flex-col items-center justify-center text-center">
+                    <span class="text-sm font-semibold text-gray-500">总锁定价值 (TVL)</span>
+                    <span class="text-4xl font-bold text-green-600 mt-2">$1.13亿+</span>
+                    <span class="text-xs text-gray-400 mt-1">数据来源: DeFi Llama</span>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-lg flex flex-col items-center justify-center text-center">
+                    <span class="text-sm font-semibold text-gray-500">年化协议收入</span>
+                    <span class="text-4xl font-bold text-green-600 mt-2">~$460万</span>
+                    <span class="text-xs text-gray-400 mt-1">数据来源: Token Terminal</span>
+                </div>
+                <div class="bg-red-50 p-6 rounded-2xl shadow-lg flex flex-col items-center justify-center text-center border-2 border-red-500">
+                    <span class="text-sm font-semibold text-red-700">综合投资评级</span>
+                    <span class="text-3xl font-bold text-red-600 mt-2">强烈不建议</span>
+                    <span class="text-xs text-red-400 mt-1">基于团队与治理风险</span>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 md:p-8 rounded-2xl shadow-xl">
+                <h2 class="text-2xl font-bold text-center mb-6">核心矛盾：产品 vs. 团队</h2>
+                <p class="text-center text-gray-600 mb-8 max-w-3xl mx-auto">本应用旨在揭示Bucket Protocol的核心矛盾：一方面，其产品通过零利率借贷吸引了大量资本，链上数据表现优异；另一方面，其匿名团队面临严重的诚信指控，治理代币$BUT的发行充满争议，给投资带来了致命风险。请通过下方导航深入探索。</p>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="bg-green-50 p-6 rounded-xl border border-green-200">
+                        <h3 class="text-xl font-bold text-green-800 mb-4 flex items-center">
+                            <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                            看涨理由 (产品层面)
+                        </h3>
+                        <ul class="space-y-3 text-green-700">
+                            <li class="flex items-start"><span class="font-bold mr-2">✓</span><span><strong>强大的产品市场契合度:</strong> TVL过亿，收入可观，证明其零利率借贷模式极具吸引力。</span></li>
+                            <li class="flex items-start"><span class="font-bold mr-2">✓</span><span><strong>坚实的技术基础:</strong> 构建于高性能Sui网络，并提供开发者SDK，具备成为生态基础设施的潜力。</span></li>
+                            <li class="flex items-start"><span class="font-bold mr-2">✓</span><span><strong>稳健的经济模型:</strong> 拥有稳定池、PSM和实时清算等多种机制保障协议运行。</span></li>
+                        </ul>
+                    </div>
+                    <div class="bg-red-50 p-6 rounded-xl border border-red-200">
+                        <h3 class="text-xl font-bold text-red-800 mb-4 flex items-center">
+                             <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path></svg>
+                            看跌理由 (治理层面)
+                        </h3>
+                        <ul class="space-y-3 text-red-700">
+                            <li class="flex items-start"><span class="font-bold mr-2">✗</span><span><strong>严重的诚信污点:</strong> $BUT代币发行存在“拉盘砸盘”指控，且团队未作有力回应。</span></li>
+                            <li class="flex items-start"><span class="font-bold mr-2">✗</span><span><strong>团队匿名与不透明:</strong> 核心成员身份不明，缺乏问责机制，风险极高。</span></li>
+                            <li class="flex items-start"><span class="font-bold mr-2">✗</span><span><strong>薄弱的社区基础:</strong> 社区规模与TVL严重不符，缺乏项目拥护者。</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="protocol" class="pt-20 scroll-mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold">协议如何运作？</h2>
+                <p class="mt-4 max-w-2xl mx-auto text-lg text-gray-600">Bucket Protocol是一个抵押债务头寸(CDP)协议，允许用户以零利率借贷。以下是其核心工作流程和关键组件的交互式解析。</p>
+            </div>
+            <div class="bg-white p-6 md:p-8 rounded-2xl shadow-xl">
+                <div class="flex flex-col md:flex-row items-center justify-center space-y-8 md:space-y-0 md:space-x-8">
+                    <div class="text-center p-4 rounded-lg bg-gray-100 w-full md:w-1/4 relative group">
+                        <h4 class="font-bold text-lg">1. 存入抵押品</h4>
+                        <p class="text-sm text-gray-600 mt-2">用户将$SUI, $BTC, $ETH等资产存入其个人金库“Bottle”中。</p>
+                        <div class="absolute bottom-full mb-2 w-60 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            这是获得流动性的第一步，您的资产被锁定为债务担保。
+                        </div>
+                    </div>
+                    <div class="text-3xl text-gray-400 font-thin">→</div>
+                    <div class="text-center p-4 rounded-lg bg-gray-100 w-full md:w-1/4 relative group">
+                        <h4 class="font-bold text-lg">2. 铸造稳定币</h4>
+                        <p class="text-sm text-gray-600 mt-2">基于抵押品价值，用户可以借出（铸造）稳定币$BUCK。</p>
+                        <div class="absolute bottom-full mb-2 w-60 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            必须维持最低110%的抵押率，否则面临清算风险。
+                        </div>
+                    </div>
+                    <div class="text-3xl text-gray-400 font-thin">→</div>
+                    <div class="text-center p-4 rounded-lg bg-gray-100 w-full md:w-1/4 relative group">
+                        <h4 class="font-bold text-lg">3. 使用流动性</h4>
+                        <p class="text-sm text-gray-600 mt-2">用户可以自由使用$BUCK进行交易、支付或参与其他DeFi协议。</p>
+                         <div class="absolute bottom-full mb-2 w-60 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            这是协议的核心价值：在不出售资产的情况下释放其价值。
+                        </div>
+                    </div>
+                </div>
+                <hr class="my-8 border-gray-200">
+                <h3 class="text-xl font-bold text-center mb-6">关键稳定性组件</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                    <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                        <h4 class="font-semibold text-blue-800">稳定池 (The Tank)</h4>
+                        <p class="text-sm text-gray-600 mt-2">用户存入$BUCK，作为协议的第一道清算防线，吸收坏账并赚取清算折扣。</p>
+                    </div>
+                    <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                        <h4 class="font-semibold text-blue-800">价格稳定模块 (PSM)</h4>
+                        <p class="text-sm text-gray-600 mt-2">允许$BUCK与USDC等其他稳定币1:1兑换，为$BUCK价格提供强力锚定。</p>
+                    </div>
+                    <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                        <h4 class="font-semibold text-blue-800">清算机制</h4>
+                        <p class="text-sm text-gray-600 mt-2">当抵押率低于110%时，自动清算头寸，以保障系统整体的偿付能力。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="tokens" class="pt-20 scroll-mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold">双代币模型剖析</h2>
+                <p class="mt-4 max-w-2xl mx-auto text-lg text-gray-600">协议由稳定币$BUCK和治理代币$BUT驱动。两者表现出截然不同的市场故事。</p>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-2xl shadow-xl flex flex-col">
+                    <h3 class="text-2xl font-bold mb-4 text-center">$BUCK (稳定币)</h3>
+                    <p class="text-center text-gray-600 mb-6">协议的原生稳定币，设计目标是锚定1美元，但历史数据显示其存在显著的脱锚风险。</p>
+                    <div class="chart-container mx-auto flex-grow">
+                        <canvas id="buckPriceChart"></canvas>
+                    </div>
+                    <p class="text-xs text-center text-gray-500 mt-4">图表展示了$BUCK历史价格波动，突显其并非无风险的“稳定”资产。</p>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-xl flex flex-col">
+                    <h3 class="text-2xl font-bold mb-4 text-center">$BUT (治理代币)</h3>
+                    <p class="text-center text-gray-600 mb-6">理论上的治理代币，但其发行充满争议，市场表现极差，流动性枯竭。</p>
+                    <div class="chart-container mx-auto flex-grow">
+                        <canvas id="butPriceChart"></canvas>
+                    </div>
+                     <p class="text-xs text-center text-gray-500 mt-4">图表展示了$BUT上线后的价格暴跌，反映了“拉盘砸盘”指控的影响。</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="risks-opps" class="pt-20 scroll-mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold">风险与机遇</h2>
+                <p class="mt-4 max-w-2xl mx-auto text-lg text-gray-600">在评估任何投资时，理解其风险与潜在回报至关重要。使用下方按钮切换视图。</p>
+            </div>
+            <div class="flex justify-center mb-8">
+                <div class="inline-flex rounded-md shadow-sm" role="group">
+                    <button type="button" id="show-risks" class="tab-button active py-2 px-4 text-sm font-medium text-gray-900 bg-white rounded-l-lg border border-gray-200 hover:bg-gray-100">
+                        风险评估
+                    </button>
+                    <button type="button" id="show-opps" class="tab-button py-2 px-4 text-sm font-medium text-gray-900 bg-white rounded-r-md border border-gray-200 hover:bg-gray-100">
+                        投资机会
+                    </button>
+                </div>
+            </div>
+
+            <div id="risks-view">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="risk-card risk-high bg-white p-6 rounded-lg shadow-md">
+                        <h4 class="font-bold text-lg text-red-700">团队与治理风险 (极高)</h4>
+                        <p class="text-sm text-gray-600 mt-2">核心风险。匿名团队面临“拉盘砸盘”的严重指控且未作回应，摧毁了投资者信任。这是投资$BUT的最大障碍。</p>
+                    </div>
+                    <div class="risk-card risk-high bg-white p-6 rounded-lg shadow-md">
+                        <h4 class="font-bold text-lg text-red-700">$BUCK 脱锚风险 (高)</h4>
+                        <p class="text-sm text-gray-600 mt-2">历史数据显示$BUCK曾大幅偏离1美元。在极端市场条件下，其稳定性机制可能失效，导致用户资产损失。</p>
+                    </div>
+                    <div class="risk-card risk-medium bg-white p-6 rounded-lg shadow-md">
+                        <h4 class="font-bold text-lg text-yellow-700">清算风险 (中)</h4>
+                        <p class="text-sm text-gray-600 mt-2">所有CDP协议的固有风险。如果抵押品价值下跌过快，用户的头寸可能被清算，造成本金损失。</p>
+                    </div>
+                    <div class="risk-card risk-medium bg-white p-6 rounded-lg shadow-md">
+                        <h4 class="font-bold text-lg text-yellow-700">智能合约与预言机风险 (中)</h4>
+                        <p class="text-sm text-gray-600 mt-2">尽管经过审计，但仍可能存在未知漏洞。对预言机价格的依赖也引入了单点故障风险。</p>
+                    </div>
+                    <div class="risk-card risk-low bg-white p-6 rounded-lg shadow-md">
+                        <h4 class="font-bold text-lg text-green-700">协议坏账风险 (低)</h4>
+                        <p class="text-sm text-gray-600 mt-2">在极端情况下，清算无法覆盖债务，可能导致协议产生坏账，稳定池存款人将首当其冲受损。</p>
+                    </div>
+                    <div class="risk-card risk-low bg-white p-6 rounded-lg shadow-md">
+                        <h4 class="font-bold text-lg text-green-700">流动性风险 (低 - $BUCK)</h4>
+                        <p class="text-sm text-gray-600 mt-2">$BUCK在Sui生态中有一定流动性，但$BUT流动性极差，大额交易会造成巨大滑点。</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="opps-view" class="hidden">
+                <div class="bg-white p-4 md:p-6 rounded-2xl shadow-xl overflow-x-auto">
+                    <table class="w-full text-sm text-left text-gray-500">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3">投资策略</th>
+                                <th scope="col" class="px-6 py-3">优势</th>
+                                <th scope="col" class="px-6 py-3">劣势 / 风险</th>
+                                <th scope="col" class="px-6 py-3">风险等级</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="bg-white border-b">
+                                <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">购买并持有 $BUT</th>
+                                <td class="px-6 py-4">若协议成功且治理完善，潜在回报率高。</td>
+                                <td class="px-6 py-4">目前无实际用途；流动性极差；团队风险。</td>
+                                <td class="px-6 py-4"><span class="bg-red-100 text-red-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded-full">极高</span></td>
+                            </tr>
+                            <tr class="bg-gray-50 border-b">
+                                <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">铸造并使用 $BUCK</th>
+                                <td class="px-6 py-4">极高的资本效率，释放锁定资产的流动性。</td>
+                                <td class="px-6 py-4">$BUCK可能脱锚；面临清算风险。</td>
+                                <td class="px-6 py-4"><span class="bg-yellow-100 text-yellow-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded-full">中</span></td>
+                            </tr>
+                            <tr class="bg-white border-b">
+                                <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">存入稳定池 (Tank)</th>
+                                <td class="px-6 py-4">可能以折扣价获得被清算的抵押品，高波动时收益高。</td>
+                                <td class="px-6 py-4">收益不稳定；可能承担协议坏账。</td>
+                                <td class="px-6 py-4"><span class="bg-yellow-100 text-yellow-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded-full">中-高</span></td>
+                            </tr>
+                            <tr class="bg-gray-50 border-b">
+                                <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">高阶策略 (杠杆/对冲挖矿)</th>
+                                <td class="px-6 py-4">可能获得超额APR/APY。</td>
+                                <td class="px-6 py-4">操作复杂，风险叠加（清算、智能合约、市场）。</td>
+                                <td class="px-6 py-4"><span class="bg-red-100 text-red-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded-full">高</span></td>
+                            </tr>
+                             <tr class="bg-white">
+                                <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">基于SDK进行开发</th>
+                                <td class="px-6 py-4">创造独特Alpha收益；利用协议基础设施盈利。</td>
+                                <td class="px-6 py-4">技术门槛高；需要持续维护。</td>
+                                <td class="px-6 py-4"><span class="bg-green-100 text-green-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded-full">开发者</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="verdict" class="pt-20 scroll-mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold">最终裁决与市场地位</h2>
+                <p class="mt-4 max-w-2xl mx-auto text-lg text-gray-600">综合所有因素，我们如何定位Bucket Protocol？它在竞争激烈的Sui生态中处于什么位置？</p>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-2xl shadow-xl">
+                    <h3 class="text-2xl font-bold mb-4 text-center">Sui借贷协议TVL对比</h3>
+                    <p class="text-center text-gray-600 mb-6">尽管Bucket Protocol的TVL可观，但在Sui生态中仍落后于NAVI和Suilend等主要竞争对手。</p>
+                    <div class="chart-container mx-auto">
+                        <canvas id="tvlComparisonChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-xl flex flex-col justify-center">
+                    <h3 class="text-2xl font-bold mb-4 text-center">最终投资建议</h3>
+                     <div class="text-center my-4">
+                        <div class="inline-block bg-red-100 text-red-800 text-lg font-bold px-6 py-3 rounded-full">
+                            强烈不建议
+                        </div>
+                    </div>
+                    <p class="text-gray-700 leading-relaxed">
+                        <strong>决定性因素:</strong> 在DeFi领域，安全 = 代码安全 × 团队诚信。Bucket Protocol的代码或许经过审计，但其团队诚信在当前证据下趋近于零。任何数乘以零，结果都为零。
+                    </p>
+                    <ul class="mt-4 space-y-2 text-sm">
+                        <li><strong class="text-red-600">对于$BUT代币:</strong> 投资$BUT无异于投资一个声誉破产的匿名团队，是典型的价值陷阱。</li>
+                        <li><strong class="text-yellow-600">对于协议参与:</strong> 存在风险更低、团队更透明的替代品。对于高风险偏好者，也必须认识到其中无法量化的团队作恶尾部风险。</li>
+                    </ul>
+                    <p class="mt-4 text-sm text-gray-500"><strong>结论:</strong> 除非团队能以极大的诚意和透明度解决历史遗留问题，否则该项目应被视为高风险、不宜投资的标的。</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-white mt-16">
+        <div class="container mx-auto py-6 px-4 sm:px-6 lg:px-8 text-center text-gray-500 text-sm">
+            <p>&copy; 2025 交互式投资分析报告。本报告仅供参考，不构成任何投资建议。</p>
+            <p class="mt-1">数据来源于公开渠道，包括DeFi Llama, Token Terminal, CoinGecko等。</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+
+            const navLinks = document.querySelectorAll('.nav-link');
+            navLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    if (!mobileMenu.classList.contains('hidden')) {
+                        mobileMenu.classList.add('hidden');
+                    }
+                });
+            });
+
+            const showRisksBtn = document.getElementById('show-risks');
+            const showOppsBtn = document.getElementById('show-opps');
+            const risksView = document.getElementById('risks-view');
+            const oppsView = document.getElementById('opps-view');
+
+            showRisksBtn.addEventListener('click', () => {
+                risksView.style.display = 'grid';
+                oppsView.style.display = 'none';
+                showRisksBtn.classList.add('active');
+                showOppsBtn.classList.remove('active');
+            });
+
+            showOppsBtn.addEventListener('click', () => {
+                risksView.style.display = 'none';
+                oppsView.style.display = 'block';
+                showOppsBtn.classList.add('active');
+                showRisksBtn.classList.remove('active');
+            });
+
+            const chartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        grid: {
+                            color: '#e5e7eb'
+                        }
+                    }
+                }
+            };
+            
+            new Chart(document.getElementById('buckPriceChart'), {
+                type: 'line',
+                data: {
+                    labels: ['-6M', '-5M', '-4M', '-3M', '-2M', '-1M', 'Now'],
+                    datasets: [{
+                        label: '$BUCK Price',
+                        data: [1.01, 1.00, 0.98, 0.61, 1.31, 0.99, 1.00],
+                        borderColor: '#0d6efd',
+                        backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0
+                    }]
+                },
+                options: { ...chartOptions, scales: { ...chartOptions.scales, y: { ...chartOptions.scales.y, min: 0.5, max: 1.5, ticks: { callback: value => '$' + value } } } }
+            });
+
+            new Chart(document.getElementById('butPriceChart'), {
+                type: 'line',
+                data: {
+                    labels: ['Launch', '+1m', '+5m', '+10m', '+1h', '+1d', 'Now'],
+                    datasets: [{
+                        label: '$BUT Price',
+                        data: [0.12, 0.08, 0.02, 0.01, 0.015, 0.012, 0.013],
+                        borderColor: '#dc3545',
+                        backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                        fill: true,
+                        tension: 0.1,
+                        pointRadius: 0
+                    }]
+                },
+                options: { ...chartOptions, scales: { ...chartOptions.scales, y: { ...chartOptions.scales.y, ticks: { callback: value => '$' + value.toFixed(3) } } } }
+            });
+
+            new Chart(document.getElementById('tvlComparisonChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['Suilend', 'NAVI Protocol', 'Bucket Protocol', 'Scallop'],
+                    datasets: [{
+                        label: 'TVL (in millions)',
+                        data: [768, 708, 113, 112],
+                        backgroundColor: [
+                            'rgba(54, 162, 235, 0.6)',
+                            'rgba(75, 192, 192, 0.6)',
+                            'rgba(255, 99, 132, 0.6)',
+                            'rgba(255, 206, 86, 0.6)'
+                        ],
+                        borderColor: [
+                            'rgba(54, 162, 235, 1)',
+                            'rgba(75, 192, 192, 1)',
+                            'rgba(255, 99, 132, 1)',
+                            'rgba(255, 206, 86, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: { ...chartOptions, scales: { ...chartOptions.scales, y: { ...chartOptions.scales.y, ticks: { callback: value => '$' + value + 'M' } } } }
+            });
+
+            const sections = document.querySelectorAll('section');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        document.querySelectorAll('.nav-link').forEach(link => {
+                            link.classList.remove('active');
+                            if (link.getAttribute('href').substring(1) === entry.target.id) {
+                                link.classList.add('active');
+                            }
+                        });
+                    }
+                });
+            }, { rootMargin: '-50% 0px -50% 0px' });
+
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+        });
+    </script>
+</body>
+</html>

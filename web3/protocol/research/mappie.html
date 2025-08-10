@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Chosen Palette: Calm Harmony -->
+    <!-- Application Structure Plan: A thematic dashboard SPA. The structure prioritizes the core investment conflict (value vs. risk) by presenting KPIs and the final verdict upfront, followed by deep dives into value drivers, a dedicated and visually distinct risk section, and finally, actionable, filterable investment strategies. This non-linear approach allows users to explore based on their priorities (e.g., a risk-averse user can jump straight to the risk section), enhancing usability over a linear report format. -->
+    <!-- Visualization & Content Choices: Report Info: P/S Ratio -> Goal: Compare -> Viz: Bar Chart (Chart.js) -> Interaction: Hover tooltips -> Justification: Visually demonstrates the valuation gap. Report Info: Value Flywheel -> Goal: Explain Process -> Viz: HTML/CSS Diagram -> Interaction: Static -> Justification: Simplifies a complex mechanism better than text. Report Info: Penpie Hack -> Goal: Explain Process -> Viz: Styled HTML Timeline -> Interaction: Static -> Justification: Makes the attack vector digestible and highlights the severity. Report Info: Investment Strategies -> Goal: Organize/Compare -> Viz: HTML Table -> Interaction: JS Filtering -> Justification: Allows users to find strategies matching their risk profile. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <title>Magpie (MGP) 交互式投资分析报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+            background-color: #F7F9FC;
+            color: #1a202c;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 320px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 380px;
+            }
+        }
+        .nav-link {
+            transition: color 0.3s ease, border-bottom-color 0.3s ease;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #2563eb;
+            border-bottom-color: #2563eb;
+        }
+        .kpi-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .kpi-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .risk-section {
+            background-color: #FFFBEB;
+            border-left: 4px solid #FBBF24;
+        }
+        .final-verdict-card {
+            background: linear-gradient(135deg, #FDE68A 0%, #F59E0B 100%);
+        }
+        .strategy-btn.active {
+            background-color: #1d4ed8;
+            color: white;
+        }
+        .flywheel-arrow {
+            position: absolute;
+            font-size: 1.5rem;
+            color: #9ca3af;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="font-bold text-xl text-gray-800">Magpie (MGP)</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#overview" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-600 border-b-2 border-transparent">概览</a>
+                        <a href="#metrics" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-600 border-b-2 border-transparent">核心指标</a>
+                        <a href="#value" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-600 border-b-2 border-transparent">价值主张</a>
+                        <a href="#risk" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-600 border-b-2 border-transparent">风险评估</a>
+                        <a href="#strategies" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-600 border-b-2 border-transparent">投资策略</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section id="overview" class="py-12 md:py-20 bg-white">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h1 class="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight">
+                        Magpie (MGP) 交互式投资分析
+                    </h1>
+                    <p class="mt-4 max-w-2xl mx-auto text-lg md:text-xl text-gray-500">
+                        一个被低估的基本面与已证实的系统性风险并存的高回报潜力项目。
+                    </p>
+                </div>
+
+                <div class="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+                    <div class="kpi-card bg-white p-6 rounded-2xl shadow-md border border-gray-100">
+                        <h3 class="text-sm font-medium text-gray-500">市值 (流通)</h3>
+                        <p class="mt-2 text-3xl font-bold text-gray-900">$<span class="kpi-value" data-value="23750000">0</span></p>
+                        <p class="text-sm text-gray-400">数据截至报告撰写时</p>
+                    </div>
+                    <div class="kpi-card bg-white p-6 rounded-2xl shadow-md border border-gray-100">
+                        <h3 class="text-sm font-medium text-gray-500">生态系统 TVL</h3>
+                        <p class="mt-2 text-3xl font-bold text-gray-900">$<span class="kpi-value" data-value="183000000">0</span></p>
+                        <p class="text-sm text-gray-400">跨多链总锁定价值</p>
+                    </div>
+                    <div class="kpi-card bg-white p-6 rounded-2xl shadow-md border border-gray-100">
+                        <h3 class="text-sm font-medium text-gray-500">年化协议收入</h3>
+                        <p class="mt-2 text-3xl font-bold text-gray-900">$<span class="kpi-value" data-value="9150000">0</span></p>
+                        <p class="text-sm text-gray-400">强大的现金流生成能力</p>
+                    </div>
+                    <div class="kpi-card p-6 rounded-2xl shadow-lg final-verdict-card">
+                        <h3 class="text-sm font-bold text-yellow-900">最终投资评级</h3>
+                        <p class="mt-2 text-3xl font-extrabold text-white">建议</p>
+                        <p class="text-sm font-semibold text-yellow-800">(附带强烈警告)</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="metrics" class="py-12 md:py-20">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h2 class="text-3xl font-bold text-gray-900">核心指标分析</h2>
+                    <p class="mt-3 max-w-2xl mx-auto text-lg text-gray-500">通过关键数据可视化，揭示Magpie的财务健康状况与市场估值。</p>
+                </div>
+
+                <div class="mt-12 grid gap-8 lg:grid-cols-2 lg:gap-12">
+                    <div class="bg-white p-6 rounded-2xl shadow-lg">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-4">估值差距：市值 vs. 年化收入</h3>
+                        <p class="text-sm text-gray-500 mb-4">该图表直观展示了Magpie的市值与其强大收入流之间的显著差距，其市销率（P/S）仅为约2.6，在DeFi领域中极具吸引力，暗示其价值可能被市场严重低估。</p>
+                        <div class="chart-container">
+                            <canvas id="psRatioChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-lg">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-4">TVL分布：多链生态系统</h3>
+                        <p class="text-sm text-gray-500 mb-4">Magpie的业务已成功扩展至多个主流区块链，其中以太坊凭借Eigenpie的成功占据主导地位。这展示了其SubDAO模型的可扩展性和进入高增长赛道的能力。</p>
+                        <div class="chart-container">
+                            <canvas id="tvlDistributionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                 <div class="mt-8 bg-white p-6 rounded-2xl shadow-lg">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">投资者信心：质押价值 vs 市值</h3>
+                    <p class="text-sm text-gray-500 mb-4">这是一个非常强烈的看涨信号。质押的MGP代币总价值已超过其流通市值，表明长期持有者对项目的信念远超短期市场定价，极大地减少了市场上的流通供应量。</p>
+                    <div class="w-full bg-gray-200 rounded-full h-8">
+                        <div id="stakedRatioBar" class="bg-gradient-to-r from-sky-500 to-indigo-500 h-8 rounded-full text-center text-white font-bold leading-8 transition-all duration-1000 ease-out" style="width: 0%;">
+                            130.85%
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="value" class="py-12 md:py-20 bg-white">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h2 class="text-3xl font-bold text-gray-900">价值主张：Mega DAO的增长飞轮</h2>
+                    <p class="mt-3 max-w-3xl mx-auto text-lg text-gray-500">Magpie的核心竞争力在于其创新的SubDAO模型和vlMGP价值捕获机制，这共同构成了一个强大的、可自我强化的增长生态系统。</p>
+                </div>
+                <div class="mt-12 max-w-4xl mx-auto p-8 bg-gray-50 rounded-2xl relative">
+                    <h3 class="text-xl font-semibold text-center mb-8">vlMGP 价值累积飞轮</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center relative">
+                        <div class="flywheel-arrow top-1/2 left-full -translate-y-1/2 -translate-x-4 hidden md:block">→</div>
+                        <div class="flywheel-arrow top-full left-1/2 -translate-x-1/2 -translate-y-4 md:hidden">↓</div>
+                        <div class="p-4 border border-gray-200 rounded-lg text-center bg-white">
+                            <div class="text-2xl mb-2">①</div>
+                            <h4 class="font-semibold">启动新SubDAO</h4>
+                            <p class="text-sm text-gray-500">孵化支持新DeFi协议的子项目 (如Eigenpie)。</p>
+                        </div>
+                        <div class="p-4 border border-gray-200 rounded-lg text-center bg-white">
+                            <div class="text-2xl mb-2">②</div>
+                            <h4 class="font-semibold">产生收入与代币</h4>
+                            <p class="text-sm text-gray-500">SubDAO产生协议收入，并发行自己的代币 (如EGP)。</p>
+                        </div>
+                        <div class="flywheel-arrow bottom-full left-1/2 -translate-x-1/2 translate-y-4 md:hidden">↑</div>
+                        <div class="flywheel-arrow top-1/2 right-full -translate-y-1/2 translate-x-4 hidden md:block">←</div>
+                        <div class="p-4 border border-gray-200 rounded-lg text-center bg-white">
+                            <div class="text-2xl mb-2">④</div>
+                            <h4 class="font-semibold">锁定MGP为vlMGP</h4>
+                            <p class="text-sm text-gray-500">推动MGP需求，减少流通供应，支撑代币价格。</p>
+                        </div>
+                        <div class="p-4 border border-gray-200 rounded-lg text-center bg-white">
+                             <div class="text-2xl mb-2">③</div>
+                            <h4 class="font-semibold">价值回溯至vlMGP</h4>
+                            <p class="text-sm text-gray-500">部分收入和代币空投给vlMGP持有者，增加持有吸引力。</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-16">
+                    <h3 class="text-2xl font-bold text-center text-gray-900 mb-8">主要SubDAO生态</h3>
+                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="p-6 bg-gray-50 rounded-xl">
+                            <h4 class="font-bold text-lg">Penpie (Pendle)</h4>
+                            <p class="text-sm text-gray-600 mt-2">生态中最成功的SubDAO之一，已成为Pendle Finance最大的单一治理力量。</p>
+                        </div>
+                        <div class="p-6 bg-gray-50 rounded-xl">
+                            <h4 class="font-bold text-lg">Eigenpie (EigenLayer)</h4>
+                            <p class="text-sm text-gray-600 mt-2">标志着Magpie进入流动性再质押前沿领域，TVL迅速增长，证明了团队的创新能力。</p>
+                        </div>
+                         <div class="p-6 bg-gray-50 rounded-xl">
+                            <h4 class="font-bold text-lg">Radpie (Radiant)</h4>
+                            <p class="text-sm text-gray-600 mt-2">支持Radiant Capital的dLP机制，增强用户RDNT代币释放。</p>
+                        </div>
+                        <div class="p-6 bg-gray-50 rounded-xl">
+                            <h4 class="font-bold text-lg">Cakepie (PancakeSwap)</h4>
+                            <p class="text-sm text-gray-600 mt-2">目标是BNB链上最大的DEX，通过锁定CAKE提供增强收益。</p>
+                        </div>
+                        <div class="p-6 bg-gray-50 rounded-xl">
+                            <h4 class="font-bold text-lg">Wompie (Wombat)</h4>
+                            <p class="text-sm text-gray-600 mt-2">Magpie的初始协议，专注于为Wombat Exchange提供收益增强。</p>
+                        </div>
+                         <div class="p-6 bg-gray-50 rounded-xl">
+                            <h4 class="font-bold text-lg">更多...</h4>
+                            <p class="text-sm text-gray-600 mt-2">生态系统还在不断扩张，包括Campie、Listapie等，持续捕获新价值。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="risk" class="py-12 md:py-20">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h2 class="text-3xl font-bold text-gray-900">风险评估：无法忽视的阴影</h2>
+                    <p class="mt-3 max-w-2xl mx-auto text-lg text-gray-500">高回报潜力伴随着高风险。Penpie黑客事件暴露了项目在快速扩张中的系统性安全缺陷，这是投资前必须正视的核心问题。</p>
+                </div>
+
+                <div class="mt-12 max-w-4xl mx-auto">
+                    <div class="risk-section p-6 md:p-8 rounded-2xl bg-white shadow-lg">
+                        <h3 class="text-2xl font-bold text-amber-600">案例研究：Penpie $2700万漏洞事件</h3>
+                        <p class="mt-4 text-gray-600">2024年9月，Penpie SubDAO遭受了毁灭性攻击，这是评估Magpie时最重要的负面事件。它不仅是一次代码失误，更暴露了项目在集成新功能时安全审计流程的系统性缺陷。</p>
+                        <div class="mt-6">
+                            <h4 class="font-semibold text-gray-800">攻击流程拆解：</h4>
+                            <ol class="mt-4 space-y-4">
+                                <li class="flex items-start">
+                                    <span class="flex-shrink-0 flex items-center justify-center h-8 w-8 rounded-full bg-amber-100 text-amber-700 font-bold mr-4">1</span>
+                                    <p class="text-gray-700">攻击者创建并注册了一个恶意的、虚假的Pendle市场，利用了协议“无需许可注册”的特性。</p>
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="flex-shrink-0 flex items-center justify-center h-8 w-8 rounded-full bg-amber-100 text-amber-700 font-bold mr-4">2</span>
+                                    <p class="text-gray-700">通过闪电贷借入大量wstETH，并调用存在“重入漏洞”的`batchHarvestMarketRewards`函数。</p>
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="flex-shrink-0 flex items-center justify-center h-8 w-8 rounded-full bg-amber-100 text-amber-700 font-bold mr-4">3</span>
+                                    <p class="text-gray-700">在函数执行中途，恶意合约发起重入攻击，反复调用存款函数，在协议状态更新前，极大地夸大了其应得的奖励。</p>
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="flex-shrink-0 flex items-center justify-center h-8 w-8 rounded-full bg-amber-100 text-amber-700 font-bold mr-4">4</span>
+                                    <p class="text-gray-700">攻击者领取被夸大的巨额奖励，偿还闪电贷，完成盗窃，造成约2700万美元损失。</p>
+                                </li>
+                            </ol>
+                        </div>
+                        <p class="mt-6 text-sm text-amber-800 font-semibold bg-amber-100 p-3 rounded-lg">核心教训：孤立审计新模块是不足的，关键风险存在于新旧代码的交互边界。这次“集成漏洞”严重损害了团队信誉。</p>
+                    </div>
+
+                    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="border border-red-200 bg-red-50 p-6 rounded-xl">
+                            <h4 class="font-bold text-red-800">智能合约与运营风险</h4>
+                            <p class="text-sm text-red-700 mt-2">关键合约由多重签名钱包控制，存在中心化风险。团队半匿名，降低了问责制。</p>
+                        </div>
+                        <div class="border border-red-200 bg-red-50 p-6 rounded-xl">
+                            <h4 class="font-bold text-red-800">系统性风险</h4>
+                            <p class="text-sm text-red-700 mt-2">作为“元协议”，其价值和安全高度依赖底层协议（Pendle, EigenLayer等），任何基础层问题都可能引发连锁反应。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="strategies" class="py-12 md:py-20 bg-white">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h2 class="text-3xl font-bold text-gray-900">投资策略矩阵</h2>
+                    <p class="mt-3 max-w-2xl mx-auto text-lg text-gray-500">Magpie生态系统为不同风险偏好和技术背景的投资者提供了多样化的参与机会。请根据自身情况选择合适的策略。</p>
+                </div>
+                
+                <div class="flex justify-center my-8 space-x-2">
+                    <button class="strategy-btn active px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-full hover:bg-gray-100" data-filter="all">全部</button>
+                    <button class="strategy-btn px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-full hover:bg-gray-100" data-filter="低">低风险</button>
+                    <button class="strategy-btn px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-full hover:bg-gray-100" data-filter="中">中风险</button>
+                    <button class="strategy-btn px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-full hover:bg-gray-100" data-filter="高">高风险</button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table id="strategy-table" class="min-w-full bg-white shadow-md rounded-lg">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">策略名称</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">优点</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">缺点</th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">风险等级</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            <tr data-risk="中">
+                                <td class="px-6 py-4 whitespace-nowrap font-semibold text-gray-800">锁定MGP为vlMGP</td>
+                                <td class="px-6 py-4 text-sm text-gray-600">捕获整个生态系统价值、多元化、被动收入</td>
+                                <td class="px-6 py-4 text-sm text-gray-600">60天解锁期、MGP价格波动</td>
+                                <td class="px-6 py-4 text-center"><span class="px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">中</span></td>
+                            </tr>
+                            <tr data-risk="高">
+                                <td class="px-6 py-4 whitespace-nowrap font-semibold text-gray-800">质押mPENDLE</td>
+                                <td class="px-6 py-4 text-sm text-gray-600">流动性质押、无需锁定PENDLE、高收益</td>
+                                <td class="px-6 py-4 text-sm text-gray-600">依赖Pendle Finance、PNP/PENDLE价格波动</td>
+                                <td class="px-6 py-4 text-center"><span class="px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">中高</span></td>
+                            </tr>
+                            <tr data-risk="低">
+                                <td class="px-6 py-4 whitespace-nowrap font-semibold text-gray-800">Wompie稳定币挖矿</td>
+                                <td class="px-6 py-4 text-sm text-gray-600">单边稳定币池、无无常损失、收益稳定</td>
+                                <td class="px-6 py-4 text-sm text-gray-600">依赖Wombat协议安全、收益率可能下降</td>
+                                <td class="px-6 py-4 text-center"><span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">低</span></td>
+                            </tr>
+                            <tr data-risk="中">
+                                <td class="px-6 py-4 whitespace-nowrap font-semibold text-gray-800">贿赂市场投票</td>
+                                <td class="px-6 py-4 text-sm text-gray-600">将治理权直接变现、收益来源多样</td>
+                                <td class="px-6 py-4 text-sm text-gray-600">需要主动管理投票、依赖贿赂市场活跃度</td>
+                                <td class="px-6 py-4 text-center"><span class="px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">中</span></td>
+                            </tr>
+                            <tr data-risk="高">
+                                <td class="px-6 py-4 whitespace-nowrap font-semibold text-gray-800">杠杆收益挖矿</td>
+                                <td class="px-6 py-4 text-sm text-gray-600">放大收益</td>
+                                <td class="px-6 py-4 text-sm text-gray-600">清算风险、智能合约风险叠加、利率风险</td>
+                                <td class="px-6 py-4 text-center"><span class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">非常高</span></td>
+                            </tr>
+                             <tr data-risk="高">
+                                <td class="px-6 py-4 whitespace-nowrap font-semibold text-gray-800">开发自动化策略库</td>
+                                <td class="px-6 py-4 text-sm text-gray-600">创造独特价值、潜在高回报</td>
+                                <td class="px-6 py-4 text-sm text-gray-600">开发成本、智能合约安全风险、策略失效风险</td>
+                                <td class="px-6 py-4 text-center"><span class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">非常高</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-gray-800">
+        <div class="container mx-auto py-8 px-4 sm:px-6 lg:px-8 text-center text-gray-400">
+            <p class="text-sm">免责声明：本交互式报告仅供参考，不构成任何投资建议。所有投资决策均需基于您个人的研究和风险承受能力。加密货币投资存在高风险。</p>
+            <p class="mt-2 text-xs">&copy; 2025 交互式投资分析报告. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            const kpiValues = document.querySelectorAll('.kpi-value');
+            kpiValues.forEach(el => {
+                const target = +el.dataset.value;
+                let current = 0;
+                const increment = target / 100;
+                const update = () => {
+                    if (current < target) {
+                        current += increment;
+                        el.textContent = Math.ceil(current).toLocaleString('en-US');
+                        requestAnimationFrame(update);
+                    } else {
+                        el.textContent = target.toLocaleString('en-US');
+                    }
+                };
+                update();
+            });
+
+            const stakedRatioBar = document.getElementById('stakedRatioBar');
+            setTimeout(() => {
+                stakedRatioBar.style.width = '100%'; 
+            }, 500);
+
+            const psRatioCtx = document.getElementById('psRatioChart').getContext('2d');
+            new Chart(psRatioCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['年化协议收入', '市值'],
+                    datasets: [{
+                        label: '金额 (美元)',
+                        data: [9150000, 23750000],
+                        backgroundColor: [
+                            'rgba(59, 130, 246, 0.7)',
+                            'rgba(239, 68, 68, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(59, 130, 246, 1)',
+                            'rgba(239, 68, 68, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + (value / 1000000) + 'M';
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.x !== null) {
+                                        label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed.x);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            const tvlDistCtx = document.getElementById('tvlDistributionChart').getContext('2d');
+            new Chart(tvlDistCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['以太坊 ($115M)', 'Arbitrum ($37.6M)', 'BNB Chain ($15.5M)', '其他'],
+                    datasets: [{
+                        label: 'TVL 分布',
+                        data: [115, 37.6, 15.5, 183 - 115 - 37.6 - 15.5],
+                        backgroundColor: [
+                            'rgba(75, 192, 192, 0.7)',
+                            'rgba(54, 162, 235, 0.7)',
+                            'rgba(255, 206, 86, 0.7)',
+                            'rgba(153, 102, 255, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(75, 192, 192, 1)',
+                            'rgba(54, 162, 235, 1)',
+                            'rgba(255, 206, 86, 1)',
+                            'rgba(153, 102, 255, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                        },
+                        tooltip: {
+                             callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += '$' + context.parsed + 'M';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            const strategyBtns = document.querySelectorAll('.strategy-btn');
+            const strategyTableRows = document.querySelectorAll('#strategy-table tbody tr');
+
+            strategyBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    strategyBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    const filter = btn.dataset.filter;
+
+                    strategyTableRows.forEach(row => {
+                        const risk = row.dataset.risk;
+                        if (filter === 'all' || risk.includes(filter) || (filter === '高' && (risk === '中高' || risk === '非常高'))) {
+                            row.style.display = '';
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
+                });
+            });
+
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('main section');
+
+            window.addEventListener('scroll', () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (pageYOffset >= sectionTop - 80) {
+                        current = section.getAttribute('id');
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href').includes(current)) {
+                        link.classList.add('active');
+                    }
+                });
+            });
+            
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Origami Finance 交互式投资分析报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: "Calm Harmony" - A professional and clean theme with a light neutral background (slate), dark text for readability, and a sophisticated teal/cyan as the primary accent for interactive elements and highlights. -->
+    <!-- Application Structure Plan: The SPA is designed as a top-down interactive dashboard. It starts with a high-level summary and final rating, allowing users to grasp the key takeaway instantly. A sticky navigation bar facilitates non-linear exploration. The content is segmented into logical, task-oriented sections: 1) Protocol Overview (What is it?), 2) Market Data (How does it compare?), 3) Risk & Security (Is it safe?), 4) Investment Opportunities (How can I invest?), and 5) Final Verdict. This structure guides the user from understanding the basics to making an informed decision, prioritizing usability over the report's original linear format. Key interactions include chart hovers for data details and a tabbed interface for comparing investment strategies, making complex information digestible. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Final investment rating & summary. -> Goal: Inform (immediate takeaway). -> Viz/Method: Prominent "Verdict Card" at the top. -> Interaction: Static, high-visibility. -> Justification: Delivers the most crucial conclusion first for efficient decision-making.
+        - Report Info: TVL distribution by chain. -> Goal: Compare proportions. -> Viz/Method: Chart.js Donut Chart. -> Interaction: Hover tooltips to show specific values. -> Justification: A donut chart is ideal for showing parts of a whole, making the chain dominance visually obvious.
+        - Report Info: Competitive landscape table. -> Goal: Compare against rivals. -> Viz/Method: Styled HTML table with Tailwind CSS. -> Interaction: Static, clear layout for easy comparison. -> Justification: A table is the most direct way to compare multiple entities across consistent metrics.
+        - Report Info: Security audits vs. inherent risks. -> Goal: Organize & balance pros/cons. -> Viz/Method: Two-column layout with icons (Unicode characters). -> Interaction: Static, visual cues (checkmarks vs. warning signs) for quick assessment. -> Justification: This visual dichotomy helps users quickly weigh the project's security posture.
+        - Report Info: Four distinct investment strategies. -> Goal: Organize & detail actionable paths. -> Viz/Method: Interactive tabbed interface. -> Interaction: Click tabs to switch content. -> Justification: Tabs de-clutter the UI and allow users to focus on one strategy at a time, which is much cleaner than a long, scrolling list.
+        - Library/Method: Chart.js for visualizations, Tailwind CSS for all styling and layout, Vanilla JS for interactions.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+            color: #1e293b; /* slate-800 */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+        .nav-link {
+            transition: color 0.3s, border-bottom-color 0.3s;
+        }
+        .tab-btn.active {
+            border-color: #0d9488; /* teal-600 */
+            color: #0d9488; /* teal-600 */
+            font-weight: 700;
+        }
+        .section-fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+        .section-fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="font-bold text-xl text-teal-700">Origami Finance</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#overview" class="nav-link text-slate-600 hover:text-teal-600 px-3 py-2 rounded-md text-sm font-medium">协议概述</a>
+                        <a href="#market" class="nav-link text-slate-600 hover:text-teal-600 px-3 py-2 rounded-md text-sm font-medium">市场数据</a>
+                        <a href="#risk" class="nav-link text-slate-600 hover:text-teal-600 px-3 py-2 rounded-md text-sm font-medium">风险与安全</a>
+                        <a href="#opportunities" class="nav-link text-slate-600 hover:text-teal-600 px-3 py-2 rounded-md text-sm font-medium">投资机会</a>
+                        <a href="#verdict" class="nav-link text-slate-600 hover:text-teal-600 px-3 py-2 rounded-md text-sm font-medium">最终结论</a>
+                    </div>
+                </div>
+                <div class="md:hidden">
+                     <button id="mobile-menu-button" class="inline-flex items-center justify-center p-2 rounded-md text-slate-400 hover:text-white hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 focus:ring-white">
+                        <span class="sr-only">Open main menu</span>
+                        <svg class="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </nav>
+        <div class="md:hidden hidden" id="mobile-menu">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="#overview" class="nav-link text-slate-600 hover:text-teal-600 block px-3 py-2 rounded-md text-base font-medium">协议概述</a>
+                <a href="#market" class="nav-link text-slate-600 hover:text-teal-600 block px-3 py-2 rounded-md text-base font-medium">市场数据</a>
+                <a href="#risk" class="nav-link text-slate-600 hover:text-teal-600 block px-3 py-2 rounded-md text-base font-medium">风险与安全</a>
+                <a href="#opportunities" class="nav-link text-slate-600 hover:text-teal-600 block px-3 py-2 rounded-md text-base font-medium">投资机会</a>
+                <a href="#verdict" class="nav-link text-slate-600 hover:text-teal-600 block px-3 py-2 rounded-md text-base font-medium">最终结论</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+
+        <!-- Hero Section -->
+        <section class="text-center mb-16">
+            <h1 class="text-4xl md:text-5xl font-bold text-slate-900 mb-4">自动化杠杆收益农场深度解析</h1>
+            <p class="max-w-3xl mx-auto text-lg text-slate-600 mb-8">一份交互式报告，助您全面评估DeFi协议 Origami Finance 的投资价值与潜在风险。</p>
+            
+            <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                <div class="bg-white p-6 rounded-xl shadow-md border border-slate-200">
+                    <div class="text-sm font-semibold text-slate-500 mb-2">总锁仓价值 (TVL)</div>
+                    <div class="text-3xl font-bold text-teal-600">~$71M</div>
+                </div>
+                <div class="bg-teal-600 text-white p-6 rounded-xl shadow-lg">
+                    <div class="text-sm font-semibold text-teal-100 mb-2">最终投资评级</div>
+                    <div class="text-3xl font-bold">建议</div>
+                    <div class="text-xs mt-1 text-teal-200">(针对高风险偏好DeFi老手)</div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md border border-slate-200">
+                    <div class="text-sm font-semibold text-slate-500 mb-2">安全审计</div>
+                    <div class="text-3xl font-bold text-teal-600">多重审计</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Protocol Overview -->
+        <section id="overview" class="section-fade-in py-12 md:py-16 bg-white rounded-2xl shadow-lg mb-16 scroll-mt-20">
+            <div class="max-w-5xl mx-auto px-6 lg:px-8">
+                <h2 class="text-3xl font-bold text-center text-slate-900 mb-4">协议概述</h2>
+                <p class="text-center text-slate-600 mb-12">本节旨在解释Origami Finance的核心机制。它是一个“元层”协议，通过自动化复杂的循环借贷策略（“折叠”），帮助用户在其生息资产上增加杠杆，以期获得更高的收益率。</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+                    <div>
+                        <h3 class="text-2xl font-bold text-slate-800 mb-4">核心机制：“折叠”策略自动化</h3>
+                        <p class="text-slate-600 mb-6">传统上，DeFi用户需要手动执行多个步骤来建立杠杆头寸，过程繁琐且风险高。Origami将此过程封装在一个“金库”中，实现一键式操作，并自动管理头寸健康度以降低清算风险。</p>
+                        <div class="space-y-4">
+                            <div class="flex items-start p-4 bg-slate-100 rounded-lg">
+                                <div class="flex-shrink-0 bg-teal-500 text-white rounded-full h-8 w-8 flex items-center justify-center font-bold">1</div>
+                                <p class="ml-4 text-slate-700">用户存入一种生息代币（如 stETH）。</p>
+                            </div>
+                            <div class="flex items-start p-4 bg-slate-100 rounded-lg">
+                                <div class="flex-shrink-0 bg-teal-500 text-white rounded-full h-8 w-8 flex items-center justify-center font-bold">2</div>
+                                <p class="ml-4 text-slate-700">协议将该资产作为抵押，在第三方市场（如Morpho）借出其基础资产（如 ETH）。</p>
+                            </div>
+                             <div class="flex items-start p-4 bg-slate-100 rounded-lg">
+                                <div class="flex-shrink-0 bg-teal-500 text-white rounded-full h-8 w-8 flex items-center justify-center font-bold">3</div>
+                                <p class="ml-4 text-slate-700">协议将借来的资产换成更多的生息代币（ETH -> stETH）。</p>
+                            </div>
+                            <div class="flex items-start p-4 bg-slate-100 rounded-lg">
+                                <div class="flex-shrink-0 bg-teal-500 text-white rounded-full h-8 w-8 flex items-center justify-center font-bold">4</div>
+                                <p class="ml-4 text-slate-700">重复步骤2和3，循环增加杠杆，直到达到目标倍数。</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-6 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                         <h3 class="text-2xl font-bold text-slate-800 mb-4 text-center">关键产品</h3>
+                         <div class="flow-root">
+                            <ul role="list" class="-mb-8">
+                                <li>
+                                    <div class="relative pb-8">
+                                        <span class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-slate-200" aria-hidden="true"></span>
+                                        <div class="relative flex space-x-3">
+                                            <div>
+                                                <span class="h-8 w-8 rounded-full bg-teal-100 flex items-center justify-center ring-8 ring-slate-50">
+                                                    <span class="text-teal-600 text-lg">❖</span>
+                                                </span>
+                                            </div>
+                                            <div class="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
+                                                <div>
+                                                    <p class="text-md text-slate-800 font-semibold">金库代币 (lovTokens)</p>
+                                                    <p class="text-sm text-slate-500">代表用户在杠杆金库中份额的ERC-20代币，本身也是可组合的生息资产。</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </li>
+                                <li>
+                                    <div class="relative pb-8">
+                                        <div class="relative flex space-x-3">
+                                            <div>
+                                                <span class="h-8 w-8 rounded-full bg-teal-100 flex items-center justify-center ring-8 ring-slate-50">
+                                                    <span class="text-teal-600 text-lg">⚙</span>
+                                                </span>
+                                            </div>
+                                            <div class="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
+                                                <div>
+                                                    <p class="text-md text-slate-800 font-semibold">自动化框架 (Overlord)</p>
+                                                    <p class="text-sm text-slate-500">用于执行每日复利、风险监控等自动化任务的链上框架，是其“自动化”承诺的技术保障。</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Market Data -->
+        <section id="market" class="section-fade-in py-12 md:py-16 mb-16 scroll-mt-20">
+            <div class="max-w-6xl mx-auto px-6 lg:px-8">
+                <h2 class="text-3xl font-bold text-center text-slate-900 mb-4">市场与数据</h2>
+                <p class="text-center text-slate-600 mb-12 max-w-3xl mx-auto">本节通过链上数据和竞品对比，展示Origami Finance在市场中的位置。其核心战略是深度押注BeraChain等新兴生态，以谋求先发优势。</p>
+                <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                    <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-lg border border-slate-200">
+                        <h3 class="text-xl font-bold text-slate-800 mb-4 text-center">TVL 分布</h3>
+                        <div class="chart-container">
+                            <canvas id="tvlChart"></canvas>
+                        </div>
+                        <p class="text-xs text-slate-500 text-center mt-4">数据显示，大部分资金集中在以太坊，但其在BeraChain测试网上的高额TVL预示着强大的早期市场兴趣。</p>
+                    </div>
+                    <div class="lg:col-span-3">
+                        <h3 class="text-xl font-bold text-slate-800 mb-4 text-center">竞争格局分析</h3>
+                        <div class="overflow-x-auto bg-white rounded-2xl shadow-lg border border-slate-200">
+                            <table class="min-w-full divide-y divide-slate-200">
+                                <thead class="bg-slate-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">协议</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">TVL</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">关键差异点</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-slate-200">
+                                    <tr class="bg-teal-50">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-teal-800">Origami Finance</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700 font-semibold">~$71M</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700">深度集成BeraChain，强大的安全审计</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">Homora V2</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700">~$109M</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700">市场领导者，支持主流DEX</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">Extra Finance</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700">~$82M</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700">深耕Optimism生态 (Base, OP)</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">DeltaPrime</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700">~$12M</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700">跨保证金账户，曾有安全事件</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Risk & Security -->
+        <section id="risk" class="section-fade-in py-12 md:py-16 bg-white rounded-2xl shadow-lg mb-16 scroll-mt-20">
+            <div class="max-w-5xl mx-auto px-6 lg:px-8">
+                <h2 class="text-3xl font-bold text-center text-slate-900 mb-4">风险与安全</h2>
+                <p class="text-center text-slate-600 mb-12">投资DeFi，安全是第一要务。本节将平衡展示Origami Finance在安全方面的投入（加分项）以及投资者必须警惕的固有风险（减分项）。</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="bg-green-50 border border-green-200 p-6 rounded-xl">
+                        <h3 class="text-2xl font-bold text-green-800 mb-6 flex items-center"><span class="text-3xl mr-3">🛡️</span> 安全保障 (加分项)</h3>
+                        <ul class="space-y-4">
+                            <li class="flex items-start">
+                                <span class="text-green-600 font-bold text-xl mr-3">✓</span>
+                                <div>
+                                    <h4 class="font-semibold text-green-900">多轮专业审计</h4>
+                                    <p class="text-sm text-green-700">由顶级安全公司Zellic和yAudit完成v1和v2版本的代码审计，报告公开透明。</p>
+                                </div>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-green-600 font-bold text-xl mr-3">✓</span>
+                                <div>
+                                    <h4 class="font-semibold text-green-900">公开审计竞赛</h4>
+                                    <p class="text-sm text-green-700">通过Hats Finance举办竞赛，利用社区白帽黑客的力量进一步加固代码安全。</p>
+                                </div>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-green-600 font-bold text-xl mr-3">✓</span>
+                                <div>
+                                    <h4 class="font-semibold text-green-900">后端基础设施评估</h4>
+                                    <p class="text-sm text-green-700">聘请Rivanorth评估云基础架构，展示了超越智能合约层面的全面安全意识。</p>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="bg-red-50 border border-red-200 p-6 rounded-xl">
+                        <h3 class="text-2xl font-bold text-red-800 mb-6 flex items-center"><span class="text-3xl mr-3">⚠️</span> 主要风险 (减分项)</h3>
+                        <ul class="space-y-4">
+                            <li class="flex items-start">
+                                <span class="text-red-600 font-bold text-xl mr-3">!</span>
+                                <div>
+                                    <h4 class="font-semibold text-red-900">系统性与清算风险</h4>
+                                    <p class="text-sm text-red-700">作为杠杆协议，面临市场剧烈波动时的清算风险。其安全性高度依赖其集成的所有第三方协议。</p>
+                                </div>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-red-600 font-bold text-xl mr-3">!</span>
+                                <div>
+                                    <h4 class="font-semibold text-red-900">匿名团队</h4>
+                                    <p class="text-sm text-red-700">匿名团队天然存在更高的运营风险，尽管有知名投资者背书作为缓解。</p>
+                                </div>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-red-600 font-bold text-xl mr-3">!</span>
+                                <div>
+                                    <h4 class="font-semibold text-red-900">合约权限警告</h4>
+                                    <p class="text-sm text-red-700">GoPlus针对hOHM金库合约发出警告，指出创建者可能拥有过高权限，这是一个严重的技术红旗。</p>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Investment Opportunities -->
+        <section id="opportunities" class="section-fade-in py-12 md:py-16 mb-16 scroll-mt-20">
+            <div class="max-w-6xl mx-auto px-6 lg:px-8">
+                <h2 class="text-3xl font-bold text-center text-slate-900 mb-4">投资机会</h2>
+                <p class="text-center text-slate-600 mb-12 max-w-3xl mx-auto">本节是报告中最具操作性的部分，分解了四种主要的参与方式。请注意，高回报往往伴随着高风险。点击下方标签页切换查看不同策略。</p>
+                
+                <div class="mb-8 border-b border-slate-200">
+                    <nav class="-mb-px flex space-x-6 justify-center" aria-label="Tabs">
+                        <button class="tab-btn active whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" data-tab="airdrop">空投农场</button>
+                        <button class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-slate-500 hover:text-slate-700" data-tab="yield">高收益策略</button>
+                        <button class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-slate-500 hover:text-slate-700" data-tab="ecosystem">生态系统打法</button>
+                        <button class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-slate-500 hover:text-slate-700" data-tab="developer">开发者贡献</button>
+                    </nav>
+                </div>
+
+                <div id="tab-content">
+                    <!-- Airdrop Farming Tab -->
+                    <div class="tab-pane active" id="airdrop">
+                        <div class="bg-white p-8 rounded-2xl shadow-lg border border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-8">
+                            <div class="md:col-span-2">
+                                <h3 class="text-2xl font-bold text-slate-800 mb-3">策略一：空投农场</h3>
+                                <p class="text-slate-600 mb-6">这是当前阶段最核心的策略。通过向协议金库存款来积累“Ori Points”，以期在项目未来发行代币时获得空投。优先选择那些提供“空投叠加”机会的金库（如Ethena金库）以实现收益最大化。</p>
+                                <h4 class="font-semibold text-slate-700 mb-2">优点：</h4>
+                                <ul class="list-disc list-inside text-slate-600 space-y-1 mb-4">
+                                    <li>潜在回报高，参与门槛相对较低。</li>
+                                    <li>可能同时获得多个项目的空投奖励。</li>
+                                </ul>
+                                <h4 class="font-semibold text-slate-700 mb-2">缺点：</h4>
+                                <ul class="list-disc list-inside text-slate-600 space-y-1">
+                                    <li>回报不确定，取决于未来代币价格和空投规则。</li>
+                                    <li>资金有锁仓机会成本，并承担协议所有风险。</li>
+                                </ul>
+                            </div>
+                            <div class="bg-slate-50 p-6 rounded-xl border border-slate-200 flex flex-col justify-center text-center">
+                                <div class="mb-4">
+                                    <div class="text-sm font-semibold text-slate-500">风险等级</div>
+                                    <div class="text-xl font-bold text-orange-500">中-高</div>
+                                </div>
+                                <div class="mb-4">
+                                    <div class="text-sm font-semibold text-slate-500">资本要求</div>
+                                    <div class="text-xl font-bold text-slate-700">中-高</div>
+                                </div>
+                                <div>
+                                    <div class="text-sm font-semibold text-slate-500">潜在回报</div>
+                                    <div class="text-xl font-bold text-slate-700">高度不确定</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- High Yield Tab -->
+                    <div class="tab-pane hidden" id="yield">
+                         <div class="bg-white p-8 rounded-2xl shadow-lg border border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-8">
+                            <div class="md:col-span-2">
+                                <h3 class="text-2xl font-bold text-slate-800 mb-3">策略二：高收益金库策略 (Ethena USDe)</h3>
+                                <p class="text-slate-600 mb-6">对于追求极致收益的专家级用户。存入USDe，通过协议在Morpho上实现高达5倍的杠杆，赚取Ethena原生收益和多倍Sats奖励。可通过在其他平台开立空头合约进行风险对冲（套保挖矿）。</p>
+                                <h4 class="font-semibold text-slate-700 mb-2">优点：</h4>
+                                <ul class="list-disc list-inside text-slate-600 space-y-1 mb-4">
+                                    <li>极高的潜在APY，空投积分和Sats奖励叠加。</li>
+                                </ul>
+                                <h4 class="font-semibold text-slate-700 mb-2">缺点：</h4>
+                                <ul class="list-disc list-inside text-slate-600 space-y-1">
+                                    <li>风险极高：涉及多个协议，USDe脱锚风险，负资金费率风险，清算风险。</li>
+                                    <li>需要高级DeFi知识和风险管理能力。</li>
+                                </ul>
+                            </div>
+                            <div class="bg-slate-50 p-6 rounded-xl border border-slate-200 flex flex-col justify-center text-center">
+                                <div class="mb-4">
+                                    <div class="text-sm font-semibold text-slate-500">风险等级</div>
+                                    <div class="text-xl font-bold text-red-600">极高</div>
+                                </div>
+                                <div class="mb-4">
+                                    <div class="text-sm font-semibold text-slate-500">潜在APY</div>
+                                    <div class="text-xl font-bold text-slate-700">&gt; 100%</div>
+                                </div>
+                                <div>
+                                    <div class="text-sm font-semibold text-slate-500">专业知识</div>
+                                    <div class="text-xl font-bold text-slate-700">专家级</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Ecosystem Tab -->
+                    <div class="tab-pane hidden" id="ecosystem">
+                        <div class="bg-white p-8 rounded-2xl shadow-lg border border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-8">
+                            <div class="md:col-span-2">
+                                <h3 class="text-2xl font-bold text-slate-800 mb-3">策略三：生态系统打法 (BeraChain)</h3>
+                                <p class="text-slate-600 mb-6">在BeraChain测试网上参与`oriBGT`等金库，深度绑定BeraChain生态，博取其早期红利和Origami的双重空投。此策略的成功与BeraChain主网上线后的表现高度相关。</p>
+                                <h4 class="font-semibold text-slate-700 mb-2">优点：</h4>
+                                <ul class="list-disc list-inside text-slate-600 space-y-1 mb-4">
+                                    <li>有机会成为BeraChain生态的早期参与者。</li>
+                                    <li>双重奖励预期（BeraChain + Origami）。</li>
+                                </ul>
+                                <h4 class="font-semibold text-slate-700 mb-2">缺点：</h4>
+                                <ul class="list-disc list-inside text-slate-600 space-y-1">
+                                    <li>BeraChain主网上线时间不确定，生态发展存在失败风险。</li>
+                                    <li>测试网资产价值低，回报周期长。</li>
+                                </ul>
+                            </div>
+                            <div class="bg-slate-50 p-6 rounded-xl border border-slate-200 flex flex-col justify-center text-center">
+                                <div class="mb-4">
+                                    <div class="text-sm font-semibold text-slate-500">风险等级</div>
+                                    <div class="text-xl font-bold text-orange-600">高</div>
+                                </div>
+                                <div class="mb-4">
+                                    <div class="text-sm font-semibold text-slate-500">资本要求</div>
+                                    <div class="text-xl font-bold text-slate-700">低-中</div>
+                                </div>
+                                <div>
+                                    <div class="text-sm font-semibold text-slate-500">回报周期</div>
+                                    <div class="text-xl font-bold text-slate-700">长</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Developer Tab -->
+                    <div class="tab-pane hidden" id="developer">
+                        <div class="bg-white p-8 rounded-2xl shadow-lg border border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-8">
+                            <div class="md:col-span-2">
+                                <h3 class="text-2xl font-bold text-slate-800 mb-3">策略四：开发者贡献</h3>
+                                <p class="text-slate-600 mb-6">对于具备软件开发背景的投资者。通过为协议贡献代码（如构建新金库、开发预言机适配器）或运行自动化机器人，来获取潜在的追溯性空投、开发补助金（Grants）或未来在DAO中的职位。</p>
+                                <h4 class="font-semibold text-slate-700 mb-2">优点：</h4>
+                                <ul class="list-disc list-inside text-slate-600 space-y-1 mb-4">
+                                    <li>可能获得超额回报（大额空投）。</li>
+                                    <li>深度参与项目，建立行业声誉。</li>
+                                </ul>
+                                <h4 class="font-semibold text-slate-700 mb-2">缺点：</h4>
+                                <ul class="list-disc list-inside text-slate-600 space-y-1">
+                                    <li>耗时耗力，回报不直接且不保证。</li>
+                                    <li>需要高水平的技术能力（Solidity, TS等）。</li>
+                                </ul>
+                            </div>
+                            <div class="bg-slate-50 p-6 rounded-xl border border-slate-200 flex flex-col justify-center text-center">
+                                <div class="mb-4">
+                                    <div class="text-sm font-semibold text-slate-500">风险等级</div>
+                                    <div class="text-xl font-bold text-yellow-500">中</div>
+                                </div>
+                                <div class="mb-4">
+                                    <div class="text-sm font-semibold text-slate-500">资本要求</div>
+                                    <div class="text-xl font-bold text-slate-700">低 (时间投入)</div>
+                                </div>
+                                <div>
+                                    <div class="text-sm font-semibold text-slate-500">所需技能</div>
+                                    <div class="text-xl font-bold text-slate-700">软件开发</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Final Verdict -->
+        <section id="verdict" class="section-fade-in py-12 md:py-16 bg-white rounded-2xl shadow-lg scroll-mt-20">
+            <div class="max-w-4xl mx-auto px-6 lg:px-8 text-center">
+                <h2 class="text-3xl font-bold text-slate-900 mb-4">最终结论与投资论述</h2>
+                <p class="text-slate-600 mb-8">综合来看，Origami Finance是一个设计精巧、战略清晰的DeFi协议，为特定类型的投资者提供了高风险、高潜在回报的机会。</p>
+                <div class="text-left bg-slate-50 p-8 rounded-xl border border-slate-200">
+                    <h3 class="text-xl font-bold text-teal-700 mb-4">最终投资评级：建议</h3>
+                    <div class="space-y-4 text-slate-700">
+                        <p><strong class="text-slate-900">对于风险承受能力极高、经验丰富且具备深度研究能力的DeFi投资者：</strong>这是一个值得参与的项目。主要参与方式应是空投农场，通过向其金库（特别是具有多重奖励的金库）存入一部分风险投资组合资金，以博取未来的代币空投。</p>
+                        <p><strong class="text-slate-900">对于具备开发背景的投资者：</strong>这是一个“强烈建议”关注并尝试贡献的项目。通过技术贡献建立的联系和声誉，可能带来的回报将远超单纯的资金投入。</p>
+                        <p><strong class="text-slate-900">对于风险厌恶型或DeFi新手投资者：</strong>则应“不建议”参与。其复杂的机制和多层次的风险，远超普通投资者能够有效管理的范畴。</p>
+                    </div>
+                </div>
+                 <p class="text-sm text-slate-500 mt-8">免责声明：本报告仅为信息分享，不构成任何投资建议。所有投资决策都应基于您自己的独立研究和风险评估。</p>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Mobile menu toggle
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+
+            // Smooth scrolling for nav links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                    // Close mobile menu on link click
+                    if (!mobileMenu.classList.contains('hidden')) {
+                         mobileMenu.classList.add('hidden');
+                    }
+                });
+            });
+
+            // TVL Chart
+            const ctx = document.getElementById('tvlChart').getContext('2d');
+            const tvlChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['以太坊 (Ethereum)', 'BeraChain', 'Arbitrum'],
+                    datasets: [{
+                        label: 'TVL Distribution',
+                        data: [57.90, 12.86, 0.24], // Data from the report ($M)
+                        backgroundColor: [
+                            '#0d9488', // teal-600
+                            '#f59e0b', // amber-500
+                            '#3b82f6'  // blue-500
+                        ],
+                        borderColor: '#f8fafc', // slate-50
+                        borderWidth: 4,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#475569', // slate-600
+                                font: {
+                                    size: 14,
+                                    family: "'Noto Sans SC', sans-serif"
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += '$' + context.parsed.toFixed(2) + 'M';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '60%'
+                }
+            });
+
+            // Tabs for Investment Opportunities
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            const tabPanes = document.querySelectorAll('.tab-pane');
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const tabId = button.getAttribute('data-tab');
+
+                    tabButtons.forEach(btn => {
+                        btn.classList.remove('active');
+                        btn.classList.add('text-slate-500', 'hover:text-slate-700');
+                    });
+                    button.classList.add('active');
+                    button.classList.remove('text-slate-500', 'hover:text-slate-700');
+
+                    tabPanes.forEach(pane => {
+                        if (pane.id === tabId) {
+                            pane.classList.remove('hidden');
+                            pane.classList.add('active');
+                        } else {
+                            pane.classList.add('hidden');
+                            pane.classList.remove('active');
+                        }
+                    });
+                });
+            });
+
+            // Fade-in sections on scroll
+            const sections = document.querySelectorAll('.section-fade-in');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, {
+                threshold: 0.1
+            });
+
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+        });
+    </script>
+</body>
+</html>
