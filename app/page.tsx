@@ -8,7 +8,7 @@ import { FilterPanel } from '@/components/FilterPanel';
 import { Pagination } from '@/components/Pagination';
 import { Button } from '@/components/ui/button';
 import { WebsiteStructuredData } from '@/components/StructuredData';
-import { Plus, Filter, SortAsc, SortDesc, X } from 'lucide-react';
+import { Plus, Filter, SortAsc, SortDesc, X, Github } from 'lucide-react';
 import { debounce } from '@/lib/utils';
 import { trackPoolEvent, trackPerformance, initializeSessionTracking } from '@/lib/analytics';
 import Link from 'next/link';
@@ -215,9 +215,23 @@ export default function HomePage() {
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
             探索优质 DeFi 收益机会
           </h1>
-          <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+          <p className="text-lg text-gray-600 max-w-3xl mx-auto mb-6">
             AI Agents 基于项目最新市场数据、项目信息、新闻与行情、社交媒体的评价&情绪、历史风险事件等维度，整合专业数据平台，调研生成详细的 Web3 项目投资评估报告
           </p>
+          
+          {/* GitHub Star 按钮 */}
+          <div className="flex justify-center">
+            <Link 
+              href="https://github.com/guantik-gm/defix" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium rounded-lg transition-colors"
+              title="在 GitHub 上给我们一个 Star ⭐"
+            >
+              <Github className="w-4 h-4" />
+              <span>Star on GitHub</span>
+            </Link>
+          </div>
         </div>
 
         {/* 操作区域 */}
@@ -382,6 +396,17 @@ export default function HomePage() {
                 提交反馈
               </Link>
             </p>
+            <span className="text-gray-300">|</span>
+            <Link 
+              href="https://github.com/guantik-gm/defix" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-gray-500 hover:text-gray-700 transition-colors"
+              title="查看项目源码"
+            >
+              <Github className="w-4 h-4" />
+              <span className="text-xs">开源项目</span>
+            </Link>
             <span className="text-gray-300">|</span>
             <Link 
               href="https://x.com/GT_Chiang" 
