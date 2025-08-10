@@ -1,10 +1,12 @@
 ---
 Protocol: "[[Asymmetry Finance]]"
-Type: CDP
+Type: Deposit
 Chain:
   - Ethereum
-Risk: 高风险
-Token: USDaf
+Risk: 中风险
+Token: USDT
+APR-Low: 0.1
+APR-High: 0.5
 Market:
   - 通用
 ---
@@ -29,4 +31,22 @@ Market:
 
 **Remark**
 
-此文档已根据调研报告大幅修正。**类型从 `Deposit` 改为 `CDP`，代币从 `USDT` 改为 `USDaf`**。**风险等级因“USDaf 预言机事件”信息不透明而从“低风险”上调至“高风险”**。APR 字段已被移除，因为它不适用于 CDP 类型。用户提及的“Pendle + Penpie”策略是使用借出的稳定币在外部执行的高风险操作，并非协议内建功能。
+Asymmetry 的稳定币 USDaf 可通过与 Penpie 协议的集成，获得可观的增强收益。该策略主要围绕 Penpie 为 USDaf 和 sUSDaf 设立的专属收益池展开。
+
+**核心收益策略**
+
+用户可直接在 Penpie 平台上为 Asymmetry 的代币提供流动性，以获取收益。截至调研时，主要有两个收益池：
+- **USDaf 池**: APY 约为 **33.60%**。
+- **sUSDaf 池**: sUSDaf 是 Asymmetry 的原生计息代币，其在 Penpie 上的收益池 APY 更高，约为 **41.54%**。
+
+**策略原理**
+
+该收益主要来源于 Penpie 对 Pendle 生态的收益增强机制。Penpie 是一个建立在 Pendle 之上的收益聚合器，它通过大量持有 vePENDLE（Pendle 的治理代币）来放大其流动性池的奖励。当用户（如 USDaf 持有者）在 Penpie 上提供流动性时，实际上是享受到了由 Penpie 聚合的、被增强后的平台奖励。对于 sUSDaf 而言，该策略更是将 Asymmetry 的原生收益与 Penpie 的增强收益进行了叠加。
+
+**主要风险**
+
+该策略虽然收益诱人，但风险也相应叠加，用户需同时面对两个协议的风险：
+1.  **Asymmetry 协议风险**: 包括潜在的预言机风险、清算风险和智能合约风险。
+2.  **Penpie 协议风险**: Penpie 在 2024 年 9 月曾遭受价值 2700 万美元的重入攻击，这表明其智能合约存在严重安全漏洞，是参与该策略需要考量的**首要风险**。
+3.  **综合风险**: 包括在提供流动性时可能发生的无常损失，以及 PENDLE、PNP 等相关代币的价格波动风险。
+
