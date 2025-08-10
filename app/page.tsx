@@ -216,7 +216,7 @@ export default function HomePage() {
             探索优质 DeFi 收益机会
           </h1>
           <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-            基于项目最新市场数据、项目信息、新闻与行情、社交媒体的评价&情绪、历史风险事件等维度，整合专业数据平台，调研生成详细的 Web3 项目投资评估报告
+            AI Agents 基于项目最新市场数据、项目信息、新闻与行情、社交媒体的评价&情绪、历史风险事件等维度，整合专业数据平台，调研生成详细的 Web3 项目投资评估报告
           </p>
         </div>
 
