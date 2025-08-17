@@ -1,6 +1,6 @@
 ---
 Website: https://www.pendle.finance/
 Nickname: pendle
-Report: "[[pendle]]"
-Description:
+Report: "[[keepgoing/web3/protocol/research/pendle]]"
+Description: 
 ---

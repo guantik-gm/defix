@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aethir (ATH) 交互式投资分析仪表盘</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Harmony -->
+    <!-- Application Structure Plan: 本应用采用仪表盘式布局，通过顶部导航栏实现平滑滚动定位，引导用户探索不同维度的信息。整体结构分为：1. **概览**：提供最终评级和核心指标，让用户第一时间掌握关键结论。2. **技术核心**：通过可视化流程图解析复杂的节点架构，增强理解。3. **市场与代币**：结合交互式图表（竞品对比、代币分配与释放）将枯燥数据转化为直观洞察。4. **风险与机遇**：使用卡片式布局清晰对比项目的优劣势，突出关键风险。5. **投资策略**：以可展开的列表形式呈现不同投资路径，满足不同用户的需求。此结构旨在将深度报告内容分解为易于消化、可按需探索的模块，提升用户体验和决策效率。 -->
+    <!-- Visualization & Content Choices: 1. **最终评级**: (信息) -> 突出显示的评级卡片 -> 强调核心结论。2. **技术架构**: (组织) -> HTML/CSS流程图 -> 交互式悬停提示 -> 清晰展示三节点关系，避免使用SVG。3. **代币分配**: (比较) -> Chart.js 甜甜圈图 -> 交互式图例 -> 直观展示各方份额。4. **代币释放**: (变化) -> Chart.js 堆叠面积图 -> 时间轴展示 -> 形象化通胀压力。5. **竞品对比**: (比较) -> HTML表格 -> 关键数据对比 -> 快速定位Aethir市场地位。6. **风险/机遇**: (比较) -> 双列卡片布局 -> 视觉区分 -> 快速权衡利弊。7. **投资策略**: (组织) -> HTML可展开列表 -> 按需展示细节 -> 避免信息过载。所有选择均围绕将复杂报告内容转化为互动式、易于理解的Web体验，并严格遵守无SVG/Mermaid的约束。 -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+            color: #1f2937; /* gray-800 */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 320px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .nav-link {
+            transition: color 0.3s, border-bottom-color 0.3s;
+        }
+        .nav-link.active, .nav-link:hover {
+            color: #0d9488; /* teal-600 */
+            border-bottom-color: #0d9488;
+        }
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.1);
+        }
+        html {
+            scroll-behavior: smooth;
+        }
+        .section-title::after {
+            content: '';
+            display: block;
+            width: 60px;
+            height: 3px;
+            background-color: #0d9488; /* teal-600 */
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Header & Navigation -->
+    <header id="header" class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-3">
+                    <span class="text-2xl font-bold text-teal-600">A</span>
+                    <h1 class="text-xl font-bold text-gray-800">Aethir 投资分析</h1>
+                </div>
+                <nav class="hidden md:flex items-center space-x-6">
+                    <a href="#overview" class="nav-link text-gray-600 font-medium border-b-2 border-transparent pb-1">概览</a>
+                    <a href="#tech" class="nav-link text-gray-600 font-medium border-b-2 border-transparent pb-1">技术核心</a>
+                    <a href="#market" class="nav-link text-gray-600 font-medium border-b-2 border-transparent pb-1">市场与代币</a>
+                    <a href="#risks" class="nav-link text-gray-600 font-medium border-b-2 border-transparent pb-1">风险与机遇</a>
+                    <a href="#strategies" class="nav-link text-gray-600 font-medium border-b-2 border-transparent pb-1">投资策略</a>
+                </nav>
+                <div class="md:hidden">
+                    <select id="mobile-nav" class="bg-gray-200 border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
+                        <option value="#overview">概览</option>
+                        <option value="#tech">技术核心</option>
+                        <option value="#market">市场与代币</option>
+                        <option value="#risks">风险与机遇</option>
+                        <option value="#strategies">投资策略</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8 md:py-12">
+
+        <!-- Section 1: Overview -->
+        <section id="overview" class="mb-16 scroll-mt-20">
+            <h2 class="text-3xl font-bold mb-2 section-title">投资概览</h2>
+            <p class="text-gray-600 mb-8 max-w-3xl">本部分提供了Aethir项目的核心投资结论和关键性能指标，帮助您快速了解其市场定位和潜力。最终投资决策取决于您对“团队执行力能否战胜安全不确定性和通胀压力”这一核心命题的信念。</p>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Investment Rating -->
+                <div class="lg:col-span-1">
+                    <div class="card p-6 h-full flex flex-col justify-center items-center text-center bg-teal-50 border-2 border-teal-200">
+                        <h3 class="text-lg font-semibold text-gray-700 mb-2">最终投资评级</h3>
+                        <p class="text-4xl font-bold text-teal-600 mb-2">中立 / 投机性买入</p>
+                        <p class="text-sm text-gray-600">高风险、高潜在回报的投机性机会，仅适合风险承受能力极高的投资者。</p>
+                    </div>
+                </div>
+
+                <!-- Key Metrics -->
+                <div class="lg:col-span-2 grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div class="card p-4 text-center">
+                        <h4 class="text-sm font-medium text-gray-500">市值 (约)</h4>
+                        <p class="text-2xl font-bold text-gray-800">$3.8亿</p>
+                    </div>
+                    <div class="card p-4 text-center">
+                        <h4 class="text-sm font-medium text-gray-500">完全稀释估值 (约)</h4>
+                        <p class="text-2xl font-bold text-gray-800">$15.1亿</p>
+                    </div>
+                    <div class="card p-4 text-center">
+                        <h4 class="text-sm font-medium text-gray-500">总供应量</h4>
+                        <p class="text-2xl font-bold text-gray-800">420亿</p>
+                    </div>
+                    <div class="card p-4 text-center">
+                        <h4 class="text-sm font-medium text-gray-500">声称年收入 (ARR)</h4>
+                        <p class="text-2xl font-bold text-gray-800">$1.13亿+</p>
+                    </div>
+                    <div class="card p-4 text-center">
+                        <h4 class="text-sm font-medium text-gray-500">核心叙事</h4>
+                        <p class="text-2xl font-bold text-gray-800">AI + DePIN</p>
+                    </div>
+                    <div class="card p-4 text-center bg-rose-50 border border-rose-200">
+                        <h4 class="text-sm font-medium text-rose-600">核心风险</h4>
+                        <p class="text-xl font-bold text-rose-700">安全审计缺失</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        ---
+
+        <!-- Section 2: Tech Core -->
+        <section id="tech" class="mb-16 scroll-mt-20">
+            <h2 class="text-3xl font-bold mb-2 section-title">技术核心：三位一体的去中心化网络</h2>
+            <p class="text-gray-600 mb-8 max-w-3xl">Aethir的网络由三个关键角色构成一个自我调节的系统：容器提供算力，检查器验证质量，索引器匹配供需。这个精巧的架构是其实现低延迟、高质量服务的技术基石。将鼠标悬停在下方卡片上以了解更多信息。</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+                <!-- Container -->
+                <div class="card p-6 tech-card">
+                    <div class="text-4xl mb-4">🖥️</div>
+                    <h3 class="text-xl font-bold mb-2">容器 (Containers)</h3>
+                    <p class="text-gray-600">网络的“动力源”，实际执行计算和渲染任务的虚拟终端，通过质押ATH代币确保服务质量。</p>
+                </div>
+                <!-- Checker -->
+                <div class="card p-6 tech-card">
+                    <div class="text-4xl mb-4">🕵️</div>
+                    <h3 class="text-xl font-bold mb-2">检查器 (Checkers)</h3>
+                    <p class="text-gray-600">网络的“质量监察员”，负责验证容器的性能和在线状态，通过“渲染能力证明”确保网络完整性。</p>
+                </div>
+                <!-- Indexer -->
+                <div class="card p-6 tech-card">
+                    <div class="text-4xl mb-4">🚦</div>
+                    <h3 class="text-xl font-bold mb-2">索引器 (Indexers)</h3>
+                    <p class="text-gray-600">网络的“智能匹配者”，根据用户需求快速、精准地匹配最合适的容器，实现低延迟体验。</p>
+                </div>
+            </div>
+        </section>
+
+        ---
+
+        <!-- Section 3: Market & Tokenomics -->
+        <section id="market" class="mb-16 scroll-mt-20">
+            <h2 class="text-3xl font-bold mb-2 section-title">市场与代币经济学</h2>
+            <p class="text-gray-600 mb-8 max-w-3xl">本部分深入探讨Aethir在竞争激烈的DePIN赛道中的位置，并剖析其代币（ATH）的分配、释放计划和通胀压力。理解代币经济模型是评估其长期价值和价格稳定性的关键。</p>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                <!-- Token Allocation -->
+                <div class="card p-6">
+                    <h3 class="text-xl font-bold mb-4 text-center">ATH 代币分配</h3>
+                    <div class="chart-container h-72 md:h-80">
+                        <canvas id="tokenAllocationChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Token Vesting -->
+                <div class="card p-6">
+                    <h3 class="text-xl font-bold mb-4 text-center">代币释放与通胀压力</h3>
+                     <div class="chart-container h-72 md:h-80">
+                        <canvas id="tokenVestingChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Competitor Analysis -->
+            <div class="mt-12">
+                <h3 class="text-2xl font-bold mb-4 text-center">DePIN GPU 赛道竞争格局</h3>
+                <div class="card overflow-x-auto">
+                    <table class="w-full text-sm text-left text-gray-500">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3">特性</th>
+                                <th scope="col" class="px-6 py-3 bg-teal-50">Aethir (ATH)</th>
+                                <th scope="col" class="px-6 py-3">Akash (AKT)</th>
+                                <th scope="col" class="px-6 py-3">Render (RNDR)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="bg-white border-b">
+                                <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">主要用例</th>
+                                <td class="px-6 py-4 bg-teal-50">企业级AI, 云游戏</td>
+                                <td class="px-6 py-4">通用云计算</td>
+                                <td class="px-6 py-4">3D渲染, AI计算</td>
+                            </tr>
+                            <tr class="bg-white border-b">
+                                <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">市值 (约)</th>
+                                <td class="px-6 py-4 bg-teal-50">$3.8亿</td>
+                                <td class="px-6 py-4">$3.5亿</td>
+                                <td class="px-6 py-4">$20.9亿</td>
+                            </tr>
+                            <tr class="bg-white border-b">
+                                <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">声称年收入</th>
+                                <td class="px-6 py-4 bg-teal-50">$1.13亿+</td>
+                                <td class="px-6 py-4">$74.2万</td>
+                                <td class="px-6 py-4">~$800万</td>
+                            </tr>
+                             <tr class="bg-white">
+                                <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">关键差异</th>
+                                <td class="px-6 py-4 bg-teal-50">专注企业与游戏，聚合供应</td>
+                                <td class="px-6 py-4">成本低，拍卖模式</td>
+                                <td class="px-6 py-4">强大创作者社区</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        ---
+
+        <!-- Section 4: Risks & Opportunities -->
+        <section id="risks" class="mb-16 scroll-mt-20">
+            <h2 class="text-3xl font-bold mb-2 section-title">风险与机遇</h2>
+            <p class="text-gray-600 mb-8 max-w-3xl">投资Aethir是一场机遇与风险的博弈。这里清晰地列出了项目的主要优势（机遇）和劣势（风险），帮助您进行全面的、平衡的评估。请特别关注“致命的安全隐患”这一项。</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Opportunities -->
+                <div>
+                    <h3 class="text-2xl font-bold text-emerald-600 mb-4 text-center">✅ 机遇 (优势)</h3>
+                    <div class="space-y-4">
+                        <div class="card p-4 bg-emerald-50 border border-emerald-200">
+                            <h4 class="font-bold text-emerald-800">强大的叙事</h4>
+                            <p class="text-sm text-emerald-700">精准卡位AI和DePIN两大风口，市场关注度高。</p>
+                        </div>
+                        <div class="card p-4 bg-emerald-50 border border-emerald-200">
+                            <h4 class="font-bold text-emerald-800">资深的团队</h4>
+                            <p class="text-sm text-emerald-700">领导层公开透明，拥有在顶级游戏、科技公司成功执行大规模项目的经验。</p>
+                        </div>
+                        <div class="card p-4 bg-emerald-50 border border-emerald-200">
+                            <h4 class="font-bold text-emerald-800">显著的商业进展</h4>
+                            <p class="text-sm text-emerald-700">项目方声称已获得可观的年度经常性收入，显示出强大的商业拓展能力。</p>
+                        </div>
+                         <div class="card p-4 bg-emerald-50 border border-emerald-200">
+                            <h4 class="font-bold text-emerald-800">战略性的合作</h4>
+                            <p class="text-sm text-emerald-700">与EigenLayer等建立合作，生态系统正在扩张。</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Risks -->
+                <div>
+                    <h3 class="text-2xl font-bold text-rose-600 mb-4 text-center">❌ 风险 (劣势)</h3>
+                    <div class="space-y-4">
+                        <div class="card p-4 bg-rose-50 border-2 border-rose-500">
+                            <h4 class="font-bold text-rose-800">致命的安全隐患</h4>
+                            <p class="text-sm text-rose-700">严重缺乏最新的、来自顶级机构的公开安全审计，这是最大的风险点。</p>
+                        </div>
+                        <div class="card p-4 bg-rose-50 border border-rose-200">
+                            <h4 class="font-bold text-rose-800">极高的通胀压力</h4>
+                            <p class="text-sm text-rose-700">代币经济模型决定了未来几年将有海量代币进入流通，对价格构成持续威胁。</p>
+                        </div>
+                        <div class="card p-4 bg-rose-50 border border-rose-200">
+                            <h4 class="font-bold text-rose-800">不透明的收入</h4>
+                            <p class="text-sm text-rose-700">声称的收入数据无法通过链上途径独立验证，存在信息不对称风险。</p>
+                        </div>
+                        <div class="card p-4 bg-rose-50 border border-rose-200">
+                            <h4 class="font-bold text-rose-800">社区信任问题</h4>
+                            <p class="text-sm text-rose-700">封闭的社区管理策略、不佳的用户体验反馈，损害了项目的公信力。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        ---
+
+        <!-- Section 5: Investment Strategies -->
+        <section id="strategies" class="scroll-mt-20">
+            <h2 class="text-3xl font-bold mb-2 section-title">可行投资策略</h2>
+            <p class="text-gray-600 mb-8 max-w-3xl">本节将分析转化为具体的投资路径，为不同风险偏好和技术背景的投资者提供参考。点击各项策略以展开查看详细的优缺点和所需专业知识。</p>
+            <div class="space-y-4">
+                <details class="card p-4 cursor-pointer">
+                    <summary class="font-bold text-lg text-gray-800 flex justify-between items-center">
+                        <span>📈 直接购买ATH代币</span>
+                        <span class="text-sm text-gray-500">低门槛，高风险</span>
+                    </summary>
+                    <div class="mt-4 text-gray-600 border-t pt-4">
+                        <p><strong>描述:</strong> 在二级市场购买并持有ATH代币，博取价格升值。</p>
+                        <p><strong>优势:</strong> 流动性高，参与门槛低，操作简单。</p>
+                        <p><strong>劣势/风险:</strong> 价格波动剧烈，面临巨大通胀压力，安全透明度风险。</p>
+                        <p><strong>所需知识:</strong> 基础市场分析能力。</p>
+                    </div>
+                </details>
+                <details class="card p-4 cursor-pointer">
+                    <summary class="font-bold text-lg text-gray-800 flex justify-between items-center">
+                        <span>💻 运营检查器节点</span>
+                        <span class="text-sm text-gray-500">技术型，长期收益</span>
+                    </summary>
+                    <div class="mt-4 text-gray-600 border-t pt-4">
+                        <p><strong>描述:</strong> 购买许可证并运行节点，验证网络以赚取奖励。</p>
+                        <p><strong>优势:</strong> 获得协议原生奖励，深度参与网络。</p>
+                        <p><strong>劣势/风险:</strong> 需要技术维护，有罚没风险，前期需投入许可证成本。</p>
+                        <p><strong>所需知识:</strong> 服务器运维、Linux基础。</p>
+                    </div>
+                </details>
+                <details class="card p-4 cursor-pointer">
+                    <summary class="font-bold text-lg text-gray-800 flex justify-between items-center">
+                        <span>🔒 标准ATH质押</span>
+                        <span class="text-sm text-gray-500">简单，赚取多重奖励</span>
+                    </summary>
+                    <div class="mt-4 text-gray-600 border-t pt-4">
+                        <p><strong>描述:</strong> 将ATH质押到AI或游戏池中，赚取ATH和合作伙伴代币奖励。</p>
+                        <p><strong>优势:</strong> 操作简单，可获得多样化代币奖励。</p>
+                        <p><strong>劣势/风险:</strong> 机会成本（资金被锁定），智能合约风险。</p>
+                        <p><strong>所需知识:</strong> DeFi基础操作。</p>
+                    </div>
+                </details>
+                <details class="card p-4 cursor-pointer">
+                    <summary class="font-bold text-lg text-gray-800 flex justify-between items-center">
+                        <span>💎 EigenLayer ATH再质押</span>
+                        <span class="text-sm text-gray-500">高风险，高潜力</span>
+                    </summary>
+                    <div class="mt-4 text-gray-600 border-t pt-4">
+                        <p><strong>描述:</strong> 质押ATH换取eATH，赚取算力服务费分成。</p>
+                        <p><strong>优势:</strong> 融入热门再质押叙事，潜在高回报。</p>
+                        <p><strong>劣势/风险:</strong> 一年锁仓期，叠加EigenLayer风险，智能合约风险极高。</p>
+                        <p><strong>所需知识:</strong> 高级DeFi理解、风险管理能力。</p>
+                    </div>
+                </details>
+                 <details class="card p-4 cursor-pointer">
+                    <summary class="font-bold text-lg text-gray-800 flex justify-between items-center">
+                        <span>🚀 申请生态系统资助</span>
+                         <span class="text-sm text-gray-500">开发者专属</span>
+                    </summary>
+                    <div class="mt-4 text-gray-600 border-t pt-4">
+                        <p><strong>描述:</strong> 作为开发者，构建应用并申请基金支持。</p>
+                        <p><strong>优势:</strong> 获得资金和资源支持，与项目方深度合作。</p>
+                        <p><strong>劣势/风险:</strong> 竞争激烈，需要强大的项目构思和执行能力。</p>
+                        <p><strong>所需知识:</strong> 软件开发、商业计划书撰写。</p>
+                    </div>
+                </details>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-gray-800 text-white mt-16">
+        <div class="container mx-auto px-4 py-6 text-center text-sm">
+            <p>&copy; 2024 Aethir 投资分析仪表盘。仅供参考，不构成投资建议。</p>
+            <p>数据来源于公开的投资评估报告，请结合自身研究进行决策。</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Data from the report
+            const tokenAllocationData = {
+                labels: ['算力提供者/检查器', '生态系统基金', '团队', '投资者', '空投', '顾问'],
+                datasets: [{
+                    data: [50, 15, 12.5, 11.5, 6, 5],
+                    backgroundColor: [
+                        '#14b8a6', // teal-500
+                        '#2dd4bf', // teal-400
+                        '#5eead4', // teal-300
+                        '#99f6e4', // teal-200
+                        '#ccfbf1', // teal-100
+                        '#f0fdfa'  // teal-50
+                    ],
+                    borderColor: '#ffffff',
+                    hoverOffset: 4
+                }]
+            };
+
+            const tokenVestingData = {
+                labels: ['Year 1', 'Year 2', 'Year 3', 'Year 4'],
+                datasets: [
+                    {
+                        label: '算力提供者/检查器',
+                        data: [52.5, 105, 157.5, 210], // Cumulative
+                        backgroundColor: 'rgba(20, 184, 166, 0.5)',
+                        borderColor: 'rgba(20, 184, 166, 1)',
+                        fill: true,
+                        tension: 0.4,
+                    },
+                    {
+                        label: '投资者',
+                        data: [0, 24.15, 48.3, 48.3], // Cumulative
+                        backgroundColor: 'rgba(45, 212, 191, 0.5)',
+                        borderColor: 'rgba(45, 212, 191, 1)',
+                        fill: true,
+                        tension: 0.4,
+                    },
+                     {
+                        label: '团队',
+                        data: [0, 0, 17.5, 52.5], // Cumulative
+                        backgroundColor: 'rgba(94, 234, 212, 0.5)',
+                        borderColor: 'rgba(94, 234, 212, 1)',
+                        fill: true,
+                        tension: 0.4,
+                    }
+                ]
+            };
+            
+            // Chart.js: Token Allocation Chart
+            const ctxAllocation = document.getElementById('tokenAllocationChart').getContext('2d');
+            new Chart(ctxAllocation, {
+                type: 'doughnut',
+                data: tokenAllocationData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                font: {
+                                    family: "'Inter', 'Noto Sans SC', sans-serif"
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += context.parsed + '%';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Chart.js: Token Vesting Chart
+            const ctxVesting = document.getElementById('tokenVestingChart').getContext('2d');
+            new Chart(ctxVesting, {
+                type: 'line',
+                data: tokenVestingData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            stacked: true,
+                            title: {
+                                display: true,
+                                text: '累计代币数量 (亿)'
+                            }
+                        },
+                        x: {
+                             title: {
+                                display: true,
+                                text: '时间'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                             labels: {
+                                padding: 15,
+                                font: {
+                                    family: "'Inter', 'Noto Sans SC', sans-serif"
+                                }
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        title: {
+                            display: true,
+                            text: '主要来源的累计代币释放'
+                        }
+                    },
+                    interaction: {
+                        mode: 'nearest',
+                        axis: 'x',
+                        intersect: false
+                    }
+                }
+            });
+
+            // Navigation scroll logic
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('section');
+
+            window.addEventListener('scroll', () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (pageYOffset >= sectionTop - 80) {
+                        current = section.getAttribute('id');
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href').includes(current)) {
+                        link.classList.add('active');
+                    }
+                });
+            });
+            
+            // Mobile navigation
+            const mobileNav = document.getElementById('mobile-nav');
+            mobileNav.addEventListener('change', (e) => {
+                window.location.hash = e.target.value;
+            });
+
+        });
+    </script>
+</body>
+</html>
