@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NODO AI Vault - 交互式投资分析仪表板</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutral with Terracotta Accent -->
+    <!-- Application Structure Plan: A top-down, dashboard-style SPA. It starts with the final verdict and key metrics for immediate insight. A sticky navigation bar allows non-linear exploration into thematic sections: Core Analysis, Risk Matrix, Opportunities, and SWOT. This structure prioritizes investor decision-making by presenting the conclusion first, followed by supporting evidence in digestible, interactive modules (charts, tabs, cards), which is more effective than a linear report for quickly assessing complex information. -->
+    <!-- Visualization & Content Choices: 1. TVL Discrepancy -> Goal: Highlight data inconsistency -> Viz: Bar Chart (Chart.js) -> Interaction: Hover tooltips -> Justification: Visually powerful comparison of disparate numbers. 2. Security Risks -> Goal: Emphasize critical vulnerabilities -> Viz: Interactive Cards with icons -> Interaction: Click to expand details -> Justification: Manages information density, drawing attention to critical alerts. 3. Competitive Landscape -> Goal: Easy feature comparison -> Viz: HTML Table -> Interaction: Row hover highlight -> Justification: Standard, clear format for direct comparison. 4. Technical Architecture -> Goal: Explain system flow and centralization -> Viz: HTML/CSS Diagram -> Interaction: Hover for info -> Justification: Lightweight, avoids external libraries for a simple concept. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #FDFBF6;
+            color: #403d39;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .nav-link {
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link.active, .nav-link:hover {
+            border-bottom-color: #E07A5F;
+            color: #E07A5F;
+        }
+        .tab-button {
+            transition: all 0.3s ease;
+        }
+        .tab-button.active {
+            background-color: #E07A5F;
+            color: #FFFFFF;
+        }
+        .card-hover-effect {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card-hover-effect:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-[#FDFBF6] shadow-md sticky top-0 z-50">
+        <nav class="container mx-auto px-6 py-3">
+            <div class="flex items-center justify-between">
+                <div class="text-xl font-bold text-gray-800">NODO AI Vault</div>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#summary" class="nav-link active">摘要</a>
+                    <a href="#core-analysis" class="nav-link">核心分析</a>
+                    <a href="#risk-matrix" class="nav-link">风险矩阵</a>
+                    <a href="#opportunities" class="nav-link">投资机会</a>
+                    <a href="#final-rating" class="nav-link">SWOT & 评级</a>
+                </div>
+                <div class="md:hidden">
+                    <select id="mobile-nav" class="bg-white border border-gray-300 rounded-md py-2 px-4">
+                        <option value="#summary">摘要</option>
+                        <option value="#core-analysis">核心分析</option>
+                        <option value="#risk-matrix">风险矩阵</option>
+                        <option value="#opportunities">投资机会</option>
+                        <option value="#final-rating">SWOT & 评级</option>
+                    </select>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-6 py-12">
+        
+        <section id="summary" class="text-center mb-20 scroll-mt-20">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4">NODO AI Vault 投资评估</h1>
+            <p class="text-xl text-gray-600 mb-8">一个交互式仪表板，用于剖析 DeFAI 协议的机遇与风险</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="bg-white p-6 rounded-lg shadow-lg border border-gray-200 flex flex-col justify-center items-center card-hover-effect">
+                    <h3 class="text-lg font-semibold mb-2 text-gray-700">最终投资评级</h3>
+                    <div class="px-6 py-2 rounded-full text-2xl font-bold bg-red-100 text-red-800 border border-red-300">
+                        高风险 - 建议规避
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow-lg border border-gray-200 flex flex-col justify-center items-center card-hover-effect">
+                    <h3 class="text-lg font-semibold mb-2 text-gray-700">核心论点</h3>
+                    <p class="text-gray-600">战略模糊、安全疏漏和缺乏透明度掩盖了其潜在优势。</p>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow-lg border border-gray-200 flex flex-col justify-center items-center card-hover-effect">
+                    <h3 class="text-lg font-semibold mb-2 text-gray-700">关键危险信号</h3>
+                    <ul class="text-left list-disc list-inside text-gray-600">
+                        <li>TVL 数据严重不符</li>
+                        <li>曾发生私钥泄露事件</li>
+                        <li>核心 AI 技术为“黑箱”</li>
+                        <li>缺乏白皮书和技术文档</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="mt-12 bg-white p-6 rounded-lg shadow-lg border border-gray-200">
+                <h2 class="text-2xl font-bold mb-4 text-center">总锁仓价值 (TVL) 差异分析</h2>
+                <p class="text-gray-600 mb-6 text-center">项目方数据与可验证链上数据之间存在巨大鸿沟，这是评估中最严重的数据危险信号。</p>
+                <div class="chart-container">
+                    <canvas id="tvlChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <hr class="my-16 border-gray-200">
+
+        <section id="core-analysis" class="mb-20 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center mb-10">核心分析：解构 NODO 的主张</h2>
+             <p class="text-lg text-gray-600 mb-12 max-w-3xl mx-auto text-center">本节深入探讨 NODO 的核心主张、技术架构、战略转型及其生态系统定位。通过理解项目“声称”是什么，我们可以更清晰地评估其执行能力和潜在价值。</p>
+            <div class="bg-white p-6 rounded-lg shadow-lg border border-gray-200">
+                <div class="mb-6 border-b border-gray-200">
+                    <nav class="flex space-x-1" aria-label="Tabs">
+                        <button class="tab-button active py-3 px-4 font-medium text-sm rounded-t-lg" data-tab="value-prop">价值主张</button>
+                        <button class="tab-button py-3 px-4 font-medium text-sm rounded-t-lg text-gray-600" data-tab="architecture">技术架构</button>
+                        <button class="tab-button py-3 px-4 font-medium text-sm rounded-t-lg text-gray-600" data-tab="pivot">战略转型</button>
+                        <button class="tab-button py-3 px-4 font-medium text-sm rounded-t-lg text-gray-600" data-tab="ecosystem">生态系统</button>
+                    </nav>
+                </div>
+                <div id="tab-content">
+                </div>
+            </div>
+        </section>
+
+        <hr class="my-16 border-gray-200">
+
+        <section id="risk-matrix" class="mb-20 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center mb-10">风险矩阵：识别关键威胁</h2>
+            <p class="text-lg text-gray-600 mb-12 max-w-3xl mx-auto text-center">对任何DeFi协议的投资都必须建立在对其风险的全面理解之上。本节将报告中发现的安全、协议和运营风险进行分类和可视化，突出显示了可能导致灾难性资金损失的最高优先级问题。</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            </div>
+        </section>
+
+        <hr class="my-16 border-gray-200">
+        
+        <section id="opportunities" class="mb-20 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center mb-10">投资机会与策略</h2>
+            <p class="text-lg text-gray-600 mb-12 max-w-3xl mx-auto text-center">尽管存在巨大风险，NODO 仍提供了一些潜在的高回报机会，主要围绕其机枪池的高 APR 和未来的代币空投。本节旨在量化这些机会，并对其可持续性进行批判性评估，为高风险偏好的投资者提供策略参考。</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            </div>
+        </section>
+
+        <hr class="my-16 border-gray-200">
+
+        <section id="final-rating" class="scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center mb-10">SWOT 分析与最终评级</h2>
+            <p class="text-lg text-gray-600 mb-12 max-w-3xl mx-auto text-center">综合所有分析，本节提供了一个全面的SWOT（优势、劣势、机会、威胁）矩阵，并重申最终的投资评级。这是对 NODO AI Vault 项目当前状态和未来前景的最终总结。</p>
+            <div class="bg-white p-8 rounded-lg shadow-lg border border-gray-200 mb-12">
+                <h3 class="text-2xl font-bold mb-6 text-center">SWOT 矩阵</h3>
+                <div id="swot-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                </div>
+            </div>
+
+            <div class="bg-white p-8 rounded-lg shadow-lg border border-gray-200">
+                <h3 class="text-2xl font-bold mb-6 text-center">结论性投资论点</h3>
+                <div id="conclusion-content" class="space-y-6">
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-gray-800 text-white mt-20">
+        <div class="container mx-auto px-6 py-4 text-center">
+            <p>本报告仅供参考，不构成任何投资建议。加密货币投资具有高风险。</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            const appData = {
+                tvl: {
+                    claimed: 1569490,
+                    verified: 21636
+                },
+                coreAnalysis: {
+                    'value-prop': {
+                        title: '核心主张：自主 AI 代理',
+                        content: `
+                            <p class="mb-4">NODO 将自身定位为“DeFAI”（去中心化金融人工智能）协议，旨在自动化和优化在集中流动性做市商（CLMM）上的流动性供应（LP）。</p>
+                            <p class="mb-4"><strong>核心价值主张：</strong>通过自主、实时的头寸管理，最大限度地减少无常损失（IL）并最大化动态交易费捕获。</p>
+                            <p>这种“一劳永逸”的解决方案旨在同时满足被动投资者和高级用户的需求。通过利用强大的 AI 叙事，项目进入了一个已被验证且具有实际需求的 DeFi 细分市场。</p>
+                        `
+                    },
+                    'architecture': {
+                        title: '技术架构：三层体系',
+                        content: `
+                            <p class="mb-6">NODO 声称其机枪池由一个三层架构驱动，但其核心逻辑依赖于中心化的链下组件，这引入了关键的单点故障和信任假设。</p>
+                            <div class="space-y-4 text-left border-l-2 border-[#E07A5F] pl-4">
+                                <div>
+                                    <h4 class="font-semibold">策略引擎 (Strategy Engine) - <span class="text-red-600 font-bold">链下/中心化</span></h4>
+                                    <p class="text-sm text-gray-600">利用市场数据持续重新校准 LP 参数。</p>
+                                </div>
+                                <div class="font-bold text-center text-2xl text-[#E07A5F]">&darr;</div>
+                                <div>
+                                    <h4 class="font-semibold">AI 代理 (AI Agents) - <span class="text-red-600 font-bold">链下/中心化</span></h4>
+                                    <p class="text-sm text-gray-600">一组专门的代理，为策略引擎的决策提供信息。</p>
+                                </div>
+                                <div class="font-bold text-center text-2xl text-[#E07A5F]">&darr;</div>
+                                <div>
+                                    <h4 class="font-semibold">执行层 (Execution Layer) - <span class="text-green-600 font-bold">链上</span></h4>
+                                    <p class="text-sm text-gray-600">根据链下指令，与 Momentum DEX 交互以部署流动性。</p>
+                                </div>
+                            </div>
+                            <p class="mt-6 text-sm text-red-700 bg-red-100 p-3 rounded-md"><strong>风险提示：</strong>用户不仅要信任其链上合约，还必须信任 NODO 团队在运营安全和算法完整性方面的能力，而这两者目前都无法被外界验证。</p>
+                        `
+                    },
+                    'pivot': {
+                        title: '战略转型：从预测市场到流动性管理器',
+                        content: `
+                            <p class="mb-4">链上数据和早期媒体稿清晰地将 NODO 定义为一个“全链 AI 驱动的社交跟单交易生态系统，提供价格预测市场”。</p>
+                            <p class="mb-4">然而，项目当前的官网和公告完全专注于 Sui 上的 AI Vaults。但矛盾的是，其路线图仍然将“价格预测市场上线”列为未来目标。</p>
+                            <p class="font-semibold text-gray-800">这一战略转型强烈暗示最初的模型未能获得市场认可。投资者所支持的并非一个拥有多年历史的项目，而实际上是一个继承了前一个不太成功项目品牌的新企业。这种模糊性引发了关于团队长期愿景和执行能力的疑问。</p>
+                        `
+                    },
+                    'ecosystem': {
+                        title: '生态系统：Sui 网络与 Momentum DEX',
+                        content: `
+                            <h4 class="font-semibold text-lg mb-2">Sui 网络：高增长的 DeFi 环境</h4>
+                            <p class="mb-4">Sui 是一个高性能的 Layer 1，其 DeFi TVL 经历了爆炸性增长。通过在 Sui 上启动，NODO 将自己定位在一个不那么饱和但增长迅速的市场中，这是一种“蓝海”策略。</p>
+                            <h4 class="font-semibold text-lg mb-2">与 Momentum DEX 的共生关系</h4>
+                            <p class="mb-4">NODO 的 AI Vaults 独家在 Momentum 上推出，后者是 Sui 上 TVL 排名第一的 DEX。这种独家合作关系是一把双刃剑：</p>
+                            <ul class="list-disc list-inside space-y-2">
+                                <li><strong class="text-green-700">优势：</strong>即时接触深度流动性和庞大用户群，解决了冷启动问题。</li>
+                                <li><strong class="text-red-700">风险：</strong>平台依赖风险。如果 Momentum 的市场份额下降或其智能合约出现漏洞，NODO 的价值主张将直接被削弱。</li>
+                            </ul>
+                        `
+                    }
+                },
+                riskMatrix: [
+                    {
+                        title: '安全审计风险',
+                        level: '严重',
+                        color: 'red',
+                        icon: '🚨',
+                        content: '声称由三家公司审计，但只有一份报告公开。该报告揭示了灾难性的运营安全失败：<strong>私钥和服务账户凭证曾被直接提交到源代码库中</strong>。虽然已修复，但这暴露了根本薄弱的安全文化。',
+                        details: '公开的Quill Audits报告范围为“渗透测试”，而非逐行智能合约审计。缺乏来自Hashlock和WatchPUG的可访问报告是另一个透明度上的失败。'
+                    },
+                    {
+                        title: '协议与经济风险',
+                        level: '高',
+                        color: 'orange',
+                        icon: '⚙️',
+                        content: '核心的“AI/策略引擎”是<strong>链下且中心化的</strong>，这是最大的单一风险向量。攻击者一旦攻破这个链下系统，就可能耗尽所有机枪池的资金。',
+                        details: 'AI依赖的数据源未知，可能存在预言机操纵风险。策略本身不透明且未经审计，一个有缺陷的策略可能导致持续亏损。风险状况更类似于中心化的对冲基金。'
+                    },
+                    {
+                        title: '运营风险',
+                        level: '高',
+                        color: 'orange',
+                        icon: '📉',
+                        content: '项目未能达到 DeFi 领域预期的最低透明度标准。<strong>缺乏可访问的白皮书、技术文档或公开的 GitHub 仓库</strong>。',
+                        details: '在研究期间，主域名 ai.nodo.xyz 一度无法访问。关于项目核心产品的矛盾信息制造了混乱，并削弱了对团队长期愿景的信心。'
+                    }
+                ],
+                opportunities: [
+                    {
+                        title: '旗舰机枪池与高 APR',
+                        icon: '💰',
+                        content: '项目宣传了极高的 APR，例如 USDC-SUI 池高达 <strong>267.64%</strong>。',
+                        analysis: '这些 APR 极有可能是由代币激励（来自 Momentum 和未来的 NODO）所大量补贴，是<strong>不可持续的</strong>。投资者需要明确区分“真实收益”（来自交易费）和“激励收益”（来自代币发行），后者带有很高的价格风险。'
+                    },
+                    {
+                        title: '即将发行的 $NODO 代币与空投',
+                        icon: '🎁',
+                        content: '计划在 2025 年第二季度举行 TGE，代币将具有质押和治理功能。项目正在进行“创世收益活动”，参与者可赚取积分，预计可兑换为 <strong>$NODO 空投</strong>。',
+                        analysis: '目前获得风险敞口的主要方式是通过参与空投活动，但这需要与协议交互并承担相关的安全风险。代币的主要近期价值驱动力将是空投，这创造了一个投机事件，而非由基本面驱动的估值。'
+                    }
+                ],
+                swot: {
+                    strengths: { title: '优势', color: 'green', items: ['定位于高增长的 Sui 生态', '与领先 DEX (Momentum) 的战略合作', '获知名风投和 Sui 基金会支持', '解决 CLMM 管理的真实痛点'] },
+                    weaknesses: { title: '劣势', color: 'red', items: ['极度缺乏透明度（无白皮书、代码）', '严重的历史安全失误（私钥泄露）', '战略愿景不明确且相互矛盾', '核心 AI 技术不透明、中心化'] },
+                    opportunities: { title: '机会', color: 'blue', items: ['有望成为 Sui 主导的流动性管理器', '即将到来的 TGE 和空投可能产生热度', '“AI 代理市场”概念有长期潜力'] },
+                    threats: { title: '威胁', color: 'orange', items: ['来自更透明协议的直接竞争', '高度依赖 Momentum DEX 和 Sui 生态', '中心化基础设施的安全漏洞风险', '声誉受损风险'] }
+                },
+                conclusion: [
+                    {
+                        title: '乐观情景 (Bull Case)',
+                        content: 'NODO 变得彻底透明，其“黑箱”AI 表现优于竞争对手。TGE 成功，空投奖励早期用户，启动了充满活力的社区。'
+                    },
+                    {
+                        title: '悲观情景 (Bear Case)',
+                        content: '缺乏透明度的问题持续存在，“AI”被证明只是简单算法。项目被揭示为一个基本面薄弱的“追逐叙事”的投机项目，最终缓慢衰退。'
+                    },
+                    {
+                        title: '最终评级：高风险 - 建议规避',
+                        content: '综合所有因素，当前证据强烈指向对直接资本投资的<strong>高风险 - 建议规避</strong>评级。这主要是由于在透明度、安全性和可验证性方面存在压倒性的危险信号。<br><br>然而，对于风险承受能力极高且经验丰富的专业用户，可以考虑一种不同的策略：将小额、可承受完全损失的资金，用于参与其空投活动，可以被视为一种独立的、非对称的投机行为。这种参与并非基于对项目基本面的信心，而是对未来空投可能带来的短期市场热度的押注。'
+                    }
+                ]
+            };
+
+            const renderTVLChart = () => {
+                const ctx = document.getElementById('tvlChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['官网声称 TVL', '可验证 TVL (DeFiLlama)'],
+                        datasets: [{
+                            label: 'TVL (USD)',
+                            data: [appData.tvl.claimed, appData.tvl.verified],
+                            backgroundColor: [
+                                'rgba(224, 122, 95, 0.6)',
+                                'rgba(128, 128, 128, 0.6)'
+                            ],
+                            borderColor: [
+                                'rgba(224, 122, 95, 1)',
+                                'rgba(128, 128, 128, 1)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                type: 'logarithmic',
+                                ticks: {
+                                    callback: function(value, index, values) {
+                                        return '$' + value.toLocaleString();
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed.y !== null) {
+                                            label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed.y);
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            };
+            
+            const tabContentContainer = document.getElementById('tab-content');
+            const tabButtons = document.querySelectorAll('.tab-button');
+
+            const renderTabContent = (tabId) => {
+                const data = appData.coreAnalysis[tabId];
+                tabContentContainer.innerHTML = `
+                    <div class="p-4">
+                        <h3 class="text-xl font-bold mb-4">${data.title}</h3>
+                        ${data.content}
+                    </div>
+                `;
+            };
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    tabButtons.forEach(btn => {
+                        btn.classList.remove('active');
+                        btn.classList.add('text-gray-600');
+                    });
+                    button.classList.add('active');
+                    button.classList.remove('text-gray-600');
+                    renderTabContent(button.dataset.tab);
+                });
+            });
+
+            const renderRiskMatrix = () => {
+                const container = document.querySelector('#risk-matrix .grid');
+                let html = '';
+                appData.riskMatrix.forEach(risk => {
+                    html += `
+                        <div class="bg-white p-6 rounded-lg shadow-lg border border-${risk.color}-200 card-hover-effect">
+                            <div class="flex items-start justify-between mb-4">
+                                <div>
+                                    <h3 class="text-xl font-bold text-gray-800">${risk.icon} ${risk.title}</h3>
+                                    <span class="px-3 py-1 text-sm font-semibold rounded-full bg-${risk.color}-100 text-${risk.color}-800">${risk.level}</span>
+                                </div>
+                            </div>
+                            <p class="text-gray-600 mb-4">${risk.content}</p>
+                            <details class="text-sm">
+                                <summary class="cursor-pointer text-[#E07A5F] font-semibold">查看详情</summary>
+                                <p class="mt-2 text-gray-500 bg-gray-50 p-3 rounded-md">${risk.details}</p>
+                            </details>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            };
+
+            const renderOpportunities = () => {
+                const container = document.querySelector('#opportunities .grid');
+                let html = '';
+                appData.opportunities.forEach(opp => {
+                    html += `
+                        <div class="bg-white p-6 rounded-lg shadow-lg border border-gray-200 card-hover-effect">
+                            <h3 class="text-xl font-bold mb-4 flex items-center">${opp.icon} <span class="ml-2">${opp.title}</span></h3>
+                            <p class="text-gray-600 mb-4">${opp.content}</p>
+                            <div class="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-lg">
+                                <p class="font-semibold text-amber-800">分析师观点</p>
+                                <p class="text-amber-700">${opp.analysis}</p>
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            };
+
+            const renderSwot = () => {
+                const container = document.getElementById('swot-grid');
+                let html = '';
+                Object.values(appData.swot).forEach(category => {
+                    html += `
+                        <div class="bg-${category.color}-50 p-4 rounded-lg border border-${category.color}-200">
+                            <h4 class="font-bold text-lg text-${category.color}-800 mb-2">${category.title}</h4>
+                            <ul class="list-disc list-inside space-y-1 text-${category.color}-700">
+                                ${category.items.map(item => `<li>${item}</li>`).join('')}
+                            </ul>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            };
+
+            const renderConclusion = () => {
+                const container = document.getElementById('conclusion-content');
+                let html = '';
+                appData.conclusion.forEach(item => {
+                    html += `
+                        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                            <h4 class="font-bold text-lg text-gray-800 mb-2">${item.title}</h4>
+                            <p class="text-gray-600">${item.content}</p>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            };
+
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('section');
+            const mobileNav = document.getElementById('mobile-nav');
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        navLinks.forEach(link => {
+                            link.classList.toggle('active', link.getAttribute('href').substring(1) === entry.target.id);
+                        });
+                        mobileNav.value = `#${entry.target.id}`;
+                    }
+                });
+            }, { rootMargin: '-50% 0px -50% 0px', threshold: 0 });
+
+            sections.forEach(section => observer.observe(section));
+
+            navLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    document.querySelector(link.getAttribute('href')).scrollIntoView({ behavior: 'smooth' });
+                });
+            });
+
+            mobileNav.addEventListener('change', (e) => {
+                 document.querySelector(e.target.value).scrollIntoView({ behavior: 'smooth' });
+            });
+
+            renderTVLChart();
+            renderTabContent('value-prop');
+            renderRiskMatrix();
+            renderOpportunities();
+            renderSwot();
+            renderConclusion();
+        });
+    </script>
+</body>
+</html>
