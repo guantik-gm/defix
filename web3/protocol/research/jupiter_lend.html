@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jupiter Lend/Earn 交互式投资分析</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals (Amber/Gray) -->
+    <!-- Application Structure Plan: A single-page dashboard with a sticky top navigation for quick access to thematic sections: Overview, Protocol Deep Dive, Risk Assessment, Competition, and Investment Strategies. This non-linear structure allows users to jump directly to their area of interest, which is more effective than a linear report scroll. Key interactions include KPI counters, interactive charts, and a leverage calculator to make complex data more tangible and engaging. -->
+    <!-- Visualization & Content Choices: 1. Jupiter KPIs -> Inform -> Animated Number Cards -> Engagement -> Vanilla JS. 2. Token Allocation -> Organize -> Donut Chart -> Comparison -> Chart.js. 3. Competitive TVL -> Compare -> Bar Chart -> Quick Comparison -> Chart.js. 4. Risk Factors -> Inform/Warn -> Icon-based Grid Layout -> Readability/Impact -> HTML/Tailwind. 5. Investment Strategies -> Inform/Explore -> Tabbed Interface + Interactive Calculator -> User Engagement/Understanding -> Vanilla JS. This approach prioritizes visual data representation and interaction over dense text. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #fdfcf9;
+            color: #374151;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .nav-link {
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link.active, .nav-link:hover {
+            color: #c2410c;
+            border-bottom-color: #c2410c;
+        }
+        .kpi-card h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #c2410c;
+        }
+        .tab-btn {
+            transition: all 0.2s ease-in-out;
+        }
+        .tab-btn.active {
+            background-color: #c2410c;
+            color: white;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="sticky top-0 z-50 bg-white/80 backdrop-blur-lg shadow-sm">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0">
+                    <h1 class="text-xl font-bold text-gray-800">Jupiter Lend 投资分析</h1>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#overview" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700">概述</a>
+                        <a href="#protocol" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700">协议解析</a>
+                        <a href="#risk" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700">风险评估</a>
+                        <a href="#competition" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700">市场竞争</a>
+                        <a href="#strategy" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700">投资策略</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+
+        <section id="overview" class="mb-16 text-center scroll-mt-20">
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Jupiter Lend/Earn 协议</h2>
+            <p class="max-w-3xl mx-auto text-lg text-gray-600 mb-8">本节为您提供 Jupiter Lend 协议的顶层视图，包括其市场定位、核心业务数据以及最终的投资评级。这些信息旨在帮助您快速把握该协议的战略重要性和核心投资论点，为后续的深度探索奠定基础。</p>
+            
+            <div class="bg-amber-50 border-l-4 border-amber-500 text-amber-800 p-6 rounded-lg max-w-2xl mx-auto shadow-md mb-12">
+                <h3 class="text-xl font-bold mb-2">最终投资评级</h3>
+                <p class="text-2xl font-bold">中性，展望谨慎乐观</p>
+                <p class="mt-2 text-sm">此评级基于协议的战略定位与当前重大风险（特别是审计透明度不足）之间的平衡。**评级上调取决于公开审计报告的发布。**</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center max-w-5xl mx-auto">
+                <div class="bg-white p-6 rounded-lg shadow-lg kpi-card">
+                    <h3 id="kpi-dex-volume">0</h3>
+                    <p class="text-gray-500 mt-2">近30日DEX聚合器交易量</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-lg kpi-card">
+                    <h3 id="kpi-platform-fees">0</h3>
+                    <p class="text-gray-500 mt-2">近30日平台费用</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-lg kpi-card">
+                    <h3 id="kpi-retail-liquidity">0</h3>
+                    <p class="text-gray-500 mt-2">Solana零售流动性市场份额</p>
+                </div>
+            </div>
+             <p class="mt-8 text-gray-600 max-w-4xl mx-auto">Jupiter 作为 Solana 的核心基础设施，拥有巨大的流量入口和用户基础。Lend 协议的推出是其从交易聚合器向全栈式“DeFi超级应用”演进的关键一步，旨在捕获完整的 DeFi 价值链，将用户和资产锁定在自身生态系统内。</p>
+        </section>
+
+        <section id="protocol" class="mb-16 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center mb-10">协议深度解析</h2>
+            <p class="text-center text-gray-600 max-w-3xl mx-auto mb-10">本节将深入剖析 Jupiter Lend 的核心运行机制和 JUP 代币的经济模型。您将了解到其创新的高 LTV 设计如何运作，以及 JUP 代币在整个生态系统中的价值捕获逻辑。这有助于您理解协议的内在优势和潜在的经济动态。</p>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                <div>
+                    <h3 class="text-2xl font-bold mb-4">运行机制：游走在边缘的资本效率</h3>
+                    <p class="text-gray-600 mb-6">Jupiter Lend 的核心是其与技术伙伴 Fluid 合作的创新清算引擎和隔离金库系统。其最引人注目的特性是高达95%的贷款价值比（LTV）和仅1%的清算罚金，远超行业标准。这为用户提供了极高的资本效率，但也极大地压缩了协议的容错空间。</p>
+                    <div class="space-y-4">
+                        <div class="flex items-start p-4 bg-white rounded-lg shadow">
+                            <div class="flex-shrink-0 h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center mr-4">
+                                <span class="text-xl font-bold text-orange-600">95%</span>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-gray-800">超高LTV</h4>
+                                <p class="text-sm text-gray-600">用同等抵押品获得更多流动性，赋能更激进的投资策略。</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start p-4 bg-white rounded-lg shadow">
+                            <div class="flex-shrink-0 h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center mr-4">
+                                <span class="text-xl font-bold text-orange-600">1%</span>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-gray-800">极低清算罚金</h4>
+                                <p class="text-sm text-gray-600">降低用户被清算时的损失，但可能削弱第三方清算人的激励。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-bold mb-4 text-center">JUP 代币经济学</h3>
+                    <p class="text-gray-600 mb-4 text-center">总供应量100亿枚，面临显著的通胀压力。Lend协议的成功对于捕获价值、支撑JUP代币至关重要。</p>
+                    <div class="chart-container">
+                        <canvas id="tokenomicsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="risk" class="mb-16 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center mb-10">综合风险评估</h2>
+            <p class="text-center text-gray-600 max-w-3xl mx-auto mb-10">高资本效率的背后是多重且集中的风险。本节将系统性地梳理与 Jupiter Lend 相关的各项风险，包括技术、经济、网络和治理层面。**尤其需要关注的是智能合约安全部分，这是当前评估中的最大不确定性因素。**</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+                <div class="bg-red-50 border-2 border-dashed border-red-300 p-6 rounded-lg shadow-lg transition-transform hover:scale-105">
+                     <div class="flex items-center mb-3">
+                        <div class="w-10 h-10 rounded-full bg-red-200 flex items-center justify-center mr-4">
+                            <span class="text-2xl">⚠️</span>
+                        </div>
+                        <h3 class="text-xl font-bold text-red-800">智能合约安全 - 重大警示</h3>
+                    </div>
+                    <p class="text-red-700">截至报告撰写时，**未找到任何针对Jupiter Lend智能合约的公开审计报告**。这是一个严重的透明度缺失和核心风险点。在审计报告公开前，无法全面评估其安全性。</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md transition-transform hover:scale-105">
+                    <h3 class="text-xl font-bold text-gray-800 mb-3">协议与经济风险</h3>
+                    <ul class="list-disc list-inside space-y-2 text-gray-600">
+                        <li><strong>坏账风险:</strong> 高LTV模型在市场剧烈波动时极易产生坏账。</li>
+                        <li><strong>预言机风险:</strong> 依赖Pyth Network，任何价格延迟或操纵都可能导致灾难性后果。</li>
+                        <li><strong>清算引擎风险:</strong> 核心组件未经公开审计，任何漏洞都可能是毁灭性的。</li>
+                    </ul>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md transition-transform hover:scale-105">
+                    <h3 class="text-xl font-bold text-gray-800 mb-3">Solana 网络风险</h3>
+                    <p class="text-gray-600">协议完全依赖Solana网络。历史上的网络中断和性能下降问题在高波动市场中可能成为致命弱点，阻碍关键的清算交易。</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md transition-transform hover:scale-105">
+                    <h3 class="text-xl font-bold text-gray-800 mb-3">团队与治理风险</h3>
+                    <ul class="list-disc list-inside space-y-2 text-gray-600">
+                        <li><strong>关键人物风险:</strong> 创始人为化名身份，影响力巨大。</li>
+                        <li><strong>治理中心化:</strong> DAO投票暂停至2026年初，决策权高度集中于核心团队。</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="competition" class="mb-16 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center mb-10">Solana 借贷市场竞争格局</h2>
+            <p class="text-center text-gray-600 max-w-3xl mx-auto mb-10">Jupiter Lend 并非进入一片蓝海。本节通过可视化的数据对比，展示了其在 Solana 借贷市场中的位置，以及与主要竞争对手（如 Kamino Finance）在关键指标上的差距。这有助于您客观评估其面临的市场挑战和增长潜力。</p>
+            <div class="chart-container">
+                <canvas id="competitionChart"></canvas>
+            </div>
+        </section>
+
+        <section id="strategy" class="scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center mb-10">投资机会与高级策略</h2>
+            <p class="text-center text-gray-600 max-w-3xl mx-auto mb-10">本节旨在提供具体、可操作的投资参与路径。通过交互式选项卡，您可以探索从低风险的资产出借到极高风险的杠杆策略等不同选择。我们还提供了一个杠杆计算器，帮助您直观地理解高级策略背后的潜在回报与风险。</p>
+            <div class="max-w-4xl mx-auto">
+                <div class="mb-4 flex justify-center border-b border-gray-200">
+                    <button class="tab-btn py-2 px-4 text-gray-600 font-medium active" data-tab="earn">出借资产 (Earn)</button>
+                    <button class="tab-btn py-2 px-4 text-gray-600 font-medium" data-tab="jup">持有/质押 JUP</button>
+                    <button class="tab-btn py-2 px-4 text-gray-600 font-medium" data-tab="leverage">杠杆循环借贷</button>
+                </div>
+                <div class="p-6 bg-white rounded-lg shadow-inner">
+                    <div id="earn" class="tab-content">
+                        <h3 class="text-xl font-bold mb-2">出借资产 (Earn) - 低风险</h3>
+                        <p class="text-gray-600">将USDC、SOL等资产存入金库赚取浮动利息。这是参与协议最直接、风险相对较低的方式。收益来源于借款人支付的利息，风险主要为智能合约风险和协议坏账风险（由隔离金库部分缓解）。</p>
+                    </div>
+                    <div id="jup" class="tab-content hidden">
+                        <h3 class="text-xl font-bold mb-2">持有/质押 JUP - 中高风险</h3>
+                        <p class="text-gray-600">直接购买JUP代币或进行质押，赌注押在整个Jupiter生态的长期成功上。主要回报来自代币价格升值和质押奖励。主要风险包括代币解锁带来的巨大抛压、价格高波动性以及治理暂停带来的不确定性。</p>
+                    </div>
+                    <div id="leverage" class="tab-content hidden">
+                        <h3 class="text-xl font-bold mb-2">杠杆循环借贷 - 极高风险</h3>
+                        <p class="text-gray-600 mb-4">利用协议95%的高LTV，通过反复存入-借出-兑换-再存入的操作，建立远超初始资本的杠杆头寸，以放大基础资产的收益。此策略极大地放大了清算风险，资产价格的微小波动都可能导致全部本金损失。</p>
+                        <div class="mt-6 p-4 border border-gray-200 rounded-lg">
+                            <h4 class="font-bold mb-2">杠杆效应计算器 (示例)</h4>
+                            <div class="flex flex-col sm:flex-row items-center gap-4">
+                                <div class="w-full sm:w-auto">
+                                    <label for="initial-capital" class="block text-sm font-medium text-gray-700">初始资本 ($)</label>
+                                    <input type="number" id="initial-capital" value="1000" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm">
+                                </div>
+                                <div class="w-full sm:w-auto">
+                                    <label for="loops" class="block text-sm font-medium text-gray-700">循环次数</label>
+                                    <input type="number" id="loops" value="5" min="1" max="20" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm">
+                                </div>
+                                <div class="mt-2 sm:mt-6">
+                                    <button id="calculate-leverage" class="w-full sm:w-auto bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700">计算</button>
+                                </div>
+                            </div>
+                            <div id="leverage-result" class="mt-4 text-center bg-orange-50 p-3 rounded-md hidden">
+                                <p class="text-gray-700">最终杠杆头寸价值约为: <span class="font-bold text-lg text-orange-800" id="final-position"></span></p>
+                                <p class="text-xs text-gray-500 mt-1">这是一个简化的估算，未考虑交易滑点和费用。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-gray-800 text-white mt-16">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center text-sm">
+            <p>本报告仅供参考，不构成任何财务建议。所有信息均基于公开数据整理分析。</p>
+            <p class="mt-1 text-gray-400">&copy; 2025 交互式投资分析</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const kpiData = {
+                dexVolume: 24.2, 
+                platformFees: 110, 
+                retailLiquidity: 80 
+            };
+
+            function animateValue(obj, start, end, duration, suffix) {
+                let startTimestamp = null;
+                const step = (timestamp) => {
+                    if (!startTimestamp) startTimestamp = timestamp;
+                    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                    let currentValue = progress * (end - start) + start;
+                    if (suffix === 'B') {
+                        obj.innerHTML = `$${currentValue.toFixed(2)}B`;
+                    } else if (suffix === 'M') {
+                        obj.innerHTML = `$${currentValue.toFixed(0)}M`;
+                    } else if (suffix === '%') {
+                        obj.innerHTML = `~${currentValue.toFixed(0)}%`;
+                    }
+                    if (progress < 1) {
+                        window.requestAnimationFrame(step);
+                    }
+                };
+                window.requestAnimationFrame(step);
+            }
+
+            const dexVolumeEl = document.getElementById('kpi-dex-volume');
+            const platformFeesEl = document.getElementById('kpi-platform-fees');
+            const retailLiquidityEl = document.getElementById('kpi-retail-liquidity');
+            
+            animateValue(dexVolumeEl, 0, kpiData.dexVolume, 2000, 'B');
+            animateValue(platformFeesEl, 0, kpiData.platformFees, 2000, 'M');
+            animateValue(retailLiquidityEl, 0, kpiData.retailLiquidity, 2000, '%');
+
+            const tokenomicsCtx = document.getElementById('tokenomicsChart').getContext('2d');
+            new Chart(tokenomicsCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['社区空投', '流动性供应', '团队', '战略储备'],
+                    datasets: [{
+                        label: 'JUP 代币分配',
+                        data: [40, 10, 20, 20],
+                        backgroundColor: [
+                            'rgba(251, 146, 60, 0.8)',
+                            'rgba(251, 191, 116, 0.8)',
+                            'rgba(124, 58, 237, 0.8)',
+                            'rgba(167, 139, 250, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgba(251, 146, 60, 1)',
+                            'rgba(251, 191, 116, 1)',
+                            'rgba(124, 58, 237, 1)',
+                            'rgba(167, 139, 250, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: 'JUP 代币分配'
+                        }
+                    }
+                }
+            });
+
+            const competitionCtx = document.getElementById('competitionChart').getContext('2d');
+            new Chart(competitionCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Kamino Finance', 'Save (Solend)', 'MarginFi', 'Jupiter Lend'],
+                    datasets: [{
+                        label: '总锁仓价值 (TVL)',
+                        data: [3600, 600, 290, 161],
+                        backgroundColor: [
+                            'rgba(54, 162, 235, 0.6)',
+                            'rgba(255, 206, 86, 0.6)',
+                            'rgba(75, 192, 192, 0.6)',
+                            'rgba(255, 99, 132, 0.6)'
+                        ],
+                        borderColor: [
+                            'rgba(54, 162, 235, 1)',
+                            'rgba(255, 206, 86, 1)',
+                            'rgba(75, 192, 192, 1)',
+                            'rgba(255, 99, 132, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value + 'M';
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: '主要竞争对手TVL对比 (单位: 百万美元)'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact' }).format(context.parsed.y * 1000000);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            const tabs = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(item => item.classList.remove('active'));
+                    tab.classList.add('active');
+                    const target = tab.getAttribute('data-tab');
+                    tabContents.forEach(content => {
+                        if (content.id === target) {
+                            content.classList.remove('hidden');
+                        } else {
+                            content.classList.add('hidden');
+                        }
+                    });
+                });
+            });
+
+            const calculateBtn = document.getElementById('calculate-leverage');
+            const resultDiv = document.getElementById('leverage-result');
+            const finalPositionEl = document.getElementById('final-position');
+            const initialCapitalInput = document.getElementById('initial-capital');
+            const loopsInput = document.getElementById('loops');
+
+            calculateBtn.addEventListener('click', () => {
+                const initialCapital = parseFloat(initialCapitalInput.value);
+                const loops = parseInt(loopsInput.value);
+                const ltv = 0.95;
+
+                if (isNaN(initialCapital) || isNaN(loops) || initialCapital <= 0 || loops <= 0) {
+                    alert('请输入有效的初始资本和循环次数。');
+                    return;
+                }
+
+                let totalPosition = initialCapital;
+                let currentBorrowable = initialCapital;
+
+                for (let i = 0; i < loops; i++) {
+                    let borrowedAmount = currentBorrowable * ltv;
+                    totalPosition += borrowedAmount;
+                    currentBorrowable = borrowedAmount;
+                }
+
+                finalPositionEl.textContent = `$${totalPosition.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                resultDiv.classList.remove('hidden');
+            });
+
+            const sections = document.querySelectorAll('section');
+            const navLinks = document.querySelectorAll('.nav-link');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        navLinks.forEach(link => {
+                            link.classList.toggle('active', link.getAttribute('href').substring(1) === entry.target.id);
+                        });
+                    }
+                });
+            }, { rootMargin: "-50% 0px -50% 0px" });
+
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+        });
+    </script>
+</body>
+</html>
