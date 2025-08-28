@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giza 协议交互式投资仪表板</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Beige & Slate -->
+    <!-- Application Structure Plan: A single-page dashboard with a sticky top navigation for non-linear exploration. The structure is thematic, grouping content into logical sections like Technology, Performance, Tokenomics, and Risk. This is more user-friendly than the report's linear format, allowing investors to jump directly to their area of interest. Key interactions include hover-to-reveal diagrams, interactive charts, and a clickable risk matrix to make data consumption active rather than passive. -->
+    <!-- Visualization & Content Choices: 
+    - Report Info: Token Allocation -> Goal: Organize -> Viz: Chart.js Donut Chart -> Interaction: Hover tooltips -> Justification: Visually intuitive way to show proportions.
+    - Report Info: ARMA Yield vs. Static -> Goal: Compare -> Viz: Chart.js Bar Chart -> Interaction: Hover tooltips -> Justification: Clearly demonstrates the core value proposition (outperformance).
+    - Report Info: 3-Layer Architecture -> Goal: Explain -> Viz: HTML/CSS Diagram -> Interaction: Hover to show details -> Justification: Breaks down a complex technical concept into digestible, interactive parts.
+    - Report Info: Risk Matrix -> Goal: Inform/Warn -> Viz: Interactive HTML Grid -> Interaction: Click to expand -> Justification: Allows users to self-direct their risk assessment, focusing on what matters to them, while visually prioritizing the most critical risks.
+    - CONFIRMATION: NO SVG/Mermaid used. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #FDFBF8; 
+            color: #334155;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .tech-card {
+            transition: all 0.3s ease-in-out;
+        }
+        .tech-card .details {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out;
+        }
+        .tech-card:hover .details {
+            max-height: 500px;
+        }
+        .risk-item.active {
+            border-left-width: 4px;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .tab-btn.active {
+            border-bottom-width: 2px;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
+        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="font-bold text-xl text-slate-800">Giza 协议分析</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#overview" class="text-slate-600 hover:text-teal-600 px-3 py-2 rounded-md text-sm font-medium">概览</a>
+                        <a href="#technology" class="text-slate-600 hover:text-teal-600 px-3 py-2 rounded-md text-sm font-medium">技术架构</a>
+                        <a href="#performance" class="text-slate-600 hover:text-teal-600 px-3 py-2 rounded-md text-sm font-medium">性能仪表盘</a>
+                        <a href="#tokenomics" class="text-slate-600 hover:text-teal-600 px-3 py-2 rounded-md text-sm font-medium">代币经济</a>
+                        <a href="#risk" class="text-slate-600 hover:text-teal-600 px-3 py-2 rounded-md text-sm font-medium">风险矩阵</a>
+                        <a href="#strategy" class="text-slate-600 hover:text-teal-600 px-3 py-2 rounded-md text-sm font-medium">投资策略</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+
+        <section id="overview" class="mb-16">
+            <h1 class="text-4xl md:text-5xl font-bold text-center text-slate-900 mb-4">Giza 协议: DeFi 领域 AI 驱动型自主代理</h1>
+            <p class="text-center text-lg text-slate-600 max-w-3xl mx-auto mb-8">一份关于 Giza 及其 ARMA DeFi 代理的全面交互式投资评估报告。</p>
+            
+            <div class="text-center mb-12">
+                <span class="text-sm font-semibold text-slate-500">最终投资评级</span>
+                <p class="text-3xl font-bold text-amber-600 mt-1">投机性买入 (Speculative Buy)</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-lg shadow-md border border-green-200">
+                    <h3 class="text-2xl font-bold text-green-700 mb-4">看涨理由 (Bull Case)</h3>
+                    <ul class="space-y-3 text-slate-700">
+                        <li class="flex items-start"><span class="text-green-500 mr-3 mt-1">✓</span><span><b>赛道先行者:</b> 占据前景广阔的 AgentFi 赛道，技术理念创新。</span></li>
+                        <li class="flex items-start"><span class="text-green-500 mr-3 mt-1">✓</span><span><b>顶级支持:</b> 拥有强大的团队背景和顶级的风险投资支持。</span></li>
+                        <li class="flex items-start"><span class="text-green-500 mr-3 mt-1">✓</span><span><b>产品验证:</b> 旗舰产品 ARMA 已上线并取得可验证的链上成功。</span></li>
+                        <li class="flex items-start"><span class="text-green-500 mr-3 mt-1">✓</span><span><b>机构需求:</b> 技术架构精准瞄准机构级 DeFi 用户的核心痛点。</span></li>
+                        <li class="flex items-start"><span class="text-green-500 mr-3 mt-1">✓</span><span><b>价值捕获:</b> 代币价值捕获机制清晰，与协议基本面增长直接挂钩。</span></li>
+                    </ul>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md border border-red-200">
+                    <h3 class="text-2xl font-bold text-red-700 mb-4">看跌理由 (Bear Case)</h3>
+                    <ul class="space-y-3 text-slate-700">
+                        <li class="flex items-start"><span class="text-red-500 mr-3 mt-1">✗</span><span><b class="text-red-800">致命缺陷:</b> 缺乏顶级安全公司的公开审计报告，风险极高。</span></li>
+                        <li class="flex items-start"><span class="text-red-500 mr-3 mt-1">✗</span><span><b>抛售压力:</b> 代币分配集中，未来线性解锁将造成巨大的持续抛压。</span></li>
+                        <li class="flex items-start"><span class="text-red-500 mr-3 mt-1">✗</span><span><b>新兴市场:</b> AgentFi 赛道处于萌芽期，竞争格局未定。</span></li>
+                        <li class="flex items-start"><span class="text-red-500 mr-3 mt-1">✗</span><span><b>系统风险:</b> 继承所有集成的底层 DeFi 协议和跨链桥的风险。</span></li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="technology" class="mb-16">
+            <h2 class="text-3xl font-bold text-center text-slate-800 mb-4">解构 Giza：为自主代理而生的架构</h2>
+            <p class="text-center text-slate-600 max-w-3xl mx-auto mb-10">Giza 的创新之处在于其专为自主 DeFi 代理设计的综合性架构。将鼠标悬停在下方卡片上以了解各层级的详细信息。</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="tech-card bg-white p-6 rounded-lg shadow-md hover:shadow-xl hover:-translate-y-1 cursor-pointer border-t-4 border-teal-500">
+                    <h4 class="text-xl font-bold text-slate-800 mb-2">语义抽象层</h4>
+                    <p class="text-sm text-slate-500 mb-3">DeFi 世界的“罗塞塔石碑”</p>
+                    <div class="details">
+                        <p class="text-slate-600 text-sm">将不同协议复杂独特的函数调用，转化为一组标准化的、AI 代理能够理解的金融概念（如“借出”、“交换”），极大降低了跨协议操作的难度。</p>
+                    </div>
+                </div>
+                <div class="tech-card bg-white p-6 rounded-lg shadow-md hover:shadow-xl hover:-translate-y-1 cursor-pointer border-t-4 border-sky-500">
+                    <h4 class="text-xl font-bold text-slate-800 mb-2">代理授权层</h4>
+                    <p class="text-sm text-slate-500 mb-3">非托管安全的核心</p>
+                    <div class="details">
+                        <p class="text-slate-600 text-sm">利用智能账户 (ERC-4337) 和会话密钥技术，用户可以向代理授予粒度极细、有时间限制的权限，而无需交出私钥，确保资产安全。</p>
+                    </div>
+                </div>
+                <div class="tech-card bg-white p-6 rounded-lg shadow-md hover:shadow-xl hover:-translate-y-1 cursor-pointer border-t-4 border-indigo-500">
+                    <h4 class="text-xl font-bold text-slate-800 mb-2">去中心化执行层</h4>
+                    <p class="text-sm text-slate-500 mb-3">7x24 小时可靠运行</p>
+                    <div class="details">
+                        <p class="text-slate-600 text-sm">由节点组成的去中心化网络，负责任务的调度和执行。通过 EigenLayer AVS 继承以太坊的安全性，并利用加密经济机制（质押与罚没）保障可靠性。</p>
+                    </div>
+                </div>
+                <div class="tech-card bg-white p-6 rounded-lg shadow-md hover:shadow-xl hover:-translate-y-1 cursor-pointer border-t-4 border-purple-500">
+                    <h4 class="text-xl font-bold text-slate-800 mb-2">可验证机器学习 (zkML)</h4>
+                    <p class="text-sm text-slate-500 mb-3">未来愿景：可信 AI</p>
+                    <div class="details">
+                        <p class="text-slate-600 text-sm">利用零知识证明，在不暴露模型的前提下，验证 AI 决策过程的透明度和可信度，是满足机构级合规与风控需求的终极方案。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="performance" class="mb-16">
+            <h2 class="text-3xl font-bold text-center text-slate-800 mb-4">ARMA 代理性能仪表盘</h2>
+            <p class="text-center text-slate-600 max-w-3xl mx-auto mb-10">作为 Giza 的首个落地应用，ARMA 的链上性能是评估整个生态系统潜力的关键窗口。</p>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 text-center mb-10">
+                <div class="bg-white p-4 rounded-lg shadow">
+                    <p class="text-sm text-slate-500">管理资产规模 (AUA)</p>
+                    <p class="text-2xl md:text-3xl font-bold text-slate-800 mt-1">>$330万</p>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow">
+                    <p class="text-sm text-slate-500">代理交易量</p>
+                    <p class="text-2xl md:text-3xl font-bold text-slate-800 mt-1">>$2.64亿</p>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow">
+                    <p class="text-sm text-slate-500">部署代理数量</p>
+                    <p class="text-2xl md:text-3xl font-bold text-slate-800 mt-1">>14,000</p>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow">
+                    <p class="text-sm text-slate-500">资本效率指数 (CPI)</p>
+                    <p class="text-2xl md:text-3xl font-bold text-slate-800 mt-1">5.843x</p>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-xl font-bold text-center text-slate-800 mb-4">ARMA 收益率表现 vs. 静态持仓 (回测)</h3>
+                <div class="chart-container">
+                    <canvas id="performanceChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section id="tokenomics" class="mb-16">
+            <h2 class="text-3xl font-bold text-center text-slate-800 mb-4">$GIZA 代币经济学浏览器</h2>
+            <p class="text-center text-slate-600 max-w-3xl mx-auto mb-10">$GIZA 代币是驱动网络安全、激励参与者并实现价值捕获的核心。</p>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-bold text-center text-slate-800 mb-4">代币分配</h3>
+                    <div class="chart-container h-64 md:h-80">
+                        <canvas id="tokenomicsChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4">核心效用与风险</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <h4 class="font-bold text-teal-700">✓ 核心效用</h4>
+                            <ul class="list-disc list-inside text-slate-600 mt-2 space-y-1">
+                                <li><b>质押 (Staking):</b> 节点质押 $GIZA 以保障网络安全并分享协议收入。</li>
+                                <li><b>治理 (Governance):</b> 持有者通过 GizaDAO 对协议关键决策进行投票。</li>
+                                <li><b>费用分成 (Fee Accrual):</b> 协议费用用于奖励质押者及回购销毁代币。</li>
+                            </ul>
+                        </div>
+                        <div class="border-t pt-4">
+                            <h4 class="font-bold text-red-700">✗ 归属风险 (Vesting)</h4>
+                            <p class="text-slate-600 mt-2">占总供应量 <b>31.44%</b> 的投资者份额将于 <b>2025年8月</b> 开始线性解锁，可能带来每月超过 <b>1000万美元</b> 的潜在抛压，对市场构成巨大考验。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="risk" class="mb-16">
+            <h2 class="text-3xl font-bold text-center text-slate-800 mb-4">交互式风险评估矩阵</h2>
+            <p class="text-center text-slate-600 max-w-3xl mx-auto mb-10">点击左侧风险类别，查看右侧的详细分析。安全是任何 DeFi 协议的生命线。</p>
+            <div class="flex flex-col md:flex-row bg-white rounded-lg shadow-md overflow-hidden">
+                <div class="md:w-1/3 border-r border-slate-200">
+                    <ul id="risk-list" class="flex flex-row md:flex-col">
+                        <li data-risk="contract" class="risk-item p-4 cursor-pointer hover:bg-slate-50 active border-l-teal-500">
+                            <h4 class="font-bold text-slate-800">智能合约风险</h4>
+                            <p class="text-sm text-slate-500">核心逻辑未经审计</p>
+                        </li>
+                        <li data-risk="operation" class="risk-item p-4 cursor-pointer hover:bg-slate-50 border-l-transparent">
+                            <h4 class="font-bold text-slate-800">操作风险</h4>
+                            <p class="text-sm text-slate-500">极端行情决策</p>
+                        </li>
+                        <li data-risk="system" class="risk-item p-4 cursor-pointer hover:bg-slate-50 border-l-transparent">
+                            <h4 class="font-bold text-slate-800">系统性风险</h4>
+                            <p class="text-sm text-slate-500">底层协议依赖</p>
+                        </li>
+                        <li data-risk="market" class="risk-item p-4 cursor-pointer hover:bg-slate-50 border-l-transparent">
+                            <h4 class="font-bold text-slate-800">市场风险</h4>
+                            <p class="text-sm text-slate-500">解锁抛压</p>
+                        </li>
+                    </ul>
+                </div>
+                <div id="risk-details" class="md:w-2/3 p-6">
+                </div>
+            </div>
+        </section>
+
+        <section id="strategy" class="mb-16">
+            <h2 class="text-3xl font-bold text-center text-slate-800 mb-4">可行的投资与参与策略</h2>
+            <p class="text-center text-slate-600 max-w-3xl mx-auto mb-10">根据不同的风险偏好，存在多种参与 Giza 生态的方式。</p>
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="border-b border-slate-200 mb-4">
+                    <nav id="strategy-tabs" class="-mb-px flex space-x-6" aria-label="Tabs">
+                        <button data-tab="buy" class="tab-btn active text-slate-700 hover:text-teal-600 whitespace-nowrap py-4 px-1 border-b-2 border-teal-500 font-medium text-sm">直接投资代币</button>
+                        <button data-tab="use" class="tab-btn text-slate-500 hover:text-teal-600 whitespace-nowrap py-4 px-1 border-b-2 border-transparent font-medium text-sm">使用 ARMA 代理</button>
+                        <button data-tab="stake" class="tab-btn text-slate-500 hover:text-teal-600 whitespace-nowrap py-4 px-1 border-b-2 border-transparent font-medium text-sm">质押 $GIZA</button>
+                        <button data-tab="airdrop" class="tab-btn text-slate-500 hover:text-teal-600 whitespace-nowrap py-4 px-1 border-b-2 border-transparent font-medium text-sm">空投策略</button>
+                    </nav>
+                </div>
+                <div id="strategy-content">
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-slate-100 border-t">
+        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 text-center text-sm text-slate-500">
+            <p>免责声明：本交互式报告仅供参考，不构成任何投资建议。所有投资决策均需基于您个人的研究和风险评估。区块链投资存在高风险。</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            
+            const performanceData = {
+                labels: ['静态持仓 (单一协议)', 'ARMA 代理策略'],
+                datasets: [{
+                    label: '相对收益率',
+                    data: [100, 183],
+                    backgroundColor: [
+                        'rgba(148, 163, 184, 0.6)',
+                        'rgba(20, 184, 166, 0.6)'
+                    ],
+                    borderColor: [
+                        'rgba(148, 163, 184, 1)',
+                        'rgba(20, 184, 166, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            };
+
+            const performanceCtx = document.getElementById('performanceChart').getContext('2d');
+            new Chart(performanceCtx, {
+                type: 'bar',
+                data: performanceData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    if (context.dataIndex === 1) {
+                                        return 'ARMA 策略收益高出 83%';
+                                    }
+                                    return '基准收益';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            const tokenomicsData = {
+                labels: ['早期支持者 (40.1%)', '团队与顾问 (18.3%)', '社区 (22.2%)', '财库与生态 (19.4%)'],
+                datasets: [{
+                    data: [40.1, 18.3, 22.2, 19.4],
+                    backgroundColor: [
+                        '#f59e0b', // amber-500
+                        '#38bdf8', // sky-500
+                        '#4ade80', // green-400
+                        '#a78bfa', // violet-400
+                    ],
+                    hoverOffset: 4
+                }]
+            };
+
+            const tokenomicsCtx = document.getElementById('tokenomicsChart').getContext('2d');
+            new Chart(tokenomicsCtx, {
+                type: 'doughnut',
+                data: tokenomicsData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                        },
+                        tooltip: {
+                             callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += context.parsed + '%';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            const riskData = {
+                contract: {
+                    title: '智能合约风险 (严重)',
+                    possibility: '高',
+                    impact: '严重',
+                    content: '这是 Giza 协议当前面临的<strong>最核心风险</strong>。项目缺乏来自行业顶级审计公司的公开审计报告。尽管其使用的第三方服务商经过审计，但这并不能覆盖 Giza 自身的核心业务逻辑。对于管理用户资产的协议而言，这构成了不可接受的风险。',
+                    mitigation: '<strong>无（当前）</strong>。亟需进行并公布顶级安全公司的全面审计。'
+                },
+                operation: {
+                    title: '操作风险',
+                    possibility: '中',
+                    impact: '高',
+                    content: 'ARMA 代理的决策模型中若存在逻辑缺陷，可能导致在市场极端波动（“黑天鹅”事件）期间做出无利可图甚至亏损的交易，从而损害用户资金。',
+                    mitigation: '严格的回测；内置的风险管理模块（如止损）。'
+                },
+                system: {
+                    title: '系统性风险',
+                    possibility: '中',
+                    impact: '高',
+                    content: 'Giza 作为一个与多个协议交互的基础设施层，继承了其集成的所有底层协议和跨链桥的全部风险。任何一个集成环节出现漏洞，都可能对 Giza 构成威胁。',
+                    mitigation: '分散化资本配置；持续监控底层协议健康状况。'
+                },
+                market: {
+                    title: '市场风险',
+                    possibility: '高',
+                    impact: '高',
+                    content: '代币经济模型中，内部人员和早期投资者持有比例过高，未来的线性解锁将对市场造成巨大的、持续的抛售压力。',
+                    mitigation: '通过协议收入增长和质押激励来吸收新增供应。'
+                }
+            };
+
+            const riskList = document.getElementById('risk-list');
+            const riskDetailsContainer = document.getElementById('risk-details');
+
+            function displayRisk(riskKey) {
+                const data = riskData[riskKey];
+                riskDetailsContainer.innerHTML = `
+                    <h3 class="text-2xl font-bold text-slate-800 mb-4 ${riskKey === 'contract' ? 'text-red-700' : ''}">${data.title}</h3>
+                    <div class="grid grid-cols-2 gap-4 mb-4 text-sm">
+                        <div class="bg-slate-100 p-3 rounded-md"><strong>可能性:</strong> <span class="font-medium">${data.possibility}</span></div>
+                        <div class="bg-slate-100 p-3 rounded-md"><strong>影响程度:</strong> <span class="font-medium">${data.impact}</span></div>
+                    </div>
+                    <p class="text-slate-600 mb-4">${data.content}</p>
+                    <div>
+                        <h4 class="font-semibold text-slate-700">缓解措施</h4>
+                        <p class="text-slate-600 mt-1">${data.mitigation}</p>
+                    </div>
+                `;
+                
+                riskList.querySelectorAll('.risk-item').forEach(item => {
+                    item.classList.remove('active', 'border-l-teal-500');
+                    item.classList.add('border-l-transparent');
+                });
+                const activeItem = riskList.querySelector(`[data-risk="${riskKey}"]`);
+                activeItem.classList.add('active', 'border-l-teal-500');
+                activeItem.classList.remove('border-l-transparent');
+            }
+
+            riskList.addEventListener('click', (e) => {
+                const targetItem = e.target.closest('.risk-item');
+                if (targetItem) {
+                    displayRisk(targetItem.dataset.risk);
+                }
+            });
+
+            displayRisk('contract');
+            
+            const strategyData = {
+                buy: {
+                    title: '直接投资 $GIZA 代币',
+                    content: '购买并持有 $GIZA 代币，是对 Giza 协议生态系统未来成功的直接、高杠杆押注。其价值与代理交易量的增长、协议费用的产生以及代币质押需求紧密相关。',
+                    pros: ['高潜在回报', '直接参与生态增长'],
+                    cons: ['高波动性', '受解锁抛压影响大'],
+                    where: '可通过中心化交易所（如 MEXC, KuCoin）或 Base 链上的 DEX（如 Aerodrome）获取。'
+                },
+                use: {
+                    title: '通过 ARMA 代理获取收益',
+                    content: '对于寻求稳定币（如 USDC）收益的投资者，直接使用 ARMA 代理是参与协议核心功能的主要方式。预期 APR 可达 15% 左右，但需承担未经审计的智能合约风险。',
+                    pros: ['获取稳定币超额收益', '体验协议核心技术'],
+                    cons: ['承担未经审计的合约风险', '10% 业绩费'],
+                    where: '访问 ARMA 官方应用，连接钱包并存入 USDC。'
+                },
+                stake: {
+                    title: '质押 $GIZA 代币',
+                    content: '当质押功能全面上线后，这将成为 $GIZA 代币持有者的核心活动。通过质押，用户可以分享协议收入，但同时也面临着潜在的罚没风险和锁定期。',
+                    pros: ['分享协议收入', '维护网络安全'],
+                    cons: ['罚没风险', '代币有锁定期'],
+                    where: '待官方质押功能上线后，通过协议官网进行。'
+                },
+                airdrop: {
+                    title: '空投策略',
+                    content: 'Giza 已确认将有第二季（Season 2）空投，奖励重点将放在对 ARMA 及未来新代理的持续使用上。积极使用 ARMA 代理是获取空投的最有效策略。',
+                    pros: ['潜在的无成本收益', '奖励早期支持者'],
+                    cons: ['规则不确定', '需要投入时间和 Gas 费'],
+                    where: '持续使用 ARMA 代理，在链上留下活跃交互记录。'
+                }
+            };
+
+            const strategyTabs = document.getElementById('strategy-tabs');
+            const strategyContentContainer = document.getElementById('strategy-content');
+
+            function displayStrategy(tabKey) {
+                const data = strategyData[tabKey];
+                strategyContentContainer.innerHTML = `
+                    <div class="tab-content active">
+                        <h4 class="text-xl font-bold text-slate-800 mb-3">${data.title}</h4>
+                        <p class="text-slate-600 mb-4">${data.content}</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <h5 class="font-semibold text-green-700">优点</h5>
+                                <ul class="list-disc list-inside text-sm text-slate-600 mt-1 space-y-1">${data.pros.map(p => `<li>${p}</li>`).join('')}</ul>
+                            </div>
+                            <div>
+                                <h5 class="font-semibold text-red-700">缺点</h5>
+                                <ul class="list-disc list-inside text-sm text-slate-600 mt-1 space-y-1">${data.cons.map(c => `<li>${c}</li>`).join('')}</ul>
+                            </div>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-md text-sm">
+                            <p class="font-semibold text-slate-700">如何参与:</p>
+                            <p class="text-slate-600 mt-1">${data.where}</p>
+                        </div>
+                    </div>
+                `;
+                strategyTabs.querySelectorAll('.tab-btn').forEach(btn => {
+                    btn.classList.remove('active', 'border-teal-500', 'text-slate-700');
+                    btn.classList.add('border-transparent', 'text-slate-500');
+                });
+                const activeBtn = strategyTabs.querySelector(`[data-tab="${tabKey}"]`);
+                activeBtn.classList.add('active', 'border-teal-500', 'text-slate-700');
+                activeBtn.classList.remove('border-transparent', 'text-slate-500');
+            }
+
+            strategyTabs.addEventListener('click', (e) => {
+                const targetBtn = e.target.closest('.tab-btn');
+                if (targetBtn) {
+                    displayStrategy(targetBtn.dataset.tab);
+                }
+            });
+            
+            displayStrategy('buy');
+
+        });
+    </script>
+</body>
+</html>

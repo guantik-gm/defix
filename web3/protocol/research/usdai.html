@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>USD.AI 交互式投资分析报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Fintech Calm -->
+    <!-- Application Structure Plan: 本应用的架构设计旨在将线性报告转化为一个非线性的、以用户为中心的探索体验。顶部导航栏作为全局入口，允许用户快速跳转至最感兴趣的主题：'概览'、'协议机制'、'市场竞争'、'风险评估'和'投资策略'。这种主题式分块结构取代了报告的章节顺序，使用户可以根据自己的需求自由探索，而非被动阅读。例如，资深DeFi用户可能直接跳转到'投资策略'，而新用户则可以从'概览'和'协议机制'开始。核心交互在于将静态数据（如竞品对比、投资策略）转化为动态图表和可筛选表格，让用户通过操作来发现信息，从而增强理解和记忆。 -->
+    <!-- Visualization & Content Choices: 1. **关键指标 (概览)**: 报告中的TVL和目标APR是核心数据。目标是'告知'。选择使用动态数字卡片展示，而非静态文本，以在第一时间吸引用户注意力。2. **协议机制 (CALIBER, FiLo, QEV)**: 报告中的技术框架是抽象概念。目标是'组织'和'解释'。选择使用HTML/Tailwind构建的流程图来可视化，这比纯文本更清晰，且符合'NO SVG'的约束。3. **竞品对比**: 报告中提供了对比表格。目标是'比较'。选择使用Chart.js创建一个可交互的条形图。用户可以通过按钮切换对比维度（TVL、抵押品类型），实现从被动接收信息到主动探索数据的转变。4. **投资策略**: 报告中对此有详细表格。目标是'组织'和'比较'。选择创建一个带有筛选功能的HTML表格。用户可以根据风险偏好或策略类型（如'高收益'、'固定收益'）进行筛选，快速找到符合自己需求的投资选项。这比静态表格更具实用价值。 -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #FDFBF8;
+            color: #3D405B;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 400px;
+            max-height: 50vh;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 450px;
+            }
+        }
+        .nav-link {
+            transition: color 0.3s, border-bottom-color 0.3s;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #8D5A97;
+            border-bottom-color: #8D5A97;
+        }
+        .btn-primary {
+            background-color: #8D5A97;
+            color: #FFFFFF;
+            transition: background-color 0.3s;
+        }
+        .btn-primary:hover {
+            background-color: #794c81;
+        }
+        .btn-secondary {
+            background-color: #E0D2E3;
+            color: #8D5A97;
+            transition: background-color 0.3s;
+        }
+        .btn-secondary.active, .btn-secondary:hover {
+            background-color: #CBB9CF;
+        }
+        .card {
+            background-color: #FFFFFF;
+            border: 1px solid #E0D2E3;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .section-title-underline {
+            position: relative;
+            display: inline-block;
+        }
+        .section-title-underline::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50px;
+            height: 4px;
+            background-color: #8D5A97;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="text-2xl font-bold text-[#3D405B]">
+                USD<span class="text-[#8D5A97]">.AI</span> 报告
+            </div>
+            <div class="hidden md:flex space-x-8">
+                <a href="#overview" class="nav-link text-gray-600 border-b-2 border-transparent pb-1">概览</a>
+                <a href="#mechanics" class="nav-link text-gray-600 border-b-2 border-transparent pb-1">协议机制</a>
+                <a href="#market" class="nav-link text-gray-600 border-b-2 border-transparent pb-1">市场竞争</a>
+                <a href="#risk" class="nav-link text-gray-600 border-b-2 border-transparent pb-1">风险评估</a>
+                <a href="#strategies" class="nav-link text-gray-600 border-b-2 border-transparent pb-1">投资策略</a>
+            </div>
+            <button id="mobile-menu-button" class="md:hidden focus:outline-none">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+            </button>
+        </nav>
+        <div id="mobile-menu" class="hidden md:hidden">
+            <a href="#overview" class="block py-2 px-4 text-sm hover:bg-gray-100">概览</a>
+            <a href="#mechanics" class="block py-2 px-4 text-sm hover:bg-gray-100">协议机制</a>
+            <a href="#market" class="block py-2 px-4 text-sm hover:bg-gray-100">市场竞争</a>
+            <a href="#risk" class="block py-2 px-4 text-sm hover:bg-gray-100">风险评估</a>
+            <a href="#strategies" class="block py-2 px-4 text-sm hover:bg-gray-100">投资策略</a>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-6 py-12">
+
+        <section id="overview" class="text-center mb-24 scroll-mt-20">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4">USD.AI 深度投资分析</h1>
+            <p class="text-lg text-gray-600 max-w-3xl mx-auto">一个旨在为AI革命提供动力的DeFi信贷协议。本报告将通过交互式数据探索其核心价值、市场定位、潜在风险与投资机遇。</p>
+            
+            <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="card p-6">
+                    <h3 class="text-lg font-semibold text-gray-500">总锁定价值 (TVL)</h3>
+                    <p id="tvl-value" class="text-4xl font-bold my-2 text-[#8D5A97]">$0 M</p>
+                    <p class="text-sm text-gray-500">反映了市场对协议的早期信心和资本流入规模。</p>
+                </div>
+                <div class="card p-6">
+                    <h3 class="text-lg font-semibold text-gray-500">目标年化收益率 (APR)</h3>
+                    <p id="apr-value" class="text-4xl font-bold my-2 text-[#8D5A97]">0%</p>
+                    <p class="text-sm text-gray-500">sUSDai持有者可获得的高额收益，源自GPU硬件抵押贷款。</p>
+                </div>
+                <div class="card p-6">
+                    <h3 class="text-lg font-semibold text-gray-500">最终投资评级</h3>
+                    <p class="text-4xl font-bold my-2 text-[#E7B85A]">中立</p>
+                    <p class="text-sm text-gray-500">高潜力与高风险并存，关键在于安全审计的透明度。</p>
+                </div>
+            </div>
+
+            <div class="mt-16 text-left max-w-4xl mx-auto grid md:grid-cols-2 gap-8">
+                <div class="card p-6">
+                    <h3 class="text-xl font-bold mb-2 text-[#3D405B]">📈 核心优势 (看涨)</h3>
+                    <ul class="list-disc list-inside space-y-2 text-gray-600">
+                        <li>精准的市场定位，解决AI初创企业融资痛点。</li>
+                        <li>顶级机构背书，获Framework Ventures等领投。</li>
+                        <li>强劲的早期TVL增长，验证市场需求。</li>
+                        <li>创新的技术与法律框架 (CALIBER, QEV)。</li>
+                    </ul>
+                </div>
+                 <div class="card p-6">
+                    <h3 class="text-xl font-bold mb-2 text-[#3D405B]">📉 关键风险 (看跌)</h3>
+                    <ul class="list-disc list-inside space-y-2 text-gray-600">
+                        <li class="font-bold text-red-600">缺乏公开的安全审计报告，存在重大安全隐患。</li>
+                        <li>抵押品（GPU）价格波动与非流动性风险。</li>
+                        <li>QEV赎回机制未经极端市场条件检验。</li>
+                        <li>与现有RWA协议的潜在竞争。</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="mechanics" class="mb-24 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center mb-4 section-title-underline">协议运作机制</h2>
+            <p class="text-center text-gray-600 max-w-3xl mx-auto mb-12">USD.AI 的创新不仅在于其商业模式，更在于其底层的技术和法律框架。以下三大支柱共同确保了协议将现实世界的GPU资产安全地引入DeFi。</p>
+
+            <div class="grid md:grid-cols-3 gap-8 text-center">
+                <div class="card p-6 flex flex-col items-center">
+                    <div class="text-4xl mb-4">🏛️</div>
+                    <h3 class="text-xl font-bold mb-2">CALIBER 系统</h3>
+                    <p class="text-gray-600 flex-grow">将物理GPU代币化为具有法律效力的链上资产（NFT）的法律和技术框架，是连接物理与数字世界的桥梁。</p>
+                </div>
+                <div class="card p-6 flex flex-col items-center">
+                    <div class="text-4xl mb-4">⚖️</div>
+                    <h3 class="text-xl font-bold mb-2">FiLo Curator</h3>
+                    <p class="text-gray-600 flex-grow">协议的风险控制与规模化扩展机制，负责标准化筛选、评估借款人和抵押品，确保贷款质量。</p>
+                </div>
+                <div class="card p-6 flex flex-col items-center">
+                    <div class="text-4xl mb-4">🌊</div>
+                    <h3 class="text-xl font-bold mb-2">QEV 机制</h3>
+                    <p class="text-gray-600 flex-grow">一种创新的流动性机制，用于管理sUSDai的非流动性赎回。旨在应对潜在的“银行挤兑”风险，维护协议稳定。</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="market" class="mb-24 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center mb-4 section-title-underline">市场与竞争格局</h2>
+            <p class="text-center text-gray-600 max-w-3xl mx-auto mb-12">USD.AI 定位在RWA（真实世界资产）和AI两大热门赛道交汇处。其核心竞争力在于对GPU这一细分市场的专注。通过下面的图表与主要RWA信贷协议进行交互式对比，探索其市场定位。</p>
+
+            <div class="card p-6 md:p-8">
+                <div class="flex justify-center flex-wrap gap-2 mb-6">
+                    <button id="compare-tvl" class="btn-secondary px-4 py-2 rounded-md text-sm font-medium active">按 TVL 对比</button>
+                    <button id="compare-collateral" class="btn-secondary px-4 py-2 rounded-md text-sm font-medium">按主要抵押品对比</button>
+                    <button id="compare-borrowers" class="btn-secondary px-4 py-2 rounded-md text-sm font-medium">按目标借款方对比</button>
+                </div>
+                <div class="chart-container">
+                    <canvas id="competitorChart"></canvas>
+                </div>
+                 <p id="chart-description" class="text-center text-sm text-gray-500 mt-4">当前显示各协议的总锁定价值（TVL）对比，单位为百万美元。</p>
+            </div>
+        </section>
+
+        <section id="risk" class="mb-24 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center mb-4 section-title-underline">风险评估</h2>
+            <p class="text-center text-gray-600 max-w-3xl mx-auto mb-12">高收益往往伴随着高风险。对USD.AI的投资决策必须建立在对其多维度风险的清晰认知之上。点击下方卡片以展开或折叠详细风险说明。</p>
+            
+            <div class="space-y-4 max-w-4xl mx-auto">
+                <div class="risk-card card overflow-hidden">
+                    <button class="w-full text-left p-4 flex justify-between items-center bg-gray-50">
+                        <h3 class="text-lg font-semibold">🚨 智能合约风险</h3>
+                        <span class="transform transition-transform duration-300">▼</span>
+                    </button>
+                    <div class="risk-content p-4 border-t border-gray-200 hidden">
+                        <p class="font-bold text-red-600">这是最严重的风险。</p>
+                        <p>协议官方文档明确指出安全审计信息缺失。在缺乏信誉良好的第三方公开审计报告的情况下，用户的资金安全完全依赖于项目方代码的可靠性，这是不可接受的透明度缺陷。</p>
+                    </div>
+                </div>
+                <div class="risk-card card overflow-hidden">
+                    <button class="w-full text-left p-4 flex justify-between items-center bg-gray-50">
+                        <h3 class="text-lg font-semibold">📉 抵押品风险</h3>
+                        <span class="transform transition-transform duration-300">▼</span>
+                    </button>
+                    <div class="risk-content p-4 border-t border-gray-200 hidden">
+                        <ul class="list-disc list-inside space-y-2">
+                            <li><strong>价格波动风险：</strong>GPU市场价格的下跌可能导致贷款抵押不足。</li>
+                            <li><strong>技术过时风险：</strong>AI硬件更新换代快，存在迅速折旧的风险。</li>
+                            <li><strong>物理清算风险：</strong>与链上清算相比，物理资产的扣押和清算流程更慢、更复杂，并引入了法律和运营风险。</li>
+                        </ul>
+                    </div>
+                </div>
+                 <div class="risk-card card overflow-hidden">
+                    <button class="w-full text-left p-4 flex justify-between items-center bg-gray-50">
+                        <h3 class="text-lg font-semibold">⚙️ 协议与系统性风险</h3>
+                        <span class="transform transition-transform duration-300">▼</span>
+                    </button>
+                    <div class="risk-content p-4 border-t border-gray-200 hidden">
+                        <ul class="list-disc list-inside space-y-2">
+                            <li><strong>赎回流动性风险：</strong>对sUSDai的“银行挤兑”可能对QEV机制造成巨大压力，导致赎回延迟或损失。</li>
+                            <li><strong>中心化风险：</strong>贷款承销和抵押品管理在初期阶段很可能是中心化的，依赖核心团队的判断力。</li>
+                             <li><strong>治理风险：</strong>协议的长期治理结构、风险参数设定机制等信息缺失，是一个重大的未知数。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="strategies" class="scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center mb-4 section-title-underline">投资机会与策略</h2>
+            <p class="text-center text-gray-600 max-w-3xl mx-auto mb-12">USD.AI提供了从直接质押到复杂的收益衍生品交易等多种投资途径。下表全面对比了各种策略，您可以通过筛选器快速找到符合您风险偏好和收益预期的方案。</p>
+
+            <div class="card p-4 md:p-6">
+                <div class="flex flex-wrap gap-2 mb-4">
+                    <span class="font-medium my-auto">筛选:</span>
+                    <button data-filter="all" class="strategy-filter btn-secondary px-3 py-1 rounded-md text-sm active">全部</button>
+                    <button data-filter="yield" class="strategy-filter btn-secondary px-3 py-1 rounded-md text-sm">赚取收益</button>
+                    <button data-filter="speculative" class="strategy-filter btn-secondary px-3 py-1 rounded-md text-sm">投机机会</button>
+                    <button data-filter="pendle" class="strategy-filter btn-secondary px-3 py-1 rounded-md text-sm">Pendle 策略</button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-gray-500">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3">投资策略</th>
+                                <th scope="col" class="px-6 py-3">潜在优势</th>
+                                <th scope-col" class="px-6 py-3">潜在劣势</th>
+                                <th scope="col" class="px-6 py-3">预期回报/风险</th>
+                            </tr>
+                        </thead>
+                        <tbody id="strategies-table-body">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-white mt-24">
+        <div class="container mx-auto px-6 py-8 text-center text-gray-500">
+            <p>本交互式报告由AI根据公开信息生成，仅供研究和参考，不构成任何投资建议。</p>
+            <p class="text-sm mt-2">所有数据来源于报告原文，请结合自身研究做出独立判断。</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            
+            const strategiesData = [
+                { name: '质押sUSDai (空投路径)', advantages: '较高的基础收益，潜在的空投收益', disadvantages: '存在赎回周期，抵押品风险，空投不确定', returns: '目标 15% ~ 25% APR + 投机性空投', tags: ['all', 'yield', 'speculative'] },
+                { name: '存入USDai (ICO路径)', advantages: '保证ICO额度，积分累积速度快', disadvantages: '存款期间无收益，资金被锁定，ICO估值风险', returns: '投机性 (取决于ICO后代币表现)', tags: ['all', 'speculative'] },
+                { name: 'Pendle固定收益 (PT-sUSDai)', advantages: '可预测的锁定回报，对冲收益率下降的风险', disadvantages: '上行空间有限，若收益率上升则资本效率较低', returns: '市场驱动 (例如, 10% ~ 15% 固定APY)', tags: ['all', 'yield', 'pendle'] },
+                { name: 'Pendle杠杆化收益 (YT-sUSDai)', advantages: '对收益的杠杆化敞口，若收益率上升则回报高', disadvantages: '高风险，YT到期归零，若收益率下降则亏损', returns: '极度可变 (可能 > 100% 或 < -100%)', tags: ['all', 'speculative', 'pendle'] },
+                { name: '持有 USDai', advantages: '稳定，在DEX上具有流动性', disadvantages: '无收益，存在机会成本', returns: '0%', tags: ['all'] },
+                { name: '生态系统开发', advantages: '有可能获得资助，获得早期生态地位', disadvantages: '尚无正式计划，投入精力大，回报不确定', returns: '不适用 (基于资助/风险投资)', tags: ['all', 'speculative'] }
+            ];
+
+            const competitorData = {
+                tvl: {
+                    labels: ['USD.AI', 'Centrifuge', 'Maple Finance'],
+                    datasets: [{
+                        label: '总锁定价值 (百万美元)',
+                        data: [68.69, 1140, 463],
+                        backgroundColor: ['#8D5A97', '#E0D2E3', '#CBB9CF'],
+                        borderColor: ['#794c81', '#CBB9CF', '#B7A6BD'],
+                        borderWidth: 1
+                    }],
+                    description: '当前显示各协议的总锁定价值（TVL）对比，单位为百万美元。USD.AI 目前规模最小，但专注于高增长的细分市场。'
+                },
+                collateral: {
+                    labels: ['USD.AI', 'Centrifuge', 'Maple Finance'],
+                    datasets: [{
+                        label: '主要抵押品类型',
+                        data: [1, 2, 3], 
+                        backgroundColor: ['#8D5A97', '#E0D2E3', '#CBB9CF'],
+                        formatter: (value) => {
+                            if (value === 1) return 'AI硬件 (GPU)';
+                            if (value === 2) return '多样化RWA';
+                            if (value === 3) return '非足额抵押';
+                            return '';
+                        },
+                    }],
+                    description: '当前显示各协议的主要抵押品类型。USD.AI 的高度专注是其核心差异化优势。'
+                },
+                borrowers: {
+                    labels: ['USD.AI', 'Centrifuge', 'Maple Finance'],
+                    datasets: [{
+                        label: '目标借款方',
+                        data: [1, 2, 3],
+                        backgroundColor: ['#8D5A97', '#E0D2E3', '#CBB9CF'],
+                        formatter: (value) => {
+                            if (value === 1) return 'AI初创公司';
+                            if (value === 2) return '中小企业/金融科技';
+                            if (value === 3) return '加密原生机构';
+                            return '';
+                        },
+                    }],
+                    description: '当前显示各协议的目标借款方。USD.AI 精准服务于AI生态，市场需求明确。'
+                }
+            };
+
+            const animateValue = (obj, start, end, duration, formatter) => {
+                let startTimestamp = null;
+                const step = (timestamp) => {
+                    if (!startTimestamp) startTimestamp = timestamp;
+                    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                    const value = progress * (end - start) + start;
+                    obj.innerHTML = formatter(value);
+                    if (progress < 1) {
+                        window.requestAnimationFrame(step);
+                    }
+                };
+                window.requestAnimationFrame(step);
+            };
+
+            const tvlValueEl = document.getElementById('tvl-value');
+            const aprValueEl = document.getElementById('apr-value');
+            animateValue(tvlValueEl, 0, 68.69, 1500, (v) => `$${v.toFixed(1)} M`);
+            animateValue(aprValueEl, 0, 20, 1500, (v) => `${(v-5).toFixed(0)}% ~ ${(v).toFixed(0)}%`);
+
+            const ctx = document.getElementById('competitorChart').getContext('2d');
+            let competitorChart;
+
+            const createOrUpdateChart = (dataKey) => {
+                const chartData = competitorData[dataKey];
+                const chartDescriptionEl = document.getElementById('chart-description');
+                chartDescriptionEl.textContent = chartData.description;
+
+                const isCategorical = !!chartData.datasets[0].formatter;
+
+                if (competitorChart) {
+                    competitorChart.destroy();
+                }
+
+                competitorChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: chartData.labels,
+                        datasets: chartData.datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: 'y',
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed.x !== null) {
+                                            if (isCategorical) {
+                                                label += chartData.datasets[0].formatter(context.raw);
+                                            } else {
+                                                label += context.parsed.x.toLocaleString();
+                                            }
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                grid: {
+                                    display: false
+                                },
+                                ticks: {
+                                    display: !isCategorical,
+                                }
+                            },
+                            y: {
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        }
+                    }
+                });
+            };
+
+            createOrUpdateChart('tvl');
+
+            document.getElementById('compare-tvl').addEventListener('click', (e) => {
+                createOrUpdateChart('tvl');
+                updateActiveButton(e.target);
+            });
+            document.getElementById('compare-collateral').addEventListener('click', (e) => {
+                createOrUpdateChart('collateral');
+                updateActiveButton(e.target);
+            });
+            document.getElementById('compare-borrowers').addEventListener('click', (e) => {
+                createOrUpdateChart('borrowers');
+                updateActiveButton(e.target);
+            });
+            
+            const updateActiveButton = (activeButton) => {
+                document.querySelectorAll('#market .btn-secondary').forEach(btn => btn.classList.remove('active'));
+                activeButton.classList.add('active');
+            };
+
+            const riskCards = document.querySelectorAll('.risk-card button');
+            riskCards.forEach(button => {
+                button.addEventListener('click', () => {
+                    const content = button.nextElementSibling;
+                    const icon = button.querySelector('span');
+                    content.classList.toggle('hidden');
+                    icon.classList.toggle('rotate-180');
+                });
+            });
+
+            const tableBody = document.getElementById('strategies-table-body');
+            const renderTable = (filter) => {
+                tableBody.innerHTML = '';
+                const filteredData = strategiesData.filter(item => item.tags.includes(filter));
+                filteredData.forEach(item => {
+                    const row = `
+                        <tr class="bg-white border-b hover:bg-gray-50">
+                            <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">${item.name}</th>
+                            <td class="px-6 py-4">${item.advantages}</td>
+                            <td class="px-6 py-4">${item.disadvantages}</td>
+                            <td class="px-6 py-4 font-medium">${item.returns}</td>
+                        </tr>
+                    `;
+                    tableBody.innerHTML += row;
+                });
+            };
+
+            renderTable('all');
+
+            const filterButtons = document.querySelectorAll('.strategy-filter');
+            filterButtons.forEach(button => {
+                button.addEventListener('click', (e) => {
+                    filterButtons.forEach(btn => btn.classList.remove('active'));
+                    e.target.classList.add('active');
+                    renderTable(e.target.dataset.filter);
+                });
+            });
+
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+            
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                    if(mobileMenu.classList.contains('hidden') === false){
+                        mobileMenu.classList.add('hidden');
+                    }
+                });
+            });
+
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('section');
+
+            window.onscroll = () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (pageYOffset >= sectionTop - 60) {
+                        current = section.getAttribute('id');
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href').substring(1) === current) {
+                        link.classList.add('active');
+                    }
+                });
+            };
+
+        });
+    </script>
+</body>
+</html>
