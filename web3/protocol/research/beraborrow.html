@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BeraBorrow 深度投资评估报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', 'Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif';
+            scroll-behavior: smooth;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 40vh;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .tab-button.active {
+            border-color: #F59E0B;
+            color: #F59E0B;
+            background-color: #FFFBEB;
+        }
+        .risk-card.expanded .risk-details {
+            max-height: 500px;
+            opacity: 1;
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+        }
+        .risk-card.expanded .risk-arrow {
+            transform: rotate(180deg);
+        }
+    </style>
+    <!-- Chosen Palette: Warm Neutrals -->
+    <!-- Application Structure Plan: A thematic, top-down narrative structure was chosen to guide users from a high-level understanding to specific, actionable insights. The flow starts with a summary (The Verdict), moves to project fundamentals (Overview), quantitative data (Metrics), actionable strategies (Opportunities), and finally, crucial warnings (Risks). This structure mirrors an investor's decision-making process, making the dense information digestible and logical. Key interactions include a tabbed interface for comparing investment strategies and expandable cards for risk details, allowing users to drill down without being overwhelmed. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Berachain's 3-token model -> Goal: Organize/Inform -> Viz/Method: HTML/CSS Flexbox Diagram -> Interaction: Hover to see tooltips -> Justification: Visually clarifies the complex token relationship better than text. (Method: HTML/CSS).
+        - Report Info: Growing community interest (wallet addresses) -> Goal: Show Change -> Viz/Method: Chart.js Line Chart with simulated data -> Interaction: Tooltip on hover -> Justification: Illustrates the key narrative of high community engagement and airdrop anticipation. (Library: Chart.js).
+        - Report Info: Different investment strategies -> Goal: Compare -> Viz/Method: Interactive HTML tabs and table -> Interaction: Click tabs to switch content -> Justification: Allows easy comparison of complex strategies, detailing their pros, cons, and risks in a structured way. (Method: HTML/JS).
+        - Report Info: Various project risks -> Goal: Organize/Inform -> Viz/Method: Expandable HTML cards -> Interaction: Click to reveal details -> Justification: Breaks down complex risks into manageable categories, preventing information overload. (Method: HTML/JS).
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+</head>
+<body class="bg-[#F8F5F2] text-[#4A4A4A]">
+
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-6 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <div class="w-8 h-8 bg-amber-400 rounded-full flex items-center justify-center font-bold text-white text-lg">B</div>
+                <h1 class="text-xl font-bold text-gray-800">BeraBorrow 报告</h1>
+            </div>
+            <div class="hidden md:flex items-center space-x-6 text-gray-600">
+                <a href="#overview" class="hover:text-amber-500 transition-colors">项目总览</a>
+                <a href="#metrics" class="hover:text-amber-500 transition-colors">核心指标</a>
+                <a href="#opportunities" class="hover:text-amber-500 transition-colors">投资机会</a>
+                <a href="#risks" class="hover:text-amber-500 transition-colors">风险评估</a>
+            </div>
+            <a href="#verdict" class="hidden md:inline-block bg-amber-500 text-white font-semibold px-4 py-2 rounded-lg hover:bg-amber-600 transition-colors">最终结论</a>
+             <button id="mobile-menu-button" class="md:hidden p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+            </button>
+        </nav>
+        <div id="mobile-menu" class="hidden md:hidden px-6 pt-2 pb-4 space-y-2">
+             <a href="#overview" class="block text-gray-600 hover:text-amber-500 transition-colors">项目总览</a>
+             <a href="#metrics" class="block text-gray-600 hover:text-amber-500 transition-colors">核心指标</a>
+             <a href="#opportunities" class="block text-gray-600 hover:text-amber-500 transition-colors">投资机会</a>
+             <a href="#risks" class="block text-gray-600 hover:text-amber-500 transition-colors">风险评估</a>
+             <a href="#verdict" class="block bg-amber-500 text-white font-semibold px-4 py-2 rounded-lg hover:bg-amber-600 transition-colors mt-2">最终结论</a>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-6 py-8 md:py-16">
+        
+        <section class="text-center mb-16 md:mb-24">
+            <h2 class="text-3xl md:text-5xl font-extrabold text-gray-800 mb-4">BeraBorrow 深度投资评估报告</h2>
+            <p class="text-lg md:text-xl text-gray-500 max-w-3xl mx-auto">一份旨在揭示 Berachain 生态原生借贷协议 BeraBorrow 投资潜力的全面分析。</p>
+            <div class="mt-8 flex flex-col sm:flex-row justify-center items-center gap-4">
+                <div class="bg-white p-6 rounded-2xl shadow-lg w-full sm:w-auto">
+                    <p class="text-sm font-semibold text-gray-500 mb-1">综合投资评级</p>
+                    <p class="text-2xl font-bold text-amber-500">建议 (有条件)</p>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-lg w-full sm:w-auto text-left">
+                     <p class="text-sm font-semibold text-gray-500 mb-2">核心投资论点</p>
+                    <p class="text-gray-700 leading-relaxed">当前核心机会在于深度参与<strong class="text-amber-600">测试网交互</strong>，以博取未来潜在的 BeraBorrow 及 Berachain <strong class="text-amber-600">“双重空投”</strong>预期。</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="overview" class="mb-16 md:mb-24 scroll-mt-20">
+            <div class="text-center mb-12">
+                <h3 class="text-2xl md:text-3xl font-bold text-gray-800">项目总览</h3>
+                <p class="text-md text-gray-500 mt-2">理解 BeraBorrow 的基础：它是什么，以及它在 Berachain 生态中的独特地位。</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-8 items-center">
+                <div class="bg-white p-8 rounded-2xl shadow-lg">
+                    <h4 class="text-xl font-bold mb-4">什么是 BeraBorrow?</h4>
+                    <p class="text-gray-600 leading-relaxed mb-4">BeraBorrow 是 Berachain 生态系统的原生去中心化借贷市场，功能上类似于以太坊上的 Aave 或 Compound。它允许用户存入资产赚取利息，或抵押资产借出其他资产。</p>
+                    <p class="text-gray-600 leading-relaxed">作为 Berachain 官方重点扶持的“Berachain Originals”项目，它与底层公链深度绑定，拥有生态内的先发优势和正统性。</p>
+                </div>
+
+                <div class="bg-white p-8 rounded-2xl shadow-lg">
+                    <h4 class="text-xl font-bold mb-4">Berachain 的创新三代币模型</h4>
+                    <p class="text-gray-600 mb-6">BeraBorrow 的价值根植于 Berachain 独特的经济系统。这个系统通过三个代币协同工作，旨在解决流动性难题。</p>
+                    <div class="space-y-4">
+                        <div class="flex items-start space-x-4">
+                            <div class="flex-shrink-0 w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center font-bold text-lg">BERA</div>
+                            <div>
+                                <h5 class="font-bold">BERA (Gas Token)</h5>
+                                <p class="text-sm text-gray-500">网络交易的基础燃料费代币，类似于 ETH。</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start space-x-4">
+                            <div class="flex-shrink-0 w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold text-lg">BGT</div>
+                            <div>
+                                <h5 class="font-bold">BGT (Governance Token)</h5>
+                                <p class="text-sm text-gray-500">不可转让的治理代币，通过质押 BERA 获得，用于保护网络安全和参与治理。</p>
+                            </div>
+                        </div>
+                         <div class="flex items-start space-x-4">
+                            <div class="flex-shrink-0 w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center font-bold text-lg">HONEY</div>
+                            <div>
+                                <h5 class="font-bold">HONEY (Stablecoin)</h5>
+                                <p class="text-sm text-gray-500">生态系统的原生共识抵押稳定币，旨在成为生态内主要的交易媒介。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section id="metrics" class="mb-16 md:mb-24 scroll-mt-20">
+            <div class="text-center mb-12">
+                <h3 class="text-2xl md:text-3xl font-bold text-gray-800">核心指标与社区情绪</h3>
+                <p class="text-md text-gray-500 mt-2">通过数据洞察项目的热度与社区的真实反馈。注意：当前数据均源于 Artio 测试网。</p>
+            </div>
+             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-white p-8 rounded-2xl shadow-lg">
+                    <h4 class="text-xl font-bold mb-4">测试网交互热度</h4>
+                    <p class="text-gray-600 mb-6">测试网数据是衡量社区关注度和空投预期的重要风向标。BeraBorrow 在多项指标上表现突出。</p>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <span class="font-semibold">总锁定价值 (TVL)</span>
+                            <span class="text-green-600 font-bold text-lg">生态前列</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="font-semibold">独立钱包交互地址</span>
+                            <span class="text-green-600 font-bold text-lg">持续高速增长</span>
+                        </div>
+                         <div class="flex justify-between items-center">
+                            <span class="font-semibold">社交媒体情绪</span>
+                             <span class="text-amber-500 font-bold text-lg">高度积极 & 期待</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white p-8 rounded-2xl shadow-lg">
+                     <h4 class="text-xl font-bold mb-4">交互钱包地址增长趋势 (模拟)</h4>
+                    <div class="chart-container">
+                        <canvas id="walletGrowthChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="opportunities" class="mb-16 md:mb-24 scroll-mt-20">
+            <div class="text-center mb-12">
+                <h3 class="text-2xl md:text-3xl font-bold text-gray-800">投资机会深度解析</h3>
+                <p class="text-md text-gray-500 mt-2">本部分深入探讨了参与 BeraBorrow 项目的几种核心策略。从当前最热门的空投交互，到主网上线后潜在的高级收益玩法，我们将为您逐一解析其操作方式、优缺点和潜在回报。</p>
+            </div>
+            
+            <div>
+                <div class="mb-8 border-b border-gray-200">
+                    <nav class="flex flex-wrap -mb-px" id="opportunityTabs">
+                        <button data-tab="airdrop" class="tab-button active text-lg font-semibold p-4 border-b-2">空投交互策略</button>
+                        <button data-tab="yield" class="tab-button text-lg font-semibold p-4 border-b-2">高 APR 收益策略 (主网)</button>
+                        <button data-tab="dev" class="tab-button text-lg font-semibold p-4 border-b-2">开发者机会</button>
+                    </nav>
+                </div>
+
+                <div id="tabContent" class="bg-white p-8 rounded-2xl shadow-lg">
+                    <div id="airdrop-content" class="tab-pane">
+                        <h4 class="text-xl font-bold mb-2">策略核心：最大化权重，博取双重空投</h4>
+                        <p class="text-gray-600 mb-6">通过在 BeraBorrow 测试网上执行一系列操作，增加您在 BeraBorrow 和 Berachain 官方空投快照中的权重。以下是推荐的交互步骤：</p>
+                        <ul class="space-y-3 text-gray-700">
+                            <li class="flex items-center"><span class="w-5 h-5 bg-amber-500 text-white rounded-full flex items-center justify-center mr-3 text-sm">1</span> 领取测试网代币 BERA。</li>
+                            <li class="flex items-center"><span class="w-5 h-5 bg-amber-500 text-white rounded-full flex items-center justify-center mr-3 text-sm">2</span> 在 BeraBorrow 中供应 (Supply) BERA 和其他资产 (如 ETH, WBTC)。</li>
+                            <li class="flex items-center"><span class="w-5 h-5 bg-amber-500 text-white rounded-full flex items-center justify-center mr-3 text-sm">3</span> 借出 (Borrow) 生态原生稳定币 HONEY。</li>
+                            <li class="flex items-center"><span class="w-5 h-5 bg-amber-500 text-white rounded-full flex items-center justify-center mr-3 text-sm">4</span> 将借出的 HONEY 在其他生态协议中进行交互（如交易、提供流动性）。</li>
+                            <li class="flex items-center"><span class="w-5 h-5 bg-amber-500 text-white rounded-full flex items-center justify-center mr-3 text-sm">5</span> 定期（如每周）重复以上操作，保持账户活跃。</li>
+                        </ul>
+                    </div>
+                    <div id="yield-content" class="tab-pane hidden">
+                        <h4 class="text-xl font-bold mb-2">主网上线后的潜在高收益玩法</h4>
+                         <p class="text-gray-600 mb-6">Berachain 的独特机制可能催生创新的高收益策略。以下为几种值得关注的方向（高风险，高收益）：</p>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead>
+                                    <tr class="border-b">
+                                        <th class="p-2">策略名称</th>
+                                        <th class="p-2">核心逻辑</th>
+                                        <th class="p-2">潜在APR</th>
+                                        <th class="p-2">风险等级</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="border-b">
+                                        <td class="p-2 font-semibold">循环贷</td>
+                                        <td class="p-2 text-sm text-gray-600">反复进行“供应BERA - 借出HONEY - 购买BERA”的操作，放大存款利息和BGT奖励。</td>
+                                        <td class="p-2 text-green-600 font-bold">高</td>
+                                        <td class="p-2 text-red-600 font-bold">高</td>
+                                    </tr>
+                                    <tr class="border-b">
+                                        <td class="p-2 font-semibold">Delta中性挖矿</td>
+                                        <td class="p-2 text-sm text-gray-600">在提供流动性的同时，通过在中心化交易所开立反向合约来对冲价格波动风险。</td>
+                                        <td class="p-2 text-green-600 font-bold">中-高</td>
+                                        <td class="p-2 text-amber-600 font-bold">中</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-2 font-semibold">BGT 收益最大化</td>
+                                        <td class="p-2 text-sm text-gray-600">通过参与特定验证节点或dApp的流动性供应，获取最大化的BGT治理代币奖励。</td>
+                                        <td class="p-2 text-green-600 font-bold">中-高</td>
+                                        <td class="p-2 text-amber-600 font-bold">中</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div id="dev-content" class="tab-pane hidden">
+                        <h4 class="text-xl font-bold mb-2">面向开发者的生态参与机会</h4>
+                         <p class="text-gray-600 mb-6">对于具备开发背景的投资者，早期参与生态建设是获取超额回报的有效途径。BeraBorrow 作为基础借贷协议，为其上层搭建应用提供了可能。</p>
+                        <ul class="space-y-3 list-disc list-inside">
+                            <li><strong>自动化工具:</strong> 开发用于自动执行循环贷、自动再投资等策略的智能合约或机器人，收取服务费。</li>
+                            <li><strong>收益聚合器:</strong> 构建一个自动在 BeraBorrow 和其他生态协议之间寻找最优存款利率的协议。</li>
+                            <li><strong>清算机器人:</strong> 运行清算机器人，通过清算濒临破产的借贷头寸来赚取清算罚金。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="risks" class="mb-16 md:mb-24 scroll-mt-20">
+            <div class="text-center mb-12">
+                <h3 class="text-2xl md:text-3xl font-bold text-gray-800">风险评估</h3>
+                <p class="text-md text-gray-500 mt-2">投资前必须正视风险。我们从技术、市场和团队等多个维度进行了梳理。</p>
+            </div>
+            <div class="space-y-4">
+                <div class="risk-card bg-white rounded-2xl shadow-lg overflow-hidden">
+                    <div class="p-6 cursor-pointer flex justify-between items-center" data-risk="tech">
+                        <h4 class="text-xl font-bold">技术风险</h4>
+                        <div class="risk-arrow transition-transform duration-300">▼</div>
+                    </div>
+                    <div class="risk-details max-h-0 opacity-0 overflow-hidden transition-all duration-500 px-6">
+                        <ul class="list-disc list-inside space-y-2 text-gray-600">
+                            <li><strong>智能合约风险:</strong> 作为新协议，代码可能存在未知漏洞，主网上线初期风险较高。</li>
+                            <li><strong>预言机风险:</strong> 借贷协议的清算机制依赖价格预言机，预言机被攻击或数据延迟可能导致用户资产损失。</li>
+                            <li><strong>新公链风险:</strong> Berachain 作为新公链，其网络稳定性和安全性也需要时间来验证。</li>
+                        </ul>
+                    </div>
+                </div>
+                 <div class="risk-card bg-white rounded-2xl shadow-lg overflow-hidden">
+                    <div class="p-6 cursor-pointer flex justify-between items-center" data-risk="market">
+                        <h4 class="text-xl font-bold">市场风险</h4>
+                        <div class="risk-arrow transition-transform duration-300">▼</div>
+                    </div>
+                    <div class="risk-details max-h-0 opacity-0 overflow-hidden transition-all duration-500 px-6">
+                        <ul class="list-disc list-inside space-y-2 text-gray-600">
+                           <li><strong>空投不确定性:</strong> 空投规则、时间、规模和最终价值都是未知的。存在“竹篮打水一场空”的风险。</li>
+                           <li><strong>资产波动风险:</strong> 主网上线后，抵押品和借贷资产价格剧烈波动可能导致抵押不足而被清算。</li>
+                           <li><strong>竞争风险:</strong> 主网上线后，将面临 Aave 等成熟借贷协议的激烈竞争。</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="risk-card bg-white rounded-2xl shadow-lg overflow-hidden">
+                    <div class="p-6 cursor-pointer flex justify-between items-center" data-risk="team">
+                        <h4 class="text-xl font-bold">团队与安全审计风险</h4>
+                        <div class="risk-arrow transition-transform duration-300">▼</div>
+                    </div>
+                    <div class="risk-details max-h-0 opacity-0 overflow-hidden transition-all duration-500 px-6">
+                        <ul class="list-disc list-inside space-y-2 text-gray-600">
+                           <li><strong>团队匿名性:</strong> 核心团队保持匿名，虽然在DeFi领域常见，但增加了出现问题时追责的难度。</li>
+                           <li class="font-bold text-red-600"><strong>审计报告缺失:</strong> 截至目前，尚未发布由顶级审计公司出具的公开审计报告，这是主网上线前的一大关键风险点。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="verdict" class="scroll-mt-20">
+            <div class="bg-white p-8 md:p-12 rounded-2xl shadow-2xl">
+                <div class="text-center mb-8">
+                    <h3 class="text-2xl md:text-3xl font-bold text-gray-800">最终结论与投资建议</h3>
+                    <p class="text-md text-gray-500 mt-2">综合所有分析，我们得出以下结论。</p>
+                </div>
+                 <div class="grid md:grid-cols-2 gap-8">
+                    <div>
+                        <h4 class="text-xl font-bold mb-4">投资优势 (Pros)</h4>
+                        <ul class="space-y-3 text-gray-700">
+                            <li class="flex items-start"><span class="text-green-500 mr-2">✓</span><span><strong>强大的生态预期:</strong> Berachain 拥有极高的市场关注度和社区共识，作为原生核心协议将直接受益。</span></li>
+                            <li class="flex items-start"><span class="text-green-500 mr-2">✓</span><span><strong>双重空投潜力:</strong> 早期交互者有较大机会同时获得 BeraBorrow 协议代币和 Berachain 链代币空投。</span></li>
+                            <li class="flex items-start"><span class="text-green-500 mr-2">✓</span><span><strong>先发优势:</strong> 作为生态内第一个原生借贷协议，易于捕获早期用户和流动性。</span></li>
+                        </ul>
+                    </div>
+                     <div>
+                        <h4 class="text-xl font-bold mb-4">主要风险 (Cons)</h4>
+                        <ul class="space-y-3 text-gray-700">
+                            <li class="flex items-start"><span class="text-red-500 mr-2">✗</span><span><strong>项目处于极早期:</strong> 所有操作均在测试网，主网上线时间和具体表现存在不确定性。</span></li>
+                            <li class="flex items-start"><span class="text-red-500 mr-2">✗</span><span class="font-bold"><strong>缺乏安全审计:</strong> 未经公开审计的代码在主网上线后将面临严峻的安全考验。</span></li>
+                            <li class="flex items-start"><span class="text-red-500 mr-2">✗</span><span><strong>空投规则未知:</strong> 投入的时间和精力成本可能无法获得预期的回报。</span></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="mt-12 pt-8 border-t">
+                    <p class="text-center text-gray-700 leading-relaxed max-w-3xl mx-auto"><strong>最终评级: 建议 (有条件)。</strong> 我们建议投资者将 BeraBorrow 视为一个高潜力的“彩票”型机会。当前阶段不涉及真实资金投入，主要成本为时间和精力。建议在严格控制风险的前提下，适度参与其测试网交互，并密切关注项目进展，尤其是主网上线计划和安全审计报告的发布。<strong>切勿在主网上线初期投入大量资金，直到其安全性和稳定性得到市场验证。</strong></p>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <footer class="bg-gray-800 text-white mt-16">
+        <div class="container mx-auto px-6 py-4 text-center text-sm text-gray-400">
+            <p>&copy; 2025 DeFi 投资分析报告. 仅供研究参考，不构成任何投资建议。</p>
+            <p>报告生成日期: 2025年8月31日</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const walletGrowthCtx = document.getElementById('walletGrowthChart').getContext('2d');
+            const walletGrowthChart = new Chart(walletGrowthCtx, {
+                type: 'line',
+                data: {
+                    labels: ['第一周', '第二周', '第三周', '第四周', '第五周', '第六周', '第七周', '第八周'],
+                    datasets: [{
+                        label: '交互钱包地址数',
+                        data: [15000, 22000, 28000, 45000, 60000, 85000, 110000, 150000],
+                        borderColor: '#F59E0B',
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false,
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ' 模拟地址数: ' + context.parsed.y;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value / 1000 + 'k';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            const tabs = document.querySelectorAll('.tab-button');
+            const tabPanes = document.querySelectorAll('.tab-pane');
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const target = tab.getAttribute('data-tab');
+                    
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+
+                    tabPanes.forEach(pane => {
+                        if (pane.id === `${target}-content`) {
+                            pane.classList.remove('hidden');
+                        } else {
+                            pane.classList.add('hidden');
+                        }
+                    });
+                });
+            });
+
+            const riskCards = document.querySelectorAll('.risk-card .p-6');
+            riskCards.forEach(cardHeader => {
+                cardHeader.addEventListener('click', () => {
+                    const parentCard = cardHeader.parentElement;
+                    parentCard.classList.toggle('expanded');
+                });
+            });
+
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+            
+            const navLinks = document.querySelectorAll('#mobile-menu a');
+            navLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                     mobileMenu.classList.add('hidden');
+                });
+            });
+        });
+    </script>
+</body>
+</html>

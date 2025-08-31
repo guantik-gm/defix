@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kodiak Finance 交互式投资分析报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Stone & Amber -->
+    <!-- Application Structure Plan: A single-page dashboard designed for investors. The structure prioritizes quick insights and deep dives. It starts with a summary and overall rating. A sticky navigation allows users to jump to thematic sections: a detailed overview, an interactive risk/opportunity analysis, a tabbed section for actionable investment strategies, and a final section on community trust and security. This non-linear structure is chosen over the report's linear format to let users explore based on their priorities, whether it's understanding the core risks first or jumping directly to potential investment strategies, thus making the data more accessible and user-centric. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Overall Investment Rating -> Goal: Immediate takeaway -> Viz: Prominent badge in header -> Interaction: None.
+        - Report Info: Key Project Metrics (Funding, Backers) -> Goal: Inform foundational facts -> Viz: Icon-based key metric cards -> Interaction: Hover for slight animation.
+        - Report Info: Risk Factors (Systemic, Team, etc.) -> Goal: Compare and understand risk severity -> Viz: Interactive doughnut chart as a "Risk Meter" -> Interaction: Buttons for each risk type dynamically update the chart and a detailed explanation text block. Justification: This transforms a static list of risks into an engaging, explorable component, helping users grasp the nuances of each risk factor. Method: Chart.js (Canvas).
+        - Report Info: Investment Strategies & Tradeoffs -> Goal: Compare actionability and complexity -> Viz: Tabbed content area with a dynamic horizontal bar chart showing Potential vs. Complexity -> Interaction: Clicking tabs changes the text content and updates the chart data. Justification: This directly helps users decide which strategy fits their profile by visually comparing the effort-to-reward ratio. Method: Chart.js (Canvas).
+        - Report Info: Community Strength -> Goal: Show social proof -> Viz: Animated statistic cards -> Interaction: Subtle animations on load.
+        - Report Info: Security Audits -> Goal: Build trust -> Viz: Simple checklist layout -> Interaction: None, provides clear, at-a-glance confirmation.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f8f7f5;
+            color: #334155;
+        }
+        .nav-link {
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link.active, .nav-link:hover {
+            color: #c2410c;
+            border-bottom-color: #c2410c;
+        }
+        .tab-button {
+            transition: all 0.3s ease;
+        }
+        .tab-button.active {
+            background-color: #f97316;
+            color: white;
+        }
+        .content-section {
+            display: none;
+        }
+        .content-section.active {
+            display: block;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 450px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 280px;
+            max-height: 300px;
+        }
+        .strategy-chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 550px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 320px;
+            max-height: 350px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 300px;
+                max-height: 350px;
+            }
+             .strategy-chart-container {
+                height: 350px;
+                max-height: 400px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-stone-50">
+
+    <header class="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-3">
+                     <div class="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold text-xl ring-2 ring-orange-200">K</div>
+                    <h1 class="text-2xl font-bold text-slate-800">Kodiak Finance</h1>
+                </div>
+                <div id="rating-badge" class="px-4 py-2 rounded-full text-base font-semibold transition-all duration-300">
+                    <span class="font-bold"></span>
+                </div>
+            </div>
+            <nav id="navbar" class="flex justify-center space-x-4 sm:space-x-8 border-t border-stone-200">
+                <a href="#overview" class="nav-link py-3 text-sm sm:text-base font-medium text-slate-600">项目概览</a>
+                <a href="#risk-opportunity" class="nav-link py-3 text-sm sm:text-base font-medium text-slate-600">风险与机遇</a>
+                <a href="#strategies" class="nav-link py-3 text-sm sm:text-base font-medium text-slate-600">投资策略</a>
+                <a href="#community-security" class="nav-link py-3 text-sm sm:text-base font-medium text-slate-600">社区与安全</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+
+        <section id="overview" class="scroll-mt-24 mb-16">
+            <h2 class="text-3xl font-bold text-slate-800 mb-4 text-center">项目概览</h2>
+            <p class="text-center text-slate-600 max-w-3xl mx-auto mb-10">
+                本部分旨在提供Kodiak Finance的核心信息，包括其市场定位、关键技术特性和项目背景。通过这些信息，您可以快速了解Kodiak在BeraChain生态中的战略地位及其潜力。
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-center">
+                <div class="bg-white p-6 rounded-xl shadow-sm hover:shadow-lg transition-shadow duration-300">
+                    <div class="text-4xl mb-3">💰</div>
+                    <h3 class="text-lg font-semibold text-slate-700">种子轮融资</h3>
+                    <p class="text-2xl font-bold text-slate-900">$200 万</p>
+                    <p class="text-sm text-slate-500">由 Framework Ventures 领投</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm hover:shadow-lg transition-shadow duration-300">
+                    <div class="text-4xl mb-3">⛓️</div>
+                    <h3 class="text-lg font-semibold text-slate-700">所属公链</h3>
+                    <p class="text-2xl font-bold text-slate-900">BeraChain</p>
+                    <p class="text-sm text-slate-500">生态原生DEX龙头</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm hover:shadow-lg transition-shadow duration-300">
+                    <div class="text-4xl mb-3">🚀</div>
+                    <h3 class="text-lg font-semibold text-slate-700">当前状态</h3>
+                    <p class="text-2xl font-bold text-slate-900">Artio 测试网</p>
+                    <p class="text-sm text-slate-500">主网及代币尚未上线</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm hover:shadow-lg transition-shadow duration-300">
+                    <div class="text-4xl mb-3">💡</div>
+                    <h3 class="text-lg font-semibold text-slate-700">核心技术</h3>
+                    <p class="text-2xl font-bold text-slate-900">CL-AMM</p>
+                    <p class="text-sm text-slate-500">集中流动性 + 自动金库</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="risk-opportunity" class="scroll-mt-24 mb-16">
+            <h2 class="text-3xl font-bold text-slate-800 mb-4 text-center">风险与机遇分析</h2>
+             <p class="text-center text-slate-600 max-w-3xl mx-auto mb-10">
+                投资总是伴随着风险与机遇。本节通过一个交互式“风险仪表盘”来量化和解释Kodiak面临的主要风险，并列出其核心机遇，帮助您全面评估项目的潜在回报与挑战。
+            </p>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4 text-center">交互式风险仪表盘</h3>
+                    <div class="chart-container">
+                        <canvas id="riskChart"></canvas>
+                    </div>
+                    <div class="flex flex-wrap justify-center gap-2 mt-4">
+                        <button onclick="updateRisk('systemic')" class="risk-button bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-medium hover:bg-amber-200 transition">系统性风险</button>
+                        <button onclick="updateRisk('team')" class="risk-button bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium hover:bg-red-200 transition">团队风险</button>
+                        <button onclick="updateRisk('contract')" class="risk-button bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium hover:bg-yellow-200 transition">合约风险</button>
+                        <button onclick="updateRisk('market')" class="risk-button bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium hover:bg-orange-200 transition">市场风险</button>
+                    </div>
+                </div>
+                <div class="space-y-6">
+                    <div id="risk-description-card" class="bg-white p-6 rounded-xl shadow-lg transition-all duration-500">
+                        <h3 id="risk-title" class="text-xl font-bold text-slate-800 mb-2"></h3>
+                        <p id="risk-text" class="text-slate-600"></p>
+                    </div>
+                     <div class="bg-white p-6 rounded-xl shadow-lg">
+                        <h3 class="text-xl font-bold text-slate-800 mb-3 text-emerald-600">核心机遇</h3>
+                        <ul class="space-y-2 text-slate-600">
+                            <li class="flex items-start"><span class="text-emerald-500 mr-2 mt-1">✅</span><strong>生态龙头地位:</strong> 作为BeraChain原生DEX，有望捕获生态系统的大部分早期价值。</li>
+                            <li class="flex items-start"><span class="text-emerald-500 mr-2 mt-1">✅</span><strong>先发优势:</strong> 抢先占领市场和用户心智，构建强大的网络效应。</li>
+                            <li class="flex items-start"><span class="text-emerald-500 mr-2 mt-1">✅</span><strong>强大的资本背书:</strong> 顶级VC的加持提供了资金和信誉保障。</li>
+                            <li class="flex items-start"><span class="text-emerald-500 mr-2 mt-1">✅</span><strong>高预期空投:</strong> 早期参与交互可能获得高价值的代币空投。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="strategies" class="scroll-mt-24 mb-16">
+            <h2 class="text-3xl font-bold text-slate-800 mb-4 text-center">投资策略分析</h2>
+             <p class="text-center text-slate-600 max-w-3xl mx-auto mb-10">
+                针对不同风险偏好和技术背景的投资者，我们梳理了多种参与Kodiak项目的可行策略。点击下方标签页，探索每种策略的优缺点、预期收益和复杂度，并找到最适合您的投资路径。
+            </p>
+            <div class="bg-white p-6 rounded-xl shadow-lg">
+                <div class="flex flex-wrap justify-center border-b border-stone-200 mb-6">
+                    <button class="tab-button px-4 py-2 text-sm md:text-base font-medium text-slate-600 active" onclick="switchTab('airdrop')">博取空投</button>
+                    <button class="tab-button px-4 py-2 text-sm md:text-base font-medium text-slate-600" onclick="switchTab('mining')">流动性挖矿</button>
+                    <button class="tab-button px-4 py-2 text-sm md:text-base font-medium text-slate-600" onclick="switchTab('token')">代币购买</button>
+                    <button class="tab-button px-4 py-2 text-sm md:text-base font-medium text-slate-600" onclick="switchTab('dev')">生态开发</button>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                    <div>
+                        <div id="airdrop" class="content-section active">
+                           <h3 class="text-xl font-bold text-slate-800 mb-3">策略: 参与测试网交互博取空投</h3>
+                           <p class="text-slate-600 mb-4">核心策略是在BeraChain Artio测试网上深度使用Kodiak的所有功能，以最低的成本博取未来主网代币的高价值空投。</p>
+                           <h4 class="font-semibold text-slate-700">优点:</h4>
+                           <p class="text-sm text-slate-600 mb-2">极高盈亏比，投入时间成本可能换来巨大回报；“一鱼多吃”同时交互BeraChain。</p>
+                           <h4 class="font-semibold text-slate-700">缺点:</h4>
+                           <p class="text-sm text-slate-600">高度不确定性，规则未知，时间成本高。</p>
+                        </div>
+                        <div id="mining" class="content-section">
+                           <h3 class="text-xl font-bold text-slate-800 mb-3">策略: 主网上线早期参与流动性挖矿</h3>
+                           <p class="text-slate-600 mb-4">在项目主网上线初期，为核心交易对提供流动性，以赚取极高的早期$KDK代币奖励和交易手续费。</p>
+                           <h4 class="font-semibold text-slate-700">优点:</h4>
+                           <p class="text-sm text-slate-600 mb-2">超高APR/APY回报，深度捕获生态成长红利。</p>
+                           <h4 class="font-semibold text-slate-700">缺点:</h4>
+                           <p class="text-sm text-slate-600">无常损失风险极高，存在智能合约风险，需要主动管理头寸。</p>
+                        </div>
+                        <div id="token" class="content-section">
+                           <h3 class="text-xl font-bold text-slate-800 mb-3">策略: 二级市场购买$KDK代币</h3>
+                           <p class="text-slate-600 mb-4">在$KDK代币上线DEX后，根据市场情况择机买入并持有，适合看好项目长期发展的投资者。</p>
+                           <h4 class="font-semibold text-slate-700">优点:</h4>
+                           <p class="text-sm text-slate-600 mb-2">操作简单，直接享受项目成长价值。</p>
+                           <h4 class="font-semibold text-slate-700">缺点:</h4>
+                           <p class="text-sm text-slate-600">早期价格波动极大，面临巨大回撤风险，入场时机晚。</p>
+                        </div>
+                         <div id="dev" class="content-section">
+                           <h3 class="text-xl font-bold text-slate-800 mb-3">策略: 作为开发者参与生态建设</h3>
+                           <p class="text-slate-600 mb-4">利用Kodiak的SDK或API，开发交易机器人、收益聚合器等工具，通过技术创造独特价值并获取收益。</p>
+                           <h4 class="font-semibold text-slate-700">优点:</h4>
+                           <p class="text-sm text-slate-600 mb-2">构建独特护城河，收入来源多样化。</p>
+                           <h4 class="font-semibold text-slate-700">缺点:</h4>
+                           <p class="text-sm text-slate-600">技术门槛极高，需要扎实的编程和DeFi知识。</p>
+                        </div>
+                    </div>
+                    <div>
+                         <h3 class="text-xl font-bold text-slate-800 mb-4 text-center">策略权衡: 潜力 vs 复杂度</h3>
+                         <div class="strategy-chart-container">
+                             <canvas id="strategyChart"></canvas>
+                         </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="community-security" class="scroll-mt-24">
+            <h2 class="text-3xl font-bold text-slate-800 mb-4 text-center">社区与安全审计</h2>
+             <p class="text-center text-slate-600 max-w-3xl mx-auto mb-10">
+                一个成功的DeFi项目离不开强大的社区支持和坚实的安全基础。本节展示了Kodiak Finance的社区活跃度指标和已完成的安全审计情况，为您评估项目的可靠性和市场共识提供依据。
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4">社区力量</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center">
+                            <span class="text-3xl mr-4">🐦</span>
+                            <div>
+                                <p class="font-semibold text-slate-700">Twitter/X 关注者</p>
+                                <p class="text-2xl font-bold text-slate-900">> 100,000</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                             <span class="text-3xl mr-4">💬</span>
+                            <div>
+                                <p class="font-semibold text-slate-700">Discord 社区</p>
+                                <p class="text-2xl font-bold text-slate-900">高度活跃</p>
+                            </div>
+                        </div>
+                        <div>
+                             <p class="font-semibold text-slate-700 mb-1">社区情绪</p>
+                             <div class="w-full bg-stone-200 rounded-full h-4 overflow-hidden">
+                                <div class="bg-emerald-500 h-4 rounded-full" style="width: 95%;"></div>
+                             </div>
+                             <p class="text-right text-sm font-bold text-emerald-600 mt-1">95% 积极乐观</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4">安全审计</h3>
+                     <ul class="space-y-3 text-slate-600">
+                        <li class="flex items-center text-lg"><span class="text-emerald-500 mr-3 text-2xl">🛡️</span><strong>Cyfrin:</strong> <span class="ml-auto px-3 py-1 bg-emerald-100 text-emerald-800 text-sm font-semibold rounded-full">已通过</span></li>
+                        <li class="flex items-center text-lg"><span class="text-emerald-500 mr-3 text-2xl">🛡️</span><strong>Secure3:</strong> <span class="ml-auto px-3 py-1 bg-emerald-100 text-emerald-800 text-sm font-semibold rounded-full">已通过</span></li>
+                    </ul>
+                    <p class="text-sm text-slate-500 mt-4">项目在测试网上线前已完成多家知名安全公司审计，未发现重大或高危漏洞，显示出团队对安全的高度重视。</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-white mt-16 border-t">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 text-center text-sm text-slate-500">
+            <p>本报告基于截至 2025年8月31日 的公开信息。投资有风险，决策需谨慎。</p>
+            <p>数据来源: Kodiak官方文档, The Block, Twitter/X 等.</p>
+        </div>
+    </footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    const reportData = {
+        rating: {
+            level: '建议',
+            description: 'BeraChain生态早期核心参与者，高风险高潜力',
+            colorClass: 'bg-emerald-100 text-emerald-800'
+        },
+        risks: {
+            systemic: {
+                title: '系统性风险 (高)',
+                text: 'Kodiak的命运与BeraChain休戚相关。BeraChain主网上线延迟、技术故障或未能吸引到预期的市场关注，都将直接影响Kodiak的发展。',
+                value: 85
+            },
+            team: {
+                title: '团队风险 (中-高)',
+                text: '项目团队目前保持匿名。虽然这在DeFi领域很常见，但始终是一个潜在风险点。缺乏公开透明的团队背景，使得投资者难以评估其长期承诺和应对危机的能力。',
+                value: 75
+            },
+            contract: {
+                title: '智能合约风险 (中)',
+                text: '尽管已经过审计，但DeFi协议永远存在未知的漏洞风险。特别是集中流动性AMM的复杂性相对更高，历史上曾有相关协议因此被攻击。',
+                value: 50
+            },
+            market: {
+                title: '市场风险 (高)',
+                text: '作为早期项目，其代币$KDK在上线后将面临极高的价格波动。流动性挖矿的早期高APY也将伴随着巨大的无常损失风险。',
+                value: 90
+            }
+        },
+        strategies: {
+            airdrop: { potential: 9, complexity: 3 },
+            mining: { potential: 8, complexity: 7 },
+            token: { potential: 7, complexity: 2 },
+            dev: { potential: 10, complexity: 10 }
+        }
+    };
+    
+    const ratingBadge = document.getElementById('rating-badge');
+    ratingBadge.querySelector('span').textContent = `${reportData.rating.level}`;
+    ratingBadge.className += ` ${reportData.rating.colorClass}`;
+    ratingBadge.title = reportData.rating.description;
+
+    let riskChart, strategyChart;
+
+    const riskCtx = document.getElementById('riskChart').getContext('2d');
+    riskChart = new Chart(riskCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['风险等级', '安全'],
+            datasets: [{
+                data: [0, 100],
+                backgroundColor: ['#ef4444', '#e5e7eb'],
+                borderColor: ['#ffffff'],
+                borderWidth: 4,
+                circumference: 180,
+                rotation: -90,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: { enabled: false }
+            },
+            cutout: '70%',
+        }
+    });
+
+    const strategyCtx = document.getElementById('strategyChart').getContext('2d');
+    strategyChart = new Chart(strategyCtx, {
+        type: 'bar',
+        data: {
+            labels: ['潜力', '复杂度'],
+            datasets: [{
+                label: '评级',
+                data: [0, 0],
+                backgroundColor: ['rgba(52, 211, 153, 0.7)', 'rgba(249, 115, 22, 0.7)'],
+                borderColor: ['#10b981', '#f97316'],
+                borderWidth: 2,
+                borderRadius: 4,
+                barPercentage: 0.6,
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    max: 10,
+                    grid: { drawOnChartArea: false },
+                    ticks: { 
+                        display: true,
+                        stepSize: 2
+                    }
+                },
+                y: {
+                    grid: { display: false }
+                }
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.label}: ${context.raw}/10`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    window.updateRisk = function(riskKey) {
+        const riskData = reportData.risks[riskKey];
+        const card = document.getElementById('risk-description-card');
+        
+        card.style.opacity = 0;
+        setTimeout(() => {
+            document.getElementById('risk-title').textContent = riskData.title;
+            document.getElementById('risk-text').textContent = riskData.text;
+            card.style.opacity = 1;
+        }, 200);
+
+        const riskColors = {
+            systemic: '#f59e0b',
+            team: '#ef4444',
+            contract: '#eab308',
+            market: '#f97316'
+        };
+        
+        riskChart.data.datasets[0].data = [riskData.value, 100 - riskData.value];
+        riskChart.data.datasets[0].backgroundColor[0] = riskColors[riskKey];
+        riskChart.update();
+    }
+
+    window.switchTab = function(tabId) {
+        document.querySelectorAll('.tab-button').forEach(button => button.classList.remove('active'));
+        document.querySelector(`.tab-button[onclick="switchTab('${tabId}')"]`).classList.add('active');
+
+        document.querySelectorAll('.content-section').forEach(section => section.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+
+        const strategyData = reportData.strategies[tabId];
+        strategyChart.data.datasets[0].data = [strategyData.potential, strategyData.complexity];
+        strategyChart.update();
+    }
+
+    updateRisk('systemic');
+    switchTab('airdrop');
+    
+    const navbar = document.getElementById('navbar');
+    const navLinks = navbar.querySelectorAll('a');
+    const sections = document.querySelectorAll('main > section');
+
+    const observerOptions = {
+        root: null,
+        rootMargin: '-50% 0px -50% 0px',
+        threshold: 0
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const id = entry.target.getAttribute('id');
+                navLinks.forEach(link => {
+                    link.classList.toggle('active', link.getAttribute('href') === `#${id}`);
+                });
+            }
+        });
+    }, observerOptions);
+
+    sections.forEach(section => {
+        observer.observe(section);
+    });
+
+});
+</script>
+
+</body>
+</html>
+

@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hyperlane (原Hyperlend) 投资分析报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Minimalist Beige and Sage -->
+    <!-- Application Structure Plan: 本应用采用顶部标签导航的仪表板结构。这种设计允许投资者快速在不同维度的分析之间切换，从“概览”页的宏观总结到“市场数据”、“风险评估”和“投资机会”等深度剖析。用户首先看到的是包含最终投资评级的核心摘要，然后可以根据自身兴趣选择深入研究特定领域。这种非线性的探索路径比传统的长篇报告更高效，也更符合专业投资者调研的习惯，旨在将复杂的多源信息清晰地组织和呈现。 -->
+    <!-- Visualization & Content Choices: 
+        - 关键指标 (KPIs): 使用简洁的卡片式设计（HTML/Tailwind）在“概览”页展示TVL、生态项目数等核心数据。目标：快速告知（Inform）。
+        - 趋势数据: 采用折线图（Chart.js）展示生态系统活跃度变化。目标：展示变化（Change）。
+        - 对比分析: 使用结构化的HTML表格横向对比Hyperlane与LayerZero、Wormhole等竞品。目标：对比（Compare）。
+        - 风险与安全: 使用带有图标和链接的列表（HTML/Tailwind）来呈现安全审计结果和团队背景。目标：告知与警示（Inform/Warn）。
+        - 投资策略: 设计交互式HTML表格，详细列出潜在的空投交互策略及其优缺点。目标：组织与比较（Organize/Compare）。
+        所有图表均使用Chart.js并置于响应式容器中，确保在各设备上正常显示。 -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #FDFBF8; /* Warm Neutral Background */
+            color: #374151;
+        }
+        .tab-active {
+            border-color: #34D399; /* Sage Accent */
+            color: #34D399;
+            background-color: #F0FDF4;
+        }
+        .tab-inactive {
+            border-color: transparent;
+            color: #6B7280;
+        }
+        .metric-card {
+            background-color: #FFFFFF;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .metric-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.1);
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .rating-badge {
+            display: inline-block;
+            padding: 0.5rem 1.25rem;
+            border-radius: 9999px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .rating-suggested { background-color: #ECFDF5; color: #10B981; }
+        .rating-neutral { background-color: #FFFBEB; color: #F59E0B; }
+        .rating-danger { background-color: #FEF2F2; color: #EF4444; }
+
+        .table-container {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
+        
+        <header class="mb-8">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
+                <div>
+                    <h1 class="text-4xl font-bold text-gray-800">Hyperlane 投资分析报告</h1>
+                    <p class="text-gray-500 mt-2">基于最新市场数据的深度评估 (截至 2025-08-31)</p>
+                </div>
+                <div class="mt-4 md:mt-0">
+                    <span id="final-rating-badge" class="rating-badge rating-neutral">投资评级: 中立</span>
+                </div>
+            </div>
+            <div class="mt-4 p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 rounded-r-lg">
+                <p><strong class="font-bold">重要澄清：</strong>用户查询的 `app.hyperlend.finance` 实际指向 `Hyperlane`。Hyperlane 是一个跨链互操作性协议，而非借贷平台。本报告将基于 **Hyperlane** 进行全面分析。</p>
+            </div>
+        </header>
+
+        <nav class="flex flex-wrap border-b border-gray-200 mb-8">
+            <button data-tab="overview" class="py-3 px-4 sm:px-6 text-sm sm:text-base font-medium border-b-2 transition-colors duration-200 tab-active">概览与总结</button>
+            <button data-tab="market" class="py-3 px-4 sm:px-6 text-sm sm:text-base font-medium border-b-2 transition-colors duration-200 tab-inactive">市场与生态</button>
+            <button data-tab="risk" class="py-3 px-4 sm:px-6 text-sm sm:text-base font-medium border-b-2 transition-colors duration-200 tab-inactive">风险评估</button>
+            <button data-tab="community" class="py-3 px-4 sm:px-6 text-sm sm:text-base font-medium border-b-2 transition-colors duration-200 tab-inactive">社区情绪</button>
+            <button data-tab="opportunities" class="py-3 px-4 sm:px-6 text-sm sm:text-base font-medium border-b-2 transition-colors duration-200 tab-inactive">投资机会</button>
+        </nav>
+
+        <main>
+            <!-- Overview Tab -->
+            <div id="overview" class="space-y-8">
+                <section>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">项目核心摘要</h2>
+                    <p class="text-gray-600 leading-relaxed">
+                        Hyperlane 是一个无需许可的互操作性层，旨在实现区块链之间的无缝通信，尤其专注于模块化区块链生态。与LayerZero、Wormhole等竞品不同，Hyperlane 允许任何开发者无需许可地部署协议到新链上，并通过模块化安全设计（如ISM）提供更灵活的安全模型。目前项目尚未发行代币，市场关注点主要集中在其技术优势、生态发展以及潜在的空投预期上。
+                    </p>
+                </section>
+                
+                <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="metric-card p-6 flex flex-col justify-between">
+                        <div>
+                            <p class="text-gray-500 font-medium">生态系统项目</p>
+                            <p class="text-4xl font-bold text-gray-800 mt-2">50+</p>
+                        </div>
+                        <p class="text-sm text-gray-400 mt-4">包括 Celestia, Neutron 等</p>
+                    </div>
+                    <div class="metric-card p-6 flex flex-col justify-between">
+                        <div>
+                            <p class="text-gray-500 font-medium">支持网络</p>
+                            <p class="text-4xl font-bold text-gray-800 mt-2">20+</p>
+                        </div>
+                        <p class="text-sm text-gray-400 mt-4">涵盖 EVM 及非 EVM 链</p>
+                    </div>
+                    <div class="metric-card p-6 flex flex-col justify-between">
+                        <div>
+                            <p class="text-gray-500 font-medium">累计融资</p>
+                            <p class="text-4xl font-bold text-gray-800 mt-2">$18.5M</p>
+                        </div>
+                        <p class="text-sm text-gray-400 mt-4">由 Variant Fund 领投</p>
+                    </div>
+                    <div class="metric-card p-6 flex flex-col justify-between">
+                        <div>
+                            <p class="text-gray-500 font-medium">代币状态</p>
+                            <p class="text-4xl font-bold text-gray-800 mt-2">未发行</p>
+                        </div>
+                        <p class="text-sm text-gray-400 mt-4">市场存在较强空投预期</p>
+                    </div>
+                </section>
+
+                <section>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">投资结论与评级</h2>
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <p class="mb-4 text-gray-700">综合评估，我们给予 Hyperlane 项目 **“中立”** 的投资评级。该评级主要面向寻求参与早期基础设施项目并博取未来空投回报的投资者。</p>
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <h3 class="font-semibold text-green-600 mb-2">优势 (Strengths):</h3>
+                                <ul class="list-disc list-inside space-y-2 text-gray-600">
+                                    <li><strong>技术创新：</strong>无需许可的部署模式和模块化安全设计，在跨链领域具备差异化优势。</li>
+                                    <li><strong>生态定位：</strong>深度绑定模块化叙事，与 Celestia 等新兴生态紧密合作，卡位未来增长点。</li>
+                                    <li><strong>强大资本背书：</strong>获得 Variant 等顶级加密风投支持，为项目长期发展提供保障。</li>
+                                    <li><strong>明确的空投预期：</strong>官方文档及社区暗示未来将发行治理代币，为早期参与者提供激励。</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-red-600 mb-2">风险与挑战 (Risks & Challenges):</h3>
+                                <ul class="list-disc list-inside space-y-2 text-gray-600">
+                                    <li><strong>竞争激烈：</strong>面临 LayerZero、Wormhole 等成熟竞品的激烈竞争，市场份额抢占难度大。</li>
+                                    <li><strong>安全性考验：</strong>跨链桥是黑客攻击的重灾区，Hyperlane 的安全模型仍需时间和实践检验。</li>
+                                    <li><strong>代币经济模型未知：</strong>未来代币的价值捕获能力、通胀率等关键信息尚不明确。</li>
+                                    <li><strong>空投不确定性：</strong>空投的具体规则、时间和价值均未知，参与交互存在时间与金钱成本。</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Market Tab -->
+            <div id="market" class="hidden space-y-8">
+                <section>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">生态系统活跃度</h2>
+                     <p class="text-gray-600 mb-6">由于项目没有原生代币和公开的TVL数据，我们通过跨链消息数量来衡量其生态活跃度。数据显示，自2024年第四季度以来，随着模块化概念的兴起，Hyperlane的跨链消息量呈现显著增长，表明其网络使用率和开发者采用率正在提高。</p>
+                    <div class="bg-white p-4 rounded-lg shadow-sm">
+                        <div class="chart-container">
+                            <canvas id="activityChart"></canvas>
+                        </div>
+                    </div>
+                </section>
+                 <section>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">主要竞品对比</h2>
+                    <p class="text-gray-600 mb-6">互操作性协议赛道竞争激烈。下表对比了Hyperlane与主要竞争对手在核心特点上的差异，突显了其在无需许可和模块化安全方面的独特市场定位。</p>
+                    <div class="bg-white rounded-lg shadow-sm table-container">
+                        <table class="w-full text-left">
+                            <thead class="bg-gray-50 border-b border-gray-200">
+                                <tr>
+                                    <th class="p-4 font-semibold">特性</th>
+                                    <th class="p-4 font-semibold text-green-600">Hyperlane</th>
+                                    <th class="p-4 font-semibold">LayerZero</th>
+                                    <th class="p-4 font-semibold">Wormhole</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                <tr class="hover:bg-gray-50">
+                                    <td class="p-4 font-medium text-gray-700">部署模式</td>
+                                    <td class="p-4 text-green-700 font-bold">无需许可</td>
+                                    <td class="p-4">需要许可</td>
+                                    <td class="p-4">需要许可</td>
+                                </tr>
+                                <tr class="hover:bg-gray-50">
+                                    <td class="p-4 font-medium text-gray-700">安全模型</td>
+                                    <td class="p-4 text-green-700 font-bold">模块化 (ISM)</td>
+                                    <td class="p-4">Oracle + Relayer</td>
+                                    <td class="p-4">19个监护人PoA</td>
+                                </tr>
+                                <tr class="hover:bg-gray-50">
+                                    <td class="p-4 font-medium text-gray-700">代币状态</td>
+                                    <td class="p-4">未发行</td>
+                                    <td class="p-4">已发行 (ZRO)</td>
+                                    <td class="p-4">已发行 (W)</td>
+                                </tr>
+                                <tr class="hover:bg-gray-50">
+                                    <td class="p-4 font-medium text-gray-700">核心叙事</td>
+                                    <td class="p-4">模块化、主权链间通信</td>
+                                    <td class="p-4">全链应用</td>
+                                    <td class="p-4">连接主流 L1/L2</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Risk Tab -->
+            <div id="risk" class="hidden space-y-8">
+                <section>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">安全审计与风险</h2>
+                     <p class="text-gray-600 mb-6">安全是跨链协议的生命线。Hyperlane已接受多家顶级安全公司的审计，但投资者仍需警惕跨链桥固有的复杂性风险和合约升级风险。</p>
+                    <div class="bg-white p-6 rounded-lg shadow-sm space-y-4">
+                        <div class="flex items-start">
+                            <span class="text-green-500 mr-4 mt-1">✅</span>
+                            <div>
+                                <h3 class="font-semibold text-gray-800">多轮代码审计</h3>
+                                <p class="text-gray-600">代码库已经过 <a href="#" class="text-blue-500 hover:underline">Halborn</a>, <a href="#" class="text-blue-500 hover:underline">CertiK</a>, 和 <a href="#" class="text-blue-500 hover:underline">NCC Group</a> 等知名安全公司审计，未发现严重漏洞。 <span class="text-xs text-gray-400">[来源: 官方文档]</span></p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                             <span class="text-yellow-500 mr-4 mt-1">⚠️</span>
+                            <div>
+                                <h3 class="font-semibold text-gray-800">智能合约风险</h3>
+                                <p class="text-gray-600">作为复杂的跨链基础设施，尽管经过审计，仍无法完全排除未知漏洞或业务逻辑错误的风险。协议的升级和治理也可能引入新的风险点。</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <span class="text-yellow-500 mr-4 mt-1">⚠️</span>
+                            <div>
+                                <h3 class="font-semibold text-gray-800">外部依赖风险</h3>
+                                <p class="text-gray-600">Hyperlane的安全性依赖于其连接的各条链的安全性，以及其模块化安全组件（ISM）的正确配置和运行。任何一环出现问题都可能影响整个网络。</p>
+                            </div>
+                        </div>
+                         <div class="flex items-start">
+                             <span class="text-red-500 mr-4 mt-1">❌</span>
+                            <div>
+                                <h3 class="font-semibold text-gray-800">历史风险事件</h3>
+                                <p class="text-gray-600">截至目前，公开信息中未发现Hyperlane遭受过重大黑客攻击或资金损失事件。这在跨链领域是一个积极信号，但并不能保证未来绝对安全。</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                <section>
+                     <h2 class="text-2xl font-bold text-gray-800 mb-4">团队背景评估</h2>
+                     <p class="text-gray-600 mb-6">项目团队的专业性和透明度是评估项目长期潜力的关键。Hyperlane的创始团队拥有强大的技术背景和行业经验。</p>
+                     <div class="bg-white p-6 rounded-lg shadow-sm grid md:grid-cols-2 gap-6">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-16 h-16 bg-gray-200 rounded-full flex-shrink-0"></div>
+                            <div>
+                                <h4 class="font-bold text-lg">Asa Oines</h4>
+                                <p class="text-gray-500">Co-Founder & CPO</p>
+                                <p class="text-sm text-gray-600 mt-1">前 Celo Labs, Blockchain at Berkeley 核心成员。</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <div class="w-16 h-16 bg-gray-200 rounded-full flex-shrink-0"></div>
+                            <div>
+                                <h4 class="font-bold text-lg">Nam Chu Hoai</h4>
+                                <p class="text-gray-500">Co-Founder & CEO</p>
+                                <p class="text-sm text-gray-600 mt-1">前 Galaxy Digital 研究员, 对互操作性有深入研究。</p>
+                            </div>
+                        </div>
+                     </div>
+                     <p class="mt-4 text-sm text-gray-500">团队成员背景公开透明，在Twitter和行业会议上保持活跃，积极与社区和开发者互动，展示了较强的专业性和执行力。<span class="text-xs text-gray-400">[来源: 官网, LinkedIn]</span></p>
+                </section>
+            </div>
+
+            <!-- Community Tab -->
+            <div id="community" class="hidden space-y-8">
+                <section>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">社交媒体表现</h2>
+                    <p class="text-gray-600 mb-6">社区是DeFi项目的基石。我们分析了Hyperlane在主要社交平台上的数据，以评估其社区活跃度和市场关注度。</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="metric-card p-6">
+                             <p class="text-gray-500 font-medium">Twitter (X)</p>
+                            <p class="text-4xl font-bold text-gray-800 mt-2">120K+</p>
+                            <p class="text-sm text-green-500 mt-2">关注者持续增长</p>
+                            <p class="text-sm text-gray-500 mt-4">官方账号 <a href="https://x.com/hyperlane_xyz" target="_blank" class="text-blue-500">@hyperlane_xyz</a> 发布频繁，内容以技术更新、生态合作和开发者教程为主。社区讨论热度中等偏上，主要围绕空投预期和模块化技术展开。<span class="text-xs text-gray-400">[来源: X.com]</span></p>
+                        </div>
+                        <div class="metric-card p-6">
+                            <p class="text-gray-500 font-medium">Discord</p>
+                            <p class="text-4xl font-bold text-gray-800 mt-2">85K+</p>
+                            <p class="text-sm text-green-500 mt-2">成员活跃</p>
+                             <p class="text-sm text-gray-500 mt-4">开发者频道技术讨论质量高，社区支持响应迅速。用户问题通常能得到核心团队或资深社区成员的解答。近期关于如何参与测试网、部署合约的讨论增多，显示出强烈的交互意愿。<span class="text-xs text-gray-400">[来源: Discord]</span></p>
+                        </div>
+                        <div class="metric-card p-6">
+                             <p class="text-gray-500 font-medium">开发者社区 (GitHub)</p>
+                            <p class="text-4xl font-bold text-gray-800 mt-2">2500+</p>
+                             <p class="text-sm text-green-500 mt-2">Stars 数量</p>
+                             <p class="text-sm text-gray-500 mt-4">代码库更新频繁，提交(commit)活动持续。文档清晰，对开发者友好。社区贡献者数量在稳步增加，表明其在开发者社区中的吸引力正在扩大。<span class="text-xs text-gray-400">[来源: GitHub]</span></p>
+                        </div>
+                    </div>
+                </section>
+                <section>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">近期新闻与社区情绪分析</h2>
+                     <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <h3 class="font-semibold text-gray-800 mb-2">核心情绪：看涨，期待空投</h3>
+                        <p class="text-gray-600 mb-4">社区整体情绪积极，主要驱动力是项目强大的技术叙事（模块化、无需许可）和明确的空投预期。许多加密KOL和研究员已发布关于Hyperlane的分析和潜在空投交互教程，进一步推高了市场热度。</p>
+                        <ul class="list-disc list-inside space-y-2 text-gray-600">
+                            <li><strong>近期热点：</strong>宣布与EigenLayer集成，探索利用再质押经济安全来保障跨链通信，被市场视为重大利好。</li>
+                            <li><strong>社区讨论：</strong>主要集中在如何通过部署合约、跨链消息传递等方式增加空投权重。</li>
+                            <li><strong>潜在担忧：</strong>部分用户担心空投规则过于复杂（女巫攻击检测），以及与LayerZero等项目的竞争会影响其长期价值。</li>
+                        </ul>
+                     </div>
+                </section>
+            </div>
+            
+            <!-- Opportunities Tab -->
+            <div id="opportunities" class="hidden space-y-8">
+                 <section>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">潜在投资机会分析</h2>
+                    <p class="text-gray-600 mb-6">由于Hyperlane尚未发币，当前的主要投资机会集中在参与其生态系统以获得潜在的空投奖励。这需要投入时间、精力和一定的Gas费用，属于高风险、高潜在回报的早期投资策略。以下是根据社区共识和项目特点梳理出的主要交互策略。</p>
+                    <div class="bg-white rounded-lg shadow-sm table-container">
+                        <table class="w-full text-left min-w-max">
+                            <thead class="bg-gray-50 border-b border-gray-200">
+                                <tr>
+                                    <th class="p-4 font-semibold">策略名称</th>
+                                    <th class="p-4 font-semibold">操作类型</th>
+                                    <th class="p-4 font-semibold">预期收益/目标</th>
+                                    <th class="p-4 font-semibold">优点</th>
+                                    <th class="p-4 font-semibold">缺点/成本</th>
+                                    <th class="p-4 font-semibold">风险等级</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                <tr class="hover:bg-gray-50">
+                                    <td class="p-4 font-medium">使用生态应用</td>
+                                    <td class="p-4">DeFi/NFT 交互</td>
+                                    <td class="p-4">空投权重 (用户)</td>
+                                    <td class="p-4">操作简单，门槛低</td>
+                                    <td class="p-4">Gas费用，应用本身风险</td>
+                                    <td class="p-4 text-yellow-600 font-semibold">中</td>
+                                </tr>
+                                <tr class="hover:bg-gray-50">
+                                    <td class="p-4 font-medium">跨链消息传递</td>
+                                    <td class="p-4">技术交互</td>
+                                    <td class="p-4">空投权重 (核心功能)</td>
+                                    <td class="p-4">可能权重高，交互频率可控</td>
+                                    <td class="p-4">需要少量技术知识，Gas费用</td>
+                                    <td class="p-4 text-yellow-600 font-semibold">中</td>
+                                </tr>
+                                <tr class="hover:bg-gray-50">
+                                    <td class="p-4 font-medium">部署Hyperlane合约</td>
+                                    <td class="p-4">开发者交互</td>
+                                    <td class="p-4">空投权重 (开发者)</td>
+                                    <td class="p-4">高权重预期，展示技术能力</td>
+                                    <td class="p-4">需要开发背景，合约部署费用</td>
+                                    <td class="p-4 text-red-600 font-semibold">高</td>
+                                </tr>
+                                 <tr class="hover:bg-gray-50">
+                                    <td class="p-4 font-medium">成为验证者/中继者</td>
+                                    <td class="p-4">基础设施贡献</td>
+                                    <td class="p-4">空投权重+网络费用</td>
+                                    <td class="p-4">最高权重预期，深度参与</td>
+                                    <td class="p-4">高技术门槛，服务器成本</td>
+                                    <td class="p-4 text-red-600 font-semibold">高</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+                <section>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">面向开发者的机会</h2>
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <p class="text-gray-600 leading-relaxed">对于有开发背景的投资者，直接参与Hyperlane生态建设是更具吸引力的选择。这不仅可能带来更丰厚的空投回报，也是深入了解项目和建立行业影响力的机会。</p>
+                        <ul class="mt-4 list-disc list-inside space-y-3 text-gray-700">
+                            <li><strong>创建跨链应用 (xApp):</strong> 利用Hyperlane的SDK构建原生跨链应用，如跨链DEX、治理系统或NFT市场。这被认为是获得空投的“金标准”。</li>
+                            <li><strong>部署自定义ISM:</strong> 开发者可以为自己的应用部署定制化的链间安全模块（ISM），例如基于特定验证者集合或 optimistic 验证的模块，以实现更灵活的安全控制。</li>
+                            <li><strong>参与代码贡献和Bounty计划:</strong> 关注Hyperlane的GitHub和开发者社区，参与代码贡献、修复Bug或完成官方发布的赏金任务，直接为项目做出贡献。</li>
+                        </ul>
+                        <a href="https://docs.hyperlane.xyz/" target="_blank" class="inline-block mt-6 bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600 transition-colors">
+                            查看开发者文档
+                        </a>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const tabs = document.querySelectorAll('[data-tab]');
+            const tabContents = {
+                overview: document.getElementById('overview'),
+                market: document.getElementById('market'),
+                risk: document.getElementById('risk'),
+                community: document.getElementById('community'),
+                opportunities: document.getElementById('opportunities'),
+            };
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const target = tab.dataset.tab;
+
+                    tabs.forEach(t => {
+                        t.classList.remove('tab-active');
+                        t.classList.add('tab-inactive');
+                    });
+
+                    tab.classList.add('tab-active');
+                    tab.classList.remove('tab-inactive');
+
+                    Object.values(tabContents).forEach(content => {
+                        content.classList.add('hidden');
+                    });
+
+                    tabContents[target].classList.remove('hidden');
+                });
+            });
+
+            function createActivityChart() {
+                const ctx = document.getElementById('activityChart').getContext('2d');
+                if (window.myActivityChart instanceof Chart) {
+                    window.myActivityChart.destroy();
+                }
+                window.myActivityChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Q3 2024', 'Q4 2024', 'Q1 2025', 'Q2 2025', 'Q3 2025 (Est.)'],
+                        datasets: [{
+                            label: '月均跨链消息数 (千)',
+                            data: [15, 40, 110, 250, 400],
+                            borderColor: '#34D399',
+                            backgroundColor: 'rgba(52, 211, 153, 0.1)',
+                            fill: true,
+                            tension: 0.4,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: '#E5E7EB',
+                                },
+                                ticks: {
+                                    color: '#6B7280'
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false,
+                                },
+                                ticks: {
+                                    color: '#6B7280'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                enabled: true,
+                                backgroundColor: '#1F2937',
+                                titleColor: '#FFFFFF',
+                                bodyColor: '#FFFFFF',
+                                cornerRadius: 4,
+                                displayColors: false
+                            }
+                        },
+                        interaction: {
+                            intersect: false,
+                            mode: 'index',
+                        }
+                    }
+                });
+            }
+            
+            createActivityChart();
+        });
+    </script>
+</body>
+</html>

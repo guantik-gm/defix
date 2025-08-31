@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unitas Labs 投资分析报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chosen Palette: Calm Neutral & Subtle Blue -->
+    <!-- Application Structure Plan: A tab-based dashboard design was chosen to organize the dense investment analysis into digestible, user-centric sections. This structure allows investors to quickly navigate between a high-level 'Overview', actionable 'Opportunities', critical 'Risk Analysis', and supporting 'Core Data' and 'Project Details'. This non-linear approach is superior to a long-scrolling report for decision-making, as it lets users prioritize information based on their needs (e.g., a risk-averse user can start with risks, while a developer can jump to uAgent opportunities). The user flow is designed for efficient exploration and comparison. -->
+    <!-- Visualization & Content Choices: Report Info: TVL & Competitors -> Goal: Compare -> Viz: Bar Chart (Chart.js) -> Interaction: Hover tooltips -> Justification: Provides immediate visual context of Unitas Labs' market position against established players. Report Info: DeFi Strategies -> Goal: Compare & Guide -> Viz: Interactive HTML Table -> Interaction: Tabular filtering (future-proof) -> Justification: Clearly presents complex strategies, comparing pros, cons, and potential returns for quick decision-making. Report Info: Risk Breakdown -> Goal: Inform & Warn -> Viz: Icon-driven HTML cards with color codes -> Interaction: Hover for details -> Justification: Uses visual cues for rapid risk assessment without overwhelming the user. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', 'Helvetica Neue', 'Arial', 'sans-serif', 'Microsoft YaHei';
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .tab-active {
+            border-color: #3b82f6;
+            color: #3b82f6;
+            background-color: #eff6ff;
+        }
+        .tab-inactive {
+            border-color: transparent;
+            color: #4b5563;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .content-section {
+            display: none;
+        }
+        .content-section.active {
+            display: block;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-gray-800">
+
+    <div id="app" class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+        
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-900">Unitas Labs 投资分析报告</h1>
+            <p class="text-lg text-gray-500 mt-2">一份交互式仪表板，助您深入了解投资潜力与风险</p>
+        </header>
+
+        <main>
+            <div class="sticky top-0 z-10 bg-slate-50/80 backdrop-blur-md mb-8">
+                <nav class="flex justify-center border-b border-gray-200 space-x-2 sm:space-x-4" aria-label="Tabs">
+                    <button data-tab="overview" class="px-3 sm:px-4 py-3 font-medium text-sm sm:text-base border-b-2 whitespace-nowrap tab-active">概览</button>
+                    <button data-tab="opportunities" class="px-3 sm:px-4 py-3 font-medium text-sm sm:text-base border-b-2 whitespace-nowrap tab-inactive">投资机会</button>
+                    <button data-tab="risks" class="px-3 sm:px-4 py-3 font-medium text-sm sm:text-base border-b-2 whitespace-nowrap tab-inactive">风险分析</button>
+                    <button data-tab="data" class="px-3 sm:px-4 py-3 font-medium text-sm sm:text-base border-b-2 whitespace-nowrap tab-inactive">核心数据</button>
+                    <button data-tab="details" class="px-3 sm:px-4 py-3 font-medium text-sm sm:text-base border-b-2 whitespace-nowrap tab-inactive">项目详情</button>
+                </nav>
+            </div>
+
+            <div id="tab-content">
+                <section id="overview" class="content-section active">
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <p class="text-gray-600 mb-6 leading-relaxed">
+                            本部分为您提供 Unitas Labs 的核心摘要和总体评估。您将快速了解该项目的市场定位、关键指标以及最终的投资评级，为后续的深入探索奠定基础。
+                        </p>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 text-center">
+                            <div class="bg-yellow-50 border border-yellow-200 p-6 rounded-lg">
+                                <div class="text-sm font-semibold text-yellow-800 mb-2">综合投资评级</div>
+                                <div class="text-3xl font-bold text-yellow-900">中立</div>
+                                <p class="text-xs text-yellow-700 mt-2">高风险与高潜力并存</p>
+                            </div>
+                            <div class="bg-blue-50 border border-blue-200 p-6 rounded-lg">
+                                <div class="text-sm font-semibold text-blue-800 mb-2">总锁仓价值 (TVL)</div>
+                                <div class="text-3xl font-bold text-blue-900">~$8.5 M</div>
+                                <p class="text-xs text-blue-700 mt-2">项目处于极早期阶段</p>
+                            </div>
+                             <div class="bg-green-50 border border-green-200 p-6 rounded-lg">
+                                <div class="text-sm font-semibold text-green-800 mb-2">核心优势</div>
+                                <div class="text-xl font-bold text-green-900 leading-tight">新兴市场 & uAgent</div>
+                                <p class="text-xs text-green-700 mt-2">差异化定位与开发者生态</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-50 p-6 rounded-lg border">
+                            <h3 class="font-bold text-xl text-gray-800 mb-3">核心摘要</h3>
+                            <p class="text-gray-600 space-y-4">
+                                <span>Unitas Labs 是一个专注于新兴市场法币的去中心化稳定币协议，旨在通过其创新的混合型稳定币 `USD1`，为非美元地区的用户提供更稳定、更具资本效率的链上金融服务。该项目切入了一个有巨大潜力的细分市场，其技术架构和经济模型设计具备一定的创新性。</span>
+                                <span class="block">然而，Unitas Labs 仍处于非常早期的发展阶段。当前其总锁仓价值（TVL）较低，市场采纳度和品牌知名度有限，代币经济学尚未完全公布，且面临来自成熟稳定币协议和宏观监管的双重压力。社区虽然活跃，但规模较小。当前项目的主要亮点在于其为开发者提供的生态参与机会（创建 uAgent）和潜在的早期参与者激励（空投预期、高 APR 挖矿）。</span>
+                                <span class="block font-semibold">结论：投资该项目具有高风险和高潜在回报的特征。对于风险偏好较高的投资者，可以适度参与其生态交互和流动性挖矿；对于风险规避型投资者，建议保持观望。</span>
+                            </p>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="opportunities" class="content-section">
+                     <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <p class="text-gray-600 mb-6 leading-relaxed">
+                            本部分重点剖析 Unitas Labs 提供的各类投资机会。我们为您梳理了从高 APR 的 DeFi 收益策略到为开发者量身定制的生态参与方式等多种途径，并以表格形式对比其优缺点和预期回报，助您发现最适合自己的投资路径。
+                        </p>
+                         <div class="mb-8">
+                             <h3 class="font-bold text-2xl text-gray-800 mb-4">DeFi 收益机会</h3>
+                             <div class="overflow-x-auto">
+                                 <table class="w-full text-sm text-left text-gray-500">
+                                     <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+                                         <tr>
+                                             <th scope="col" class="px-6 py-3 rounded-l-lg">投资方式</th>
+                                             <th scope="col" class="px-6 py-3">优点</th>
+                                             <th scope="col" class="px-6 py-3">缺点</th>
+                                             <th scope="col" class="px-6 py-3 rounded-r-lg">预期收益 & 策略</th>
+                                         </tr>
+                                     </thead>
+                                     <tbody>
+                                         <tr class="bg-white border-b">
+                                             <th scope="row" class="px-6 py-4 font-medium text-gray-900">抵押 & 铸造 USD1</th>
+                                             <td class="px-6 py-4">赚取积分 (潜在空投)、保持底层资产收益、释放流动性</td>
+                                             <td class="px-6 py-4">清算风险、借款利息、机会成本</td>
+                                             <td class="px-6 py-4 font-semibold text-blue-600">积分 + 底层收益 (~3-4%) <br> <span class="font-normal text-xs">策略: 存入stETH，借出USD1进行杠杆挖矿</span></td>
+                                         </tr>
+                                         <tr class="bg-gray-50 border-b">
+                                             <th scope="row" class="px-6 py-4 font-medium text-gray-900">提供 USD1 流动性 (LP)</th>
+                                             <td class="px-6 py-4">赚取交易费和激励、赚取积分、潜在高 APR</td>
+                                             <td class="px-6 py-4">无常损失 (风险低)、智能合约风险</td>
+                                             <td class="px-6 py-4 font-semibold text-green-600">APR 15% - 30%+ (浮动) <br> <span class="font-normal text-xs">策略: 与其他稳定币组LP，或进行套保挖矿</span></td>
+                                         </tr>
+                                         <tr class="bg-white">
+                                             <th scope="row" class="px-6 py-4 font-medium text-gray-900">参与生态交互 (博空投)</th>
+                                             <td class="px-6 py-4">潜在回报率极高、资金门槛低</td>
+                                             <td class="px-6 py-4">不确定性极高、时间和 Gas 成本</td>
+                                             <td class="px-6 py-4 font-semibold text-purple-600">不确定 <br> <span class="font-normal text-xs">策略: 小额、多次、多样化交互</span></td>
+                                         </tr>
+                                     </tbody>
+                                 </table>
+                             </div>
+                         </div>
+                         <div class="bg-indigo-50 p-6 rounded-lg border border-indigo-200">
+                             <h3 class="font-bold text-2xl text-indigo-900 mb-3">开发者生态参与机会 (uAgent)</h3>
+                             <p class="text-indigo-800 mb-4">uAgent 是 Unitas Labs 的独特机制，它是一个自动化的链上策略执行机器人。有开发背景的投资者可以通过创建自己的 uAgent 来赚取收益。</p>
+                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                 <div>
+                                     <h4 class="font-semibold text-indigo-900">参与方式：</h4>
+                                     <ul class="list-disc list-inside text-indigo-700 text-sm mt-2 space-y-1">
+                                         <li>根据官方 SDK 编写并部署自己的 uAgent 策略。</li>
+                                         <li>例如：创建自动防清算、利息套利等策略机器人。</li>
+                                         <li>将创建的 uAgent 发布到市场，供其他用户付费使用。</li>
+                                     </ul>
+                                 </div>
+                                 <div>
+                                     <h4 class="font-semibold text-indigo-900">收益模式：</h4>
+                                      <ul class="list-disc list-inside text-indigo-700 text-sm mt-2 space-y-1">
+                                         <li><b>服务费/管理费:</b> 从使用者资金中抽成。</li>
+                                         <li><b>业绩提成:</b> 根据策略表现获得分成。</li>
+                                         <li><b>平台激励:</b> 早期优秀的 uAgent 创造者可能获得额外奖励。</li>
+                                     </ul>
+                                 </div>
+                             </div>
+                         </div>
+                    </div>
+                </section>
+
+                <section id="risks" class="content-section">
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <p class="text-gray-600 mb-6 leading-relaxed">
+                            任何投资都伴随着风险。本部分系统地梳理了 Unitas Labs 面临的主要风险，包括技术安全、经济模型和外部监管等层面。我们通过直观的卡片形式，帮助您清晰地识别潜在威胁，做出更审慎的投资决策。
+                        </p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div class="border border-red-200 bg-red-50 p-6 rounded-lg">
+                                <div class="flex items-center mb-3">
+                                    <span class="text-xl mr-3">⚙️</span>
+                                    <h3 class="text-xl font-bold text-red-900">智能合约与技术风险</h3>
+                                </div>
+                                <ul class="list-disc list-inside text-sm text-red-800 space-y-2">
+                                    <li><b>审计情况:</b> 已由 PeckShield 和 Secure3 审计，但无法100%排除未知漏洞。</li>
+                                    <li><b>潜在攻击点:</b> 价格预言机、清算机制、跨链桥等都是潜在风险点。</li>
+                                    <li><b>中心化风险:</b> 早期协议治理和关键参数可能由核心团队控制。</li>
+                                </ul>
+                            </div>
+                            <div class="border border-yellow-200 bg-yellow-50 p-6 rounded-lg">
+                                <div class="flex items-center mb-3">
+                                    <span class="text-xl mr-3">📉</span>
+                                    <h3 class="text-xl font-bold text-yellow-900">经济模型与脱锚风险</h3>
+                                </div>
+                                <ul class="list-disc list-inside text-sm text-yellow-800 space-y-2">
+                                    <li><b>抵押品风险:</b> 若抵押品价值剧烈下跌，可能导致连锁清算和坏账。</li>
+                                    <li><b>流动性风险:</b> `USD1` 在二级市场的流动性尚不深厚，极端条件下可能脱锚。</li>
+                                    <li><b>银行挤兑风险:</b> 缺乏足够深的流动性来应对大规模同时赎回。</li>
+                                </ul>
+                            </div>
+                             <div class="border border-orange-200 bg-orange-50 p-6 rounded-lg">
+                                <div class="flex items-center mb-3">
+                                    <span class="text-xl mr-3">⚖️</span>
+                                    <h3 class="text-xl font-bold text-orange-900">宏观与监管风险</h3>
+                                </div>
+                                <ul class="list-disc list-inside text-sm text-orange-800 space-y-2">
+                                    <li><b>监管不确定性:</b> 稳定币是全球监管的重点，政策变化可能带来巨大冲击。</li>
+                                    <li><b>市场竞争:</b> 面临 MakerDAO、Frax 等成熟协议的激烈竞争。</li>
+                                    <li><b>采纳度挑战:</b> 新兴市场的推广和落地需要克服合规、教育等多重障碍。</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <section id="data" class="content-section">
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <p class="text-gray-600 mb-8 leading-relaxed">
+                            数据是客观评估的基石。本部分通过图表形式，直观展示 Unitas Labs 的核心数据及其在市场中的相对位置。您可以通过这些可视化图表，快速掌握其 TVL 规模与主要竞争对手的差距，以及其抵押资产的构成情况。
+                        </p>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <div>
+                                <h3 class="text-center font-bold text-xl mb-4 text-gray-800">TVL 对比：Unitas vs 竞争对手</h3>
+                                <div class="chart-container">
+                                    <canvas id="tvlChart"></canvas>
+                                </div>
+                            </div>
+                            <div>
+                                <h3 class="text-center font-bold text-xl mb-4 text-gray-800">协议抵押资产构成 (示例)</h3>
+                                <div class="chart-container">
+                                    <canvas id="collateralChart"></canvas>
+                                </div>
+                                <p class="text-xs text-center text-gray-500 mt-2">注：此为基于协议接受资产类型的示例数据，非实时数据。</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="details" class="content-section">
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <p class="text-gray-600 mb-6 leading-relaxed">
+                            一个成功的项目离不开强大的团队和活跃的社区。本部分将深入介绍 Unitas Labs 的团队背景、重要投资机构以及社交媒体上的情绪表现，帮助您从“人”和“社区”的角度全面评估该项目。
+                        </p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="bg-slate-50 p-6 rounded-lg border">
+                                <h3 class="font-bold text-xl text-gray-800 mb-3">团队与融资</h3>
+                                <p class="text-sm text-gray-600 mb-4">团队成员背景透明，具备区块链和金融科技经验。项目获得了顶级VC的支持，为其长期发展提供了实力背书和资金保障。</p>
+                                <span class="font-semibold text-gray-700">主要投资机构:</span>
+                                <div class="flex flex-wrap gap-2 mt-2">
+                                    <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Binance Labs</span>
+                                    <span class="bg-purple-100 text-purple-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Jump Crypto</span>
+                                    <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Polygon Ventures</span>
+                                </div>
+                            </div>
+                             <div class="bg-slate-50 p-6 rounded-lg border">
+                                <h3 class="font-bold text-xl text-gray-800 mb-3">社区与社交媒体情绪</h3>
+                                <p class="text-sm text-gray-600 mb-4">社区活跃度中等，讨论主要围绕产品使用和空投预期。整体情绪为中性偏积极，主要由“空投猎人”和早期支持者驱动，尚未形成广泛的市场共识。</p>
+                                <span class="font-semibold text-gray-700">主要平台:</span>
+                                <div class="flex flex-wrap gap-2 mt-2">
+                                     <span class="bg-gray-200 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Twitter/X (~3.5万粉丝)</span>
+                                     <span class="bg-gray-200 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Discord</span>
+                                     <span class="bg-gray-200 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Telegram</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const tabs = document.querySelectorAll('nav button');
+            const sections = document.querySelectorAll('.content-section');
+
+            const tvlCtx = document.getElementById('tvlChart');
+            const collateralCtx = document.getElementById('collateralChart');
+
+            let tvlChartInstance, collateralChartInstance;
+
+            function switchTab(tabId) {
+                tabs.forEach(tab => {
+                    if (tab.dataset.tab === tabId) {
+                        tab.classList.remove('tab-inactive');
+                        tab.classList.add('tab-active');
+                    } else {
+                        tab.classList.remove('tab-active');
+                        tab.classList.add('tab-inactive');
+                    }
+                });
+
+                sections.forEach(section => {
+                    if (section.id === tabId) {
+                        section.classList.add('active');
+                    } else {
+                        section.classList.remove('active');
+                    }
+                });
+                
+                if (tabId === 'data') {
+                    renderCharts();
+                }
+            }
+            
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    switchTab(tab.dataset.tab);
+                });
+            });
+
+            function renderCharts() {
+                if (tvlChartInstance) {
+                    tvlChartInstance.destroy();
+                }
+                if (collateralChartInstance) {
+                    collateralChartInstance.destroy();
+                }
+
+                const tvlChartData = {
+                    labels: ['Unitas Labs', 'MakerDAO', 'Frax Finance', 'Ethena'],
+                    datasets: [{
+                        label: 'TVL (in millions USD)',
+                        data: [8.5, 8500, 2600, 3500],
+                        backgroundColor: [
+                            'rgba(59, 130, 246, 0.6)',
+                            'rgba(16, 185, 129, 0.6)',
+                            'rgba(139, 92, 246, 0.6)',
+                            'rgba(239, 68, 68, 0.6)'
+                        ],
+                        borderColor: [
+                            'rgba(59, 130, 246, 1)',
+                            'rgba(16, 185, 129, 1)',
+                            'rgba(139, 92, 246, 1)',
+                            'rgba(239, 68, 68, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                };
+                
+                tvlChartInstance = new Chart(tvlCtx, {
+                    type: 'bar',
+                    data: tvlChartData,
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${context.dataset.label}: $${context.raw.toLocaleString()}M`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'TVL (Millions USD)'
+                                }
+                            }
+                        }
+                    }
+                });
+
+                const collateralChartData = {
+                    labels: ['stETH (LST)', 'wBTC', 'ETH', 'Other LSTs/LRTs'],
+                    datasets: [{
+                        label: 'Collateral Distribution',
+                        data: [45, 25, 20, 10],
+                        backgroundColor: [
+                            'rgba(59, 130, 246, 0.7)',
+                            'rgba(249, 115, 22, 0.7)',
+                            'rgba(107, 114, 128, 0.7)',
+                            'rgba(16, 185, 129, 0.7)',
+                        ],
+                        borderColor: '#ffffff',
+                        borderWidth: 2,
+                    }]
+                };
+
+                collateralChartInstance = new Chart(collateralCtx, {
+                    type: 'doughnut',
+                    data: collateralChartData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed !== null) {
+                                            label += context.parsed + '%';
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+
+</body>
+</html>
