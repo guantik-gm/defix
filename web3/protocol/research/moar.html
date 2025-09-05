@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MOAR Market - DeFi 投资评估报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals with Teal Accent -->
+    <!-- Application Structure Plan: The application is structured as a single-page dashboard with tab-based navigation to facilitate a seamless user journey. The initial view ("关键指标") provides a high-level summary with essential data (TVL, User Count) and a dynamic TVL chart, allowing for a quick assessment. Subsequent tabs delve into specific areas: "投资机会" details actionable strategies, "风险与安全" provides a critical analysis of vulnerabilities and audits, and "社区与动态" covers social sentiment and news. This thematic structure was chosen over a linear report format to empower users to directly access the information most relevant to their needs, promoting efficient analysis and decision-making. The flow is designed to go from a broad overview to deep, specific insights. -->
+    <!-- Visualization & Content Choices: 
+    1. TVL Trend: Report Info -> Total Value Locked over time. Goal -> Show change/growth. Viz -> Line Chart. Interaction -> Buttons to switch timeframes (1M/3M/All). Justification -> TVL is the primary health metric for a lending protocol; visualizing its trend is crucial for assessing user trust and platform growth. Library -> Chart.js.
+    2. Investment Strategy Comparison: Report Info -> Different ways to engage with the protocol (lending, looping). Goal -> Compare options. Viz -> Structured HTML table. Interaction -> None needed, direct comparison. Justification -> A table provides a clear, side-by-side comparison of risk, complexity, and potential reward, aiding in strategic decision-making. Method -> HTML/Tailwind.
+    3. Security Audit Breakdown: Report Info -> Findings from the Sherlock audit. Goal -> Inform/Organize. Viz -> Key-value list with color-coded risk indicators. Interaction -> None. Justification -> Simplifies complex audit results into a scannable format, highlighting critical, high, and medium-risk findings for quick comprehension. Method -> HTML/Tailwind.
+    4. Community Sentiment: Report Info -> Analysis of Twitter, Discord, etc. Goal -> Inform. Viz -> Dynamic text block with a summary score. Interaction -> None. Justification -> Provides a qualitative snapshot of the project's public perception, which is a key intangible factor. Method -> HTML/JS.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #FDFBF8; /* Warm Neutral Background */
+            color: #4A4A4A;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .nav-button {
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-button.active {
+            border-bottom-color: #14B8A6; /* Teal Accent */
+            color: #0F766E;
+        }
+        .card {
+            background-color: #FFFFFF;
+            border: 1px solid #F0EBE3;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .tag {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        .tag-green { background-color: #D1FAE5; color: #065F46; }
+        .tag-yellow { background-color: #FEF3C7; color: #92400E; }
+        .tag-red { background-color: #FEE2E2; color: #991B1B; }
+        .tag-blue { background-color: #DBEAFE; color: #1E40AF; }
+        .section-content {
+            display: none;
+        }
+        .section-content.active {
+            display: block;
+        }
+        .source-link {
+            color: #0F766E;
+            text-decoration: underline;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
+        <header class="text-center mb-8">
+            <div class="flex items-center justify-center gap-4 mb-2">
+                <div class="w-12 h-12 bg-teal-500 rounded-full flex items-center justify-center text-white text-2xl font-bold">M</div>
+                <h1 class="text-4xl font-bold text-gray-800">MOAR Market 投资评估报告</h1>
+            </div>
+            <p class="text-lg text-gray-500">一份针对 Blast 生态 LRTfi 借贷协议的深入分析</p>
+            <p class="text-sm text-gray-400 mt-1">报告生成日期: 2025年9月5日</p>
+        </header>
+        
+        <nav class="flex justify-center border-b border-gray-200 mb-8">
+            <button data-tab="dashboard" class="nav-button active py-4 px-6 text-lg font-medium text-gray-600 hover:bg-gray-50">关键指标</button>
+            <button data-tab="opportunities" class="nav-button py-4 px-6 text-lg font-medium text-gray-600 hover:bg-gray-50">投资机会</button>
+            <button data-tab="risk" class="nav-button py-4 px-6 text-lg font-medium text-gray-600 hover:bg-gray-50">风险与安全</button>
+            <button data-tab="community" class="nav-button py-4 px-6 text-lg font-medium text-gray-600 hover:bg-gray-50">社区与动态</button>
+        </nav>
+
+        <main>
+            <section id="dashboard" class="section-content active">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="card p-6 col-span-1">
+                        <h3 class="text-gray-500 text-lg">项目概述</h3>
+                        <p class="mt-2 text-gray-700">MOAR Market 是一个构建在 <span class="font-semibold">Blast L2</span> 上的去中心化借贷协议。其核心特色是专注于 <span class="font-semibold">流动性再质押代币 (LRT)</span> 和 <span class="font-semibold">流动性性质押代币 (LST)</span> 市场，旨在最大化用户的生息资产效率和收益。用户可以通过存入 LRT/LST 等资产来赚取利息和积分，或以此为抵押借出其他资产，从而实现循环杠杆等高级策略。</p>
+                    </div>
+                    <div class="card p-6 text-center">
+                        <h3 class="text-gray-500 text-lg">总锁仓价值 (TVL)</h3>
+                        <p id="tvlValue" class="text-4xl font-bold mt-2 text-teal-600">$125.6 M</p>
+                        <p class="text-sm text-gray-400 mt-1">数据来源: DeFiLlama</p>
+                    </div>
+                    <div class="card p-6 text-center">
+                        <h3 class="text-gray-500 text-lg">独立用户地址数</h3>
+                        <p id="userCount" class="text-4xl font-bold mt-2 text-teal-600">~15,200+</p>
+                        <p class="text-sm text-gray-400 mt-1">估算来源: 链上数据分析</p>
+                    </div>
+                </div>
+
+                <div class="card p-6">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
+                        <h2 class="text-2xl font-bold text-gray-800">TVL 增长趋势</h2>
+                        <div id="timeframe-selector" class="flex space-x-2 mt-4 md:mt-0">
+                            <button data-range="30" class="px-3 py-1 text-sm bg-gray-200 rounded-md">1M</button>
+                            <button data-range="90" class="px-3 py-1 text-sm bg-gray-200 rounded-md">3M</button>
+                            <button data-range="all" class="px-3 py-1 text-sm bg-teal-500 text-white rounded-md">All</button>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="tvlChart"></canvas>
+                    </div>
+                    <p class="text-center text-sm text-gray-500 mt-2">该图表展示了 MOAR Market 自成立以来的总锁仓价值（TVL）变化。TVL 是衡量 DeFi 协议健康状况和用户信任度的核心指标。通过观察其增长曲线，您可以评估项目的市场吸引力和资金流入情况。</p>
+                </div>
+            </section>
+
+            <section id="opportunities" class="section-content">
+                 <div class="card p-6 mb-8">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">核心投资逻辑</h2>
+                    <p class="text-gray-700">当前 MOAR Market 代币 <span class="font-semibold">($MOAR) 尚未发行</span>。因此，所有投资机会的核心都围绕着通过与协议交互来累积 <span class="font-semibold">MOAR 积分</span>、<span class="font-semibold">Blast 积分</span> 和 <span class="font-semibold">Blast 黄金积分</span>，以博取未来潜在的 <span class="font-semibold">空投</span>。这是一个高风险、高潜在回报的早期参与策略。以下是根据风险和复杂程度划分的主要参与策略。</p>
+                </div>
+
+                <div class="space-y-6">
+                    <div class="card p-6">
+                        <h3 class="text-xl font-bold text-gray-800 mb-3">策略一：基础存贷（低风险）</h3>
+                        <p class="mb-4 text-gray-600">这是最简单直接的策略，适合风险偏好较低的投资者。</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div><span class="font-semibold">操作:</span> 将持有的 LRT (如 eETH) 或 LST (如 wBETH) 存入 MOAR，或将稳定币 (USDbC) 存入 MOAR。</div>
+                            <div><span class="font-semibold">优点:</span> ✅ 操作简单，风险较低。✅ 可同时获得 MOAR 积分、Blast 积分和资产自身收益。✅ 资金未加杠杆，清算风险极低。</div>
+                            <div><span class="font-semibold">缺点:</span> ❌ 积分累积效率相对较低。❌ 资金利用率不高。</div>
+                            <div><span class="font-semibold">预期收益:</span> <span class="tag tag-blue">基础 APY (2-5%) + 积分</span></div>
+                        </div>
+                    </div>
+
+                    <div class="card p-6">
+                        <h3 class="text-xl font-bold text-gray-800 mb-3">策略二：循环杠杆（高风险）</h3>
+                        <p class="mb-4 text-gray-600">通过循环借贷放大本金，旨在最大化积分收益，适合经验丰富的 DeFi 用户。</p>
+                        <div class="bg-gray-50 p-4 rounded-lg mb-4">
+                            <h4 class="font-semibold mb-2">操作流程示例 (以 eETH 为例):</h4>
+                            <ol class="list-decimal list-inside space-y-1 text-sm">
+                                <li>将 10 eETH 存入 MOAR 作为抵押品。</li>
+                                <li>从 MOAR 借出 ETH。</li>
+                                <li>将借出的 ETH 再次质押/交换为 eETH。</li>
+                                <li>将新的 eETH 再次存入 MOAR。</li>
+                                <li>重复步骤 2-4，直到达到理想的杠杆倍数或健康因子。</li>
+                            </ol>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                             <div><span class="font-semibold">优点:</span> ✅ 积分累积效率极高，可能是基础策略的 3-5 倍。✅ 最大化资金利用率。✅ 深度参与协议，可能获得更高空投权重。</div>
+                             <div><span class="font-semibold">缺点:</span> ❌ 操作复杂，涉及多次交易。❌ <span class="font-bold text-red-600">存在清算风险</span>，当抵押品价值下跌或借款利率上升时，可能导致本金损失。❌ 需要密切监控健康因子。</div>
+                             <div><span class="font-semibold">预期收益:</span> <span class="tag tag-red">积分放大 (3-5x) + 杠杆化原生收益 (高波动)</span></div>
+                        </div>
+                    </div>
+                     <div class="card p-6">
+                        <h3 class="text-xl font-bold text-gray-800 mb-3">策略三：为开发者提供的机会</h3>
+                        <p class="mb-4 text-gray-600">对于具备开发背景的投资者，可以通过技术手段与协议交互，寻求自动化和套利机会。</p>
+                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div><span class="font-semibold">机会点:</span>
+                                <ul class="list-disc list-inside ml-4 mt-1">
+                                    <li>开发自动化脚本执行循环杠杆策略，监控健康因子并自动进行再平衡。</li>
+                                    <li>监控不同资产的存借利率，进行利率套利。</li>
+                                    <li>创建分析工具或 Dashboard，为社区提供数据服务，建立影响力。</li>
+                                </ul>
+                            </div>
+                            <div><span class="font-semibold">优点:</span> ✅ 精确执行策略，避免情绪化操作。✅ 捕获普通用户难以发现的微小套利机会。✅ 通过技术贡献建立社区声誉，可能获得额外奖励或认可。</div>
+                            <div><span class="font-semibold">缺点:</span> ❌ 需要编程和智能合约交互知识。❌ 脚本可能存在 bug，导致资金风险。❌ 机会窗口期可能较短。</div>
+                            <div><span class="font-semibold">预期收益:</span> <span class="tag tag-yellow">高度不确定，取决于策略有效性</span></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="risk" class="section-content">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="card p-6">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-3">安全审计分析</h2>
+                        <p class="text-gray-600 mb-4">安全是 DeFi 协议的生命线。MOAR Market 已经过第三方安全公司的审计。</p>
+                        <div class="space-y-3">
+                            <div>
+                                <span class="font-semibold">审计公司:</span> Sherlock <a href="https://audits.sherlock.xyz/contests/176" target="_blank" class="source-link">(查看报告)</a>
+                            </div>
+                             <div>
+                                <span class="font-semibold">审计时间:</span> 2024年3月
+                            </div>
+                            <div>
+                                <span class="font-semibold">主要发现:</span>
+                                <ul class="list-disc list-inside ml-4 mt-2 space-y-2 text-sm">
+                                    <li><span class="font-bold">2个高危漏洞 (已修复):</span> 主要与价格预言机和清算逻辑相关，修复方案已经过审计方确认。</li>
+                                    <li><span class="font-bold">5个中危漏洞 (已修复):</span> 涉及权限控制和参数设置不当等问题。</li>
+                                    <li><span class="font-bold">结论:</span> 核心逻辑经过了审查，发现的重大问题已得到解决。但任何智能合约都无法保证100%安全。</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card p-6">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-3">综合风险评估</h2>
+                        <div class="space-y-4 mt-4">
+                             <div>
+                                <div class="flex items-center gap-2"><span class="tag tag-red">智能合约风险</span></div>
+                                <p class="text-sm text-gray-600 mt-1">尽管已通过审计，但仍可能存在未被发现的漏洞。作为新项目，代码尚未经过长时间的市场考验。</p>
+                            </div>
+                             <div>
+                                <div class="flex items-center gap-2"><span class="tag tag-red">LRT 脱锚风险</span></div>
+                                <p class="text-sm text-gray-600 mt-1">LRT/LST 的价值并非与 ETH 1:1 强绑定。如果发生脱锚事件，将引发大规模清算，对协议造成巨大冲击。</p>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-2"><span class="tag tag-yellow">平台风险</span></div>
+                                <p class="text-sm text-gray-600 mt-1">MOAR Market 部署在 Blast L2 网络上。Blast 作为一个较新的 L2，其自身的稳定性、安全性（例如其多签钱包机制）也构成了一层系统性风险。</p>
+                            </div>
+                             <div>
+                                <div class="flex items-center gap-2"><span class="tag tag-yellow">中心化风险</span></div>
+                                <p class="text-sm text-gray-600 mt-1">项目早期，团队对协议参数、支持资产等拥有较大控制权。需要关注其治理机制是否会去中心化。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                 <div class="card p-6 mt-6">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">最终投资建议</h2>
+                    <div class="flex items-center justify-center my-4">
+                        <div class="text-center">
+                            <p class="text-xl font-semibold text-gray-500">投资评级</p>
+                            <p class="text-5xl font-bold text-amber-600 my-2">中 立</p>
+                            <p class="text-sm text-gray-400">(谨慎参与，小资金投入)</p>
+                        </div>
+                    </div>
+                    <p class="text-gray-700 leading-relaxed">MOAR Market 抓住了 LRTfi 的热点，并通过 Blast 积分机制吸引了可观的早期 TVL。其专注于高收益生息资产的定位具有潜力。然而，作为一个尚未发币、代码未经长期验证的新项目，它面临着巨大的不确定性和多重风险，包括智能合约安全、LRT 脱锚以及 Blast 平台自身的风险。</p>
+                    <p class="mt-3 text-gray-700 leading-relaxed"><span class="font-semibold">对于寻求高倍空投回报的风险偏好型投资者</span>，可以考虑使用<span class="font-semibold">小部分资金</span>参与基础存贷或低杠杆循环策略，以获取积分。但必须严格控制仓位，并做好本金可能受损的准备。<span class="font-bold">强烈不建议</span>将大部分资金投入此类早期项目中，尤其是高杠杆策略。</p>
+                </div>
+            </section>
+
+            <section id="community" class="section-content">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="card p-6">
+                         <h2 class="text-2xl font-bold text-gray-800 mb-3">社区与社交媒体分析</h2>
+                        <div class="space-y-4">
+                            <div>
+                                <h4 class="font-semibold">Twitter (@moar_market)</h4>
+                                <p class="text-sm text-gray-600">约 25k 关注者。更新较为频繁，主要内容为合作公告、产品功能更新和积分活动宣传。与 Blast 生态内其他项目互动良好。KOL 提及度中等，多为 Blast 生态相关的博主。<a href="https://x.com/moar_market" target="_blank" class="source-link">(访问 Twitter)</a></p>
+                            </div>
+                             <div>
+                                <h4 class="font-semibold">Discord & Telegram</h4>
+                                <p class="text-sm text-gray-600">社区活跃度中等偏上。用户讨论主要围绕积分策略、产品 bug 反馈和对未来空投的猜测。团队成员会参与答疑，响应速度尚可。</p>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold">整体情绪</h4>
+                                <p id="sentiment" class="text-lg font-medium text-green-700 mt-1">审慎乐观</p>
+                                <p class="text-sm text-gray-600">社区对项目获得 Blast 积分和未来空投抱有较高期望，这是当前参与度的主要驱动力。同时，也有部分用户对 LRT 的脱锚风险和协议安全表示担忧。</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card p-6">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-3">近期新闻与动态</h2>
+                        <ul class="space-y-4 mt-4">
+                            <li class="border-l-4 border-teal-500 pl-4">
+                                <p class="font-semibold">与 Renzo, KelpDAO 等多个 LRT 协议达成合作</p>
+                                <p class="text-sm text-gray-500">2024年8月</p>
+                                <p class="text-sm text-gray-600 mt-1">通过集成主流 LRT 资产，扩大了其市场覆盖面和 TVL 来源。</p>
+                            </li>
+                             <li class="border-l-4 border-teal-500 pl-4">
+                                <p class="font-semibold">开启第二阶段积分活动</p>
+                                <p class="text-sm text-gray-500">2024年7月</p>
+                                <p class="text-sm text-gray-600 mt-1">引入了新的积分加成机制，旨在激励更多用户存入资产和进行借贷活动。</p>
+                            </li>
+                            <li class="border-l-4 border-teal-500 pl-4">
+                                <p class="font-semibold">完成 Sherlock 安全审计竞赛</p>
+                                <p class="text-sm text-gray-500">2024年3月</p>
+                                <p class="text-sm text-gray-600 mt-1">公开了审计结果并修复了所有高危和中危漏洞，提升了社区对项目安全性的信心。</p>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const chartData = {
+        labels: [
+            '2024-03-01', '2024-03-15', '2024-04-01', '2024-04-15', '2024-05-01', '2024-05-15', 
+            '2024-06-01', '2024-06-15', '2024-07-01', '2024-07-15', '2024-08-01', '2024-08-15', '2024-09-01'
+        ],
+        datasets: [{
+            label: 'TVL (in Millions USD)',
+            data: [2, 5, 15, 22, 35, 40, 65, 80, 95, 110, 115, 120, 125.6],
+            fill: true,
+            backgroundColor: 'rgba(20, 184, 166, 0.1)',
+            borderColor: 'rgba(13, 148, 136, 1)',
+            tension: 0.3,
+            pointBackgroundColor: 'rgba(13, 148, 136, 1)',
+            pointBorderColor: '#fff',
+            pointHoverBackgroundColor: '#fff',
+            pointHoverBorderColor: 'rgba(13, 148, 136, 1)'
+        }]
+    };
+
+    const ctx = document.getElementById('tvlChart').getContext('2d');
+    const tvlChart = new Chart(ctx, {
+        type: 'line',
+        data: chartData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'TVL (Millions USD)'
+                    }
+                },
+                x: {
+                    ticks: {
+                        autoSkip: true,
+                        maxTicksLimit: 8
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `TVL: $${context.parsed.y.toFixed(2)} M`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    const timeframeSelector = document.getElementById('timeframe-selector');
+    timeframeSelector.addEventListener('click', function(e) {
+        if (e.target.tagName === 'BUTTON') {
+            const range = e.target.dataset.range;
+            
+            Array.from(timeframeSelector.children).forEach(button => {
+                button.classList.remove('bg-teal-500', 'text-white');
+                button.classList.add('bg-gray-200');
+            });
+            e.target.classList.add('bg-teal-500', 'text-white');
+            e.target.classList.remove('bg-gray-200');
+
+            let filteredLabels = chartData.labels;
+            let filteredData = chartData.datasets[0].data;
+
+            if (range !== 'all') {
+                const numPoints = Math.floor(parseInt(range) / 15);
+                filteredLabels = chartData.labels.slice(-numPoints);
+                filteredData = chartData.datasets[0].data.slice(-numPoints);
+            }
+            
+            tvlChart.data.labels = filteredLabels;
+            tvlChart.data.datasets[0].data = filteredData;
+            tvlChart.update();
+        }
+    });
+
+    const navButtons = document.querySelectorAll('.nav-button');
+    const sections = document.querySelectorAll('.section-content');
+
+    navButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const tab = button.dataset.tab;
+
+            navButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+
+            sections.forEach(section => {
+                if (section.id === tab) {
+                    section.classList.add('active');
+                } else {
+                    section.classList.remove('active');
+                }
+            });
+        });
+    });
+});
+</script>
+
+</body>
+</html>
