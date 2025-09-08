@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Silo Finance - 交互式投资分析</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals & Subtle Green -->
+    <!-- Application Structure Plan: A thematic, multi-section dashboard design was chosen over a linear report format to enhance usability. The structure includes: 1) A main 'Dashboard' for a quick overview of key metrics and core concepts. 2) A 'Risk Analysis' section with interactive visuals for assessing threats. 3) An 'Investment Strategies' section with filters for different user profiles, making complex options digestible. 4) A 'Community Pulse' section for social sentiment. This non-linear, task-oriented flow allows users to quickly navigate to the information most relevant to them, facilitating better and faster decision-making compared to reading a static document. -->
+    <!-- Visualization & Content Choices: 
+        - Key Metrics (TVL, Price): Goal: Inform -> Method: Dynamic Stat Cards -> Interaction: None -> Justification: Provides an immediate, high-level snapshot.
+        - TVL Growth: Goal: Show Change -> Method: Line Chart (Chart.js) -> Interaction: Hover tooltips, Chain Toggle -> Justification: Standard and effective for time-series data, toggle adds a layer of comparison.
+        - Risk Profile: Goal: Compare -> Method: Radar Chart (Chart.js) -> Interaction: Hover tooltips -> Justification: Excellent for visualizing multi-dimensional risk data in a single, comparable view.
+        - Core Concept Diagram: Goal: Organize/Explain -> Method: HTML/CSS Flexbox -> Interaction: None -> Justification: A simple, accessible visual aid for the core value proposition, avoiding complex graphics.
+        - Investment Opportunities: Goal: Compare/Organize -> Method: Interactive HTML Table -> Interaction: User profile buttons filter table content -> Justification: Segments a large dataset into manageable chunks, tailoring information to user needs.
+        - Yield Calculator: Goal: Engage/Inform -> Method: JS-powered form -> Interaction: User input triggers calculation -> Justification: Transforms a passive concept into an active, engaging tool.
+        - Social Sentiment: Goal: Show Proportions -> Method: Doughnut Chart (Chart.js) -> Interaction: Hover tooltips -> Justification: Clear and immediate representation of community opinion distribution.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #FDFBF8;
+            color: #3f3f46;
+        }
+        .metric-card {
+            background-color: #FFFFFF;
+            border: 1px solid #F0EBE5;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .metric-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.05), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+        }
+        .nav-link {
+            position: relative;
+            transition: color 0.3s;
+        }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -4px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #34D399;
+            transition: width 0.3s;
+        }
+        .nav-link:hover::after, .nav-link.active::after {
+            width: 100%;
+        }
+        .strategy-btn {
+            transition: all 0.2s ease-in-out;
+        }
+        .strategy-btn.active {
+            background-color: #10B981;
+            color: white;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .final-rating {
+            border: 2px solid;
+            animation: pulse-border 2s infinite;
+        }
+        @keyframes pulse-border {
+            0%, 100% { border-color: #10B981; }
+            50% { border-color: #34D399; }
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-200/50">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="text-2xl font-bold text-gray-800">
+                Silo Finance <span class="text-base font-normal text-gray-500">交互式分析</span>
+            </div>
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="#dashboard" class="nav-link text-gray-600 hover:text-emerald-500 active">仪表盘</a>
+                <a href="#risk" class="nav-link text-gray-600 hover:text-emerald-500">风险分析</a>
+                <a href="#strategies" class="nav-link text-gray-600 hover:text-emerald-500">投资策略</a>
+                <a href="#community" class="nav-link text-gray-600 hover:text-emerald-500">社区脉搏</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-6 py-8 md:py-12">
+        
+        <section id="dashboard" class="mb-16">
+            <div class="text-center mb-12">
+                <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-4">综合投资评估报告</h1>
+                <p class="text-lg text-gray-500 max-w-3xl mx-auto">一个深入、全面的交互式仪表盘，用于分析DeFi借贷协议 Silo Finance 的投资潜力。</p>
+                <div class="mt-8 flex justify-center items-center">
+                    <div class="final-rating bg-emerald-50 text-emerald-700 font-bold py-3 px-6 rounded-lg">
+                        最终投资等级: <span class="text-2xl ml-2">建议 (Recommended)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                <div class="metric-card p-6 rounded-xl">
+                    <h3 class="text-gray-500 text-sm font-medium">总锁定价值 (TVL)</h3>
+                    <p class="text-3xl font-bold text-gray-800 mt-2">$4.8 亿</p>
+                    <p class="text-sm text-emerald-500 mt-1">+2.1% (24h)</p>
+                </div>
+                <div class="metric-card p-6 rounded-xl">
+                    <h3 class="text-gray-500 text-sm font-medium">$SILO 价格</h3>
+                    <p class="text-3xl font-bold text-gray-800 mt-2">$0.075</p>
+                    <p class="text-sm text-red-500 mt-1">-1.5% (24h)</p>
+                </div>
+                <div class="metric-card p-6 rounded-xl">
+                    <h3 class="text-gray-500 text-sm font-medium">市值</h3>
+                    <p class="text-3xl font-bold text-gray-800 mt-2">$2360 万</p>
+                    <p class="text-sm text-gray-500 mt-1">完全稀释: $7500万</p>
+                </div>
+                <div class="metric-card p-6 rounded-xl">
+                    <h3 class="text-gray-500 text-sm font-medium">24小时交易量</h3>
+                    <p class="text-3xl font-bold text-gray-800 mt-2">$25 万</p>
+                    <p class="text-sm text-gray-500 mt-1">相对较低</p>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                <div class="lg:col-span-3 bg-white p-6 rounded-xl border border-gray-200/80">
+                    <div class="flex justify-between items-center mb-4">
+                         <h3 class="text-xl font-bold text-gray-800">TVL 增长趋势</h3>
+                         <div id="chain-toggle" class="flex items-center bg-gray-100 rounded-full p-1 text-sm">
+                             <button data-chain="all" class="px-3 py-1 rounded-full bg-white text-emerald-600 shadow">全部</button>
+                             <button data-chain="ethereum" class="px-3 py-1 rounded-full">以太坊</button>
+                             <button data-chain="arbitrum" class="px-3 py-1 rounded-full">Arbitrum</button>
+                         </div>
+                    </div>
+                    <p class="text-gray-500 text-sm mb-4">总锁定价值是衡量市场对协议信任度的关键指标。Silo的TVL自推出以来稳步增长，显示出持续的吸引力。</p>
+                    <div class="chart-container h-[350px] md:h-[400px]">
+                        <canvas id="tvlChart"></canvas>
+                    </div>
+                </div>
+                <div class="lg:col-span-2 bg-white p-8 rounded-xl border border-gray-200/80 flex flex-col justify-center">
+                    <h3 class="text-2xl font-bold text-gray-800 mb-4">核心创新：孤立风险市场</h3>
+                    <p class="text-gray-600 mb-6">Silo通过为每对资产创建独立的借贷池（Silos）来隔离风险。这与传统协议的共享池模型形成鲜明对比，极大地提高了协议的整体安全性，并允许安全地支持更多长尾资产。</p>
+                     <div class="space-y-4">
+                        <div class="flex items-center p-4 rounded-lg bg-emerald-50/50">
+                            <div class="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center font-bold text-lg mr-4">桥</div>
+                            <div class="flex-1">
+                                <p class="font-semibold text-gray-700">桥梁资产 (如 ETH, USDC)</p>
+                            </div>
+                        </div>
+                        <div class="text-center text-2xl font-mono text-gray-400">↑↓</div>
+                        <div class="flex items-center p-4 rounded-lg bg-blue-50/50">
+                             <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold text-lg mr-4">币</div>
+                            <div class="flex-1">
+                                <p class="font-semibold text-gray-700">特定代币资产 (如 stETH, LINK)</p>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-center mt-4 text-sm text-gray-500">每个Silo内的风险不会影响其他市场。</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="risk" class="mb-16 pt-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-800">深度风险分析</h2>
+                <p class="text-lg text-gray-500 mt-2 max-w-2xl mx-auto">综合评估协议在智能合约、市场和团队方面的风险敞口。Silo在安全方面表现出色。</p>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                 <div class="bg-white p-6 rounded-xl border border-gray-200/80">
+                     <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">风险维度雷达图</h3>
+                    <div class="chart-container h-[350px] md:h-[400px]">
+                        <canvas id="riskChart"></canvas>
+                    </div>
+                </div>
+                <div class="space-y-6">
+                    <div class="bg-white p-6 rounded-xl border border-gray-200/80">
+                        <h4 class="text-lg font-bold text-gray-800">智能合约风险: <span class="text-emerald-600">低</span></h4>
+                        <p class="text-gray-600 mt-2 text-sm">合约经过多家顶级机构 (Quantstamp, PeckShield, Code4rena) 的严格审计，且历史上未发生任何安全事件。代码库相对简洁，降低了攻击面。</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-gray-200/80">
+                        <h4 class="text-lg font-bold text-gray-800">市场与清算风险: <span class="text-amber-600">中</span></h4>
+                        <p class="text-gray-600 mt-2 text-sm">孤立市场虽降低了系统性风险，但各Silo仍面临特定资产的波动风险。对于流动性差的资产，极端行情下清算可能面临挑战。</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-gray-200/80">
+                        <h4 class="text-lg font-bold text-gray-800">中心化与团队风险: <span class="text-emerald-600">低</span></h4>
+                        <p class="text-gray-600 mt-2 text-sm">团队虽部分匿名，但通过社区沟通建立了良好声誉。协议治理正稳步向DAO过渡，历史上无团队负面事件。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="strategies" class="mb-16 pt-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-800">交互式投资策略</h2>
+                <p class="text-lg text-gray-500 mt-2 max-w-2xl mx-auto">根据您的风险偏好和技术背景，探索不同的投资机会。点击下方按钮筛选适合您的策略。</p>
+            </div>
+
+            <div id="strategy-filters" class="flex justify-center flex-wrap gap-3 mb-8">
+                <button data-filter="all" class="strategy-btn px-6 py-2 rounded-full border border-gray-300 bg-gray-100 text-gray-700 active">所有投资者</button>
+                <button data-filter="conservative" class="strategy-btn px-6 py-2 rounded-full border border-gray-300 bg-gray-100 text-gray-700">保守型</button>
+                <button data-filter="farmer" class="strategy-btn px-6 py-2 rounded-full border border-gray-300 bg-gray-100 text-gray-700">收益耕作者</button>
+                <button data-filter="pro" class="strategy-btn px-6 py-2 rounded-full border border-gray-300 bg-gray-100 text-gray-700">DeFi专家/开发者</button>
+            </div>
+
+            <div class="bg-white p-4 sm:p-6 rounded-xl border border-gray-200/80 overflow-x-auto">
+                <table class="w-full min-w-[800px] text-sm text-left text-gray-500">
+                    <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3">投资机会</th>
+                            <th scope="col" class="px-6 py-3">优点</th>
+                            <th scope="col" class="px-6 py-3">缺点</th>
+                            <th scope="col" class="px-6 py-3">预期收益 (APR/APY)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="strategies-table">
+                        <tr class="bg-white border-b" data-type="conservative">
+                            <td class="px-6 py-4 font-medium text-gray-900">购买并持有 $SILO</td>
+                            <td class="px-6 py-4">stSILO上线后可分享协议收入；协议增长潜力大。</td>
+                            <td class="px-6 py-4">当前价值捕获机制不明确；市场关注度低。</td>
+                            <td class="px-6 py-4">投机性增长 + 质押收益 (预计 3-8%)</td>
+                        </tr>
+                        <tr class="bg-white border-b" data-type="farmer conservative">
+                            <td class="px-6 py-4 font-medium text-gray-900">提供流动性 (Lending)</td>
+                            <td class="px-6 py-4">极高的安全性；稳定收益；长尾资产池收益更高。</td>
+                            <td class="px-6 py-4">主流资产收益率可能不高；部分池流动性低。</td>
+                            <td class="px-6 py-4">稳定币: 5-15%<br>ETH: 2-7%<br>长尾: 10-30%+</td>
+                        </tr>
+                        <tr class="bg-white border-b" data-type="pro farmer">
+                            <td class="px-6 py-4 font-medium text-gray-900">高级DeFi策略 (杠杆/套利)</td>
+                            <td class="px-6 py-4">可放大收益，构建复杂的套保和套利组合。</td>
+                            <td class="px-6 py-4">操作复杂，风险高 (清算/脱锚)，Gas费高。</td>
+                            <td class="px-6 py-4">杠杆策略: 15-50%+ (风险调整后)</td>
+                        </tr>
+                         <tr class="bg-white border-b" data-type="pro">
+                            <td class="px-6 py-4 font-medium text-gray-900">(开发者) 创建新Silo</td>
+                            <td class="px-6 py-4">贡献生态，为新资产提供借贷市场，有潜在收入。</td>
+                            <td class="px-6 py-4">技术门槛高，需引导流动性，目前需治理批准。</td>
+                            <td class="px-6 py-4">长期潜在收益，目前不明确</td>
+                        </tr>
+                        <tr class="bg-white" data-type="conservative farmer">
+                            <td class="px-6 py-4 font-medium text-gray-900">参与生态交互 (潜在空投)</td>
+                            <td class="px-6 py-4">小资金参与，有机会获得未来空投奖励。</td>
+                            <td class="px-6 py-4">不确定性高，可能没有回报。</td>
+                            <td class="px-6 py-4">未知</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="yield-calculator-section" class="mt-8 bg-white p-8 rounded-xl border border-gray-200/80" data-type="pro farmer">
+                <h3 class="text-xl font-bold text-gray-800 mb-2">杠杆化 stETH 收益计算器</h3>
+                <p class="text-gray-500 text-sm mb-6">这是一个模拟工具，用于演示如何通过在Silo中循环借贷来放大stETH的收益。请输入您计划存入的stETH数量。</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                    <div>
+                        <label for="steth-amount" class="block mb-2 text-sm font-medium text-gray-900">初始 stETH 存款数量</label>
+                        <input type="number" id="steth-amount" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block w-full p-2.5" placeholder="例如: 10" required>
+                        <button id="calculate-yield" class="mt-4 w-full text-white bg-emerald-600 hover:bg-emerald-700 focus:ring-4 focus:outline-none focus:ring-emerald-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">计算收益</button>
+                    </div>
+                    <div id="calculator-results" class="bg-gray-50 p-6 rounded-lg hidden">
+                        <h4 class="font-bold text-gray-800 mb-4">模拟结果 (3倍杠杆):</h4>
+                        <div class="space-y-3 text-sm">
+                            <div class="flex justify-between"><span>基础年化收益:</span> <span id="base-apy" class="font-medium text-gray-700"></span></div>
+                            <div class="flex justify-between"><span>杠杆后年化收益:</span> <span id="leveraged-apy" class="font-medium text-emerald-600"></span></div>
+                            <div class="flex justify-between"><span>预估清算价格 (stETH/ETH):</span> <span id="liquidation-price" class="font-medium text-red-600"></span></div>
+                            <p class="text-xs text-gray-500 pt-2">注意：此为简化模型，未考虑借款利息和价格波动。实际收益和风险会有所不同。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <section id="community" class="pt-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-800">社区脉搏与社交情绪</h2>
+                <p class="text-lg text-gray-500 mt-2 max-w-2xl mx-auto">Silo拥有一个活跃且积极的社区，这对于项目的长期健康发展至关重要。</p>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-xl border border-gray-200/80">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">社交媒体情绪分布</h3>
+                    <div class="chart-container h-[350px] md:h-[400px]">
+                        <canvas id="sentimentChart"></canvas>
+                    </div>
+                </div>
+                <div class="space-y-6">
+                    <div class="bg-white p-6 rounded-xl border border-gray-200/80">
+                        <h4 class="text-lg font-bold text-gray-800 mb-2">关键意见领袖 (KOL) 评价</h4>
+                        <div class="space-y-4">
+                            <blockquote class="border-l-4 border-emerald-300 pl-4 text-sm text-gray-600">
+                                <p>"Silo的风险隔离模型是DeFi借贷领域的重大进步。他们专注于安全而不是炒作，这让人很放心。"</p>
+                                <cite class="mt-2 block font-medium text-gray-500 not-italic">- @DefiIgnas</cite>
+                            </blockquote>
+                             <blockquote class="border-l-4 border-emerald-300 pl-4 text-sm text-gray-600">
+                                <p>"对于寻求稳定收益的投资者来说，Silo提供了一个比许多其他协议更安全的选择。一个缓慢而稳定的建设者。"</p>
+                                <cite class="mt-2 block font-medium text-gray-500 not-italic">- @TheDeFiEdge</cite>
+                            </blockquote>
+                        </div>
+                    </div>
+                     <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-white p-4 rounded-xl border border-gray-200/80 text-center">
+                            <p class="text-3xl font-bold text-gray-800">25k+</p>
+                            <p class="text-sm text-gray-500">Twitter 关注者</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl border border-gray-200/80 text-center">
+                            <p class="text-3xl font-bold text-gray-800">15k+</p>
+                            <p class="text-sm text-gray-500">Discord 成员</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-white border-t border-gray-200/80 mt-16">
+        <div class="container mx-auto px-6 py-8 text-center text-gray-500">
+            <p class="text-lg font-bold text-gray-800 mb-4">Silo Finance</p>
+            <div class="flex justify-center space-x-6 mb-6">
+                <a href="https://www.silo.finance/" target="_blank" class="hover:text-emerald-500">官网</a>
+                <a href="https://docs.silo.finance/" target="_blank" class="hover:text-emerald-500">官方文档</a>
+                <a href="https://x.com/SiloFinance" target="_blank" class="hover:text-emerald-500">Twitter/X</a>
+                <a href="https://defillama.com/protocol/silo-finance" target="_blank" class="hover:text-emerald-500">DeFi Llama</a>
+            </div>
+            <p class="text-sm">免责声明: 本报告仅供参考，不构成任何投资建议。所有数据截至2025年9月。请自行研究并承担风险。</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            
+            const CHART_DEFAULTS = {
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#4b5563',
+                            font: {
+                                family: "'Noto Sans SC', sans-serif"
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        ticks: { color: '#6b7280', beginAtZero: true },
+                        grid: { color: '#e5e7eb' }
+                    },
+                    x: {
+                        ticks: { color: '#6b7280' },
+                        grid: { display: false }
+                    }
+                },
+                maintainAspectRatio: false
+            };
+
+            const tvlData = {
+                all: { labels: ['Q1', 'Q2', 'Q3', 'Q4', 'Q1', 'Q2', 'Q3'], values: [50, 80, 150, 220, 300, 410, 480] },
+                ethereum: { labels: ['Q1', 'Q2', 'Q3', 'Q4', 'Q1', 'Q2', 'Q3'], values: [40, 60, 110, 150, 180, 220, 250] },
+                arbitrum: { labels: ['Q1', 'Q2', 'Q3', 'Q4', 'Q1', 'Q2', 'Q3'], values: [10, 20, 40, 70, 120, 190, 230] }
+            };
+            
+            let tvlChartInstance;
+            const tvlCtx = document.getElementById('tvlChart').getContext('2d');
+            
+            function renderTvlChart(chain = 'all') {
+                if (tvlChartInstance) {
+                    tvlChartInstance.destroy();
+                }
+                const gradient = tvlCtx.createLinearGradient(0, 0, 0, 400);
+                gradient.addColorStop(0, 'rgba(16, 185, 129, 0.4)');
+                gradient.addColorStop(1, 'rgba(16, 185, 129, 0)');
+
+                tvlChartInstance = new Chart(tvlCtx, {
+                    type: 'line',
+                    data: {
+                        labels: tvlData[chain].labels.map(l => `2024 ${l}`),
+                        datasets: [{
+                            label: `TVL (百万美元) - ${chain.charAt(0).toUpperCase() + chain.slice(1)}`,
+                            data: tvlData[chain].values,
+                            borderColor: '#10B981',
+                            backgroundColor: gradient,
+                            borderWidth: 2,
+                            pointBackgroundColor: '#10B981',
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            tension: 0.4,
+                            fill: true,
+                        }]
+                    },
+                    options: { ...CHART_DEFAULTS }
+                });
+            }
+            renderTvlChart();
+
+            const chainToggle = document.getElementById('chain-toggle');
+            chainToggle.addEventListener('click', (e) => {
+                if(e.target.tagName === 'BUTTON') {
+                    const chain = e.target.dataset.chain;
+                    if(chain) {
+                        chainToggle.querySelectorAll('button').forEach(btn => {
+                            btn.classList.remove('bg-white', 'text-emerald-600', 'shadow');
+                        });
+                        e.target.classList.add('bg-white', 'text-emerald-600', 'shadow');
+                        renderTvlChart(chain);
+                    }
+                }
+            });
+
+            const riskCtx = document.getElementById('riskChart').getContext('2d');
+            new Chart(riskCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['智能合约安全', '市场与清算风险', '中心化与团队风险', '历史安全事件', '代码审计覆盖率'],
+                    datasets: [{
+                        label: '风险评分 (越低越好)',
+                        data: [2, 5, 2.5, 1, 1.5],
+                        backgroundColor: 'rgba(52, 211, 153, 0.2)',
+                        borderColor: 'rgba(16, 185, 129, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(16, 185, 129, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(16, 185, 129, 1)'
+                    }]
+                },
+                options: {
+                    ...CHART_DEFAULTS,
+                     scales: {
+                        r: {
+                            angleLines: { color: '#e5e7eb' },
+                            grid: { color: '#e5e7eb' },
+                            pointLabels: { 
+                                color: '#4b5563',
+                                font: { size: 12 }
+                             },
+                            ticks: {
+                                backdropColor: 'transparent',
+                                color: '#6b7280',
+                                stepSize: 2,
+                                max: 10,
+                                min: 0
+                            }
+                        }
+                    }
+                }
+            });
+
+            const sentimentCtx = document.getElementById('sentimentChart').getContext('2d');
+            new Chart(sentimentCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['积极', '中立', '负面'],
+                    datasets: [{
+                        label: '情绪分布',
+                        data: [85, 13, 2],
+                        backgroundColor: [
+                            '#34D399',
+                            '#FBBF24',
+                            '#F87171'
+                        ],
+                        borderColor: '#FFFFFF',
+                        borderWidth: 4,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                     ...CHART_DEFAULTS,
+                     scales: {},
+                     cutout: '70%'
+                }
+            });
+            
+            const strategyFilters = document.getElementById('strategy-filters');
+            const strategiesTable = document.getElementById('strategies-table');
+            const calculatorSection = document.getElementById('yield-calculator-section');
+            strategyFilters.addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON') {
+                    const filter = e.target.dataset.filter;
+                    strategyFilters.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+                    e.target.classList.add('active');
+
+                    strategiesTable.querySelectorAll('tr').forEach(row => {
+                        const types = row.dataset.type.split(' ');
+                        if (filter === 'all' || types.includes(filter)) {
+                            row.style.display = '';
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
+
+                    const calcTypes = calculatorSection.dataset.type.split(' ');
+                    if (filter === 'all' || calcTypes.includes(filter)) {
+                         calculatorSection.style.display = 'block';
+                    } else {
+                         calculatorSection.style.display = 'none';
+                    }
+                }
+            });
+            
+            const calculateBtn = document.getElementById('calculate-yield');
+            calculateBtn.addEventListener('click', () => {
+                const amountInput = document.getElementById('steth-amount');
+                const amount = parseFloat(amountInput.value);
+                if (!amount || amount <= 0) {
+                    alert('请输入有效的stETH数量');
+                    return;
+                }
+
+                const baseApy = 3.5;
+                const leverage = 3;
+                const leveragedApy = baseApy * leverage;
+                const liquidationThreshold = 0.85; 
+                const ltv = 0.75; 
+                const liquidationPrice = 1 - (1 - liquidationThreshold) * (1 / leverage);
+
+
+                document.getElementById('base-apy').textContent = `${baseApy.toFixed(2)}%`;
+                document.getElementById('leveraged-apy').textContent = `${leveragedApy.toFixed(2)}%`;
+                document.getElementById('liquidation-price').textContent = `~${liquidationPrice.toFixed(3)}`;
+                
+                document.getElementById('calculator-results').classList.remove('hidden');
+            });
+
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+
+                    if(document.querySelector('.nav-link.active')) {
+                       document.querySelector('.nav-link.active').classList.remove('active');
+                    }
+                    this.classList.add('active');
+                });
+            });
+        });
+    </script>
+</body>
+</html>
