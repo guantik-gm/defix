@@ -8,7 +8,7 @@ Chain:
 Risk: 低风险
 Token: USDC
 APR-Low: 0.07
-APR-High: 0.13
+APR-High: 0.3
 Market:
   - 通用
 ---
