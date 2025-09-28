@@ -4,7 +4,7 @@ Type: Deposit
 Chain:
   - BSC
   - Solana
-Risk: 低风险
+Risk: 无风险
 Token: USDC
 APR-Low: 0.05
 APR-High: 0.08

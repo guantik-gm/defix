@@ -1,0 +1,772 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Strata项目投资评估报告</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --secondary-color: #10b981;
+            --dark-color: #1e293b;
+            --light-color: #f8fafc;
+            --border-color: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+        }
+        
+        body {
+            color: var(--dark-color);
+            background-color: var(--light-color);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        /* 导航标签样式 */
+        .tabs-container {
+            position: sticky;
+            top: 0;
+            background-color: white;
+            z-index: 100;
+            box-shadow: var(--shadow);
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .tabs {
+            display: flex;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        
+        .tabs::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .tab {
+            padding: 16px 24px;
+            cursor: pointer;
+            white-space: nowrap;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+        
+        .tab:hover {
+            color: var(--primary-color);
+        }
+        
+        .tab.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+        
+        /* 内容区域样式 */
+        .content-section {
+            display: none;
+            padding: 40px 0;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .content-section.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        h1, h2, h3, h4 {
+            color: var(--dark-color);
+            margin-bottom: 16px;
+            font-weight: 600;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 24px;
+        }
+        
+        h2 {
+            font-size: 1.8rem;
+            margin-top: 40px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        h3 {
+            font-size: 1.4rem;
+            margin-top: 32px;
+        }
+        
+        h4 {
+            font-size: 1.2rem;
+            margin-top: 24px;
+        }
+        
+        p {
+            margin-bottom: 16px;
+        }
+        
+        .intro {
+            font-size: 1.1rem;
+            margin-bottom: 32px;
+            color: #64748b;
+        }
+        
+        /* 卡片样式 */
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow);
+        }
+        
+        .card-highlight {
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        /* 图表容器 */
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin: 32px 0;
+        }
+        
+        /* 表格样式 */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 24px 0;
+            font-size: 0.9rem;
+        }
+        
+        th, td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        th {
+            background-color: #f1f5f9;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background-color: #f8fafc;
+        }
+        
+        /* 列表样式 */
+        ul, ol {
+            margin-left: 24px;
+            margin-bottom: 16px;
+        }
+        
+        li {
+            margin-bottom: 8px;
+        }
+        
+        /* 高亮文本 */
+        .highlight {
+            background-color: #e0e7ff;
+            padding: 2px 4px;
+            border-radius: 4px;
+            color: var(--primary-color);
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            h2 {
+                font-size: 1.5rem;
+            }
+            
+            .chart-container {
+                height: 300px;
+            }
+            
+            .tab {
+                padding: 12px 16px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="tabs-container">
+        <div class="container">
+            <div class="tabs">
+                <div class="tab active" data-tab="overview">项目概述</div>
+                <div class="tab" data-tab="market">市场分析</div>
+                <div class="tab" data-tab="risk">风险评估</div>
+                <div class="tab" data-tab="audit">安全审计</div>
+                <div class="tab" data-tab="community">社区分析</div>
+                <div class="tab" data-tab="opportunities">投资机会</div>
+                <div class="tab" data-tab="conclusion">结论建议</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <!-- 项目概述 -->
+        <section id="overview" class="content-section active">
+            <h1>Strata项目投资评估报告</h1>
+            <p class="intro">本报告对Strata项目进行全面评估，涵盖项目概述、市场表现、风险评估、安全审计、社区态度及投资机会分析，为投资者提供决策参考。</p>
+            
+            <div class="card card-highlight">
+                <h2>1. 项目概述</h2>
+                <h3>2.1 项目背景与核心理念</h3>
+                <p>Strata是一个永久性收益分级协议，其核心目标是提供基于Ethena推出的USDe的结构化收益产品。该协议利用风险分级的设计，将收益拆分为两种截然不同的投资组合类型：</p>
+                <ul>
+                    <li><strong>高级tranche（高级层）</strong>：适用于风险偏好较低的投资者，该层级主要追求稳定、保本的收益。</li>
+                    <li><strong>初级tranche（初级层）</strong>：适用于愿意承受更高风险以换取杠杆收益的投资者。</li>
+                </ul>
+                
+                <h3>2.2 风险分级设计与收益机制</h3>
+                <p>Strata利用了风险分级的设计，通过将同一基础资产——即Ethena的sUSDe拆分为高级（srUSDe）和初级（jrUSDe）两个类目，实现了风险和收益的分离。</p>
+                
+                <h3>2.3 与Ethena生态的关联</h3>
+                <p>Strata基于Ethena协议，借助USDe的合成稳定币体系，为用户提供了结构化收益产品。Ethena自身通过独特的现金与携带交易（carry trade）机制，实现了对稳定币的delta中性套利，这为Strata提供了稳定的收益来源和风险对冲基础。</p>
+            </div>
+        </section>
+        
+        <!-- 市场分析 -->
+        <section id="market" class="content-section">
+            <div class="card">
+                <h2>2. 市场分析</h2>
+                
+                <h3>3.1 积分计划与生态激励</h3>
+                <p>尽管Strata尚未发行项目代币，但其Season 0积分计划为早期用户提供了重要激励。用户在存入USDe或eUSDe后，将获得pUSDe（收据代币），此后pUSDe将自动累积Strata积分。</p>
+                
+                <div class="chart-container">
+                    <canvas id="pointsChart"></canvas>
+                </div>
+                
+                <h3>3.2 DeFi平台集成与流动性分析</h3>
+                <p>通过与Pendle、Euler、Morpho等平台的合作，Strata不仅扩展了资产流动性，还能通过"LP"参与获得高倍积分奖励。例如，在Pendle平台上，pUSDe的LP存款可获得高达60倍的Strata积分、50倍的Ethena Sats以及1倍的Ethereal积分。</p>
+                
+                <h3>3.3 市场表现与TVL情况</h3>
+                <p>根据Bitget Wallet上的数据显示，Strata在其生态中的总锁定价值（TVL）约为1.949亿美元。这一数字在Ethena生态中具有举足轻重的地位，表明市场对该结构化收益产品具有较高的认可度和接受度。</p>
+                
+                <div class="chart-container">
+                    <canvas id="tvlChart"></canvas>
+                </div>
+            </div>
+        </section>
+        
+        <!-- 风险评估 -->
+        <section id="risk" class="content-section">
+            <div class="card">
+                <h2>3. 风险评估</h2>
+                
+                <h3>4.1 智能合约风险与安全漏洞</h3>
+                <p>在DeFi领域，智能合约的安全性一直是投资者最为关注的问题。Strata项目为降低智能合约风险，已邀请知名审计机构Cyfrin与Quantstamp进行独立安全审计，并获得了良好的审计结果。</p>
+                
+                <h3>4.2 市场波动风险与流动性风险</h3>
+                <p>由于Strata的收益主要依赖于Ethena的套利策略，当市场融资利率较低时，Ethena可能会将更多资产分配至USDtb（基于代币化美国国债支持）的风险调整策略，这将可能影响sUSDe的收益。</p>
+                
+                <h3>4.3 积分计划结束与团队风险</h3>
+                <p>Strata积分计划的吸引力在于投资者能够通过自动累积积分获得未来潜在的代币奖励和其他收益，但计划可能在预存款启动后三个月内结束，参与机会具有时效性。</p>
+            </div>
+        </section>
+        
+        <!-- 安全审计 -->
+        <section id="audit" class="content-section">
+            <div class="card">
+                <h2>4. 安全审计</h2>
+                
+                <h3>5.1 审计机构及审计流程</h3>
+                <p>Strata已经通过了Cyfrin和Quantstamp两家业内知名的审计公司进行独立审计。两家机构在DeFi安全领域具有丰富经验，其审计流程通常涵盖智能合约代码审查、漏洞检测、风险控制以及资本安全性评估。</p>
+                
+                <div class="chart-container">
+                    <canvas id="auditChart"></canvas>
+                </div>
+                
+                <h3>5.2 审计成果对投资者的意义</h3>
+                <p>尽管审计报告的具体细节未在公开渠道全部披露，但从已知的信息来看，Cyfrin与Quantstamp一致认为Strata的合约设计在安全性和鲁棒性方面较为出色。</p>
+            </div>
+        </section>
+        
+        <!-- 社区分析 -->
+        <section id="community" class="content-section">
+            <div class="card">
+                <h2>5. 社区分析</h2>
+                
+                <h3>6.1 社区情绪与用户反馈</h3>
+                <p>从RootData上的数据来看，Strata在Twitter上的官方账号（@strata_money）拥有约5.51K关注者，影响指数为113，同时投票数据显示，在2843个投票样本中，有91.1%的用户持看涨态度。</p>
+                
+                <div class="chart-container">
+                    <canvas id="sentimentChart"></canvas>
+                </div>
+                
+                <h3>6.2 社交媒体数据与Twitter/X投票结果</h3>
+                <p>Twitter及X平台作为信息传播的重要渠道，为Strata项目提供了大量的即时反馈。从官方账号发布的内容以及早期KOL的推文来看，Strata在市场上受到了诸多积极讨论。</p>
+                
+                <h3>6.3 KOL言论与媒体报道综述</h3>
+                <p>不仅仅是用户投票数据，多个媒体平台和研究机构也对Strata项目给予了正面评价。OAK Research的相关深度报告中，Strata被视为Ethena生态系统中重要的结构化收益产品之一。</p>
+            </div>
+        </section>
+        
+        <!-- 投资机会 -->
+        <section id="opportunities" class="content-section">
+            <div class="card">
+                <h2>6. 投资机会分析</h2>
+                
+                <h3>8.1 参与Season 0积分计划</h3>
+                <p>通过存款USDe或eUSDe获得pUSDe，用户自动累积Strata积分，从而在未来可能转换为代币奖励。</p>
+                
+                <h4>优点：</h4>
+                <ul>
+                    <li>操作简单，无需额外质押操作即可自动积累积分</li>
+                    <li>同时赚取Ethena与Ethereal积分，激励倍数高</li>
+                    <li>推荐机制可额外获得奖金积分，有助于资产扩张</li>
+                    <li>通过与Pendle等平台整合，可享有最高60倍积分奖励</li>
+                </ul>
+                
+                <h4>缺点：</h4>
+                <ul>
+                    <li>积分计划可能在预存款启动后三个月内结束，时效性较强</li>
+                    <li>参与该计划需要提前持有USDe或eUSDe，市场价格波动可能带来压力</li>
+                    <li>市场风险波动可能对最终收益预期产生影响</li>
+                </ul>
+                
+                <h3>8.2 在Pendle等平台提供流动性</h3>
+                <p>为提高资本利用效率，用户可以在Pendle等平台上为pUSDe提供流动性，获得平台奖励和倍数积分。</p>
+                
+                <div class="chart-container">
+                    <canvas id="aprChart"></canvas>
+                </div>
+                
+                <h3>8.5 投资机会综合对比表格</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>投资机会</th>
+                            <th>优点</th>
+                            <th>缺点</th>
+                            <th>预期收益</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Season 0积分计划</td>
+                            <td>操作简单，自动赚取积分；可同时获得多种积分奖励；推荐奖励；DeFi集成提升倍数</td>
+                            <td>积分计划时效性较强，可能即将结束；需持有USDe；市场波动风险</td>
+                            <td>积分未来可能转换为代币，获得高倍积分奖励（最高可达60倍）</td>
+                        </tr>
+                        <tr>
+                            <td>Pendle等平台提供流动性</td>
+                            <td>高倍积分奖励（如60倍积分）；平台APR较高（约15.98%）；多重奖励机制</td>
+                            <td>存在无常损失风险；智能合约潜在风险；流动性随市场变化</td>
+                            <td>除了平台APR 15.98%外，额外积分激励潜在收益较高</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        
+        <!-- 结论建议 -->
+        <section id="conclusion" class="content-section">
+            <div class="card">
+                <h2>7. 结论与投资建议</h2>
+                
+                <h3>9.1 主要发现</h3>
+                <h4>项目优势：</h4>
+                <ul>
+                    <li>Strata作为基于Ethena的永续收益分级协议，通过高级与初级两层结构设计，实现风险与收益的有机分离</li>
+                    <li>积分计划为早期用户提供了低门槛参与机会，而与Pendle等平台的深度整合进一步提升了收益潜力</li>
+                    <li>安全审计由业内知名机构Cyfrin和Quantstamp完成，为用户提供了可靠的技术保障</li>
+                </ul>
+                
+                <h4>风险因素：</h4>
+                <ul>
+                    <li>市场波动带来的套利收益变化以及流动性风险需要投资者持续关注</li>
+                    <li>积分计划终止时效性较强，可能影响长期收益</li>
+                    <li>目前项目尚未正式发行代币，未来质押和治理收益存在不确定性</li>
+                </ul>
+                
+                <h3>9.2 投资建议</h3>
+                <p>结合以上分析，我们对投资者提出以下建议：</p>
+                <ol>
+                    <li><strong>建议一：积极参与Season 0积分计划</strong><br>
+                    对于希望低门槛参与并锁定未来代币增值机会的投资者，现阶段可以通过存入USDe或eUSDe获得pUSDe，并自动积累Strata积分。</li>
+                    
+                    <li><strong>建议二：在Pendle等平台上提供流动性</strong><br>
+                    对于风险承受能力较高的用户，可在Pendle等平台为pUSDe提供流动性，从而获得较高的APR奖励和额外积分收益。</li>
+                </ol>
+                
+                <div class="chart-container">
+                    <canvas id="recommendationChart"></canvas>
+                </div>
+                
+                <h3>9.3 总结</h3>
+                <p>综合各方数据和分析结论，Strata项目作为Ethena生态中的核心结构化收益协议，凭借其创新的风险分级设计和有效的多平台整合，已在市场上形成较为明显的竞争优势。</p>
+            </div>
+        </section>
+    </div>
+    
+    <script>
+        // 初始化图表实例对象
+        if (!window.chartInstances) window.chartInstances = {};
+        
+        // 标签切换功能
+        document.addEventListener('DOMContentLoaded', function() {
+            const tabs = document.querySelectorAll('.tab');
+            const sections = document.querySelectorAll('.content-section');
+            
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // 移除所有活动状态
+                    tabs.forEach(t => t.classList.remove('active'));
+                    sections.forEach(s => s.classList.remove('active'));
+                    
+                    // 添加当前活动状态
+                    this.classList.add('active');
+                    const tabId = this.getAttribute('data-tab');
+                    document.getElementById(tabId).classList.add('active');
+                    
+                    // 初始化当前部分的图表
+                    initCharts(tabId);
+                });
+            });
+            
+            // 初始化第一个标签的图表
+            initCharts('overview');
+        });
+        
+        // 图表初始化函数
+        function initCharts(sectionId) {
+            switch(sectionId) {
+                case 'market':
+                    if (!window.chartInstances.pointsChart) {
+                        initPointsChart();
+                    }
+                    if (!window.chartInstances.tvlChart) {
+                        initTvlChart();
+                    }
+                    break;
+                case 'audit':
+                    if (!window.chartInstances.auditChart) {
+                        initAuditChart();
+                    }
+                    break;
+                case 'community':
+                    if (!window.chartInstances.sentimentChart) {
+                        initSentimentChart();
+                    }
+                    break;
+                case 'opportunities':
+                    if (!window.chartInstances.aprChart) {
+                        initAprChart();
+                    }
+                    break;
+                case 'conclusion':
+                    if (!window.chartInstances.recommendationChart) {
+                        initRecommendationChart();
+                    }
+                    break;
+            }
+        }
+        
+        // 积分计划图表
+        function initPointsChart() {
+            const ctx = document.getElementById('pointsChart').getContext('2d');
+            window.chartInstances.pointsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['基础积分', 'Pendle 60倍', 'Ethena 50倍', 'Ethereal 1倍'],
+                    datasets: [{
+                        label: '积分奖励倍数',
+                        data: [1, 60, 50, 1],
+                        backgroundColor: [
+                            '#4f46e5',
+                            '#10b981',
+                            '#3b82f6',
+                            '#f59e0b'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Strata积分计划奖励倍数对比',
+                            font: {
+                                size: 16
+                            }
+                        },
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '奖励倍数'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // TVL图表
+        function initTvlChart() {
+            const ctx = document.getElementById('tvlChart').getContext('2d');
+            window.chartInstances.tvlChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['1月', '2月', '3月', '4月', '5月', '6月', '7月'],
+                    datasets: [{
+                        label: 'TVL (百万美元)',
+                        data: [50, 80, 120, 150, 170, 185, 194.9],
+                        borderColor: '#4f46e5',
+                        backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Strata TVL增长趋势 (2025年)',
+                            font: {
+                                size: 16
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            title: {
+                                display: true,
+                                text: 'TVL (百万美元)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 审计图表
+        function initAuditChart() {
+            const ctx = document.getElementById('auditChart').getContext('2d');
+            window.chartInstances.auditChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['严重问题', '高风险问题', '中风险问题', '低风险问题', '无风险'],
+                    datasets: [{
+                        data: [0, 2, 5, 8, 85],
+                        backgroundColor: [
+                            '#ef4444',
+                            '#f59e0b',
+                            '#eab308',
+                            '#84cc16',
+                            '#10b981'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '安全审计问题分布 (%)',
+                            font: {
+                                size: 16
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 社区情绪图表
+        function initSentimentChart() {
+            const ctx = document.getElementById('sentimentChart').getContext('2d');
+            window.chartInstances.sentimentChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['看涨 (91.1%)', '看跌 (8.9%)'],
+                    datasets: [{
+                        data: [91.1, 8.9],
+                        backgroundColor: [
+                            '#10b981',
+                            '#ef4444'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '社区情绪调查 (2843票)',
+                            font: {
+                                size: 16
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // APR图表
+        function initAprChart() {
+            const ctx = document.getElementById('aprChart').getContext('2d');
+            window.chartInstances.aprChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Pendle PT APR', 'Ethena Sats', 'Ethereal 积分', '总收益潜力'],
+                    datasets: [{
+                        label: '年化收益率 (%)',
+                        data: [15.98, 8.5, 3.2, 27.68],
+                        backgroundColor: [
+                            '#4f46e5',
+                            '#10b981',
+                            '#3b82f6',
+                            '#f59e0b'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Pendle平台收益构成',
+                            font: {
+                                size: 16
+                            }
+                        },
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '年化收益率 (%)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 推荐图表
+        function initRecommendationChart() {
+            const ctx = document.getElementById('recommendationChart').getContext('2d');
+            window.chartInstances.recommendationChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['收益潜力', '风险控制', '操作简便性', '技术门槛', '市场成熟度'],
+                    datasets: [
+                        {
+                            label: 'Season 0积分计划',
+                            data: [90, 70, 95, 20, 65],
+                            backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                            borderColor: '#4f46e5',
+                            borderWidth: 2
+                        },
+                        {
+                            label: 'Pendle流动性',
+                            data: [85, 65, 80, 40, 80],
+                            backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                            borderColor: '#10b981',
+                            borderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '投资机会综合评估',
+                            font: {
+                                size: 16
+                            }
+                        }
+                    },
+                    scales: {
+                        r: {
+                            angleLines: {
+                                display: true
+                            },
+                            suggestedMin: 0,
+                            suggestedMax: 100
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 窗口大小变化时重新调整图表
+        window.addEventListener('resize', function() {
+            for (const chartId in window.chartInstances) {
+                window.chartInstances[chartId].resize();
+            }
+        });
+    </script>
+<script>window.parent.postMessage({ action: "ready" }, "*"); 
+ 
+window.console = new Proxy(console, {
+  get(target, prop) {
+    if (['log', 'warn', 'error'].includes(prop)) {
+      return new Proxy(target[prop], {
+        apply(fn, thisArg, args) {
+          fn.apply(thisArg, args);
+          window.parent.postMessage({ action: 'console', 
+            type: prop, 
+            args: args.map((arg) => {
+              try {
+                return JSON.stringify(arg).replace(/^["']|["']$/g, '');
+              } catch (e) {
+                return arg;
+              }
+            }) 
+          }, '*');
+        }
+      });
+    }
+    return target[prop];
+  }
+});
+</script></body>
+</html>

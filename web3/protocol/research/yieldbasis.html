@@ -1,0 +1,279 @@
+
+  <!doctype html>
+  <html lang="zh-CN">
+    <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1"/>
+      <title>Yield Basis 调研可视化</title>
+      <style>
+        :root {
+          --bg: #0b1020;
+          --card: #121833;
+          --muted: #7f8dab;
+          --text: #f8fafc;
+          --accent: #6d9eff;
+          --border: #233055;
+          --pos: #16a34a;
+          --neg: #ef4444;
+          --warn: #f59e0b;
+        }
+        * { box-sizing: border-box; }
+        body {
+          margin: 0;
+          font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto;
+          background: linear-gradient(180deg, #080d1a 0%, #0b1020 100%);
+          color: var(--text);
+          line-height: 1.65;
+        }
+        header {
+          padding: 32px 20px;
+          border-bottom: 1px solid var(--border);
+          background:
+            radial-gradient(1000px 400px at 20% -10%, rgba(109,158,255,.12), transparent);
+        }
+        .container { max-width: 1040px; margin: 0 auto; padding: 0 16px; }
+        .title { font-size: 28px; font-weight: 800; letter-spacing: .2px; }
+        .subtitle { color: var(--muted); margin-top: 8px; }
+        .banner { margin-top: 20px; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); }
+        .banner img { width: 100%; height: 220px; object-fit: cover; display: block; }
+        nav { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 0; }
+        nav a {
+          padding: 8px 10px; border: 1px solid var(--border); border-radius: 999px;
+          color: var(--text); text-decoration: none; font-size: 14px; opacity: .9;
+        }
+        nav a:hover { border-color: var(--accent); opacity: 1; }
+        .card {
+          margin-top: 18px; padding: 16px; border-radius: 12px;
+          border: 1px solid var(--border); background: rgba(255,255,255,0.02);
+        }
+        .card-title { font-size: 14px; font-weight: 700; margin-bottom: 8px; color: #fff; }
+        .bullets { padding-left: 18px; }
+        .bullets li { margin: 4px 0; }
+        details {
+          border: 1px solid var(--border); border-radius: 12px; margin: 14px 0; overflow: hidden;
+          background: rgba(255,255,255,0.02);
+        }
+        summary {
+          padding: 14px 16px; cursor: pointer; font-weight: 700; list-style: none;
+          background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0));
+          border-bottom: 1px solid var(--border);
+        }
+        summary::-webkit-details-marker { display: none; }
+        .content { padding: 12px 16px 16px; }
+        .para { margin: 8px 0 8px; color: var(--text); }
+        .notes { border-left: 3px solid var(--accent); padding-left: 10px; color: var(--muted); }
+        figure.table { margin: 14px 0; }
+        figure.table figcaption { color: var(--muted); margin-bottom: 6px; font-size: 14px; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+        th { background: rgba(109,158,255,0.08); }
+        .footer { color: var(--muted); font-size: 13px; text-align: center; padding: 24px; }
+
+        /* Charts */
+        .charts-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+          gap: 16px;
+          margin-top: 14px;
+        }
+        .bars { display: flex; align-items: flex-end; gap: 12px; height: 200px; padding: 8px; border: 1px dashed var(--border); border-radius: 10px; }
+        .bar { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1; min-width: 0; }
+        .bar-inner { width: 24px; background: #6d9eff; border-radius: 6px 6px 0 0; }
+        .bar-label { color: #cbd5e1; font-size: 12px; text-align: center; min-height: 28px; }
+        .bar-value { color: #e5e7eb; font-size: 12px; font-weight: 700; }
+        .donut-wrap { display: grid; grid-template-columns: 160px 1fr; gap: 12px; align-items: center; }
+        .donut { width: 160px; height: 160px; display: block; }
+        .legend { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; color: #cbd5e1; font-size: 13px; }
+        .legend .dot { display: inline-block; width: 10px; height: 10px; border-radius: 999px; margin-right: 8px; vertical-align: middle; }
+        .radar-wrap { border: 1px dashed var(--border); border-radius: 10px; padding: 8px; }
+        .radar { width: 100%; height: auto; display: block; }
+
+        /* Utilities */
+        .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+        @media (max-width: 720px) { .grid-2 { grid-template-columns: 1fr; } }
+      </style>
+    </head>
+    <body>
+  
+    <header>
+      <div class="container">
+        <div class="title">Yield Basis 调研可视化</div>
+        <div class="subtitle">面向比特币流动性的全新 AMM 与 2x 重新杠杆模型：旨在降低无常损失并提升可持续收益。</div>
+        <div class="banner"><img src="https://pub-cdn.sider.ai/u/U0D9GHELJ9/web-coder/68d92f40b54d8be52a90e780/resource/1ec58f57-c126-4d36-a361-28607184dd4a.jpg" alt="banner"/></div>
+        <nav>
+          <a href="#charts">可视化图表</a>
+          <a href="#intro">引言</a><a href="#overview">项目概述</a><a href="#market">市场分析</a><a href="#risk">风险评估</a><a href="#security">安全审计与技术可靠性</a><a href="#community">社区与社交媒体情绪</a><a href="#opportunities">投资机会与未来展望</a><a href="#events">近期事件与合作</a><a href="#conclusion">结论与投资建议</a>
+        </nav>
+        <div class="card">
+          <strong>要点摘要：</strong>
+          <ul class="bullets">
+            <li>核心亮点：2x 杠杆自动重平衡，目标减少无常损失；BTC 计价收益更贴近现货表现。</li><li>生态支持：Curve DAO 通过 6000 万 crvUSD 信贷额度；与 Kraken、Legion 深度合作。</li><li>安全性：多轮审计（Quantstamp 等），紧急停止机制，多重测试与快速修补。</li><li>市场预期：平均 APR 约 14.87% - 20%，牛市阶段潜在可至 60%（回测）。</li><li>主要风险：智能合约复杂性、初期 TVL 较低、对 crvUSD 依赖、监管不确定性。</li>
+          </ul>
+        </div>
+      </div>
+    </header>
+  
+    <main class="container">
+      
+  <section id="charts" class="charts-grid">
+    
+  <figure class="card">
+    <figcaption class="card-title">APR 预期与潜力</figcaption>
+    <div class="bars">
+      
+        <div class="bar">
+          <div class="bar-inner" style="height:39.65333333333333px"></div>
+          <div class="bar-label">APR 下限</div>
+          <div class="bar-value">14.87%</div>
+        </div>
+        <div class="bar">
+          <div class="bar-inner" style="height:53.33333333333333px"></div>
+          <div class="bar-label">APR 上限</div>
+          <div class="bar-value">20%</div>
+        </div>
+        <div class="bar">
+          <div class="bar-inner" style="height:160px"></div>
+          <div class="bar-label">牛市潜力</div>
+          <div class="bar-value">60%</div>
+        </div>
+    </div>
+    <p class="hint">注：基于报告回测与公开信息的区间与潜力值。</p>
+  </figure>
+    
+  <figure class="card">
+    <figcaption class="card-title">风险雷达图（相对强度）</figcaption>
+    <div class="radar-wrap">
+      <svg viewBox="0 0 220 220" class="radar">
+        <circle key="g-0" cx="110" cy="110" r="20" fill="none" stroke="#26314f" stroke-width="1"/><circle key="g-1" cx="110" cy="110" r="40" fill="none" stroke="#26314f" stroke-width="1"/><circle key="g-2" cx="110" cy="110" r="60" fill="none" stroke="#26314f" stroke-width="1"/><circle key="g-3" cx="110" cy="110" r="80" fill="none" stroke="#26314f" stroke-width="1"/>
+        <line x1="110" y1="110" x2="110" y2="30" stroke="#26314f" stroke-width="1"/><line x1="110" y1="110" x2="186.0845213036123" y2="85.2786404500042" stroke="#26314f" stroke-width="1"/><line x1="110" y1="110" x2="157.02282018339787" y2="174.72135954999578" stroke="#26314f" stroke-width="1"/><line x1="110" y1="110" x2="62.97717981660216" y2="174.72135954999578" stroke="#26314f" stroke-width="1"/><line x1="110" y1="110" x2="33.91547869638772" y2="85.27864045000419" stroke="#26314f" stroke-width="1"/>
+        <polygon points="110,47.599999999999994 159.454938847348,93.93111629250274 142.91597412837848,155.30495168499706 80.84585148629334,150.1272429209974 65.87097764390488,95.66161146100242" fill="#a78bfa" opacity="0.35" stroke="#a78bfa" stroke-width="2"/>
+        <text x="110" y="14" text-anchor="middle" dominant-baseline="middle" fill="#a7b0c2" font-size="12">技术</text><text x="201.30142556433475" y="80.33436854000504" text-anchor="middle" dominant-baseline="middle" fill="#a7b0c2" font-size="12">流动性</text><text x="166.4273842200774" y="187.66563145999496" text-anchor="middle" dominant-baseline="middle" fill="#a7b0c2" font-size="12">市场</text><text x="53.572615779922586" y="187.66563145999496" text-anchor="middle" dominant-baseline="middle" fill="#a7b0c2" font-size="12">监管</text><text x="18.698574435665265" y="80.33436854000502" text-anchor="middle" dominant-baseline="middle" fill="#a7b0c2" font-size="12">依赖</text>
+      </svg>
+    </div>
+    <p class="hint">注：相对值用于对比关注重点，非风险概率。</p>
+  </figure>
+    
+  <figure class="card">
+    <figcaption class="card-title">治理投票倾向（Curve DAO）</figcaption>
+    <div class="donut-wrap">
+      <svg viewBox="0 0 160 160" class="donut">
+        <g transform="rotate(-90 80 80)">
+          <circle cx="80" cy="80" r="56" fill="transparent" stroke="#233055" stroke-width="18"/>
+          <circle cx="80" cy="80" r="56" fill="transparent" stroke="#16a34a" stroke-width="18" stroke-dasharray="341.3026258859951 10.55575131606173" stroke-dashoffset="351.85837720205683" /><circle cx="80" cy="80" r="56" fill="transparent" stroke="#ef4444" stroke-width="18" stroke-dasharray="10.555751316061704 341.3026258859951" stroke-dashoffset="10.555751316061714" />
+        </g>
+        <text x="80" y="80" text-anchor="middle" dominant-baseline="middle" fill="#e5e7eb" font-size="12" font-weight="700">
+          Governance
+        </text>
+      </svg>
+      
+    <ul class="legend">
+      <li><span class="dot" style="background:#16a34a"></span>支持：97%</li><li><span class="dot" style="background:#ef4444"></span>反对：3%</li>
+    </ul>
+    </div>
+  </figure>
+    
+  <figure class="card">
+    <figcaption class="card-title">社交舆情概览</figcaption>
+    <div class="donut-wrap">
+      <svg viewBox="0 0 160 160" class="donut">
+        <g transform="rotate(-90 80 80)">
+          <circle cx="80" cy="80" r="56" fill="transparent" stroke="#233055" stroke-width="18"/>
+          <circle cx="80" cy="80" r="56" fill="transparent" stroke="#3b82f6" stroke-width="18" stroke-dasharray="334.26545834195394 17.592918860102884" stroke-dashoffset="351.85837720205683" /><circle cx="80" cy="80" r="56" fill="transparent" stroke="#f59e0b" stroke-width="18" stroke-dasharray="17.59291886010284 334.265458341954" stroke-dashoffset="17.592918860102856" />
+        </g>
+        <text x="80" y="80" text-anchor="middle" dominant-baseline="middle" fill="#e5e7eb" font-size="12" font-weight="700">
+          Sentiment
+        </text>
+      </svg>
+      
+    <ul class="legend">
+      <li><span class="dot" style="background:#3b82f6"></span>正面：95%</li><li><span class="dot" style="background:#f59e0b"></span>负面/谨慎：5%</li>
+    </ul>
+    </div>
+  </figure>
+  </section>
+      
+  <details id="intro" open>
+    <summary>引言</summary>
+    <div class="content">
+      <p class="para">Yield Basis 由 Curve 创始人 Michael Egorov 发起，聚焦于比特币及其他资产的流动性收益与风险控制。</p>
+<p class="para">其通过 AMM 与 2x 杠杆自动重平衡策略，力求在链上实现更稳定、透明且可持续的 BTC 收益方案。</p>
+    </div>
+  </details>
+  <details id="overview" open>
+    <summary>项目概述</summary>
+    <div class="content">
+      <ul class="bullets"><li>技术创新：2x 杠杆重新杠杆化，保持头寸接近现货表现，降低无常损失。</li><li>自动重平衡：在 Curve 流动性池架构上，加入智能再平衡应对波动。</li><li>代币经济：YB 总量 10 亿；公售价 $0.2；FDV 2 亿美金；两阶段公售与信誉分配。</li><li>生态协作：Kraken 合规分发、Legion 信誉评分、Curve DAO 信贷支持。</li></ul>
+    </div>
+  </details>
+  <details id="market" open>
+    <summary>市场分析</summary>
+    <div class="content">
+      <p class="para">目标市场：提升 BTC 在 DeFi 中的资本效率，缓解传统 LP 的无常损失痛点。</p>
+<p class="para">收益预期：回测 APR 中位 14.87% - 20%，波动上行期潜在 60%。</p>
+<p class="para">竞争优势：去中心化、链上透明、自动重平衡降低波动影响。</p>
+
+  <figure class="table">
+    <figcaption>Yield Basis 与传统 BTC 收益产品比较</figcaption>
+    <table>
+      <thead><tr><th>项目特性</th><th>传统 BTC 收益方式</th><th>Yield Basis</th></tr></thead>
+      <tbody>
+        <tr><td>收益率</td><td>0.02% - 2%</td><td>14.87% - 20%，牛市可达 60%</td></tr><tr><td>无常损失</td><td>高风险</td><td>基础上显著降低/趋近消除</td></tr><tr><td>流动性提供方式</td><td>中心化或传统 AMM</td><td>自动杠杆 AMM</td></tr><tr><td>安全性</td><td>信托风险、透明度不足</td><td>去中心化、链上透明</td></tr><tr><td>用户门槛</td><td>通常较高</td><td>信誉分配+公开抢购，门槛更低</td></tr>
+      </tbody>
+    </table>
+  </figure>
+    </div>
+  </details>
+  <details id="risk" open>
+    <summary>风险评估</summary>
+    <div class="content">
+      <ul class="bullets"><li>技术风险：复杂合约与自动重平衡可能在极端条件下产生异常成本或风险。</li><li>流动性风险：初期各池上限较低，TVL 尚小；深度不足可能影响体验。</li><li>市场风险：收益依赖波动与交易量，低波动期收益或低于成本。</li><li>监管风险：合规环境变化可能影响运营与可访问性（地区差异）。</li><li>依赖风险：对创始人、Curve 生态与治理机制的依赖。</li></ul>
+    </div>
+  </details>
+  <details id="security" open>
+    <summary>安全审计与技术可靠性</summary>
+    <div class="content">
+      <ul class="bullets"><li>审计：Quantstamp 审计发现 8 项风险；6 修复、2 确认跟进。</li><li>紧急停止：由 Curve 紧急 DAO 多签控制，快速响应异常。</li><li>测试：单元、功能与压力测试覆盖关键路径；持续更新与补丁。</li></ul>
+<div class="notes"><p>注：数据来源：Quantstamp 审计报告及社区公开披露。</p></div>
+    </div>
+  </details>
+  <details id="community" open>
+    <summary>社区与社交媒体情绪</summary>
+    <div class="content">
+      <p class="para">治理：Curve DAO 对 6000 万 crvUSD 信贷额度投票通过率高。</p>
+<p class="para">舆情：多数观点认可创新与潜在收益；少数担忧高杠杆与初期流动性。</p>
+    </div>
+  </details>
+  <details id="opportunities" open>
+    <summary>投资机会与未来展望</summary>
+    <div class="content">
+      <ul class="bullets"><li>公售：两阶段、低门槛、无锁定；预计快速二级流动性。</li><li>收益：流动性挖矿（BTC 计价）、可选 YB 激励，减少稀释外溢。</li><li>策略：自动化套保与借贷挖矿在波动期放大收益，需注意执行与利率风险。</li><li>扩展：长期探索多资产与跨链，吸引更多机构与合规场景。</li></ul>
+
+  <figure class="table">
+    <figcaption>投资方式与风险对比</figcaption>
+    <table>
+      <thead><tr><th>投资方式</th><th>收益来源</th><th>优势</th><th>主要风险</th></tr></thead>
+      <tbody>
+        <tr><td>代币公售</td><td>二级流动性/升值</td><td>低门槛、速度快</td><td>波动与技术风险</td></tr><tr><td>流动性挖矿</td><td>交易费（BTC 计价）</td><td>降低无常损失预期</td><td>TVL 初期较低</td></tr><tr><td>套保挖矿</td><td>对冲+收益</td><td>风险控制更优</td><td>策略复杂、执行延迟</td></tr><tr><td>借贷挖矿</td><td>杠杆与利差</td><td>收益放大</td><td>利率变动、系统性风险</td></tr>
+      </tbody>
+    </table>
+  </figure>
+    </div>
+  </details>
+  <details id="events" open>
+    <summary>近期事件与合作</summary>
+    <div class="content">
+      <ul class="bullets"><li>公售节点：9/29 信誉分配、10/1 公开抢购（Kraken + Legion）。</li><li>上市：预计 Kraken 快速提供二级流动性。</li><li>生态：Kraken 合规发行、Legion 信誉甄选、Curve DAO 信贷支撑。</li></ul>
+    </div>
+  </details>
+  <details id="conclusion" open>
+    <summary>结论与投资建议</summary>
+    <div class="content">
+      <p class="para">在技术创新、生态支持与合规推进下，Yield Basis 对 BTC DeFi 收益模型具有较强的改良潜力。</p>
+<p class="para">建议依据自身风险承受力配置：高风险偏好者可适度参与公售与挖矿；稳健型关注套保与审计动态。</p>
+    </div>
+  </details>
+      <p class="footer">导出自：Yield Basis 调研可视化（单文件版）。</p>
+    </main>
+  
+    </body>
+  </html>

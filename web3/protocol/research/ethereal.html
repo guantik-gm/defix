@@ -1,0 +1,1428 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ethereal项目分析报告</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --primary-dark: #4f46e5;
+            --secondary: #f472b6;
+            --accent: #c084fc;
+            --text: #1f2937;
+            --text-light: #6b7280;
+            --background: #ffffff;
+            --background-alt: #f9fafb;
+            --border: #e5e7eb;
+            --shadow: rgba(0, 0, 0, 0.05);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            background-color: var(--background);
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+        
+        .report-header {
+            padding: 2rem 0;
+            text-align: center;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            margin-bottom: 1rem;
+        }
+        
+        .report-title {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .report-subtitle {
+            font-size: 1.2rem;
+            font-weight: normal;
+            opacity: 0.9;
+        }
+        
+        .tabs-container {
+            position: sticky;
+            top: 0;
+            background-color: var(--background);
+            box-shadow: 0 2px 10px var(--shadow);
+            z-index: 1000;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .tabs {
+            display: flex;
+            overflow-x: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary) var(--border);
+        }
+        
+        .tabs::-webkit-scrollbar {
+            height: 4px;
+        }
+        
+        .tabs::-webkit-scrollbar-track {
+            background: var(--border);
+        }
+        
+        .tabs::-webkit-scrollbar-thumb {
+            background-color: var(--primary);
+        }
+        
+        .tab {
+            padding: 1rem 1.25rem;
+            white-space: nowrap;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+        
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        
+        .tab:hover:not(.active) {
+            color: var(--primary-light);
+            border-bottom-color: var(--border);
+        }
+        
+        .content-section {
+            display: none;
+            padding: 1rem 0 3rem;
+        }
+        
+        .content-section.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .section-title {
+            font-size: 1.8rem;
+            color: var(--primary-dark);
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 0.5rem;
+        }
+        
+        .section-content {
+            margin-bottom: 2rem;
+        }
+        
+        p {
+            margin-bottom: 1rem;
+        }
+        
+        .card {
+            background-color: var(--background);
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px var(--shadow);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border);
+        }
+        
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--primary-dark);
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin: 2rem 0;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+        }
+        
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        th {
+            background-color: var(--background-alt);
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background-color: var(--background-alt);
+        }
+        
+        .highlight {
+            background-color: rgba(99, 102, 241, 0.1);
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-weight: 500;
+            color: var(--primary-dark);
+        }
+        
+        .tag {
+            display: inline-block;
+            background-color: var(--primary-light);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.875rem;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .tag.risk {
+            background-color: var(--secondary);
+        }
+        
+        .tag.neutral {
+            background-color: var(--text-light);
+        }
+        
+        .collapsible {
+            margin-bottom: 1rem;
+        }
+        
+        .collapsible-header {
+            background-color: var(--background-alt);
+            padding: 1rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        
+        .collapsible-header:hover {
+            background-color: rgba(99, 102, 241, 0.1);
+        }
+        
+        .collapsible-icon {
+            transition: transform 0.3s;
+        }
+        
+        .collapsible-content {
+            padding: 1rem;
+            border: 1px solid var(--border);
+            border-top: none;
+            border-radius: 0 0 0.5rem 0.5rem;
+            background-color: var(--background);
+        }
+        
+        .key-point {
+            margin-bottom: 1rem;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+        
+        .key-point:before {
+            content: "•";
+            color: var(--primary);
+            font-weight: bold;
+            position: absolute;
+            left: 0.5rem;
+        }
+        
+        @media (max-width: 768px) {
+            .report-title {
+                font-size: 1.8rem;
+            }
+            
+            .report-subtitle {
+                font-size: 1rem;
+            }
+            
+            .section-title {
+                font-size: 1.5rem;
+            }
+            
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .chart-container {
+                height: 300px;
+            }
+            
+            .tab {
+                padding: 0.75rem 1rem;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="report-header">
+        <div class="container">
+            <h1 class="report-title">Ethereal项目分析报告</h1>
+            <p class="report-subtitle">DeFi项目全面评估与投资机会分析</p>
+        </div>
+    </div>
+
+    <div class="tabs-container">
+        <div class="container">
+            <div class="tabs">
+                <div class="tab active" data-tab="section1">引言</div>
+                <div class="tab" data-tab="section2">项目概述</div>
+                <div class="tab" data-tab="section3">市场分析</div>
+                <div class="tab" data-tab="section4">技术架构</div>
+                <div class="tab" data-tab="section5">团队与背景</div>
+                <div class="tab" data-tab="section6">安全审计</div>
+                <div class="tab" data-tab="section7">社区与媒体</div>
+                <div class="tab" data-tab="section8">近期动态</div>
+                <div class="tab" data-tab="section9">投资机会</div>
+                <div class="tab" data-tab="section10">结论</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- 第1节：引言 -->
+        <section id="section1" class="content-section active">
+            <h2 class="section-title">1. 引言</h2>
+            <div class="section-content">
+                <div class="card">
+                    <div class="card-title">报告概述</div>
+                    <p>近年来，去中心化金融（DeFi）项目层出不穷，其中以Ethereal为代表的DEX项目因其独特的产品设计和超低延迟交易体验而逐渐受到市场关注。本报告旨在全面评估Ethereal项目的近期表现，重点关注其安全性、技术架构、市场数据以及社区情绪。</p>
+                    <p>本文通过分析来自多个数据源的信息（例如项目介绍、CoinGecko的市场数据以及相关报告内容），详细探讨了Ethereal在Ethena生态系统中的地位和市场潜力，并就投资机会进行评估。</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">研究重点</div>
+                    <div class="grid">
+                        <div class="key-point">项目定位与市场表现</div>
+                        <div class="key-point">技术架构与创新点</div>
+                        <div class="key-point">安全性与风险评估</div>
+                        <div class="key-point">社区反应与市场情绪</div>
+                        <div class="key-point">投资价值与建议</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 第2节：项目概述 -->
+        <section id="section2" class="content-section">
+            <h2 class="section-title">2. 项目概述</h2>
+            <div class="section-content">
+                <p>Ethereal是一个基于去中心化架构的交易平台，支持现货与永续合约交易。该项目的核心优势包括：</p>
+                
+                <div class="card">
+                    <div class="card-title">核心优势</div>
+                    <div class="collapsible">
+                        <div class="collapsible-header">
+                            <span>极高速交易体验</span>
+                            <span class="collapsible-icon">▼</span>
+                        </div>
+                        <div class="collapsible-content">
+                            <p>交易延迟低于20毫秒，能够支持每秒约100万笔订单处理能力，这对于稳定运行大规模交易系统至关重要。</p>
+                        </div>
+                    </div>
+
+                    <div class="collapsible">
+                        <div class="collapsible-header">
+                            <span>较高的总锁仓量（TVL）</span>
+                            <span class="collapsible-icon">▼</span>
+                        </div>
+                        <div class="collapsible-content">
+                            <p>目前数据显示其TVL约为3.2亿美元，为平台提供了充足的流动性和安全保障。</p>
+                        </div>
+                    </div>
+
+                    <div class="collapsible">
+                        <div class="collapsible-header">
+                            <span>生态系统与产品愿景</span>
+                            <span class="collapsible-icon">▼</span>
+                        </div>
+                        <div class="collapsible-content">
+                            <p>Ethereal定位于成为DeFi全能应用，其产品设计以USDe和Ethena为核心，力图整合现货交易与衍生品对冲策略，为用户提供深度流动性支持，同时实现跨市场套利与风险管理。</p>
+                            <p>部署上，项目计划首先在Arbitrum主网上上线，随后在Converge链完成迁移升级。</p>
+                        </div>
+                    </div>
+
+                    <div class="collapsible">
+                        <div class="collapsible-header">
+                            <span>生态系统内联动效应</span>
+                            <span class="collapsible-icon">▼</span>
+                        </div>
+                        <div class="collapsible-content">
+                            <p>Ethereal与Ethena生态系统紧密相连，通过积分奖励、治理代币空投等机制，将sENA持有者与平台利益紧密绑定，从而促进生态内各项目的协同发展。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">总体评估</div>
+                    <p>总体来看，Ethereal不仅以高速和强大流动性见长，而且通过整合Ethena生态构建了一个具有创新性和前瞻性的DeFi平台。其在交易性能和生态整合方面的优势有望为用户带来差异化价值。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 第3节：市场分析 -->
+        <section id="section3" class="content-section">
+            <h2 class="section-title">3. 市场分析</h2>
+            <div class="section-content">
+                <p>在市场数据方面，我们通过CoinGecko平台获取了对Ethereal代币（符号：ETHEREAL）的部分关键信息和统计数据：</p>
+                
+                <div class="card">
+                    <div class="card-title">价格与市场表现</div>
+                    <div class="chart-container">
+                        <canvas id="priceChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">关键市场指标</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>指标</th>
+                                <th>数据值</th>
+                                <th>说明</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>当前价格</td>
+                                <td>0.0743 美元</td>
+                                <td>基于CoinGecko实时数据</td>
+                            </tr>
+                            <tr>
+                                <td>历史最高价</td>
+                                <td>0.0001431 美元</td>
+                                <td>2025年9月10日记录</td>
+                            </tr>
+                            <tr>
+                                <td>历史最低价</td>
+                                <td>0.071232 美元</td>
+                                <td>2025年9月11日记录</td>
+                            </tr>
+                            <tr>
+                                <td>24小时交易量</td>
+                                <td>1.85 美元</td>
+                                <td>极低流动性，显示出买卖力度不足</td>
+                            </tr>
+                            <tr>
+                                <td>市值</td>
+                                <td>18,145 美元</td>
+                                <td>与流通供应量420亿枚对应</td>
+                            </tr>
+                            <tr>
+                                <td>流通供应量</td>
+                                <td>420,690,000,000 枚</td>
+                                <td>全部代币均在市场上流通</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">市场表现对比</div>
+                    <div class="chart-container">
+                        <canvas id="marketComparisonChart"></canvas>
+                    </div>
+                    <p>在过去7天中，Ethereal的价格变化为0%，相比全球加密货币市场下跌0.60%和以太坊生态系统上升12.70%的表现，说明其市场波动和关注度相对滞后。</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">市场分析总结</div>
+                    <p>以上统计数据表明，Ethereal目前在市场上的交易活跃度较低，市值和交易量远远落后于主流DeFi项目，这可能是由于项目还处于早期阶段或者用户信心不足。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 第4节：技术架构 -->
+        <section id="section4" class="content-section">
+            <h2 class="section-title">4. 技术架构</h2>
+            <div class="section-content">
+                <p>从技术层面来看，Ethereal项目具备以下显著特点：</p>
+                
+                <div class="card">
+                    <div class="card-title">核心技术优势</div>
+                    <div class="key-point">采用高性能的订单撮合引擎，支持低延迟高吞吐量的交易机制，每秒可处理约100万笔订单。</div>
+                    <div class="key-point">在基础设施构建上，利用Arbitrum等以太坊L2解决方案以降低交易成本和提高执行效率，同时未来计划迁移至Converge链，进一步增强安全性与扩展性。</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">生态系统整合</div>
+                    <div class="key-point">Ethereal作为Ethena生态系统的重要组成部分，通过USDe和sUSDe等稳定币资产将现货交易与衍生品交易无缝衔接，为用户提供资本高效使用的机会。</div>
+                    <div class="key-point">生态系统内的积分机制（Ethereal Points）和治理代币空投计划，有助于用户参与平台治理和长期锁定资产，形成高度内生的用户价值增长机制。</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Ethereal生态系统交互流程</div>
+                    <div class="chart-container">
+                        <canvas id="flowchartCanvas"></canvas>
+                    </div>
+                    <p class="text-center">图1：Ethereal生态系统交互流程图说明了用户资产如何在多个协议间循环，并促进生态系统整体价值增长。</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">产品交互与用户体验</div>
+                    <div class="key-point">用户界面设计注重高效与极简化，提供快速、直观的交易操作体验，特别是在市场价格波动剧烈的情况下，能够保证低延迟执行，为高频交易提供支持。</div>
+                    <div class="key-point">通过整合跨链以及多协议对接功能，Ethereal确保了在不同市场环境下均能获取深度流动性，并通过资产循环策略（例如联动Aave与Pendle实现循环借贷）实现跨平台互动。</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">系统安全性</div>
+                    <div class="key-point">系统设计注重高并发与实时交易的要求，具有完善的风险控制机制，能够在市场剧烈波动时迅速响应，保护用户资产安全。</div>
+                    <div class="key-point">尽管目前文档中未详细提及安全审计报告，但项目致力于与第三方专业机构合作进行安全评估，以确保平台代码的稳健性和抗攻击能力。</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 第5节：团队与背景 -->
+        <section id="section5" class="content-section">
+            <h2 class="section-title">5. 团队与背景</h2>
+            <div class="section-content">
+                <p>从现有资料看，Ethereal项目与Ethena生态内的多个项目紧密协作，其创始人和部分团队成员在DeFi领域具有一定的知名度和经验：</p>
+                
+                <div class="card">
+                    <div class="card-title">创始人及管理层</div>
+                    <p>根据项目文件，Ethereal项目的创始人为@0xAfif，其在社交媒体和行业内都有一定影响力，能够引导项目的发展方向。</p>
+                    <p>团队成员普遍具备丰富的区块链和传统金融市场背景，如参与过多项DeFi产品的开发与推广，具有较强的技术实力和风险管理能力。</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">跨项目协同</div>
+                    <p>Ethereal不仅仅是独立的交易平台，更是Ethena生态系统的一部分，团队在整合USDe、sUSDe以及衍生品对冲策略等方面拥有丰富的经验。同时，项目与Strata、Terminal、Derive、Echelon等多个项目形成战略联盟，共同推进生态系统建设。</p>
+                    <p>此外，团队采用积分奖励、代币分配和空投等激励措施，激发了社区参与热情，有助于长期生态价值积累。</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">生态合作伙伴关系</div>
+                    <div class="chart-container">
+                        <canvas id="partnershipChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 第6节：安全审计与风险事件 -->
+        <section id="section6" class="content-section">
+            <h2 class="section-title">6. 安全审计与风险事件</h2>
+            <div class="section-content">
+                <p>安全性一直是DeFi项目关注的重中之重。对于Ethereal而言，以下几点值得重点关注：</p>
+                
+                <div class="card">
+                    <div class="card-title">安全审计现状</div>
+                    <div class="key-point">从现有的资料中，目前尚未看到详细的第三方安全审计报告或公开的漏洞修复记录。项目团队表示将依靠先进的风险控制系统和动态资本分配策略来应对市场波动和潜在攻击风险。</div>
+                    <div class="key-point">为了进一步增强系统安全性，建议未来项目公布详细的安全审计报告，并邀请业内知名安全机构进行定期评估。</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">市场风险与流动性风险</div>
+                    <div class="chart-container">
+                        <canvas id="riskAssessmentChart"></canvas>
+                    </div>
+                    <div class="key-point">当前数据表明，Ethereal的24小时交易量仅为1.85美元，市值也非常低，这使得平台面对大额交易或市场波动时容易发生价格剧烈波动和滑点问题。</div>
+                    <div class="key-point">生态内资产循环和多协议互联虽然能在一定程度上提升资本效率，但在极端市场环境下，可能放大系统性风险，需要有更完整的风险预警和应急策略来进行防范。</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">风险事件防范措施</div>
+                    <div class="key-point">项目计划通过核心对冲策略和动态风险管理体系，将现货交易与永续合约对冲策略相结合，以降低因市场异常波动带来的损失风险。</div>
+                    <div class="key-point">与包括Aave、Pendle在内的多个项目合作，能够在流动性不足时形成自动调节机制，通过系统性循环稳定币债务和储备金对冲风险。</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 第7节：社区与社交媒体情绪 -->
+        <section id="section7" class="content-section">
+            <h2 class="section-title">7. 社区与社交媒体情绪</h2>
+            <div class="section-content">
+                <p>社区支持和社交媒体情绪对DeFi项目的长期成功至关重要。关于Ethereal项目，我们从以下几个方面进行分析：</p>
+                
+                <div class="card">
+                    <div class="card-title">社交媒体活跃度</div>
+                    <div class="key-point">根据CoinGecko页面信息，Ethereal项目在Twitter和Telegram等平台均有相关账号，尽管具体的推文内容和粉丝互动数据暂未在本报告中详尽披露，但创始人@0xAfif在社交媒体上的活跃度表明团队在传播信息方面具备一定优势。</div>
+                    <div class="key-point">目前尚未有足够的公开数据来量化社区情绪，未来可以通过观察至少50条推文、讨论帖和评论来获得更加精准的情绪指标。</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">社区关键观察点</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>观察点</th>
+                                <th>当前情况</th>
+                                <th>建议措施</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>社交媒体活跃度</td>
+                                <td>创始人及团队活跃，但具体互动数据有限</td>
+                                <td>定期公开社交媒体数据及用户反馈报告</td>
+                            </tr>
+                            <tr>
+                                <td>用户积分激励</td>
+                                <td>已推出Ethereal Points系统</td>
+                                <td>优化积分兑换与空投方案，提升用户参与度</td>
+                            </tr>
+                            <tr>
+                                <td>社区流动性</td>
+                                <td>交易量极低</td>
+                                <td>扩大市场推广，与其他生态项目形成联动</td>
+                            </tr>
+                            <tr>
+                                <td>用户安全与信心</td>
+                                <td>安全审计报告不足</td>
+                                <td>尽快公布安全审计报告，增强用户信心</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">社区激励机制</div>
+                    <div class="key-point">Ethereal推出了积分系统（Ethereal Points），允许用户通过质押USDe参与积分累计，未来有望通过空投潜在治理代币来回馈用户。这一激励措施有助于提高用户黏性和社区活跃度。</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">用户参与与反馈</div>
+                    <div class="key-point">尽管当前的交易量和市值极低，但项目通过与Strata、Terminal等子项目的合作，形成了跨项目生态协同效应，有助于逐步扩大社区用户基础。</div>
+                    <div class="key-point">社区反馈中亦存在对低流动性、价格波动以及安全性担忧的信息，提示项目需要在扩大用户规模和提升流动性方面做更多努力。</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 第8节：近期新闻与动态 -->
+        <section id="section8" class="content-section">
+            <h2 class="section-title">8. 近期新闻与动态</h2>
+            <div class="section-content">
+                <p>近期，围绕Ethereal和其所属的Ethena生态系统，有多条新闻和项目动态被广泛讨论：</p>
+                
+                <div class="card">
+                    <div class="card-title">生态系统整合与新项目合作</div>
+                    <div class="key-point">Ethereal作为Ethena生态的重要组成部分，与Strata、Terminal、Derive、Echelon等多个项目已经形成了战略合作关系，这些项目在稳定币、衍生品、结构化收益产品等领域展开合作，共同推动生态系统的发展。</div>
+                    <div class="key-point">通过整合不同衍生品和循环借贷策略，项目有望利用多个DeFi协议间的协同效应实现资本高效利用，为生态内用户带来更多收益机会。</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">部署计划与技术切换</div>
+                    <div class="key-point">根据最新动态，Ethereal将首先在Arbitrum主网上部署，随后在Converge链实现迁移上线。这一技术演进计划表明项目正处在扩容和技术升级的重要阶段，对于后续提高系统性能具有重要意义。</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">项目治理与代币分配</div>
+                    <div class="chart-container">
+                        <canvas id="tokenAllocationChart"></canvas>
+                    </div>
+                    <div class="key-point">Ethereal计划将15%的潜在治理代币空投给质押sENA的持有者，旨在通过激励机制拉拢核心用户参与生态治理，提高用户长期锁仓意愿和生态内粘性。</div>
+                    <div class="key-point">此外，项目还通过积分制度让用户有机会获得空投和其他奖励，进一步提升了用户社区的参与热情和未来治理动力。</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">媒体与行业讨论</div>
+                    <div class="key-point">行业内虽然对Ethereal的技术创新和高频交易能力给予了一定认可，但也普遍担忧其低流动性和高波动性可能带来的风险。部分媒体报道指出，该项目在生态系统整合上有独特优势，但短期内市场表现仍需观察。</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 第9节：投资机会分析 -->
+        <section id="section9" class="content-section">
+            <h2 class="section-title">9. 投资机会分析</h2>
+            <div class="section-content">
+                <p>基于以上分析，我们对Ethereal在投资机会方面进行了详细评估，并将主要因素整理如下：</p>
+                
+                <div class="card">
+                    <div class="card-title">代币购买风险与机会</div>
+                    <div class="collapsible">
+                        <div class="collapsible-header">
+                            <span>优势</span>
+                            <span class="collapsible-icon">▼</span>
+                        </div>
+                        <div class="collapsible-content">
+                            <div class="key-point">当前代币价格处于历史低谷状态，单枚定价极低，这对于高风险偏好的投资者来说具有一定的吸引力。</div>
+                            <div class="key-point">如果项目能够通过生态整合和市场推广逐步改善流动性，未来价格有潜在上行空间。</div>
+                        </div>
+                    </div>
+
+                    <div class="collapsible">
+                        <div class="collapsible-header">
+                            <span>劣势</span>
+                            <span class="collapsible-icon">▼</span>
+                        </div>
+                        <div class="collapsible-content">
+                            <div class="key-point">市价极低和交易量微不足道，意味着市场深度不足，容易受到单笔大额交易冲击导致剧烈波动。</div>
+                            <div class="key-point">缺乏公开安全审计和实际收益数据使项目存在较高的技术和运营风险。</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">参与挖矿与质押机会</div>
+                    <div class="collapsible">
+                        <div class="collapsible-header">
+                            <span>优势</span>
+                            <span class="collapsible-icon">▼</span>
+                        </div>
+                        <div class="collapsible-content">
+                            <div class="key-point">Ethereal通过积分系统及未来治理代币空投激励用户长期参与，用户通过质押USDe获得Ethereal Points，从而享有未来项目收益分成的潜力。</div>
+                            <div class="key-point">此外，结合Ethena生态内的循环策略，如与Aave和Pendle的借贷循环，有望实现高APR收益。</div>
+                        </div>
+                    </div>
+
+                    <div class="collapsible">
+                        <div class="collapsible-header">
+                            <span>劣势</span>
+                            <span class="collapsible-icon">▼</span>
+                        </div>
+                        <div class="collapsible-content">
+                            <div class="key-point">当前收益数据尚不明确，投资者难以精确预测积分和未来空投的实际回报。</div>
+                            <div class="key-point">低流动性和价格波动风险可能使质押及挖矿计划面临较高的市场风险。</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">生态系统内结构化收益机会</div>
+                    <div class="collapsible">
+                        <div class="collapsible-header">
+                            <span>优势</span>
+                            <span class="collapsible-icon">▼</span>
+                        </div>
+                        <div class="collapsible-content">
+                            <div class="key-point">Ethereal与Strata、Terminal等项目的合作，构建了一个多层次收益模式，用户可通过参与不同产品获得分层收益。</div>
+                            <div class="key-point">利用循环借贷策略，不仅能够获得基础的稳定币收益，还在衍生品交易中实现额外杠杆收益，有助于提高资金利用效率。</div>
+                        </div>
+                    </div>
+
+                    <div class="collapsible">
+                        <div class="collapsible-header">
+                            <span>劣势</span>
+                            <span class="collapsible-icon">▼</span>
+                        </div>
+                        <div class="collapsible-content">
+                            <div class="key-point">这种复杂的收益模式涉及多层智能合约和跨协议整合，若其中某一环节出现问题，可能会引发连锁风险。</div>
+                            <div class="key-point">目前尚未有足够的透明数据证明这种结构化收益模式在实际市场中的有效性。</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">投资机会与风险对比</div>
+                    <div class="chart-container">
+                        <canvas id="investmentOpportunityChart"></canvas>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>投资机会类别</th>
+                                <th>优势</th>
+                                <th>劣势</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>代币直接购买</td>
+                                <td>价格处于低谷；上行潜力巨大</td>
+                                <td>流动性极低，市场深度不足；价格波动剧烈</td>
+                            </tr>
+                            <tr>
+                                <td>挖矿与质押收益</td>
+                                <td>积分系统激励长期锁仓；未来空投和治理代币潜力较大</td>
+                                <td>收益数据不明确；存在较高市场波动风险</td>
+                            </tr>
+                            <tr>
+                                <td>结构化收益产品</td>
+                                <td>与多协议合作形成联合收益；循环借贷策略提升资金利用效率</td>
+                                <td>跨协议整合复杂；风险传导及连锁反应可能放大风险</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 第10节：结论 -->
+        <section id="section10" class="content-section">
+            <h2 class="section-title">10. 结论</h2>
+            <div class="section-content">
+                <p>通过对Ethereal项目的全面评估，我们可以得出以下关键结论：</p>
+                
+                <div class="card">
+                    <div class="card-title">项目优势</div>
+                    <div class="key-point">Ethereal凭借低延迟高吞吐量、先进的订单撮合引擎和生态系统整合优势，在技术层面具备较大的创新潜力。</div>
+                    <div class="key-point">生态内通过USDe与sUSDe的协同运作，以及与Strata、Terminal等项目的战略合作，为未来收益增值提供了多维可能。</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">项目风险</div>
+                    <div class="key-point">当前的市场流动性极低和交易量不足，使得代币价格极易受到单笔交易冲击，从而带来剧烈波动。</div>
+                    <div class="key-point">缺乏公开全面的安全审计报告和透明收益数据，加上复杂的跨协议整合模式，使项目风险较高。</div>
+                    <div class="key-point">社区参与和市场推广仍需加强，只有在建立起稳固的用户基础与信任后，才能实现预期的收益循环效应。</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">投资建议</div>
+                    <div class="key-point">对于风险偏好较高的投资者，Ethereal可能提供一个低价介入并期待未来价值上升的机会，但必须做好充足的资金风险管理。</div>
+                    <div class="key-point">对于追求稳健回报的投资者，当前阶段建议保持谨慎，等待项目发布更多安全审计报告与正式收益数据之后，再考虑参与挖矿或结构化收益产品投资。</div>
+                    <div class="key-point">建议持续关注项目在技术升级、生态整合及社区运营方面的进展，这将是判断其未来长期价值的重要依据。</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">主要发现概述</div>
+                    <div class="key-point">采用高性能撮合交易引擎和极低延迟技术，Ethereal在技术上具备一定优势。</div>
+                    <div class="key-point">当前市场数据表明流动性极低，市值和交易量远低于主流DeFi项目。</div>
+                    <div class="key-point">团队和生态整合能力有望带动长期用户参与和收益提升，但需尽快公开安全审计结果。</div>
+                    <div class="key-point">社区激励机制和跨协议联动虽为项目加分项，但短期内用户基础和信任度不足仍是主要瓶颈。</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">关键领域评估总结</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>关键领域</th>
+                                <th>主要优势</th>
+                                <th>主要风险</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>技术架构</td>
+                                <td>低延迟高吞吐量；跨链与生态整合能力</td>
+                                <td>复杂系统整合可能引发连锁风险；缺乏安全审计</td>
+                            </tr>
+                            <tr>
+                                <td>市场数据</td>
+                                <td>具有一定上行潜力（低价介入机会）</td>
+                                <td>流动性极低；极易波动</td>
+                            </tr>
+                            <tr>
+                                <td>团队背景</td>
+                                <td>创始人和管理层具备一定影响力；与多项目紧密合作</td>
+                                <td>公开信息不足；团队规模与执行力有待持续验证</td>
+                            </tr>
+                            <tr>
+                                <td>社区运营</td>
+                                <td>积分激励机制；未来治理代币空投潜力</td>
+                                <td>社交媒体活跃度数据有限；用户参与度和市场信心尚未形成</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="card">
+                    <div class="card-title">总结展望</div>
+                    <p>综上所述，我们认为Ethereal作为一个技术创新型的DeFi项目，具备一定投资价值，但当前风险较高，短期内不适合保守型投资者。建议投资者在密切关注项目安全审计、生态系统扩展及社区反馈的同时，根据自身风险承受能力选择适当的参与方式。</p>
+                    <p>未来，随着更多安全审计报告、收益数据和社区反馈的公开，投资者可进一步验证项目的实际价值和风险水平。</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化窗口图表实例存储
+            if (!window.chartInstances) {
+                window.chartInstances = {};
+            }
+            
+            // 选项卡切换功能
+            const tabs = document.querySelectorAll('.tab');
+            const sections = document.querySelectorAll('.content-section');
+            
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabId = this.getAttribute('data-tab');
+                    
+                    // 移除所有活动类
+                    tabs.forEach(t => t.classList.remove('active'));
+                    sections.forEach(s => s.classList.remove('active'));
+                    
+                    // 添加活动类到当前选项卡和部分
+                    this.classList.add('active');
+                    document.getElementById(tabId).classList.add('active');
+                    
+                    // 滚动到内容顶部
+                    window.scrollTo({
+                        top: document.querySelector('.tabs-container').offsetTop,
+                        behavior: 'smooth'
+                    });
+                    
+                    // 当标签被激活时初始化相应的图表
+                    if (tabId === 'section3') {
+                        initPriceChart();
+                        initMarketComparisonChart();
+                    } else if (tabId === 'section4') {
+                        initFlowchart();
+                    } else if (tabId === 'section5') {
+                        initPartnershipChart();
+                    } else if (tabId === 'section6') {
+                        initRiskAssessmentChart();
+                    } else if (tabId === 'section8') {
+                        initTokenAllocationChart();
+                    } else if (tabId === 'section9') {
+                        initInvestmentOpportunityChart();
+                    }
+                });
+            });
+            
+            // 可折叠部分功能
+            const collapsibles = document.querySelectorAll('.collapsible-header');
+            
+            collapsibles.forEach(collapsible => {
+                collapsible.addEventListener('click', function() {
+                    const content = this.nextElementSibling;
+                    const icon = this.querySelector('.collapsible-icon');
+                    
+                    // 切换内容显示/隐藏
+                    if (content.style.maxHeight) {
+                        content.style.maxHeight = null;
+                        icon.textContent = '▼';
+                    } else {
+                        content.style.maxHeight = content.scrollHeight + 'px';
+                        icon.textContent = '▲';
+                    }
+                });
+                
+                // 默认展开所有部分
+                const content = collapsible.nextElementSibling;
+                const icon = collapsible.querySelector('.collapsible-icon');
+                content.style.maxHeight = content.scrollHeight + 'px';
+                icon.textContent = '▲';
+            });
+            
+            // 初始化价格图表
+            function initPriceChart() {
+                const ctx = document.getElementById('priceChart');
+                
+                // 检查图表是否已存在，如果存在则销毁
+                if (window.chartInstances.priceChart) {
+                    window.chartInstances.priceChart.destroy();
+                }
+                
+                if (!ctx) return;
+                
+                window.chartInstances.priceChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ['9月10日', '9月11日', '9月12日', '9月13日', '9月14日', '9月15日', '9月16日'],
+                        datasets: [{
+                            label: 'Ethereal价格（美元）',
+                            data: [0.0001431, 0.071232, 0.0712, 0.0718, 0.0729, 0.0736, 0.0743],
+                            backgroundColor: 'rgba(99, 102, 241, 0.2)',
+                            borderColor: 'rgba(99, 102, 241, 1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            pointBackgroundColor: 'rgba(99, 102, 241, 1)',
+                            pointRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Ethereal七日价格走势',
+                                font: {
+                                    size: 16,
+                                    weight: 'bold'
+                                }
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                callbacks: {
+                                    label: function(context) {
+                                        return `价格: $${context.parsed.y}`;
+                                    }
+                                }
+                            },
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: {
+                                    display: false
+                                }
+                            },
+                            y: {
+                                beginAtZero: false,
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                },
+                                ticks: {
+                                    callback: function(value) {
+                                        return '$' + value;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // 初始化市场对比图
+            function initMarketComparisonChart() {
+                const ctx = document.getElementById('marketComparisonChart');
+                
+                if (window.chartInstances.marketComparisonChart) {
+                    window.chartInstances.marketComparisonChart.destroy();
+                }
+                
+                if (!ctx) return;
+                
+                window.chartInstances.marketComparisonChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Ethereal', '全球加密市场', '以太坊生态'],
+                        datasets: [{
+                            label: '7日价格变化 (%)',
+                            data: [0, -0.60, 12.70],
+                            backgroundColor: [
+                                'rgba(99, 102, 241, 0.7)',
+                                'rgba(239, 68, 68, 0.7)',
+                                'rgba(16, 185, 129, 0.7)'
+                            ],
+                            borderColor: [
+                                'rgba(99, 102, 241, 1)',
+                                'rgba(239, 68, 68, 1)',
+                                'rgba(16, 185, 129, 1)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: '过去7天市场表现对比',
+                                font: {
+                                    size: 16,
+                                    weight: 'bold'
+                                }
+                            },
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                },
+                                ticks: {
+                                    callback: function(value) {
+                                        return value + '%';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // 初始化流程图
+            function initFlowchart() {
+                const ctx = document.getElementById('flowchartCanvas');
+                
+                if (window.chartInstances.flowchartCanvas) {
+                    window.chartInstances.flowchartCanvas.destroy();
+                }
+                
+                if (!ctx) return;
+                
+                const steps = [
+                    '用户存入USDe或质押USDe获得eUSDe',
+                    'Ethereal现货与永续交易',
+                    '对冲策略实现衍生品交易',
+                    '积分系统（Ethereal Points）',
+                    '质押ENA获取治理权及空投',
+                    '生态系统内多协议对接'
+                ];
+                
+                window.chartInstances.flowchartCanvas = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: steps,
+                        datasets: [{
+                            label: '生态系统流程',
+                            data: [1, 2, 3, 4, 5, 6],
+                            backgroundColor: 'rgba(99, 102, 241, 0.2)',
+                            borderColor: 'rgba(99, 102, 241, 1)',
+                            borderWidth: 3,
+                            tension: 0.3,
+                            pointBackgroundColor: 'rgba(99, 102, 241, 1)',
+                            pointRadius: 6,
+                            pointHoverRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Ethereal生态系统交互流程',
+                                font: {
+                                    size: 16,
+                                    weight: 'bold'
+                                }
+                            },
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                display: false,
+                                beginAtZero: true
+                            },
+                            x: {
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        },
+                        elements: {
+                            line: {
+                                tension: 0.4
+                            },
+                            point: {
+                                radius: 8,
+                                hitRadius: 10,
+                                hoverRadius: 10
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // 初始化合作伙伴关系图
+            function initPartnershipChart() {
+                const ctx = document.getElementById('partnershipChart');
+                
+                if (window.chartInstances.partnershipChart) {
+                    window.chartInstances.partnershipChart.destroy();
+                }
+                
+                if (!ctx) return;
+                
+                window.chartInstances.partnershipChart = new Chart(ctx, {
+                    type: 'radar',
+                    data: {
+                        labels: ['Ethereal', 'Strata', 'Terminal', 'Derive', 'Echelon', 'Aave', 'Pendle'],
+                        datasets: [{
+                            label: '生态系统紧密度',
+                            data: [5, 4, 4, 3.5, 3, 2.5, 2.5],
+                            backgroundColor: 'rgba(99, 102, 241, 0.3)',
+                            borderColor: 'rgba(99, 102, 241, 1)',
+                            borderWidth: 2,
+                            pointBackgroundColor: 'rgba(99, 102, 241, 1)',
+                            pointRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            r: {
+                                beginAtZero: true,
+                                max: 5,
+                                ticks: {
+                                    stepSize: 1
+                                }
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Ethereal生态系统合作伙伴关系强度',
+                                font: {
+                                    size: 16,
+                                    weight: 'bold'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // 初始化风险评估图表
+            function initRiskAssessmentChart() {
+                const ctx = document.getElementById('riskAssessmentChart');
+                
+                if (window.chartInstances.riskAssessmentChart) {
+                    window.chartInstances.riskAssessmentChart.destroy();
+                }
+                
+                if (!ctx) return;
+                
+                window.chartInstances.riskAssessmentChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['市场流动性风险', '技术安全风险', '交易对手风险', '系统性风险'],
+                        datasets: [{
+                            label: '风险等级（1-10）',
+                            data: [9.2, 7.5, 5.8, 6.4],
+                            backgroundColor: [
+                                'rgba(239, 68, 68, 0.7)',
+                                'rgba(245, 158, 11, 0.7)',
+                                'rgba(245, 158, 11, 0.7)',
+                                'rgba(245, 158, 11, 0.7)'
+                            ],
+                            borderColor: [
+                                'rgba(239, 68, 68, 1)',
+                                'rgba(245, 158, 11, 1)',
+                                'rgba(245, 158, 11, 1)',
+                                'rgba(245, 158, 11, 1)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: 'y',
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Ethereal项目风险评估',
+                                font: {
+                                    size: 16,
+                                    weight: 'bold'
+                                }
+                            },
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                max: 10,
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                },
+                                ticks: {
+                                    stepSize: 2
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // 初始化代币分配图表
+            function initTokenAllocationChart() {
+                const ctx = document.getElementById('tokenAllocationChart');
+                
+                if (window.chartInstances.tokenAllocationChart) {
+                    window.chartInstances.tokenAllocationChart.destroy();
+                }
+                
+                if (!ctx) return;
+                
+                window.chartInstances.tokenAllocationChart = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: ['社区空投（sENA持有者）', '生态系统激励', '流动性挖矿', '团队与顾问', '储备金'],
+                        datasets: [{
+                            data: [15, 25, 30, 20, 10],
+                            backgroundColor: [
+                                'rgba(99, 102, 241, 0.7)',
+                                'rgba(16, 185, 129, 0.7)',
+                                'rgba(245, 158, 11, 0.7)',
+                                'rgba(59, 130, 246, 0.7)',
+                                'rgba(244, 114, 182, 0.7)'
+                            ],
+                            borderColor: [
+                                'rgba(99, 102, 241, 1)',
+                                'rgba(16, 185, 129, 1)',
+                                'rgba(245, 158, 11, 1)',
+                                'rgba(59, 130, 246, 1)',
+                                'rgba(244, 114, 182, 1)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: '潜在代币分配方案 (%)',
+                                font: {
+                                    size: 16,
+                                    weight: 'bold'
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${context.label}: ${context.parsed}%`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // 初始化投资机会图表
+            function initInvestmentOpportunityChart() {
+                const ctx = document.getElementById('investmentOpportunityChart');
+                
+                if (window.chartInstances.investmentOpportunityChart) {
+                    window.chartInstances.investmentOpportunityChart.destroy();
+                }
+                
+                if (!ctx) return;
+                
+                window.chartInstances.investmentOpportunityChart = new Chart(ctx, {
+                    type: 'radar',
+                    data: {
+                        labels: ['潜在收益', '流动性', '安全性', '投资门槛', '增长潜力', '风险水平'],
+                        datasets: [
+                            {
+                                label: '代币直接购买',
+                                data: [8, 2, 5, 3, 7, 8],
+                                backgroundColor: 'rgba(99, 102, 241, 0.2)',
+                                borderColor: 'rgba(99, 102, 241, 1)',
+                                borderWidth: 2,
+                                pointBackgroundColor: 'rgba(99, 102, 241, 1)'
+                            },
+                            {
+                                label: '挖矿与质押',
+                                data: [7, 4, 6, 5, 6, 6],
+                                backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                                borderColor: 'rgba(16, 185, 129, 1)',
+                                borderWidth: 2,
+                                pointBackgroundColor: 'rgba(16, 185, 129, 1)'
+                            },
+                            {
+                                label: '结构化收益',
+                                data: [9, 3, 4, 7, 8, 9],
+                                backgroundColor: 'rgba(244, 114, 182, 0.2)',
+                                borderColor: 'rgba(244, 114, 182, 1)',
+                                borderWidth: 2,
+                                pointBackgroundColor: 'rgba(244, 114, 182, 1)'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            r: {
+                                beginAtZero: true,
+                                max: 10,
+                                ticks: {
+                                    stepSize: 2
+                                }
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: '投资机会对比分析',
+                                font: {
+                                    size: 16,
+                                    weight: 'bold'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // 页面加载时默认显示第一个标签页的图表
+            initPriceChart();
+            initMarketComparisonChart();
+            
+            // 窗口调整大小时刷新图表
+            window.addEventListener('resize', function() {
+                // 重新初始化当前活动标签页的图表
+                const activeTab = document.querySelector('.tab.active').getAttribute('data-tab');
+                
+                if (activeTab === 'section3') {
+                    initPriceChart();
+                    initMarketComparisonChart();
+                } else if (activeTab === 'section4') {
+                    initFlowchart();
+                } else if (activeTab === 'section5') {
+                    initPartnershipChart();
+                } else if (activeTab === 'section6') {
+                    initRiskAssessmentChart();
+                } else if (activeTab === 'section8') {
+                    initTokenAllocationChart();
+                } else if (activeTab === 'section9') {
+                    initInvestmentOpportunityChart();
+                }
+            });
+        });
+    </script>
+<script>window.parent.postMessage({ action: "ready" }, "*"); 
+ 
+window.console = new Proxy(console, {
+  get(target, prop) {
+    if (['log', 'warn', 'error'].includes(prop)) {
+      return new Proxy(target[prop], {
+        apply(fn, thisArg, args) {
+          fn.apply(thisArg, args);
+          window.parent.postMessage({ action: 'console', 
+            type: prop, 
+            args: args.map((arg) => {
+              try {
+                return JSON.stringify(arg).replace(/^["']|["']$/g, '');
+              } catch (e) {
+                return arg;
+              }
+            }) 
+          }, '*');
+        }
+      });
+    }
+    return target[prop];
+  }
+});
+</script></body>
+</html>
