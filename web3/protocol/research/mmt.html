@@ -3,533 +3,1634 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Momentum (MMT) 交互式投资分析报告</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <!-- Chosen Palette: Calm Harmony -->
-    <!-- Application Structure Plan: A dashboard-style, single-page application with a sticky top navigation for quick access to thematic sections. The structure prioritizes immediate communication of the core investment thesis (the "Audit Paradox") by placing the final rating and key risk/reward summary at the very top. This is more effective for an investor than a linear report structure. The flow is designed to be non-linear: 1) Get the verdict upfront. 2) Explore dynamic data visuals on the dashboard. 3) Dive into the critical risk analysis. 4) Evaluate actionable investment strategies. 5) Review background and competitive context. This structure is chosen to mirror an investor's decision-making process: from high-level summary to deep-dive analysis and actionable steps. -->
-    <!-- Visualization & Content Choices: 
-        - Report Info: Overall investment thesis -> Goal: Inform & Alert -> Viz/Method: Prominent summary cards with icons and color-coding (Green for pros, Red for cons) -> Interaction: Static, high-impact display -> Justification: Immediately communicates the report's core findings.
-        - Report Info: Key Metrics (TVL, Volume, Users) -> Goal: Show Change & Growth -> Viz/Method: Chart.js Line Charts -> Interaction: Hover tooltips for data points -> Justification: Visually demonstrates the project's explosive growth better than static numbers.
-        - Report Info: The "Audit Paradox" -> Goal: Emphasize Critical Risk -> Viz/Method: A dedicated section with a warning color background, icons (&#9888;), and a structured HTML/CSS timeline to contrast claims vs. reality -> Interaction: Static, but visually arresting to highlight severity -> Justification: Ensures the single most important risk is unmissable.
-        - Report Info: ve(3,3) Flywheel -> Goal: Explain a Complex System -> Viz/Method: A simple diagram built with HTML/CSS and Unicode arrows (→) -> Interaction: None -> Justification: Provides a clear, lightweight visual explanation without needing heavy graphics libraries.
-        - Report Info: Investment Strategies -> Goal: Compare Options -> Viz/Method: Interactive cards in a flexbox grid. -> Interaction: Clicking a card reveals detailed pros/cons. -> Justification: Keeps the UI clean while allowing users to drill down into specific, actionable information.
-        - Report Info: Competitive Analysis -> Goal: Compare -> Viz/Method: A clear HTML table -> Interaction: None -> Justification: The most direct and effective way to present structured comparative data.
-    -->
-    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <title>Momentum Finance (MMT) 投资评估报告 - 交互式可视化</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
+        /* ==================== CSS Variables ==================== */
+        :root {
+            /* Brand Colors */
+            --primary-color: #6366f1;
+            --secondary-color: #8b5cf6;
+            --accent-color: #ec4899;
+
+            /* Semantic Colors */
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --info-color: #3b82f6;
+
+            /* Light Theme */
+            --bg-primary: #ffffff;
+            --bg-secondary: #f9fafb;
+            --bg-tertiary: #f3f4f6;
+            --text-primary: #111827;
+            --text-secondary: #6b7280;
+            --text-tertiary: #9ca3af;
+            --border-color: #e5e7eb;
+
+            /* Spacing */
+            --spacing-xs: 4px;
+            --spacing-sm: 8px;
+            --spacing-md: 16px;
+            --spacing-lg: 24px;
+            --spacing-xl: 32px;
+            --spacing-2xl: 48px;
+
+            /* Border Radius */
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --radius-xl: 16px;
+
+            /* Transitions */
+            --transition-fast: 150ms ease-in-out;
+            --transition-base: 250ms ease-in-out;
+            --transition-slow: 350ms ease-in-out;
+        }
+
+        /* Dark Theme */
+        [data-theme="dark"] {
+            --bg-primary: #111827;
+            --bg-secondary: #1f2937;
+            --bg-tertiary: #374151;
+            --text-primary: #f9fafb;
+            --text-secondary: #d1d5db;
+            --text-tertiary: #9ca3af;
+            --border-color: #374151;
+        }
+
+        /* ==================== Base Styles ==================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'Noto Sans SC', sans-serif;
-            background-color: #F8F9FA;
-            color: #212529;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            transition: background var(--transition-base), color var(--transition-base);
         }
-        .chart-container {
+
+        /* ==================== Layout ==================== */
+        .header {
+            background: var(--bg-primary);
+            border-bottom: 1px solid var(--border-color);
+            padding: var(--spacing-lg) var(--spacing-xl);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: var(--spacing-lg);
+        }
+
+        .header-left {
+            flex: 1;
+        }
+
+        .header-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .header-meta {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            display: flex;
+            gap: var(--spacing-lg);
+            flex-wrap: wrap;
+        }
+
+        .header-meta a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: var(--spacing-md);
+            align-items: center;
+        }
+
+        .search-box {
             position: relative;
+            width: 280px;
+        }
+
+        .search-box input {
             width: 100%;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
-            height: 300px;
-            max-height: 400px;
+            padding: var(--spacing-sm) var(--spacing-md);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 0.875rem;
         }
-        @media (min-width: 768px) {
-            .chart-container {
-                height: 350px;
-            }
+
+        .theme-toggle {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-sm) var(--spacing-md);
+            cursor: pointer;
+            font-size: 1.25rem;
+            transition: all var(--transition-fast);
         }
+
+        .theme-toggle:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: var(--spacing-xl);
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: var(--spacing-xl);
+        }
+
+        .sidebar {
+            position: sticky;
+            top: 120px;
+            height: fit-content;
+            background: var(--bg-primary);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            border: 1px solid var(--border-color);
+        }
+
+        .nav-list {
+            list-style: none;
+        }
+
+        .nav-item {
+            margin-bottom: var(--spacing-sm);
+        }
+
         .nav-link {
-            transition: all 0.3s ease;
-            border-bottom: 2px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--radius-md);
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.875rem;
+            transition: all var(--transition-fast);
         }
-        .nav-link:hover, .nav-link.active {
-            color: #007BFF;
-            border-bottom-color: #007BFF;
+
+        .nav-link:hover {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
         }
-        .card-flip {
-            perspective: 1000px;
+
+        .nav-link.active {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
         }
-        .card-flip-inner {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            transition: transform 0.6s;
-            transform-style: preserve-3d;
-        }
-        .card-flip.flipped .card-flip-inner {
-            transform: rotateY(180deg);
-        }
-        .card-face {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            -webkit-backface-visibility: hidden;
-            backface-visibility: hidden;
+
+        .main-content {
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            gap: var(--spacing-xl);
+        }
+
+        /* ==================== Components ==================== */
+        .card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-xl);
+            transition: all var(--transition-base);
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .card.animate-in {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .section-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: var(--spacing-lg);
+            color: var(--text-primary);
+            display: flex;
             align-items: center;
-            padding: 1rem;
+            gap: var(--spacing-sm);
         }
-        .card-back {
-            transform: rotateY(180deg);
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
         }
-        .section-title-underline {
+
+        .stat-item {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            color: white;
+            transition: transform var(--transition-fast);
+        }
+
+        .stat-item:hover {
+            transform: translateY(-4px);
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            opacity: 0.9;
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .stat-change {
+            font-size: 0.875rem;
+            opacity: 0.9;
+        }
+
+        .highlight {
+            border-left: 4px solid var(--primary-color);
+            padding: var(--spacing-md);
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            margin: var(--spacing-lg) 0;
+        }
+
+        .highlight.info {
+            border-color: var(--info-color);
+        }
+
+        .highlight.success {
+            border-color: var(--success-color);
+        }
+
+        .highlight.warning {
+            border-color: var(--warning-color);
+        }
+
+        .highlight.danger {
+            border-color: var(--danger-color);
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: var(--spacing-lg) 0;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: var(--spacing-md);
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .data-table th {
+            background: var(--bg-secondary);
+            font-weight: 600;
+            color: var(--text-primary);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .data-table th:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .data-table tbody tr:hover {
+            background: var(--bg-secondary);
+        }
+
+        .tag {
             display: inline-block;
-            border-bottom: 3px solid #007BFF;
-            padding-bottom: 0.25rem;
+            padding: 2px 8px;
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            font-weight: 500;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .tag.success {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success-color);
+        }
+
+        .tag.warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning-color);
+        }
+
+        .tag.danger {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger-color);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin: var(--spacing-lg) 0;
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: var(--spacing-xl);
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 8px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--border-color);
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -25px;
+            top: 6px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            border: 2px solid var(--bg-primary);
+        }
+
+        .timeline-date {
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .timeline-content {
+            color: var(--text-secondary);
+        }
+
+        .investor-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: var(--spacing-md);
+            margin: var(--spacing-lg) 0;
+        }
+
+        .investor-card {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+            text-align: center;
+            transition: all var(--transition-fast);
+        }
+
+        .investor-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .investor-icon {
+            font-size: 2rem;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .investor-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .risk-matrix {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--spacing-md);
+            margin: var(--spacing-lg) 0;
+        }
+
+        .risk-item {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+            border-left: 4px solid;
+        }
+
+        .risk-item.low {
+            border-color: var(--success-color);
+        }
+
+        .risk-item.medium {
+            border-color: var(--warning-color);
+        }
+
+        .risk-item.high {
+            border-color: var(--danger-color);
+        }
+
+        .risk-level {
+            font-weight: 600;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .back-to-top {
+            position: fixed;
+            bottom: 40px;
+            right: 40px;
+            width: 48px;
+            height: 48px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transition: all var(--transition-fast);
+            z-index: 50;
+        }
+
+        .back-to-top:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        }
+
+        .rating-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-sm) var(--spacing-lg);
+            background: linear-gradient(135deg, var(--success-color), #059669);
+            color: white;
+            border-radius: var(--radius-xl);
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        /* ==================== Mobile Responsive ==================== */
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: static;
+                margin-bottom: var(--spacing-lg);
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .header-controls {
+                width: 100%;
+                flex-direction: column;
+            }
+
+            .search-box {
+                width: 100%;
+            }
+
+            .stat-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .chart-container {
+                height: 300px;
+            }
+        }
+
+        /* ==================== Animations ==================== */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800">
-
-    <header class="sticky top-0 bg-white/80 backdrop-blur-lg shadow-md z-50">
-        <nav class="container mx-auto px-4">
-            <div class="flex items-center justify-between h-16">
-                <div class="flex items-center">
-                    <span class="font-bold text-xl text-gray-800">Momentum (MMT)</span>
-                    <span class="ml-2 bg-gray-200 text-gray-700 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full">SUI</span>
-                </div>
-                <div class="hidden md:flex items-center space-x-4">
-                    <a href="#summary" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700">投资摘要</a>
-                    <a href="#dashboard" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700">数据仪表盘</a>
-                    <a href="#risk" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700">核心风险</a>
-                    <a href="#opportunities" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700">投资策略</a>
-                    <a href="#analysis" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700">深度分析</a>
-                </div>
-                <div class="md:hidden">
-                    <button id="mobile-menu-button" class="text-gray-700 hover:text-blue-600 focus:outline-none">
-                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
-                        </svg>
-                    </button>
-                </div>
+<body data-theme="light">
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <h1 class="header-title">💎 Momentum Finance (MMT) 投资评估报告</h1>
+            <div class="header-meta">
+                <span>调研日期: 2025年10月11日</span>
+                <a href="https://www.mmt.finance" target="_blank">官网</a>
+                <a href="https://x.com/mmtfinance" target="_blank">@MMTFinance</a>
+                <span>区块链: Sui Network</span>
             </div>
-        </nav>
-        <div id="mobile-menu" class="hidden md:hidden">
-            <a href="#summary" class="block nav-link px-4 py-2 text-sm text-gray-700">投资摘要</a>
-            <a href="#dashboard" class="block nav-link px-4 py-2 text-sm text-gray-700">数据仪表盘</a>
-            <a href="#risk" class="block nav-link px-4 py-2 text-sm text-gray-700">核心风险</a>
-            <a href="#opportunities" class="block nav-link px-4 py-2 text-sm text-gray-700">投资策略</a>
-            <a href="#analysis" class="block nav-link px-4 py-2 text-sm text-gray-700">深度分析</a>
+        </div>
+        <div class="header-controls">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="搜索内容...">
+            </div>
+            <button class="theme-toggle" id="themeToggle">🌙</button>
         </div>
     </header>
 
-    <main class="container mx-auto px-4 py-8">
-        
-        <section id="summary" class="mb-16 scroll-mt-20">
-            <h1 class="text-4xl font-bold text-center mb-2">交互式投资分析报告</h1>
-            <p class="text-center text-gray-500 mb-8">Sui生态明星DEX的机遇与未解的安全之谜</p>
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <nav>
+                <ul class="nav-list">
+                    <li class="nav-item"><a href="#summary" class="nav-link active">📋 执行摘要</a></li>
+                    <li class="nav-item"><a href="#overview" class="nav-link">🎯 项目概述</a></li>
+                    <li class="nav-item"><a href="#tech" class="nav-link">🏗️ 技术架构</a></li>
+                    <li class="nav-item"><a href="#market" class="nav-link">📊 市场数据</a></li>
+                    <li class="nav-item"><a href="#tokenomics" class="nav-link">💰 代币经济学</a></li>
+                    <li class="nav-item"><a href="#funding" class="nav-link">💵 融资背景</a></li>
+                    <li class="nav-item"><a href="#team" class="nav-link">👥 团队背景</a></li>
+                    <li class="nav-item"><a href="#security" class="nav-link">🛡️ 安全审计</a></li>
+                    <li class="nav-item"><a href="#community" class="nav-link">🌐 社区分析</a></li>
+                    <li class="nav-item"><a href="#investment" class="nav-link">💡 投资机会</a></li>
+                    <li class="nav-item"><a href="#competitors" class="nav-link">⚔️ 竞品对比</a></li>
+                    <li class="nav-item"><a href="#risks" class="nav-link">⚠️ 风险评估</a></li>
+                    <li class="nav-item"><a href="#rating" class="nav-link">📈 投资评级</a></li>
+                </ul>
+            </nav>
+        </aside>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-                <div class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-yellow-400">
-                    <h3 class="text-xl font-semibold mb-2">投资评级</h3>
-                    <p class="text-5xl font-bold text-yellow-500 my-4">中立</p>
-                    <p class="text-sm text-gray-600">若公布顶级审计报告，则前景极为乐观。</p>
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Executive Summary -->
+            <section id="summary" class="card">
+                <h2 class="section-title">📋 执行摘要</h2>
+                <div class="highlight success">
+                    <div class="rating-badge">🟢 建议 (Recommended) - 综合评分 7.2/10</div>
                 </div>
-                <div class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-green-400">
-                    <h3 class="text-xl font-semibold mb-2">核心优势 ✅</h3>
-                    <ul class="text-left text-sm text-gray-700 space-y-2 list-disc list-inside">
-                        <li>顶级VC与Meta背景团队</li>
-                        <li>成熟的ve(3,3)经济模型</li>
-                        <li>爆炸性的链上数据增长</li>
-                        <li>Sui生态流动性中心地位</li>
+                <p style="margin-top: 1rem; color: var(--text-secondary); line-height: 1.8;">
+                    Momentum Finance (原名MSafe) 是构建在Sui区块链上的去中心化交易所(DEX)和全栈流动性协议,采用创新的ve(3,3)代币经济学模型和集中流动性做市商(CLMM)架构。项目自推出以来增长迅猛,TVL突破$550M,累计交易量超$16B,用户数超210万,已成为Sui生态系统的头部DeFi协议。
+                </p>
+
+                <div class="stat-grid" style="margin-top: 2rem;">
+                    <div class="stat-item">
+                        <div class="stat-label">总锁定价值 (TVL)</div>
+                        <div class="stat-value">$550M+</div>
+                        <div class="stat-change">Sui #1 DEX</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">累计交易量</div>
+                        <div class="stat-value">$16B+</div>
+                        <div class="stat-change">全球 DEX #3</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">用户数量</div>
+                        <div class="stat-value">210万+</div>
+                        <div class="stat-change">快速增长中</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">日交易量峰值</div>
+                        <div class="stat-value">$100M+</div>
+                        <div class="stat-change">高活跃度</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Project Overview -->
+            <section id="overview" class="card">
+                <h2 class="section-title">🎯 项目概述</h2>
+
+                <h3 style="margin-bottom: 1rem; color: var(--primary-color);">核心产品模块</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+                    <div class="highlight info">
+                        <strong>Momentum DEX</strong>
+                        <p style="margin-top: 0.5rem; color: var(--text-secondary);">采用Uniswap v3风格的集中流动性DEX,支持高资金效率的交易</p>
+                    </div>
+                    <div class="highlight info">
+                        <strong>xSUI</strong>
+                        <p style="margin-top: 0.5rem; color: var(--text-secondary);">Sui原生的流动性质押代币,允许用户在获得质押奖励的同时参与DeFi</p>
+                    </div>
+                    <div class="highlight info">
+                        <strong>MSafe</strong>
+                        <p style="margin-top: 0.5rem; color: var(--text-secondary);">多签钱包和DAO治理工具,为团队和协议提供企业级安全管理</p>
+                    </div>
+                    <div class="highlight info">
+                        <strong>Momentum X</strong>
+                        <p style="margin-top: 0.5rem; color: var(--text-secondary);">跨链合规流动性市场,整合现实世界资产(RWA)代币化</p>
+                    </div>
+                    <div class="highlight info">
+                        <strong>Token Launchpad</strong>
+                        <p style="margin-top: 0.5rem; color: var(--text-secondary);">代币发行平台,支持项目方安全启动代币</p>
+                    </div>
+                </div>
+
+                <h3 style="margin-bottom: 1rem; color: var(--primary-color);">发展历程</h3>
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-date">2022年8月</div>
+                        <div class="timeline-content">项目以MSafe (多签钱包) 名义成立</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2023年1月</div>
+                        <div class="timeline-content">完成$5M种子轮融资</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2025年3月</div>
+                        <div class="timeline-content">以Momentum Finance品牌从隐身模式启动,推出全球首个ve(3,3) DEX</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2025年6月</div>
+                        <div class="timeline-content">获得$5M战略融资,估值$100M</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2025年10月</div>
+                        <div class="timeline-content">宣布MMT代币社区发售,目标筹资$4.5M,TVL突破$550M</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Technical Architecture -->
+            <section id="tech" class="card">
+                <h2 class="section-title">🏗️ 技术架构</h2>
+
+                <h3 style="margin-bottom: 1rem; color: var(--primary-color);">Sui Network 底层技术栈</h3>
+                <div class="stat-grid">
+                    <div class="stat-item">
+                        <div class="stat-label">TPS性能</div>
+                        <div class="stat-value">120,000</div>
+                        <div class="stat-change">实际运行 (峰值297K)</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">交易最终性</div>
+                        <div class="stat-value">400ms</div>
+                        <div class="stat-change">比Solana快32倍</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">共识机制</div>
+                        <div class="stat-value">Mysticeti</div>
+                        <div class="stat-change">延迟降低80%</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">编程语言</div>
+                        <div class="stat-value">Move</div>
+                        <div class="stat-change">高安全性</div>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <canvas id="techComparisonChart"></canvas>
+                </div>
+
+                <h3 style="margin-bottom: 1rem; color: var(--primary-color);">核心技术特性</h3>
+                <div class="highlight info">
+                    <strong>集中流动性做市商(CLMM)</strong>
+                    <ul style="margin-top: 0.5rem; margin-left: 1.5rem; color: var(--text-secondary);">
+                        <li>基于Uniswap v3架构改进</li>
+                        <li>流动性提供者可设定价格区间,提高资金效率</li>
+                        <li>利用Sui的并行执行能力实现高吞吐量、低延迟交易</li>
                     </ul>
                 </div>
-                <div class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-red-400">
-                    <h3 class="text-xl font-semibold mb-2">核心风险 ❗️</h3>
-                    <ul class="text-left text-sm text-gray-700 space-y-2 list-disc list-inside">
-                        <li><span class="font-bold">“审计悖论”</span>: 核心合约缺乏公开审计报告</li>
-                        <li>TGE前的不确定性</li>
-                        <li>Move语言生态尚处早期</li>
-                        <li>激烈的内部竞争</li>
+
+                <div class="highlight warning" style="margin-top: 1rem;">
+                    <strong>⚠️ 风险提示</strong>
+                    <p style="margin-top: 0.5rem; color: var(--text-secondary);">未找到公开的Momentum Finance专用GitHub仓库。项目可能采用闭源开发,降低了社区审计和透明度。</p>
+                </div>
+            </section>
+
+            <!-- Market Data -->
+            <section id="market" class="card">
+                <h2 class="section-title">📊 市场数据分析</h2>
+
+                <h3 style="margin-bottom: 1rem; color: var(--primary-color);">核心指标</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>指标</th>
+                            <th>数据</th>
+                            <th>时间</th>
+                            <th>来源</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>TVL</strong></td>
+                            <td>$550M+</td>
+                            <td>2025年10月</td>
+                            <td>DefiLlama</td>
+                        </tr>
+                        <tr>
+                            <td><strong>累计交易量</strong></td>
+                            <td>$16B+</td>
+                            <td>成立至今</td>
+                            <td>The Defiant</td>
+                        </tr>
+                        <tr>
+                            <td><strong>日交易量</strong></td>
+                            <td>$100M+</td>
+                            <td>峰值</td>
+                            <td>OKX Analysis</td>
+                        </tr>
+                        <tr>
+                            <td><strong>用户数</strong></td>
+                            <td>210万+</td>
+                            <td>2025年10月</td>
+                            <td>X/Twitter Official</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Sui DEX排名</strong></td>
+                            <td>#1</td>
+                            <td>当前</td>
+                            <td>DeFiLlama</td>
+                        </tr>
+                        <tr>
+                            <td><strong>全球DEX排名</strong></td>
+                            <td>#3 (按交易量)</td>
+                            <td>当前</td>
+                            <td>Web Search</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 style="margin: 2rem 0 1rem; color: var(--primary-color);">Sui生态主要DeFi协议 (按TVL排名)</h3>
+                <div class="chart-container">
+                    <canvas id="suiEcosystemChart"></canvas>
+                </div>
+
+                <div class="highlight warning" style="margin-top: 1rem;">
+                    <strong>MMT代币市场数据</strong>
+                    <p style="margin-top: 0.5rem; color: var(--text-secondary);"><strong>重要说明</strong>: MMT代币尚未正式发行。目前处于社区发售阶段(通过Buidlpad平台)。</p>
+                    <ul style="margin-top: 0.5rem; margin-left: 1.5rem; color: var(--text-secondary);">
+                        <li>筹资目标: $4.5M</li>
+                        <li>FDV估值: Tier 1为$250M, Tier 2为$350M</li>
+                        <li>解锁: 社区发售代币在TGE时100%解锁,无锁定期</li>
+                        <li>支付方式: SUI, USDC (Sui Network), BNB (BNB Chain)</li>
                     </ul>
                 </div>
-            </div>
-            <div class="mt-8 bg-blue-50 border-l-4 border-blue-500 text-blue-800 p-4 rounded-r-lg">
-                <p class="font-bold">核心论点</p>
-                <p class="text-sm">Momentum基本面异常强劲，但其巨大的增长潜力被一个关键风险所制衡：核心智能合约在安全审计方面的透明度严重不足。在安全性得到公开验证之前，任何形式的强烈推荐都是不负责任的。</p>
-            </div>
-        </section>
+            </section>
 
-        <section id="dashboard" class="mb-16 scroll-mt-20">
-            <h2 class="text-3xl font-bold text-center mb-8"><span class="section-title-underline">数据仪表盘</span></h2>
-            <p class="text-center text-gray-600 max-w-3xl mx-auto mb-10">此部分展示了Momentum自上线以来的关键增长指标。图表直观地反映了其在Sui生态系统中迅速崛起并占据主导地位的轨迹。请将鼠标悬停在图表上以查看具体数据点。</p>
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div class="bg-white p-6 rounded-xl shadow-lg">
-                    <h3 class="text-xl font-semibold mb-4 text-center">总锁仓价值 (TVL) 增长趋势 (百万美元)</h3>
-                    <div class="chart-container">
-                        <canvas id="tvlChart"></canvas>
-                    </div>
-                </div>
-                <div class="bg-white p-6 rounded-xl shadow-lg">
-                    <h3 class="text-xl font-semibold mb-4 text-center">累计交易量增长趋势 (十亿美元)</h3>
-                    <div class="chart-container">
-                        <canvas id="volumeChart"></canvas>
-                    </div>
-                </div>
-            </div>
-            <div class="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                <div class="bg-white p-4 rounded-xl shadow">
-                    <p class="text-sm text-gray-500">年化费用</p>
-                    <p class="text-2xl font-bold text-green-600">>$30M</p>
-                </div>
-                <div class="bg-white p-4 rounded-xl shadow">
-                    <p class="text-sm text-gray-500">年化协议收入</p>
-                    <p class="text-2xl font-bold text-green-600">>$6M</p>
-                </div>
-                <div class="bg-white p-4 rounded-xl shadow">
-                    <p class="text-sm text-gray-500">累计用户数</p>
-                    <p class="text-2xl font-bold text-blue-600">>42万</p>
-                </div>
-                <div class="bg-white p-4 rounded-xl shadow">
-                    <p class="text-sm text-gray-500">项目估值</p>
-                    <p class="text-2xl font-bold text-purple-600">$100M</p>
-                </div>
-            </div>
-        </section>
+            <!-- Tokenomics -->
+            <section id="tokenomics" class="card">
+                <h2 class="section-title">💰 代币经济学分析</h2>
 
-        <section id="risk" class="mb-16 scroll-mt-20">
-            <h2 class="text-3xl font-bold text-center mb-8"><span class="section-title-underline">核心风险: “审计悖论”</span></h2>
-            <div class="bg-red-50 border-l-4 border-red-500 p-6 rounded-r-lg max-w-4xl mx-auto">
-                <div class="flex items-start">
-                    <div class="text-3xl mr-4">⚠️</div>
-                    <div>
-                        <h3 class="text-xl font-bold text-red-800">声称与证据的严重矛盾</h3>
-                        <p class="text-red-700 mt-2">这是评估Momentum时最重要的风险点。项目方公开声称其合约经过审计，但至今未能提供任何一份来自顶级审计公司、可供公众查阅的、针对其线上DEX的完整审计报告。在其竞争对手Cetus因代码漏洞遭受毁灭性攻击的背景下，这种透明度的缺失构成了无法量化的巨大风险。</p>
+                <h3 style="margin-bottom: 1rem; color: var(--primary-color);">ve(3,3)模型核心机制</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+                    <div class="highlight success">
+                        <strong>100%费用分配</strong>
+                        <p style="margin-top: 0.5rem; color: var(--text-secondary);">所有交易手续费和代币排放100%返还给用户</p>
                     </div>
-                </div>
-                <div class="mt-6">
-                    <h4 class="font-semibold text-lg text-gray-800 mb-2">调查时间线：</h4>
-                    <div class="relative border-l-2 border-gray-300 ml-3">
-                        <div class="mb-6 ml-8">
-                            <span class="absolute flex items-center justify-center w-6 h-6 bg-green-200 rounded-full -left-3 ring-4 ring-white">
-                                <svg class="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
-                            </span>
-                            <h5 class="font-semibold text-gray-800">项目方声称</h5>
-                            <p class="text-sm text-gray-600">在新闻稿和公告中，反复强调拥有“经过审计的智能合约”和“健全的审查流程”。</p>
-                        </div>
-                        <div class="mb-6 ml-8">
-                            <span class="absolute flex items-center justify-center w-6 h-6 bg-yellow-200 rounded-full -left-3 ring-4 ring-white">
-                                <svg class="w-3 h-3 text-yellow-600" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 102 0V6zM10 14a1 1 0 100-2 1 1 0 000 2z"></path></svg>
-                            </span>
-                            <h5 class="font-semibold text-gray-800">分析师调查</h5>
-                            <p class="text-sm text-gray-600">对顶级Move生态审计公司 (MoveBit, Zellic, OtterSec) 的公开报告进行详尽搜索。</p>
-                        </div>
-                        <div class="ml-8">
-                            <span class="absolute flex items-center justify-center w-6 h-6 bg-red-200 rounded-full -left-3 ring-4 ring-white">
-                                <svg class="w-3 h-3 text-red-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>
-                            </span>
-                            <h5 class="font-semibold text-gray-800">调查结论</h5>
-                            <p class="text-sm text-gray-600 font-bold">零发现。目前没有任何一份针对线上DEX的、可供公众验证的、来自信誉良好第三方的审计报告。</p>
-                        </div>
+                    <div class="highlight success">
+                        <strong>投票锁定机制</strong>
+                        <p style="margin-top: 0.5rem; color: var(--text-secondary);">持有者通过锁定MMT获得veMMT,享有治理权和收益权</p>
                     </div>
-                </div>
-                <p class="mt-6 text-sm text-red-700"><strong>投资启示:</strong> 在DeFi中，“不信任，去验证”是基本原则。缺乏透明的审计报告，意味着将资金置于未经证实的智能合约风险之中。这是一个关于项目治理和团队文化的重大危险信号。</p>
-            </div>
-        </section>
-
-        <section id="opportunities" class="mb-16 scroll-mt-20">
-            <h2 class="text-3xl font-bold text-center mb-8"><span class="section-title-underline">投资策略矩阵</span></h2>
-            <p class="text-center text-gray-600 max-w-3xl mx-auto mb-10">此部分概述了参与Momentum生态的主要投资途径，涵盖了从TGE前的空投活动到TGE后的多样化策略。每种策略都有不同的风险回报特征和参与要求。点击卡片可查看详细的优缺点分析。</p>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div class="card-flip h-64">
-                    <div class="card-flip-inner rounded-xl shadow-lg">
-                        <div class="card-face bg-white flex-col justify-center items-center p-4 text-center rounded-xl">
-                            <div class="text-3xl mb-2">🎁</div>
-                            <h3 class="text-xl font-semibold">空投挖矿 (TGE前)</h3>
-                            <p class="text-sm text-gray-500 mt-2">参与“Bricks”积分活动，通过交易和提供流动性赚取未来空投。</p>
-                            <span class="mt-4 text-xs text-blue-600 font-semibold">点击查看详情</span>
-                        </div>
-                        <div class="card-back bg-gray-100 flex-col justify-center items-start p-4 text-left rounded-xl">
-                            <h4 class="font-bold text-lg mb-2">优缺点分析</h4>
-                            <p class="text-sm text-green-600">✅ 早期入场，潜在高回报</p>
-                            <p class="text-sm text-green-600">✅ 存在低风险策略 (haSUI/SUI)</p>
-                            <p class="text-sm text-red-600">❌ TGE时间和代币价值不确定</p>
-                            <p class="text-sm text-red-600">❌ 机会窗口有限</p>
-                        </div>
+                    <div class="highlight success">
+                        <strong>流动性引导</strong>
+                        <p style="margin-top: 0.5rem; color: var(--text-secondary);">veMMT持有者为流动性池投票,获得该池的交易手续费</p>
                     </div>
-                </div>
-                <div class="card-flip h-64">
-                    <div class="card-flip-inner rounded-xl shadow-lg">
-                        <div class="card-face bg-white flex-col justify-center items-center p-4 text-center rounded-xl">
-                            <div class="text-3xl mb-2">💧</div>
-                            <h3 class="text-xl font-semibold">LP流动性挖矿</h3>
-                            <p class="text-sm text-gray-500 mt-2">为关键交易对提供流动性，赚取MMT代币排放奖励。</p>
-                            <span class="mt-4 text-xs text-blue-600 font-semibold">点击查看详情</span>
-                        </div>
-                        <div class="card-back bg-gray-100 flex-col justify-center items-start p-4 text-left rounded-xl">
-                            <h4 class="font-bold text-lg mb-2">优缺点分析</h4>
-                            <p class="text-sm text-green-600">✅ 潜在的高APR/APY</p>
-                            <p class="text-sm text-green-600">✅ 直接参与协议核心业务</p>
-                            <p class="text-sm text-red-600">❌ 面临无常损失风险</p>
-                            <p class="text-sm text-red-600">❌ 回报受MMT价格波动影响</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-flip h-64">
-                    <div class="card-flip-inner rounded-xl shadow-lg">
-                        <div class="card-face bg-white flex-col justify-center items-center p-4 text-center rounded-xl">
-                            <div class="text-3xl mb-2">🗳️</div>
-                            <h3 class="text-xl font-semibold">veMMT质押与贿赂挖矿</h3>
-                            <p class="text-sm text-gray-500 mt-2">锁定MMT，投票赚取协议手续费和第三方项目贿赂。</p>
-                            <span class="mt-4 text-xs text-blue-600 font-semibold">点击查看详情</span>
-                        </div>
-                        <div class="card-back bg-gray-100 flex-col justify-center items-start p-4 text-left rounded-xl">
-                            <h4 class="font-bold text-lg mb-2">优缺点分析</h4>
-                            <p class="text-sm text-green-600">✅ 稳定现金流（类股息）</p>
-                            <p class="text-sm text-green-600">✅ 收入来源多样，风险相对低</p>
-                            <p class="text-sm text-red-600">❌ 资本被锁定，失去流动性</p>
-                            <p class="text-sm text-red-600">❌ 回报依赖协议活跃度</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-flip h-64">
-                    <div class="card-flip-inner rounded-xl shadow-lg">
-                        <div class="card-face bg-white flex-col justify-center items-center p-4 text-center rounded-xl">
-                            <div class="text-3xl mb-2">📈</div>
-                            <h3 class="text-xl font-semibold">直接购买MMT代币</h3>
-                            <p class="text-sm text-gray-500 mt-2">在二级市场购买并持有MMT，享受协议价值增长。</p>
-                            <span class="mt-4 text-xs text-blue-600 font-semibold">点击查看详情</span>
-                        </div>
-                        <div class="card-back bg-gray-100 flex-col justify-center items-start p-4 text-left rounded-xl">
-                            <h4 class="font-bold text-lg mb-2">优缺点分析</h4>
-                            <p class="text-sm text-green-600">✅ 操作简单，享受价值增长</p>
-                            <p class="text-sm text-green-600">✅ 流动性好，随时可交易</p>
-                            <p class="text-sm text-red-600">❌ 价格波动风险最高</p>
-                            <p class="text-sm text-red-600">❌ 无额外被动收益</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-flip h-64">
-                    <div class="card-flip-inner rounded-xl shadow-lg">
-                        <div class="card-face bg-white flex-col justify-center items-center p-4 text-center rounded-xl">
-                            <div class="text-3xl mb-2">🧩</div>
-                            <h3 class="text-xl font-semibold">高级“组合”策略</h3>
-                            <p class="text-sm text-gray-500 mt-2">结合多种策略，如LP+veMMT投票，形成自我强化的收益循环。</p>
-                            <span class="mt-4 text-xs text-blue-600 font-semibold">点击查看详情</span>
-                        </div>
-                        <div class="card-back bg-gray-100 flex-col justify-center items-start p-4 text-left rounded-xl">
-                            <h4 class="font-bold text-lg mb-2">优缺点分析</h4>
-                            <p class="text-sm text-green-600">✅ 最大化资本效率，多重收益</p>
-                            <p class="text-sm text-green-600">✅ 深度参与协议，风险分散</p>
-                            <p class="text-sm text-red-600">❌ 策略复杂，门槛高</p>
-                            <p class="text-sm text-red-600">❌ 需要高资本和精力投入</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-flip h-64">
-                    <div class="card-flip-inner rounded-xl shadow-lg">
-                        <div class="card-face bg-white flex-col justify-center items-center p-4 text-center rounded-xl">
-                            <div class="text-3xl mb-2">💻</div>
-                            <h3 class="text-xl font-semibold">生态参与 (开发者)</h3>
-                            <p class="text-sm text-gray-500 mt-2">利用协议可组合性构建应用，如收益优化器、交易机器人等。</p>
-                            <span class="mt-4 text-xs text-blue-600 font-semibold">点击查看详情</span>
-                        </div>
-                        <div class="card-back bg-gray-100 flex-col justify-center items-start p-4 text-left rounded-xl">
-                            <h4 class="font-bold text-lg mb-2">优缺点分析</h4>
-                            <p class="text-sm text-green-600">✅ 独一无二的价值创造机会</p>
-                            <p class="text-sm text-green-600">✅ 潜在回报极高</p>
-                            <p class="text-sm text-red-600">❌ 技术门槛极高</p>
-                            <p class="text-sm text-red-600">❌ 开发周期长，需承担产品风险</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-        
-        <section id="analysis" class="scroll-mt-20">
-            <h2 class="text-3xl font-bold text-center mb-8"><span class="section-title-underline">深度分析</span></h2>
-            <div class="space-y-12">
-                <div class="bg-white p-6 rounded-xl shadow-lg">
-                    <h3 class="text-2xl font-semibold mb-4">ve(3,3) 经济模型解析</h3>
-                    <p class="text-gray-600 mb-4">Momentum的核心是其ve(3,3)经济模型，这是一个旨在解决“雇佣兵流动性”问题的精巧设计。它通过激励长期持有和治理参与，将协议、流动性提供者、交易者和代币持有者的利益深度绑定，形成一个正向飞轮。</p>
-                    <div class="p-4 bg-gray-50 rounded-lg text-center text-sm text-gray-700">
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 items-center">
-                            <div class="flex flex-col items-center">
-                                <span class="text-2xl">💧</span>
-                                <span>LPs提供流动性</span>
-                            </div>
-                             <div class="flex items-center justify-center text-2xl text-blue-500 font-bold">→</div>
-                            <div class="flex flex-col items-center">
-                                <span class="text-2xl">💰</span>
-                                <span>赚取MMT排放</span>
-                            </div>
-                            <div class="flex items-center justify-center text-2xl text-blue-500 font-bold hidden md:flex">→</div>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-4 my-4">
-                             <div class="flex items-center justify-center text-2xl text-blue-500 font-bold rotate-90 md:rotate-0">↑</div>
-                             <div></div>
-                             <div></div>
-                             <div class="flex items-center justify-center text-2xl text-blue-500 font-bold rotate-90 md:rotate-0">↓</div>
-                        </div>
-                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 items-center">
-                            <div class="flex flex-col items-center">
-                                <span class="text-2xl">🗳️</span>
-                                <span>锁定MMT获veMMT并投票</span>
-                            </div>
-                             <div class="flex items-center justify-center text-2xl text-blue-500 font-bold transform rotate-180">→</div>
-                            <div class="flex flex-col items-center">
-                                <span class="text-2xl">🎁</span>
-                                <span>赚取费用与贿赂</span>
-                            </div>
-                            <div class="flex items-center justify-center text-2xl text-blue-500 font-bold transform rotate-180 hidden md:flex">→</div>
-                        </div>
+                    <div class="highlight success">
+                        <strong>飞轮效应</strong>
+                        <p style="margin-top: 0.5rem; color: var(--text-secondary);">更多流动性→更好价格→更多交易量→更多手续费→吸引更多流动性</p>
                     </div>
                 </div>
 
-                <div class="bg-white p-6 rounded-xl shadow-lg">
-                    <h3 class="text-2xl font-semibold mb-4">竞品对比：Sui生态流动性之战</h3>
-                    <p class="text-gray-600 mb-4">Momentum在Sui生态中并非没有对手，但它凭借其先进的经济模型和对竞争对手失误的利用，迅速占据了领先地位。下表对比了其与主要竞争者的关键指标。</p>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm text-left text-gray-500">
-                            <thead class="text-xs text-gray-700 uppercase bg-gray-100">
-                                <tr>
-                                    <th scope="col" class="px-6 py-3">特性</th>
-                                    <th scope="col" class="px-6 py-3 text-center">Momentum</th>
-                                    <th scope="col" class="px-6 py-3 text-center">Cetus Protocol</th>
-                                    <th scope="col" class="px-6 py-3 text-center">Kriya DEX</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr class="bg-white border-b">
-                                    <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">TVL (百万美元)</th>
-                                    <td class="px-6 py-4 text-center font-bold text-green-600">> 155</td>
-                                    <td class="px-6 py-4 text-center">107</td>
-                                    <td class="px-6 py-4 text-center">5.8</td>
-                                </tr>
-                                <tr class="bg-white border-b">
-                                    <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">经济模型</th>
-                                    <td class="px-6 py-4 text-center font-bold text-green-600">ve(3,3) 飞轮</td>
-                                    <td class="px-6 py-4 text-center">双代币质押</td>
-                                    <td class="px-6 py-4 text-center">未明确</td>
-                                </tr>
-                                <tr class="bg-white">
-                                    <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">公开安全事件</th>
-                                    <td class="px-6 py-4 text-center font-bold text-green-600">无</td>
-                                    <td class="px-6 py-4 text-center text-red-600">2025年5月被盗 ~$224M</td>
-                                    <td class="px-6 py-4 text-center">无</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                <h3 style="margin-bottom: 1rem; color: var(--primary-color);">Bricks积分系统</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                    用户通过交易、提供流动性、推荐获得Bricks积分,将在TGE时转换为MMT代币。分层奖励系统,高层级享有更多乘数加成。
+                </p>
+
+                <div class="highlight warning">
+                    <strong>⚠️ 风险提示</strong>
+                    <p style="margin-top: 0.5rem; color: var(--text-secondary);">项目未公布完整代币分配和解锁计划,透明度有待提高。投资者应关注TGE前后的详细tokenomics披露。</p>
+                </div>
+            </section>
+
+            <!-- Funding -->
+            <section id="funding" class="card">
+                <h2 class="section-title">💵 融资与投资者背景</h2>
+
+                <h3 style="margin-bottom: 1rem; color: var(--primary-color);">融资历史</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>轮次</th>
+                            <th>时间</th>
+                            <th>金额</th>
+                            <th>估值</th>
+                            <th>领投方</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>种子轮</td>
+                            <td>2023年1月</td>
+                            <td>$5M</td>
+                            <td>未披露</td>
+                            <td>Jump Crypto, Amber Group</td>
+                        </tr>
+                        <tr>
+                            <td>战略轮</td>
+                            <td>2025年3月</td>
+                            <td>$5M</td>
+                            <td>未披露</td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td>战略轮</td>
+                            <td>2025年6月</td>
+                            <td>$5M+</td>
+                            <td>$100M</td>
+                            <td>OKX Ventures, Coinbase Ventures</td>
+                        </tr>
+                        <tr style="font-weight: 600;">
+                            <td>总计</td>
+                            <td>-</td>
+                            <td>$10M+</td>
+                            <td>$100M</td>
+                            <td>-</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 style="margin: 2rem 0 1rem; color: var(--primary-color);">顶级机构投资者</h3>
+                <div class="investor-grid">
+                    <div class="investor-card">
+                        <div class="investor-icon">🏦</div>
+                        <div class="investor-name">Coinbase Ventures</div>
+                    </div>
+                    <div class="investor-card">
+                        <div class="investor-icon">🏦</div>
+                        <div class="investor-name">Circle Ventures</div>
+                    </div>
+                    <div class="investor-card">
+                        <div class="investor-icon">🏦</div>
+                        <div class="investor-name">OKX Ventures</div>
+                    </div>
+                    <div class="investor-card">
+                        <div class="investor-icon">🏦</div>
+                        <div class="investor-name">Jump Crypto</div>
+                    </div>
+                    <div class="investor-card">
+                        <div class="investor-icon">💼</div>
+                        <div class="investor-name">The Spartan Group</div>
+                    </div>
+                    <div class="investor-card">
+                        <div class="investor-icon">💼</div>
+                        <div class="investor-name">Amber Group</div>
+                    </div>
+                    <div class="investor-card">
+                        <div class="investor-icon">💼</div>
+                        <div class="investor-name">SV Angel</div>
+                    </div>
+                    <div class="investor-card">
+                        <div class="investor-icon">🌟</div>
+                        <div class="investor-name">Sui Foundation</div>
                     </div>
                 </div>
-            </div>
-        </section>
-    </main>
 
-    <footer class="bg-gray-800 text-white mt-16">
-        <div class="container mx-auto px-4 py-6 text-center text-sm">
-            <p>&copy; 2025 交互式投资分析报告. 本报告仅供参考，不构成任何投资建议。</p>
-            <p class="text-gray-400 mt-1">数据来源: DeFi Llama, CoinMarketCap, The Block, 及项目公开信息。</p>
-        </div>
-    </footer>
+                <div class="highlight success" style="margin-top: 1.5rem;">
+                    <strong>投资者质量分析</strong>
+                    <ul style="margin-top: 0.5rem; margin-left: 1.5rem; color: var(--text-secondary);">
+                        <li>Coinbase和Circle的参与意味着潜在的合规性支持和战略资源</li>
+                        <li>OKX和Jump的背书显示对项目技术和团队的高度信任</li>
+                        <li>投资者组合涵盖交易所、VC、DeFi基金,资源互补性强</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Team -->
+            <section id="team" class="card">
+                <h2 class="section-title">👥 团队背景</h2>
+
+                <h3 style="margin-bottom: 1rem; color: var(--primary-color);">创始人</h3>
+                <div style="background: var(--bg-secondary); padding: 1.5rem; border-radius: var(--radius-md); margin-bottom: 1.5rem;">
+                    <h4 style="color: var(--primary-color); margin-bottom: 0.5rem;">Wendy Fu (Wendy F.)</h4>
+                    <p style="color: var(--text-secondary);">
+                        <strong>背景:</strong> Georgia Institute of Technology教育背景<br>
+                        <strong>地点:</strong> San Francisco Bay Area<br>
+                        <strong>LinkedIn:</strong> 500+人脉连接
+                    </p>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="highlight success">
+                        <strong>✅ 优势</strong>
+                        <ul style="margin-top: 0.5rem; margin-left: 1.5rem; color: var(--text-secondary);">
+                            <li>成功将MSafe扩展为全栈DeFi协议</li>
+                            <li>获得顶级机构支持</li>
+                            <li>短期内实现高TVL和用户增长</li>
+                        </ul>
+                    </div>
+                    <div class="highlight warning">
+                        <strong>⚠️ 风险</strong>
+                        <ul style="margin-top: 0.5rem; margin-left: 1.5rem; color: var(--text-secondary);">
+                            <li>团队成员公开信息少</li>
+                            <li>缺乏可验证的过往项目经验</li>
+                            <li>技术团队规模和成员背景不透明</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Security -->
+            <section id="security" class="card">
+                <h2 class="section-title">🛡️ 安全审计与风险事件</h2>
+
+                <h3 style="margin-bottom: 1rem; color: var(--primary-color);">安全审计</h3>
+                <div class="highlight success">
+                    <strong>已确认审计</strong>
+                    <p style="margin-top: 0.5rem; color: var(--text-secondary);">
+                        <strong>xSUI合约</strong>由 <strong>OtterSec</strong> 和 <strong>Zellic</strong> 审计<br>
+                        • OtterSec: 保护超过$5B TVL的区块链安全公司<br>
+                        • Zellic: 审计过Sui Core、Aptos Core、Solana SPL等核心协议<br>
+                        • SpringSui框架锁定$200M+资产,合约经过严格审计
+                    </p>
+                </div>
+
+                <div class="highlight info" style="margin-top: 1rem;">
+                    <strong>Bug Bounty计划</strong>
+                    <p style="margin-top: 0.5rem; color: var(--text-secondary);">
+                        <strong>平台:</strong> HackenProof<br>
+                        <strong>最高奖励:</strong> $200,000<br>
+                        <strong>时间:</strong> 2025年10月8日启动<br>
+                        <strong>涵盖:</strong> 所有产品和智能合约
+                    </p>
+                </div>
+
+                <div class="highlight warning" style="margin-top: 1rem;">
+                    <strong>⚠️ 风险提示</strong>
+                    <p style="margin-top: 0.5rem; color: var(--text-secondary);">虽有Bug Bounty计划,但核心DEX合约的公开审计报告缺失。建议等待完整审计报告发布后再进行大额投资。</p>
+                </div>
+
+                <h3 style="margin: 2rem 0 1rem; color: var(--primary-color);">历史安全事件</h3>
+                <div class="highlight success">
+                    <strong>Momentum Finance自身</strong>
+                    <p style="margin-top: 0.5rem; color: var(--text-secondary);">✅ <strong>无安全事件记录</strong> - 未发现任何Momentum Finance遭受攻击或漏洞利用的报告</p>
+                </div>
+
+                <div class="highlight warning" style="margin-top: 1rem;">
+                    <strong>Sui生态安全事件 (上下文)</strong>
+                    <ul style="margin-top: 0.5rem; margin-left: 1.5rem; color: var(--text-secondary);">
+                        <li><strong>Cetus Protocol</strong> (2025年5月): 遭受$220-260M攻击,利用tick account系统的算术溢出漏洞</li>
+                        <li><strong>Nemo Protocol</strong> (2025年9月): 损失$2.4M</li>
+                        <li><strong>Sui Network</strong> (2024年12月): 整体网络漏洞导致$29M SUI被盗</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Community -->
+            <section id="community" class="card">
+                <h2 class="section-title">🌐 社交媒体与社区分析</h2>
+
+                <h3 style="margin-bottom: 1rem; color: var(--primary-color);">Twitter/X社区</h3>
+                <div class="highlight info">
+                    <strong>官方账号: <a href="https://x.com/mmtfinance" target="_blank" style="color: var(--primary-color);">@MMTFinance</a></strong>
+                    <p style="margin-top: 0.5rem; color: var(--text-secondary);">
+                        <strong>运营状态:</strong> 活跃,定期发布产品更新和市场活动<br>
+                        <strong>社区情绪:</strong> 整体偏积极正面<br>
+                        <strong>关注点:</strong> 高APY、Bricks积分、空投机会
+                    </p>
+                </div>
+
+                <h3 style="margin: 2rem 0 1rem; color: var(--primary-color);">其他社交平台</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    <div style="background: var(--bg-secondary); padding: 1rem; border-radius: var(--radius-md);">
+                        <strong>Telegram/Discord</strong>
+                        <p style="margin-top: 0.5rem; color: var(--text-secondary); font-size: 0.875rem;">未找到官方社群公开链接</p>
+                    </div>
+                    <div style="background: var(--bg-secondary); padding: 1rem; border-radius: var(--radius-md);">
+                        <strong>Reddit</strong>
+                        <p style="margin-top: 0.5rem; color: var(--text-secondary); font-size: 0.875rem;">无专门subreddit</p>
+                    </div>
+                    <div style="background: var(--bg-secondary); padding: 1rem; border-radius: var(--radius-md);">
+                        <strong>Medium</strong>
+                        <p style="margin-top: 0.5rem; color: var(--text-secondary); font-size: 0.875rem;">有官方账号,发布技术文章</p>
+                    </div>
+                </div>
+
+                <div class="highlight warning" style="margin-top: 1rem;">
+                    <strong>⚠️ 风险提示</strong>
+                    <p style="margin-top: 0.5rem; color: var(--text-secondary);">社区建设仍处于早期阶段,缺乏成熟的多平台社区互动。投资者在遇到问题时可能面临支持渠道有限的情况。</p>
+                </div>
+            </section>
+
+            <!-- Investment Opportunities -->
+            <section id="investment" class="card">
+                <h2 class="section-title">💡 投资机会分析</h2>
+
+                <h3 style="margin-bottom: 1rem; color: var(--primary-color);">投资方式对比</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>投资方式</th>
+                            <th>难度</th>
+                            <th>预期收益(APY/APR)</th>
+                            <th>风险等级</th>
+                            <th>最低投资</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>MMT代币购买</strong></td>
+                            <td><span class="tag warning">中等</span></td>
+                            <td>未知(取决于二级市场)</td>
+                            <td><span class="tag danger">高</span></td>
+                            <td>Tier门槛</td>
+                        </tr>
+                        <tr>
+                            <td><strong>流动性挖矿(LP)</strong></td>
+                            <td><span class="tag warning">中等</span></td>
+                            <td>最高155% APY</td>
+                            <td><span class="tag warning">中高</span></td>
+                            <td>约$100+</td>
+                        </tr>
+                        <tr>
+                            <td><strong>xSUI质押</strong></td>
+                            <td><span class="tag success">简单</span></td>
+                            <td>质押奖励+DeFi收益</td>
+                            <td><span class="tag success">低-中</span></td>
+                            <td>无限制</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Bricks积分挖矿</strong></td>
+                            <td><span class="tag success">简单-中等</span></td>
+                            <td>空投潜力</td>
+                            <td><span class="tag warning">中</span></td>
+                            <td>任意金额</td>
+                        </tr>
+                        <tr>
+                            <td><strong>稳定币池</strong></td>
+                            <td><span class="tag success">简单</span></td>
+                            <td>中等APY</td>
+                            <td><span class="tag success">低</span></td>
+                            <td>$100+</td>
+                        </tr>
+                        <tr>
+                            <td><strong>高风险池</strong></td>
+                            <td><span class="tag warning">中等</span></td>
+                            <td>高APY</td>
+                            <td><span class="tag danger">高</span></td>
+                            <td>$100+</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 style="margin: 2rem 0 1rem; color: var(--primary-color);">高收益DeFi策略组合</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1rem;">
+                    <div class="highlight info">
+                        <strong>策略1: 套保挖矿</strong>
+                        <p style="margin-top: 0.5rem; color: var(--text-secondary); font-size: 0.875rem;">
+                            在Momentum提供SUI-USDC流动性+在Navi Protocol做空等额SUI对冲<br>
+                            <strong>预期收益:</strong> 纯手续费+Bricks<br>
+                            <strong>难度:</strong> 中等<br>
+                            <strong>风险:</strong> 极端行情可能清算
+                        </p>
+                    </div>
+                    <div class="highlight info">
+                        <strong>策略2: 借贷+流动性组合</strong>
+                        <p style="margin-top: 0.5rem; color: var(--text-secondary); font-size: 0.875rem;">
+                            将SUI存入Navi借出USDC+用USDC提供稳定币流动性<br>
+                            <strong>预期收益:</strong> 30-50% APY<br>
+                            <strong>难度:</strong> 中等<br>
+                            <strong>风险:</strong> 需确保抵押率安全
+                        </p>
+                    </div>
+                    <div class="highlight info">
+                        <strong>策略3: xSUI收益最大化</strong>
+                        <p style="margin-top: 0.5rem; color: var(--text-secondary); font-size: 0.875rem;">
+                            质押SUI获得xSUI+将xSUI存入流动性池<br>
+                            <strong>预期收益:</strong> 可能超100% APY<br>
+                            <strong>难度:</strong> 简单<br>
+                            <strong>风险:</strong> xSUI-SUI池无常损失小
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Competitors -->
+            <section id="competitors" class="card">
+                <h2 class="section-title">⚔️ 竞品对比分析</h2>
+
+                <div class="chart-container" style="height: 450px;">
+                    <canvas id="competitorRadarChart"></canvas>
+                </div>
+
+                <h3 style="margin: 2rem 0 1rem; color: var(--primary-color);">竞争优势</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="highlight success">
+                        <strong>✅ 优势</strong>
+                        <ul style="margin-top: 0.5rem; margin-left: 1.5rem; color: var(--text-secondary);">
+                            <li>ve(3,3)激励对齐,100%手续费返还</li>
+                            <li>Sui高性能基础(400ms最终性)</li>
+                            <li>集中流动性,资金效率高</li>
+                            <li>生态整合完整(DEX+质押+多签)</li>
+                            <li>顶级机构背书(Coinbase、OKX、Circle)</li>
+                        </ul>
+                    </div>
+                    <div class="highlight warning">
+                        <strong>⚠️ 劣势</strong>
+                        <ul style="margin-top: 0.5rem; margin-left: 1.5rem; color: var(--text-secondary);">
+                            <li>品牌认知度低于Uniswap等老牌DEX</li>
+                            <li>仅在Sui,缺乏跨链流动性</li>
+                            <li>成立不足一年,未经历完整牛熊周期</li>
+                            <li>高度依赖Sui生态发展</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Risk Assessment -->
+            <section id="risks" class="card">
+                <h2 class="section-title">⚠️ 风险评估</h2>
+
+                <h3 style="margin-bottom: 1rem; color: var(--primary-color);">安全风险</h3>
+                <div class="risk-matrix">
+                    <div class="risk-item medium">
+                        <div class="risk-level">🟡 智能合约漏洞 - 中等</div>
+                        <p style="margin-top: 0.5rem; color: var(--text-secondary); font-size: 0.875rem;">
+                            xSUI经审计,但DEX核心合约审计报告未公开。缓解措施: Bug Bounty计划
+                        </p>
+                    </div>
+                    <div class="risk-item medium">
+                        <div class="risk-level">🟡 Sui生态风险 - 中等</div>
+                        <p style="margin-top: 0.5rem; color: var(--text-secondary); font-size: 0.875rem;">
+                            Sui曾发生Cetus $220M攻击等事件。缓解措施: 基金会加强安全投入
+                        </p>
+                    </div>
+                    <div class="risk-item low">
+                        <div class="risk-level">🟢 Oracle攻击 - 低</div>
+                        <p style="margin-top: 0.5rem; color: var(--text-secondary); font-size: 0.875rem;">
+                            ve(3,3)减少对外部Oracle依赖,采用链上TWAP定价
+                        </p>
+                    </div>
+                    <div class="risk-item low">
+                        <div class="risk-level">🟢 Rug Pull风险 - 低</div>
+                        <p style="margin-top: 0.5rem; color: var(--text-secondary); font-size: 0.875rem;">
+                            顶级VC支持,团队有长期激励,MSafe历史良好
+                        </p>
+                    </div>
+                </div>
+
+                <h3 style="margin: 2rem 0 1rem; color: var(--primary-color);">市场风险</h3>
+                <div class="risk-matrix">
+                    <div class="risk-item medium">
+                        <div class="risk-level">🟡 SUI价格波动 - 中高</div>
+                        <p style="margin-top: 0.5rem; color: var(--text-secondary); font-size: 0.875rem;">
+                            高度依赖SUI生态,SUI暴跌将影响TVL,导致流动性外流
+                        </p>
+                    </div>
+                    <div class="risk-item medium">
+                        <div class="risk-level">🟡 竞争加剧 - 中等</div>
+                        <p style="margin-top: 0.5rem; color: var(--text-secondary); font-size: 0.875rem;">
+                            Sui生态可能吸引更多DEX,稀释市场份额
+                        </p>
+                    </div>
+                    <div class="risk-item high">
+                        <div class="risk-level">🔴 熊市流动性枯竭 - 高</div>
+                        <p style="margin-top: 0.5rem; color: var(--text-secondary); font-size: 0.875rem;">
+                            加密熊市时TVL和交易量可能大幅下降,APY降低
+                        </p>
+                    </div>
+                    <div class="risk-item low">
+                        <div class="risk-level">🟢 监管风险 - 低-中</div>
+                        <p style="margin-top: 0.5rem; color: var(--text-secondary); font-size: 0.875rem;">
+                            已有Circle和Coinbase背书,合规意识较强
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Investment Rating -->
+            <section id="rating" class="card">
+                <h2 class="section-title">📈 最终投资评级</h2>
+
+                <div style="text-align: center; margin: 2rem 0;">
+                    <div class="rating-badge" style="font-size: 1.5rem; padding: 1rem 2rem;">
+                        🟢 建议 (Recommended) - 综合评分 7.2/10
+                    </div>
+                </div>
+
+                <h3 style="margin: 2rem 0 1rem; color: var(--primary-color);">评分维度分析</h3>
+                <div class="chart-container">
+                    <canvas id="ratingChart"></canvas>
+                </div>
+
+                <h3 style="margin: 2rem 0 1rem; color: var(--primary-color);">SWOT分析</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem;">
+                    <div class="highlight success">
+                        <strong>✅ 优势 (Strengths)</strong>
+                        <ul style="margin-top: 0.5rem; margin-left: 1.5rem; color: var(--text-secondary);">
+                            <li>Sui生态#1 DEX,TVL $550M+</li>
+                            <li>创新ve(3,3)代币经济学</li>
+                            <li>顶级机构支持</li>
+                            <li>高性能Sui基础设施</li>
+                            <li>多产品整合</li>
+                        </ul>
+                    </div>
+                    <div class="highlight warning">
+                        <strong>⚠️ 劣势 (Weaknesses)</strong>
+                        <ul style="margin-top: 0.5rem; margin-left: 1.5rem; color: var(--text-secondary);">
+                            <li>项目历史短(<1年)</li>
+                            <li>团队透明度低</li>
+                            <li>核心DEX合约审计报告缺失</li>
+                            <li>社区建设处于早期</li>
+                            <li>缺乏开源代码库</li>
+                        </ul>
+                    </div>
+                    <div class="highlight info">
+                        <strong>🚀 机会 (Opportunities)</strong>
+                        <ul style="margin-top: 0.5rem; margin-left: 1.5rem; color: var(--text-secondary);">
+                            <li>Sui生态快速增长</li>
+                            <li>ve(3,3)模型减少抛压</li>
+                            <li>xSUI质押市场扩大</li>
+                            <li>RWA代币化(Momentum X)</li>
+                            <li>MMT代币上市预期</li>
+                        </ul>
+                    </div>
+                    <div class="highlight danger">
+                        <strong>⚠️ 威胁 (Threats)</strong>
+                        <ul style="margin-top: 0.5rem; margin-left: 1.5rem; color: var(--text-secondary);">
+                            <li>Sui生态安全事件历史</li>
+                            <li>熊市流动性枯竭</li>
+                            <li>巨头进入Sui生态</li>
+                            <li>监管不确定性</li>
+                            <li>SUI代币价格波动</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h3 style="margin: 2rem 0 1rem; color: var(--primary-color);">投资策略建议</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>策略类型</th>
+                            <th>适合人群</th>
+                            <th>配置比例</th>
+                            <th>核心操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>保守策略</strong></td>
+                            <td>风险厌恶型</td>
+                            <td>10-15%</td>
+                            <td>仅xSUI质押+小额稳定币池</td>
+                        </tr>
+                        <tr>
+                            <td><strong>平衡策略</strong></td>
+                            <td>风险中性型</td>
+                            <td>15-25%</td>
+                            <td>xSUI质押+SUI-USDC LP+Bricks积分</td>
+                        </tr>
+                        <tr>
+                            <td><strong>激进策略</strong></td>
+                            <td>风险偏好型</td>
+                            <td>25-40%</td>
+                            <td>最大化Bricks挖矿+套保策略+MMT发售</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="highlight danger" style="margin-top: 2rem;">
+                    <strong>⚠️ 重要风险提示</strong>
+                    <p style="margin-top: 0.5rem; color: var(--text-secondary);">
+                        本报告仅供参考,不构成投资建议。加密货币投资存在极高风险,可能导致本金全部损失。投资者应进行独立尽职调查,只投资你能承受损失的资金。
+                    </p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Back to Top Button -->
+    <button class="back-to-top" id="backToTop">↑</button>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const mobileMenuButton = document.getElementById('mobile-menu-button');
-            const mobileMenu = document.getElementById('mobile-menu');
-            mobileMenuButton.addEventListener('click', () => {
-                mobileMenu.classList.toggle('hidden');
-            });
+        // ==================== Theme Toggle ====================
+        const themeToggle = document.getElementById('themeToggle');
+        const html = document.documentElement;
 
-            const navLinks = document.querySelectorAll('.nav-link');
-            navLinks.forEach(link => {
-                link.addEventListener('click', (e) => {
-                    if (mobileMenu.offsetParent !== null) {
-                       mobileMenu.classList.add('hidden');
-                    }
-                    if (e.currentTarget.href.includes('#')) {
-                        e.preventDefault();
-                        const targetId = e.currentTarget.getAttribute('href');
-                        const targetElement = document.querySelector(targetId);
-                        if (targetElement) {
-                            targetElement.scrollIntoView({ behavior: 'smooth' });
-                        }
-                    }
-                });
-            });
+        // Load saved theme
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        html.setAttribute('data-theme', savedTheme);
+        themeToggle.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
 
-            const sections = document.querySelectorAll('section');
-            window.addEventListener('scroll', () => {
-                let current = '';
-                sections.forEach(section => {
-                    const sectionTop = section.offsetTop;
-                    if (pageYOffset >= sectionTop - 80) {
-                        current = section.getAttribute('id');
-                    }
-                });
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            themeToggle.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+        });
 
-                navLinks.forEach(link => {
-                    link.classList.remove('active');
-                    if (link.getAttribute('href').includes(current)) {
-                        link.classList.add('active');
-                    }
-                });
-            });
-            
-            const cardFlips = document.querySelectorAll('.card-flip');
-            cardFlips.forEach(card => {
-                card.addEventListener('click', () => {
-                    card.classList.toggle('flipped');
-                });
-            });
+        // ==================== Navigation ====================
+        const navLinks = document.querySelectorAll('.nav-link');
 
-            const tvlData = {
-                labels: ['发布初期', '第1个月', '第2个月', '当前'],
-                datasets: [{
-                    label: 'TVL (百万美元)',
-                    data: [0, 69, 100, 155],
-                    fill: true,
-                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    tension: 0.3
-                }]
-            };
-            const tvlChartCtx = document.getElementById('tvlChart').getContext('2d');
-            new Chart(tvlChartCtx, {
-                type: 'line',
-                data: tvlData,
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
+        navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = link.getAttribute('href').substring(1);
+                const targetSection = document.getElementById(targetId);
+
+                targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+                navLinks.forEach(l => l.classList.remove('active'));
+                link.classList.add('active');
+            });
+        });
+
+        // Update active nav on scroll
+        const sections = document.querySelectorAll('section[id]');
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.clientHeight;
+                if (scrollY >= sectionTop - 200) {
+                    current = section.getAttribute('id');
                 }
             });
 
-            const volumeData = {
-                labels: ['发布初期', '第1个月', '第2个月', '当前'],
-                datasets: [{
-                    label: '累计交易量 (十亿美元)',
-                    data: [0, 1, 3, 6.3],
-                    fill: true,
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    tension: 0.3
-                }]
-            };
-            const volumeChartCtx = document.getElementById('volumeChart').getContext('2d');
-            new Chart(volumeChartCtx, {
-                type: 'line',
-                data: volumeData,
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === `#${current}`) {
+                    link.classList.add('active');
                 }
             });
         });
-    </script>
 
+        // ==================== Search ====================
+        const searchInput = document.getElementById('searchInput');
+        let searchTimeout;
+
+        searchInput.addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                const searchTerm = e.target.value.toLowerCase();
+                const cards = document.querySelectorAll('.card');
+
+                cards.forEach(card => {
+                    const text = card.textContent.toLowerCase();
+                    if (text.includes(searchTerm)) {
+                        card.style.display = 'block';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            }, 300);
+        });
+
+        // ==================== Intersection Observer for Animations ====================
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animate-in');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.card, .stat-item').forEach(el => {
+            observer.observe(el);
+        });
+
+        // ==================== Back to Top ====================
+        const backToTop = document.getElementById('backToTop');
+
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 500) {
+                backToTop.style.display = 'flex';
+            } else {
+                backToTop.style.display = 'none';
+            }
+        });
+
+        backToTop.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        // ==================== Charts ====================
+        // Chart.js default config
+        Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        Chart.defaults.color = getComputedStyle(document.documentElement).getPropertyValue('--text-secondary');
+
+        // Tech Comparison Chart
+        const techCtx = document.getElementById('techComparisonChart').getContext('2d');
+        new Chart(techCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Sui (Momentum)', 'Solana', 'Ethereum', 'BNB Chain'],
+                datasets: [{
+                    label: 'TPS (Transactions Per Second)',
+                    data: [120000, 65000, 15, 2000],
+                    backgroundColor: [
+                        'rgba(99, 102, 241, 0.8)',
+                        'rgba(139, 92, 246, 0.8)',
+                        'rgba(236, 72, 153, 0.8)',
+                        'rgba(245, 158, 11, 0.8)'
+                    ],
+                    borderRadius: 8
+                }, {
+                    label: '最终性时间 (毫秒)',
+                    data: [400, 12800, 600000, 3000],
+                    backgroundColor: [
+                        'rgba(16, 185, 129, 0.6)',
+                        'rgba(245, 158, 11, 0.6)',
+                        'rgba(239, 68, 68, 0.6)',
+                        'rgba(59, 130, 246, 0.6)'
+                    ],
+                    borderRadius: 8,
+                    hidden: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.parsed.y.toLocaleString();
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return value.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Sui Ecosystem Chart
+        const suiCtx = document.getElementById('suiEcosystemChart').getContext('2d');
+        new Chart(suiCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Momentum Finance', 'NAVI Protocol', 'Scallop Lend', 'Cetus Protocol', 'Turbos Finance'],
+                datasets: [{
+                    label: 'TVL ($M)',
+                    data: [550, 480, 244, 200, 50],
+                    backgroundColor: [
+                        'rgba(99, 102, 241, 0.8)',
+                        'rgba(139, 92, 246, 0.8)',
+                        'rgba(236, 72, 153, 0.8)',
+                        'rgba(245, 158, 11, 0.8)',
+                        'rgba(59, 130, 246, 0.8)'
+                    ],
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return '$' + context.parsed.x + 'M TVL';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value + 'M';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Competitor Radar Chart
+        const competitorCtx = document.getElementById('competitorRadarChart').getContext('2d');
+        new Chart(competitorCtx, {
+            type: 'radar',
+            data: {
+                labels: ['技术创新', '市场表现', 'TVL规模', '用户基础', '安全性', '生态整合'],
+                datasets: [{
+                    label: 'Momentum',
+                    data: [9, 8, 7, 8, 7, 9],
+                    backgroundColor: 'rgba(99, 102, 241, 0.2)',
+                    borderColor: 'rgba(99, 102, 241, 1)',
+                    borderWidth: 2
+                }, {
+                    label: 'Uniswap',
+                    data: [8, 10, 10, 10, 9, 8],
+                    backgroundColor: 'rgba(236, 72, 153, 0.2)',
+                    borderColor: 'rgba(236, 72, 153, 1)',
+                    borderWidth: 2
+                }, {
+                    label: 'Cetus',
+                    data: [7, 6, 5, 7, 5, 6],
+                    backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                    borderColor: 'rgba(245, 158, 11, 1)',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 10,
+                        ticks: {
+                            stepSize: 2
+                        }
+                    }
+                }
+            }
+        });
+
+        // Rating Chart
+        const ratingCtx = document.getElementById('ratingChart').getContext('2d');
+        new Chart(ratingCtx, {
+            type: 'bar',
+            data: {
+                labels: ['技术创新', '市场表现', '团队背景', '安全审计', '代币经济学', '社区生态', '投资者阵容'],
+                datasets: [{
+                    label: '评分 (/10)',
+                    data: [8.5, 8.0, 6.0, 6.5, 7.5, 6.5, 9.0],
+                    backgroundColor: [
+                        'rgba(16, 185, 129, 0.8)',
+                        'rgba(16, 185, 129, 0.8)',
+                        'rgba(245, 158, 11, 0.8)',
+                        'rgba(245, 158, 11, 0.8)',
+                        'rgba(16, 185, 129, 0.8)',
+                        'rgba(245, 158, 11, 0.8)',
+                        'rgba(16, 185, 129, 0.8)'
+                    ],
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return '评分: ' + context.parsed.y + '/10';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 10,
+                        ticks: {
+                            stepSize: 2
+                        }
+                    }
+                }
+            }
+        });
+    </script>
 </body>
 </html>

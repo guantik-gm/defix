@@ -1,0 +1,2018 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vultisig (VULT) 项目深度投资调研报告</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            /* 主色调 - Vultisig品牌色 */
+            --primary-color: #6366f1;
+            --secondary-color: #8b5cf6;
+            --accent-color: #ec4899;
+            
+            /* 语义色 */
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --info-color: #3b82f6;
+            
+            /* 浅色主题 */
+            --bg-primary: #ffffff;
+            --bg-secondary: #f9fafb;
+            --bg-tertiary: #f3f4f6;
+            --text-primary: #111827;
+            --text-secondary: #6b7280;
+            --text-tertiary: #9ca3af;
+            --border-color: #e5e7eb;
+            
+            /* 间距 */
+            --spacing-xs: 4px;
+            --spacing-sm: 8px;
+            --spacing-md: 16px;
+            --spacing-lg: 24px;
+            --spacing-xl: 32px;
+            --spacing-2xl: 48px;
+            
+            /* 圆角 */
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --radius-xl: 16px;
+            
+            /* 过渡 */
+            --transition-fast: 150ms ease-in-out;
+            --transition-base: 250ms ease-in-out;
+            --transition-slow: 350ms ease-in-out;
+        }
+        
+        /* 深色主题 */
+        [data-theme="dark"] {
+            --bg-primary: #111827;
+            --bg-secondary: #1f2937;
+            --bg-tertiary: #374151;
+            --text-primary: #f9fafb;
+            --text-secondary: #d1d5db;
+            --text-tertiary: #9ca3af;
+            --border-color: #374151;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            transition: var(--transition-base);
+        }
+        
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: var(--spacing-lg) var(--spacing-xl);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: var(--spacing-md);
+        }
+        
+        .header-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        .header-subtitle {
+            font-size: 0.95rem;
+            opacity: 0.9;
+            margin-top: var(--spacing-xs);
+        }
+        
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+        
+        .search-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        
+        .search-input {
+            padding: var(--spacing-sm) var(--spacing-md);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: var(--radius-md);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-size: 0.9rem;
+            width: 250px;
+            transition: var(--transition-base);
+        }
+        
+        .search-input::placeholder {
+            color: rgba(255,255,255,0.7);
+        }
+        
+        .search-input:focus {
+            outline: none;
+            background: rgba(255,255,255,0.15);
+            border-color: rgba(255,255,255,0.4);
+        }
+        
+        .theme-toggle {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-sm);
+            color: white;
+            cursor: pointer;
+            transition: var(--transition-base);
+            font-size: 1.2rem;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .theme-toggle:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        /* Layout */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: var(--spacing-xl);
+            padding: var(--spacing-xl);
+            min-height: calc(100vh - 120px);
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            background: var(--bg-primary);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 120px;
+            height: fit-content;
+            max-height: calc(100vh - 140px);
+            overflow-y: auto;
+        }
+        
+        .nav-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-md);
+            color: var(--text-primary);
+        }
+        
+        .nav-menu {
+            list-style: none;
+        }
+        
+        .nav-item {
+            margin-bottom: var(--spacing-xs);
+        }
+        
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--radius-md);
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: var(--transition-fast);
+            font-size: 0.9rem;
+        }
+        
+        .nav-link:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+        
+        .nav-link.active {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            font-weight: 500;
+        }
+        
+        /* Main Content */
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-xl);
+        }
+        
+        .section {
+            background: var(--bg-primary);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-xl);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: var(--transition-base);
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        
+        .section.animate-in {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: var(--spacing-lg);
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+        
+        .section-subtitle {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin: var(--spacing-lg) 0 var(--spacing-md) 0;
+            color: var(--text-primary);
+        }
+        
+        /* 统计卡片 */
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--spacing-lg);
+            margin: var(--spacing-lg) 0;
+        }
+        
+        .stat-item {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            color: white;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            transition: var(--transition-base);
+        }
+        
+        .stat-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, rgba(255,255,255,0.1), transparent);
+            transform: translateX(-100%);
+            transition: var(--transition-base);
+        }
+        
+        .stat-item:hover::before {
+            transform: translateX(100%);
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: var(--spacing-xs);
+            position: relative;
+            z-index: 1;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .stat-change {
+            font-size: 0.8rem;
+            margin-top: var(--spacing-xs);
+            opacity: 0.8;
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* 信息卡片 */
+        .card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            transition: var(--transition-base);
+        }
+        
+        .card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        
+        /* 高亮框 */
+        .highlight {
+            padding: var(--spacing-md);
+            border-radius: var(--radius-md);
+            margin: var(--spacing-md) 0;
+            border-left: 4px solid;
+        }
+        
+        .highlight.info {
+            background: rgba(59, 130, 246, 0.1);
+            border-color: var(--info-color);
+            color: var(--info-color);
+        }
+        
+        .highlight.warning {
+            background: rgba(245, 158, 11, 0.1);
+            border-color: var(--warning-color);
+            color: var(--warning-color);
+        }
+        
+        .highlight.danger {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: var(--danger-color);
+            color: var(--danger-color);
+        }
+        
+        .highlight.success {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: var(--success-color);
+            color: var(--success-color);
+        }
+        
+        /* 表格 */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: var(--spacing-lg) 0;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .data-table th,
+        .data-table td {
+            padding: var(--spacing-md);
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .data-table th {
+            background: var(--bg-tertiary);
+            font-weight: 600;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: var(--transition-fast);
+        }
+        
+        .data-table th:hover {
+            background: var(--bg-secondary);
+        }
+        
+        .data-table tr:hover {
+            background: var(--bg-secondary);
+        }
+        
+        /* 图表容器 */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            margin: var(--spacing-lg) 0;
+        }
+        
+        .chart-wrapper {
+            position: relative;
+            height: 400px;
+            padding: var(--spacing-md);
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+        }
+        
+        /* 标签 */
+        .tag {
+            display: inline-block;
+            padding: var(--spacing-xs) var(--spacing-sm);
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            border-radius: var(--radius-sm);
+            font-size: 0.8rem;
+            margin: var(--spacing-xs) var(--spacing-xs) var(--spacing-xs) 0;
+        }
+        
+        .tag.primary {
+            background: var(--primary-color);
+            color: white;
+        }
+        
+        .tag.success {
+            background: var(--success-color);
+            color: white;
+        }
+        
+        .tag.danger {
+            background: var(--danger-color);
+            color: white;
+        }
+        
+        /* 徽章 */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 20px;
+            height: 20px;
+            padding: 0 var(--spacing-xs);
+            background: var(--accent-color);
+            color: white;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        
+        /* 进度条 */
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            margin: var(--spacing-sm) 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            border-radius: var(--radius-sm);
+            transition: width 1s ease-out;
+            width: 0;
+        }
+        
+        /* 回到顶部按钮 */
+        .back-to-top {
+            position: fixed;
+            bottom: var(--spacing-xl);
+            right: var(--spacing-xl);
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: var(--transition-base);
+            opacity: 0;
+            visibility: hidden;
+            z-index: 1000;
+        }
+        
+        .back-to-top.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .back-to-top:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+                gap: var(--spacing-lg);
+                padding: var(--spacing-lg);
+            }
+            
+            .sidebar {
+                position: static;
+                max-height: none;
+            }
+            
+            .header-title {
+                font-size: 1.5rem;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .search-input {
+                width: 100%;
+                max-width: 300px;
+            }
+            
+            .stat-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .chart-wrapper {
+                height: 300px;
+            }
+            
+            .container {
+                padding: var(--spacing-md);
+            }
+            
+            .section {
+                padding: var(--spacing-lg);
+            }
+        }
+        
+        /* 列表样式 */
+        .feature-list {
+            list-style: none;
+            margin: var(--spacing-md) 0;
+        }
+        
+        .feature-list li {
+            padding: var(--spacing-sm) 0;
+            display: flex;
+            align-items: flex-start;
+            gap: var(--spacing-sm);
+        }
+        
+        .feature-list li::before {
+            content: '✓';
+            color: var(--success-color);
+            font-weight: bold;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        
+        .risk-list li::before {
+            content: '⚠';
+            color: var(--warning-color);
+        }
+        
+        /* 加载状态 */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 200px;
+            color: var(--text-secondary);
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--bg-tertiary);
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: var(--spacing-md);
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* 动画 */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .animate-in {
+            animation: fadeInUp 0.6s ease-out forwards;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div>
+                <h1 class="header-title">Vultisig (VULT) 投资调研报告</h1>
+                <p class="header-subtitle">基于TSS技术的多链钱包深度分析 | 风险等级：中高风险 | 投资建议：谨慎观望</p>
+            </div>
+            <div class="header-controls">
+                <div class="search-box">
+                    <input type="text" class="search-input" placeholder="搜索内容..." id="searchInput">
+                </div>
+                <button class="theme-toggle" id="themeToggle">🌙</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <h3 class="nav-title">报告导航</h3>
+            <ul class="nav-menu" id="navMenu">
+                <li class="nav-item">
+                    <a href="#overview" class="nav-link" data-section="overview">
+                        📋 项目概述
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#market-data" class="nav-link" data-section="market-data">
+                        📊 市场数据分析
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#technology" class="nav-link" data-section="technology">
+                        🏗️ 技术架构分析
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#team" class="nav-link" data-section="team">
+                        👥 团队背景分析
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#security" class="nav-link" data-section="security">
+                        🛡️ 安全审计与风险
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#tokenomics" class="nav-link" data-section="tokenomics">
+                        💰 代币经济学分析
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#community" class="nav-link" data-section="community">
+                        🌐 社区与生态分析
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#competition" class="nav-link" data-section="competition">
+                        ⚔️ 竞品对比分析
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#investment" class="nav-link" data-section="investment">
+                        💵 投资机会分析
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#risk-matrix" class="nav-link" data-section="risk-matrix">
+                        ⚠️ 风险评估矩阵
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#recommendation" class="nav-link" data-section="recommendation">
+                        🎯 投资建议总结
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- 项目概述 -->
+            <section id="overview" class="section">
+                <h2 class="section-title">📋 项目概述</h2>
+                
+                <!-- 基本信息统计卡片 -->
+                <div class="stat-grid">
+                    <div class="stat-item">
+                        <div class="stat-value">$0.03</div>
+                        <div class="stat-label">TGE价格</div>
+                        <div class="stat-change">白名单阶段</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">$3M</div>
+                        <div class="stat-label">初始FDV</div>
+                        <div class="stat-change">相对保守</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">$8.6M</div>
+                        <div class="stat-label">融资规模</div>
+                        <div class="stat-change">机构支持</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">$40万</div>
+                        <div class="stat-label">年收入</div>
+                        <div class="stat-change">跨链费用</div>
+                    </div>
+                </div>
+
+                <div class="highlight warning">
+                    <strong>⚠️ 重要提示：</strong> 项目尚未正式TGE，当前处于白名单阶段。10月27日白名单销售，10月28日Kraken等CEX上线。
+                </div>
+
+                <h3 class="section-subtitle">项目定位</h3>
+                <p>Vultisig是一个基于阈值签名方案(TSS)的多链钱包解决方案，主打无种子词、多重签名和跨链兼容的特点。项目定位为"为AI代理时代重新定义加密钱包安全"。项目已完成$8.6M融资，获得Delphi Ventures、AGE Crypto等知名机构支持，过去一年产生$40万跨链交换费用收入。</p>
+
+                <h3 class="section-subtitle">核心技术特点</h3>
+                <ul class="feature-list">
+                    <li><strong>无种子词设计：</strong> 彻底消除助记词丢失风险</li>
+                    <li><strong>TSS技术：</strong> 采用DKLS23协议，由Silence Laboratories开发</li>
+                    <li><strong>多重签名架构：</strong> 支持2/2、2/3、3/4等多种配置</li>
+                    <li><strong>跨链兼容：</strong> 支持UTXO、EVM、BFT和EdDSA链</li>
+                    <li><strong>防钓鱼架构：</strong> 内置MFA保护机制</li>
+                </ul>
+            </section>
+
+            <!-- 市场数据分析 -->
+            <section id="market-data" class="section">
+                <h2 class="section-title">📊 市场数据分析</h2>
+
+                <h3 class="section-subtitle">价格与市值数据</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>指标</th>
+                            <th>数值</th>
+                            <th>数据来源</th>
+                            <th>风险等级</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>TGE价格</td>
+                            <td>$0.03</td>
+                            <td>官方白名单</td>
+                            <td><span class="tag success">正常</span></td>
+                        </tr>
+                        <tr>
+                            <td>初始FDV</td>
+                            <td>$3,000,000</td>
+                            <td>官方公告</td>
+                            <td><span class="tag warning">中等</span></td>
+                        </tr>
+                        <tr>
+                            <td>融资规模</td>
+                            <td>$8,600,000</td>
+                            <td>PitchBook</td>
+                            <td><span class="tag success">优势</span></td>
+                        </tr>
+                        <tr>
+                            <td>年收入</td>
+                            <td>$400,000</td>
+                            <td>官方数据</td>
+                            <td><span class="tag success">验证</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="chart-container">
+                    <div class="chart-wrapper">
+                        <canvas id="marketChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="highlight info">
+                    <strong>TGE时间表：</strong> 10月27日白名单销售，10月28日Kraken上线，10月29日惊喜上线阶段。白名单阶段允耸1,500名早期用户以$3M FDV购买最多$10,000 USDC的代币。
+                </div>
+            </section>
+
+            <!-- 技术架构分析 -->
+            <section id="technology" class="section">
+                <h2 class="section-title">🏗️ 技术架构分析</h2>
+
+                <div class="chart-container">
+                    <div class="chart-wrapper">
+                        <canvas id="techChart"></canvas>
+                    </div>
+                </div>
+
+                <h3 class="section-subtitle">核心技术</h3>
+                <div class="card">
+                    <h4><strong>阈值签名方案(TSS)</strong></h4>
+                    <ul class="feature-list">
+                        <li>采用DKLS23协议</li>
+                        <li>由Silence Laboratories开发和维护</li>
+                        <li>2024年2月通过Trail of Bits审计</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h4><strong>钱包架构</strong></h4>
+                    <ul class="feature-list">
+                        <li><strong>Fast Vault：</strong> 单设备解决方案，适合小额资金</li>
+                        <li><strong>Secure Vault：</strong> 多设备签名，适合大额资产保护</li>
+                    </ul>
+                </div>
+
+                <h3 class="section-subtitle">技术风险</h3>
+                <ul class="feature-list risk-list">
+                    <li><strong>新技术风险：</strong> TSS技术应用时间相对较短</li>
+                    <li><strong>复杂性风险：</strong> 多设备协调可能出现故障</li>
+                    <li><strong>实施风险：</strong> 跨链兼容性可能存在未知漏洞</li>
+                </ul>
+            </section>
+
+            <!-- 团队背景分析 -->
+            <section id="team" class="section">
+                <h2 class="section-title">👥 团队背景分析</h2>
+
+                <div class="card">
+                    <h3 class="section-subtitle">核心团队</h3>
+                    <ul class="feature-list">
+                        <li><strong>JPThor：</strong> 项目创始人，THORChain联合创始人</li>
+                        <li><strong>团队规模：</strong> 起始3人团队（澳大利亚）</li>
+                        <li><strong>技术背景：</strong> 具备深厚的跨链DEX开发经验</li>
+                    </ul>
+                </div>
+
+                <h3 class="section-subtitle">团队优势</h3>
+                <ul class="feature-list">
+                    <li><strong>行业经验：</strong> THORChain是成功的跨链项目</li>
+                    <li><strong>技术实力：</strong> 在TSS和跨链技术方面有丰富经验</li>
+                    <li><strong>行业认知度：</strong> JPThor在加密社区有较高声誉</li>
+                </ul>
+
+                <div class="highlight success">
+                    <strong>机构支持：</strong> 项目获得Delphi Ventures、AGE Crypto、Apollo Crypto等16家机构投资者支持，总融资$8.6M，为项目提供强有力的资金和资源支持。
+                </div>
+            </section>
+
+            <!-- 安全审计与风险评估 -->
+            <section id="security" class="section">
+                <h2 class="section-title">🛡️ 安全审计与风险评估</h2>
+
+                <h3 class="section-subtitle">已完成审计</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>审计项目</th>
+                            <th>审计方</th>
+                            <th>时间</th>
+                            <th>费用</th>
+                            <th>结果</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Code4rena审计</td>
+                            <td>Code4rena</td>
+                            <td>2024年6月14-21日</td>
+                            <td>$41,600 USDC</td>
+                            <td><span class="tag success">已发布</span></td>
+                        </tr>
+                        <tr>
+                            <td>DKLS协议审计</td>
+                            <td>Trail of Bits</td>
+                            <td>2024年2月</td>
+                            <td>-</td>
+                            <td><span class="tag success">通过</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="section-subtitle">安全优势</h3>
+                <ul class="feature-list">
+                    <li>开源代码，透明度高</li>
+                    <li>经过专业安全审计</li>
+                    <li>分布式架构，无单点故障</li>
+                    <li>防钓鱼设计</li>
+                </ul>
+
+                <h3 class="section-subtitle">风险因素</h3>
+                <ul class="feature-list risk-list">
+                    <li>新技术应用时间短，缺乏长期验证</li>
+                    <li>多链支持增加攻击面</li>
+                    <li>用户教育成本高</li>
+                </ul>
+            </section>
+
+            <!-- 代币经济学分析 -->
+            <section id="tokenomics" class="section">
+                <h2 class="section-title">💰 代币经济学分析</h2>
+
+                <div class="chart-container">
+                    <div class="chart-wrapper">
+                        <canvas id="tokenomicsChart"></canvas>
+                    </div>
+                </div>
+
+                <h3 class="section-subtitle">代币分配</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>分配对象</th>
+                            <th>比例</th>
+                            <th>解锁机制</th>
+                            <th>风险评估</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>早期投资者</td>
+                            <td>30%</td>
+                            <td>发布时解锁</td>
+                            <td><span class="tag danger">高抛压风险</span></td>
+                        </tr>
+                        <tr>
+                            <td>LP位置</td>
+                            <td>24%</td>
+                            <td>1年锁定期</td>
+                            <td><span class="tag warning">中等风险</span></td>
+                        </tr>
+                        <tr>
+                            <td>其他</td>
+                            <td>46%</td>
+                            <td>未明确公布</td>
+                            <td><span class="tag danger">透明度风险</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="highlight warning">
+                    <strong>经济模型风险：</strong>
+                    <ul>
+                        <li>解锁压力：30%代币立即解锁可能造成抛压</li>
+                        <li>透明度：46%代币分配未明确公布</li>
+                        <li>竞争激烈：钱包赛道竞争日趋激烈</li>
+                    </ul>
+                </div>
+
+                <h3 class="section-subtitle">代币功能</h3>
+                <ul class="feature-list">
+                    <li><strong>质押奖励：</strong> 质押VULT获得USDC收益</li>
+                    <li><strong>交易费折扣：</strong> 生态内swap费用折扣</li>
+                    <li><strong>治理权利：</strong> 参与项目治理决策</li>
+                    <li><strong>生态收入分享：</strong> 获得生态系统手续费分成</li>
+                </ul>
+            </section>
+
+            <!-- 社区与生态分析 -->
+            <section id="community" class="section">
+                <h2 class="section-title">🌐 社区与生态分析</h2>
+
+                <div class="chart-container">
+                    <div class="chart-wrapper">
+                        <canvas id="communityChart"></canvas>
+                    </div>
+                </div>
+
+                <h3 class="section-subtitle">社区规模</h3>
+                <div class="stat-grid">
+                    <div class="stat-item">
+                        <div class="stat-value">28,500</div>
+                        <div class="stat-label">Twitter/X 关注者</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">11,305</div>
+                        <div class="stat-label">Telegram 成员</div>
+                        <div class="stat-change">240 在线</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">1,999</div>
+                        <div class="stat-label">Discord 成员</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">多个</div>
+                        <div class="stat-label">GitHub 代码库</div>
+                        <div class="stat-change">活跃开发</div>
+                    </div>
+                </div>
+
+                <h3 class="section-subtitle">生态系统组件</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-lg);">
+                    <div class="card">
+                        <h4><strong>现有组件</strong></h4>
+                        <ul class="feature-list">
+                            <li>Vultisig钱包应用</li>
+                            <li>Chrome浏览器扩展</li>
+                            <li>开发者SDK</li>
+                            <li>Telegram机器人</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4><strong>规划中</strong></h4>
+                        <ul class="feature-list">
+                            <li>插件市场</li>
+                            <li>AI代理市场</li>
+                            <li>DCA自动投资功能</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 竞品对比分析 -->
+            <section id="competition" class="section">
+                <h2 class="section-title">⚔️ 竞品对比分析</h2>
+
+                <div class="chart-container">
+                    <div class="chart-wrapper">
+                        <canvas id="competitionChart"></canvas>
+                    </div>
+                </div>
+
+                <h3 class="section-subtitle">主要竞争对手对比</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>钱包</th>
+                            <th>安全模式</th>
+                            <th>多链支持</th>
+                            <th>易用性</th>
+                            <th>成本</th>
+                            <th>开源</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="background: rgba(99, 102, 241, 0.1);">
+                            <td><strong>Vultisig</strong></td>
+                            <td>TSS多签</td>
+                            <td><span class="tag success">30+链</span></td>
+                            <td><span class="tag success">高</span></td>
+                            <td><span class="tag success">免费</span></td>
+                            <td><span class="tag success">✅</span></td>
+                        </tr>
+                        <tr>
+                            <td>MetaMask</td>
+                            <td>单签</td>
+                            <td><span class="tag warning">有限</span></td>
+                            <td><span class="tag success">高</span></td>
+                            <td><span class="tag success">免费</span></td>
+                            <td><span class="tag success">✅</span></td>
+                        </tr>
+                        <tr>
+                            <td>Ledger</td>
+                            <td>硬件</td>
+                            <td><span class="tag success">✅</span></td>
+                            <td><span class="tag warning">中</span></td>
+                            <td><span class="tag danger">有成本</span></td>
+                            <td><span class="tag warning">部分</span></td>
+                        </tr>
+                        <tr>
+                            <td>Gnosis Safe</td>
+                            <td>多签</td>
+                            <td><span class="tag warning">有限</span></td>
+                            <td><span class="tag danger">低</span></td>
+                            <td><span class="tag warning">链上费用</span></td>
+                            <td><span class="tag success">✅</span></td>
+                        </tr>
+                        <tr>
+                            <td>Fireblocks</td>
+                            <td>MPC</td>
+                            <td><span class="tag success">✅</span></td>
+                            <td><span class="tag warning">中</span></td>
+                            <td><span class="tag danger">企业级</span></td>
+                            <td><span class="tag danger">❌</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- 投资机会分析 -->
+            <section id="investment" class="section">
+                <h2 class="section-title">💵 投资机会分析</h2>
+
+                <h3 class="section-subtitle">潜在投资机会</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>投资类型</th>
+                            <th>风险等级</th>
+                            <th>预期收益</th>
+                            <th>优点</th>
+                            <th>缺点</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>白名单参与</strong></td>
+                            <td><span class="tag warning">中高</span></td>
+                            <td>潜在3-5x</td>
+                            <td>早期价格优势，Kraken上线预期</td>
+                            <td>锁仓期，市场波动风险</td>
+                        </tr>
+                        <tr>
+                            <td><strong>公开发售</strong></td>
+                            <td><span class="tag danger">高</span></td>
+                            <td>不确定</td>
+                            <td>Kraken流动性支持</td>
+                            <td>价格发现风险，竞争激烈</td>
+                        </tr>
+                        <tr>
+                            <td><strong>质押挖矿</strong></td>
+                            <td><span class="tag warning">中</span></td>
+                            <td>生态手续费分成</td>
+                            <td>被动收入来源</td>
+                            <td>代币价格波动风险</td>
+                        </tr>
+                        <tr>
+                            <td><strong>空投参与</strong></td>
+                            <td><span class="tag success">低</span></td>
+                            <td>免费代币</td>
+                            <td>零成本获得代币</td>
+                            <td>代币价值不确定</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="highlight info">
+                    <strong>开发者生态参与机会：</strong>
+                    <ul>
+                        <li><strong>SDK开发：</strong> 使用Vultisig SDK开发钱包应用</li>
+                        <li><strong>插件开发：</strong> 开发DeFi工具插件、创建AI代理应用</li>
+                        <li><strong>开源贡献：</strong> 参与GitHub代码库贡献、提交安全漏洞获得奖励</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- 风险评估矩阵 -->
+            <section id="risk-matrix" class="section">
+                <h2 class="section-title">⚠️ 风险评估矩阵</h2>
+
+                <div class="chart-container">
+                    <div class="chart-wrapper">
+                        <canvas id="riskChart"></canvas>
+                    </div>
+                </div>
+
+                <h3 class="section-subtitle">风险因素评分</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>风险类型</th>
+                            <th>风险等级</th>
+                            <th>影响程度</th>
+                            <th>发生概率</th>
+                            <th>详细说明</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>技术风险</strong></td>
+                            <td><span class="tag warning">中</span></td>
+                            <td>高</td>
+                            <td>中</td>
+                            <td>TSS技术具备创新性，但已通过安全审计</td>
+                        </tr>
+                        <tr>
+                            <td><strong>市场风险</strong></td>
+                            <td><span class="tag warning">中高</span></td>
+                            <td>高</td>
+                            <td>中</td>
+                            <td>TGE初期波动性，Kraken支持降低风险</td>
+                        </tr>
+                        <tr>
+                            <td><strong>团队风险</strong></td>
+                            <td><span class="tag success">低中</span></td>
+                            <td>中</td>
+                            <td>低</td>
+                            <td>JPThor经验丰富，机构投资者背书</td>
+                        </tr>
+                        <tr>
+                            <td><strong>监管风险</strong></td>
+                            <td><span class="tag warning">中</span></td>
+                            <td>中</td>
+                            <td>中</td>
+                            <td>多链钱包可能面临监管</td>
+                        </tr>
+                        <tr>
+                            <td><strong>竞争风险</strong></td>
+                            <td><span class="tag danger">高</span></td>
+                            <td>高</td>
+                            <td>中</td>
+                            <td>钱包市场竞争激烈</td>
+                        </tr>
+                        <tr>
+                            <td><strong>流动性风险</strong></td>
+                            <td><span class="tag warning">中</span></td>
+                            <td>高</td>
+                            <td>中</td>
+                            <td>Kraken上线提供流动性支持</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- 投资建议总结 -->
+            <section id="recommendation" class="section">
+                <h2 class="section-title">🎯 投资建议总结</h2>
+
+                <div class="chart-container">
+                    <div class="chart-wrapper">
+                        <canvas id="scoreChart"></canvas>
+                    </div>
+                </div>
+
+                <h3 class="section-subtitle">综合评分</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>评估维度</th>
+                            <th>得分(1-10)</th>
+                            <th>权重</th>
+                            <th>加权得分</th>
+                            <th>说明</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>技术创新性</td>
+                            <td>8</td>
+                            <td>20%</td>
+                            <td>1.6</td>
+                            <td>TSS技术具有创新性</td>
+                        </tr>
+                        <tr>
+                            <td>团队实力</td>
+                            <td>8</td>
+                            <td>15%</td>
+                            <td>1.2</td>
+                            <td>THORChain背景强</td>
+                        </tr>
+                        <tr>
+                            <td>市场机会</td>
+                            <td>7</td>
+                            <td>15%</td>
+                            <td>1.05</td>
+                            <td>钱包市场竞争激烈</td>
+                        </tr>
+                        <tr style="background: rgba(16, 185, 129, 0.1);">
+                            <td>融资背景</td>
+                            <td>8</td>
+                            <td>15%</td>
+                            <td>1.2</td>
+                            <td>机构投资者支持</td>
+                        </tr>
+                        <tr style="background: rgba(16, 185, 129, 0.1);">
+                            <td>收入验证</td>
+                            <td>7</td>
+                            <td>15%</td>
+                            <td>1.05</td>
+                            <td>年收入40万美元</td>
+                        </tr>
+                        <tr>
+                            <td>风险控制</td>
+                            <td>6</td>
+                            <td>10%</td>
+                            <td>0.6</td>
+                            <td>有一定风险因素</td>
+                        </tr>
+                        <tr>
+                            <td>社区生态</td>
+                            <td>6</td>
+                            <td>10%</td>
+                            <td>0.6</td>
+                            <td>社区规模中等</td>
+                        </tr>
+                        <tr style="background: rgba(16, 185, 129, 0.1);">
+                            <td><strong>总分</strong></td>
+                            <td><strong>7.3</strong></td>
+                            <td><strong>100%</strong></td>
+                            <td><strong>7.3</strong></td>
+                            <td><strong>可以考虑</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="highlight warning" style="margin: var(--spacing-xl) 0;">
+                    <h3><strong>⚠️ 最终投资建议：谨慎观望</strong></h3>
+                    <h4>支持理由：</h4>
+                    <ol>
+                        <li><strong>机构认可：</strong> $8.6M融资获Delphi Ventures等知名机构支持</li>
+                        <li><strong>收入验证：</strong> $40万年收入证明产品市场契合度</li>
+                        <li><strong>技本优势：</strong> TSS技术具备创新性和安全性</li>
+                        <li><strong>交易所支持：</strong> Kraken上线提供流动性和信任背书</li>
+                    </ol>
+                    <h4>风险提示：</h4>
+                    <ol>
+                        <li><strong>竞争激烈：</strong> 钱包赛道竞争日趋激烈</li>
+                        <li><strong>解锁压力：</strong> 30%代币立即解锁可能造成抛压</li>
+                        <li><strong>技术风险：</strong> TSS技术仍需要更多市场验证</li>
+                        <li><strong>市场波动：</strong> TGE初期可能面临较大价格波动</li>
+                    </ol>
+                </div>
+
+                <h3 class="section-subtitle">投资策略建议</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--spacing-lg);">
+                    <div class="card">
+                        <h4><strong>高风险投资者</strong></h4>
+                        <ul class="feature-list">
+                            <li>可考虑小额参与（≤总资产2-3%）</li>
+                            <li>重点关注技术发展和用户增长</li>
+                            <li>设置严格止损</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4><strong>保守投资者</strong></h4>
+                        <ul class="feature-list">
+                            <li>分批建仓：TGE后根据市场表现分批买入</li>
+                            <li>关注节点：Kraken上线后的流动性和价格发现</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4><strong>开发者</strong></h4>
+                        <ul class="feature-list">
+                            <li>可参与生态建设，获得早期优势</li>
+                            <li>学习TSS技术，拓展技术视野</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="highlight success">
+                    <h4><strong>适合投资者类型</strong></h4>
+                    <ul>
+                        <li>对钱包赛道有深度理解的投资者</li>
+                        <li>能承受中高风险的长期投资者</li>
+                        <li>看好TSS技术发展前景的技术投资者</li>
+                        <li>信任机构判断的跟投者</li>
+                    </ul>
+                    <h4><strong>投资策略建议</strong></h4>
+                    <ol>
+                        <li><strong>白名单参与：</strong> 考虑小额参与（≤总资产2-3%）</li>
+                        <li><strong>分批建仓：</strong> TGE后根据市场表现分批买入</li>
+                        <li><strong>关注节点：</strong> Kraken上线后的流动性和价格发现</li>
+                        <li><strong>长期持有：</strong> 关注生态发展和用户增长情况</li>
+                    </ol>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- 回到顶部按钮 -->
+    <button class="back-to-top" id="backToTop">↑</button>
+
+    <script>
+        // 全局变量
+        let charts = {};
+        
+        // 主题切换
+        const themeToggle = document.getElementById('themeToggle');
+        const body = document.body;
+        
+        // 从localStorage读取主题设置
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        if (savedTheme === 'dark') {
+            body.setAttribute('data-theme', 'dark');
+            themeToggle.textContent = '☀️';
+        }
+        
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = body.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            body.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            themeToggle.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+            
+            // 更新图表主题
+            updateChartThemes();
+        });
+        
+        // 搜索功能
+        const searchInput = document.getElementById('searchInput');
+        let searchTimeout;
+        
+        searchInput.addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                filterContent(e.target.value);
+            }, 300);
+        });
+        
+        function filterContent(query) {
+            const sections = document.querySelectorAll('.section');
+            const navLinks = document.querySelectorAll('.nav-link');
+            
+            if (!query) {
+                sections.forEach(section => section.style.display = 'block');
+                navLinks.forEach(link => link.style.display = 'flex');
+                return;
+            }
+            
+            const queryLower = query.toLowerCase();
+            
+            sections.forEach(section => {
+                const text = section.textContent.toLowerCase();
+                section.style.display = text.includes(queryLower) ? 'block' : 'none';
+            });
+            
+            navLinks.forEach(link => {
+                const text = link.textContent.toLowerCase();
+                link.style.display = text.includes(queryLower) ? 'flex' : 'none';
+            });
+        }
+        
+        // 导航功能
+        const navLinks = document.querySelectorAll('.nav-link');
+        const sections = document.querySelectorAll('.section');
+        
+        navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = link.getAttribute('href').substring(1);
+                const targetSection = document.getElementById(targetId);
+                
+                if (targetSection) {
+                    // 更新激活状态
+                    navLinks.forEach(l => l.classList.remove('active'));
+                    link.classList.add('active');
+                    
+                    // 平滑滚动
+                    targetSection.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+        
+        // 滚动监听
+        const observerOptions = {
+            threshold: 0.3,
+            rootMargin: '0px 0px -50px 0px'
+        };
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    // 动画
+                    entry.target.classList.add('animate-in');
+                    
+                    // 更新导航激活状态
+                    const id = entry.target.id;
+                    navLinks.forEach(link => {
+                        link.classList.remove('active');
+                        if (link.getAttribute('href') === `#${id}`) {
+                            link.classList.add('active');
+                        }
+                    });
+                }
+            });
+        }, observerOptions);
+        
+        sections.forEach(section => {
+            observer.observe(section);
+        });
+        
+        // 回到顶部
+        const backToTop = document.getElementById('backToTop');
+        
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 500) {
+                backToTop.classList.add('visible');
+            } else {
+                backToTop.classList.remove('visible');
+            }
+        });
+        
+        backToTop.addEventListener('click', () => {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+        
+        // 进度条动画
+        function animateProgressBars() {
+            document.querySelectorAll('.progress-bar').forEach(bar => {
+                const fill = bar.querySelector('.progress-fill');
+                const targetWidth = fill.dataset.width || '0%';
+                setTimeout(() => {
+                    fill.style.width = targetWidth;
+                }, 500);
+            });
+        }
+        
+        // Chart.js 配置
+        function getChartTheme() {
+            const isDark = document.body.getAttribute('data-theme') === 'dark';
+            return {
+                textColor: isDark ? '#f9fafb' : '#111827',
+                gridColor: isDark ? '#374151' : '#e5e7eb',
+                backgroundColor: isDark ? '#1f2937' : '#ffffff'
+            };
+        }
+        
+        function updateChartThemes() {
+            const theme = getChartTheme();
+            Object.values(charts).forEach(chart => {
+                if (chart) {
+                    chart.options.scales.x.ticks.color = theme.textColor;
+                    chart.options.scales.y.ticks.color = theme.textColor;
+                    chart.options.scales.x.grid.color = theme.gridColor;
+                    chart.options.scales.y.grid.color = theme.gridColor;
+                    chart.options.plugins.legend.labels.color = theme.textColor;
+                    chart.update();
+                }
+            });
+        }
+        
+        // 初始化图表
+        function initCharts() {
+            // 市场数据图表
+            const marketCtx = document.getElementById('marketChart').getContext('2d');
+            charts.market = new Chart(marketCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['TGE价格($)', '初始FDV(万$)', '融资额(万$)', '年收入(万$)'],
+                    datasets: [{
+                        label: '项目指标',
+                        data: [0.03, 300, 860, 40],
+                        backgroundColor: [
+                            'rgba(16, 185, 129, 0.7)',
+                            'rgba(99, 102, 241, 0.7)',
+                            'rgba(16, 185, 129, 0.8)',
+                            'rgba(16, 185, 129, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(16, 185, 129, 1)',
+                            'rgba(99, 102, 241, 1)',
+                            'rgba(16, 185, 129, 1)',
+                            'rgba(16, 185, 129, 1)'
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: '项目数据概览（机构支持与收入验证）',
+                            color: getChartTheme().textColor
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: getChartTheme().textColor
+                            },
+                            grid: {
+                                color: getChartTheme().gridColor
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: getChartTheme().textColor
+                            },
+                            grid: {
+                                color: getChartTheme().gridColor
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // 技术优势vs风险图表
+            const techCtx = document.getElementById('techChart').getContext('2d');
+            charts.tech = new Chart(techCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['安全性', '便利性', '兼容性', '开放性', '成熟度', '可靠性'],
+                    datasets: [{
+                        label: 'Vultisig技术评估',
+                        data: [8, 7, 9, 8, 4, 5],
+                        backgroundColor: 'rgba(99, 102, 241, 0.2)',
+                        borderColor: 'rgba(99, 102, 241, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(99, 102, 241, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(99, 102, 241, 1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: getChartTheme().textColor
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: '技术能力雷达图（1-10分）',
+                            color: getChartTheme().textColor
+                        }
+                    },
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 10,
+                            ticks: {
+                                color: getChartTheme().textColor
+                            },
+                            grid: {
+                                color: getChartTheme().gridColor
+                            },
+                            pointLabels: {
+                                color: getChartTheme().textColor
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // 代币分配饼图
+            const tokenomicsCtx = document.getElementById('tokenomicsChart').getContext('2d');
+            charts.tokenomics = new Chart(tokenomicsCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['早期投资者 (30%)', 'LP位置 (24%)', '其他未明确 (46%)'],
+                    datasets: [{
+                        data: [30, 24, 46],
+                        backgroundColor: [
+                            'rgba(239, 68, 68, 0.8)',
+                            'rgba(245, 158, 11, 0.8)',
+                            'rgba(156, 163, 175, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgba(239, 68, 68, 1)',
+                            'rgba(245, 158, 11, 1)',
+                            'rgba(156, 163, 175, 1)'
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: getChartTheme().textColor,
+                                padding: 20,
+                                usePointStyle: true
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: '代币分配结构（存在透明度和集中度风险）',
+                            color: getChartTheme().textColor
+                        }
+                    }
+                }
+            });
+            
+            // 社区规模图表
+            const communityCtx = document.getElementById('communityChart').getContext('2d');
+            charts.community = new Chart(communityCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Twitter/X', 'Telegram', 'Discord', 'GitHub'],
+                    datasets: [{
+                        label: '社区成员数',
+                        data: [28500, 11305, 1999, 5],
+                        backgroundColor: [
+                            'rgba(29, 155, 240, 0.7)',
+                            'rgba(34, 139, 196, 0.7)',
+                            'rgba(88, 101, 242, 0.7)',
+                            'rgba(36, 41, 46, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(29, 155, 240, 1)',
+                            'rgba(34, 139, 196, 1)',
+                            'rgba(88, 101, 242, 1)',
+                            'rgba(36, 41, 46, 1)'
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: '社区规模分布（相对较小但活跃）',
+                            color: getChartTheme().textColor
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            type: 'logarithmic',
+                            ticks: {
+                                color: getChartTheme().textColor,
+                                callback: function(value) {
+                                    return value.toLocaleString();
+                                }
+                            },
+                            grid: {
+                                color: getChartTheme().gridColor
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: getChartTheme().textColor
+                            },
+                            grid: {
+                                color: getChartTheme().gridColor
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // 竞品对比雷达图
+            const competitionCtx = document.getElementById('competitionChart').getContext('2d');
+            charts.competition = new Chart(competitionCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['安全性', '多链支持', '易用性', '成本优势', '开源程度', '用户基数'],
+                    datasets: [{
+                        label: 'Vultisig',
+                        data: [8, 10, 8, 10, 10, 2],
+                        backgroundColor: 'rgba(99, 102, 241, 0.2)',
+                        borderColor: 'rgba(99, 102, 241, 1)',
+                        borderWidth: 2
+                    }, {
+                        label: 'MetaMask',
+                        data: [6, 6, 9, 10, 10, 10],
+                        backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                        borderColor: 'rgba(245, 158, 11, 1)',
+                        borderWidth: 2
+                    }, {
+                        label: 'Ledger',
+                        data: [10, 8, 6, 4, 5, 8],
+                        backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                        borderColor: 'rgba(16, 185, 129, 1)',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: getChartTheme().textColor
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: '主要竞品对比分析（1-10分）',
+                            color: getChartTheme().textColor
+                        }
+                    },
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 10,
+                            ticks: {
+                                color: getChartTheme().textColor
+                            },
+                            grid: {
+                                color: getChartTheme().gridColor
+                            },
+                            pointLabels: {
+                                color: getChartTheme().textColor
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // 风险评估矩阵
+            const riskCtx = document.getElementById('riskChart').getContext('2d');
+            charts.risk = new Chart(riskCtx, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: '技术风险',
+                        data: [{x: 7, y: 8}],
+                        backgroundColor: 'rgba(245, 158, 11, 0.7)',
+                        borderColor: 'rgba(245, 158, 11, 1)',
+                        pointRadius: 10
+                    }, {
+                        label: '市场风险',
+                        data: [{x: 9, y: 10}],
+                        backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                        borderColor: 'rgba(239, 68, 68, 1)',
+                        pointRadius: 15
+                    }, {
+                        label: '团队风险',
+                        data: [{x: 5, y: 8}],
+                        backgroundColor: 'rgba(245, 158, 11, 0.7)',
+                        borderColor: 'rgba(245, 158, 11, 1)',
+                        pointRadius: 8
+                    }, {
+                        label: '监管风险',
+                        data: [{x: 5, y: 5}],
+                        backgroundColor: 'rgba(99, 102, 241, 0.7)',
+                        borderColor: 'rgba(99, 102, 241, 1)',
+                        pointRadius: 8
+                    }, {
+                        label: '竞争风险',
+                        data: [{x: 7, y: 8}],
+                        backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                        borderColor: 'rgba(239, 68, 68, 1)',
+                        pointRadius: 10
+                    }, {
+                        label: '操作风险',
+                        data: [{x: 5, y: 5}],
+                        backgroundColor: 'rgba(99, 102, 241, 0.7)',
+                        borderColor: 'rgba(99, 102, 241, 1)',
+                        pointRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: getChartTheme().textColor
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: '风险评估矩阵（X轴：发生概率，Y轴：影响程度，气泡大小：风险等级）',
+                            color: getChartTheme().textColor
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: '发生概率（1-10）',
+                                color: getChartTheme().textColor
+                            },
+                            min: 0,
+                            max: 10,
+                            ticks: {
+                                color: getChartTheme().textColor
+                            },
+                            grid: {
+                                color: getChartTheme().gridColor
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: '影响程度（1-10）',
+                                color: getChartTheme().textColor
+                            },
+                            min: 0,
+                            max: 10,
+                            ticks: {
+                                color: getChartTheme().textColor
+                            },
+                            grid: {
+                                color: getChartTheme().gridColor
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // 综合评分图表
+            const scoreCtx = document.getElementById('scoreChart').getContext('2d');
+            charts.score = new Chart(scoreCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['技术创新性', '团队实力', '市场机会', '融资背景', '收入验证', '风险控制', '社区生态'],
+                    datasets: [{
+                        label: '得分',
+                        data: [8, 8, 7, 8, 7, 6, 6],
+                        backgroundColor: [
+                            'rgba(16, 185, 129, 0.7)',
+                            'rgba(16, 185, 129, 0.7)',
+                            'rgba(16, 185, 129, 0.7)',
+                            'rgba(16, 185, 129, 0.7)',
+                            'rgba(16, 185, 129, 0.7)',
+                            'rgba(245, 158, 11, 0.7)',
+                            'rgba(245, 158, 11, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(16, 185, 129, 1)',
+                            'rgba(16, 185, 129, 1)',
+                            'rgba(16, 185, 129, 1)',
+                            'rgba(16, 185, 129, 1)',
+                            'rgba(16, 185, 129, 1)',
+                            'rgba(245, 158, 11, 1)',
+                            'rgba(245, 158, 11, 1)'
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: '综合评分：7.3/10（可以考虑）',
+                            color: getChartTheme().textColor
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 10,
+                            ticks: {
+                                color: getChartTheme().textColor
+                            },
+                            grid: {
+                                color: getChartTheme().gridColor
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: getChartTheme().textColor
+                            },
+                            grid: {
+                                color: getChartTheme().gridColor
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            // 延迟初始化图表，确保Chart.js加载完成
+            setTimeout(() => {
+                initCharts();
+                animateProgressBars();
+            }, 100);
+        });
+        
+        // 表格排序功能
+        function initTableSorting() {
+            document.querySelectorAll('.data-table th').forEach(th => {
+                th.addEventListener('click', () => {
+                    const table = th.closest('table');
+                    const tbody = table.querySelector('tbody');
+                    const rows = Array.from(tbody.querySelectorAll('tr'));
+                    const columnIndex = Array.from(th.parentNode.children).indexOf(th);
+                    
+                    const isAscending = th.classList.contains('asc');
+                    
+                    // 清除所有排序类
+                    table.querySelectorAll('th').forEach(header => {
+                        header.classList.remove('asc', 'desc');
+                    });
+                    
+                    // 添加当前排序类
+                    th.classList.add(isAscending ? 'desc' : 'asc');
+                    
+                    // 排序行
+                    rows.sort((a, b) => {
+                        const aText = a.cells[columnIndex].textContent.trim();
+                        const bText = b.cells[columnIndex].textContent.trim();
+                        
+                        // 尝试数字排序
+                        const aNum = parseFloat(aText.replace(/[^0-9.-]/g, ''));
+                        const bNum = parseFloat(bText.replace(/[^0-9.-]/g, ''));
+                        
+                        if (!isNaN(aNum) && !isNaN(bNum)) {
+                            return isAscending ? bNum - aNum : aNum - bNum;
+                        }
+                        
+                        // 文本排序
+                        return isAscending ? bText.localeCompare(aText) : aText.localeCompare(bText);
+                    });
+                    
+                    // 重新插入排序后的行
+                    rows.forEach(row => tbody.appendChild(row));
+                });
+            });
+        }
+        
+        // 初始化表格排序
+        document.addEventListener('DOMContentLoaded', initTableSorting);
+    </script>
+</body>
+</html>

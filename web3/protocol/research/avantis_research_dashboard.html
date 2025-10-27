@@ -1,0 +1,2352 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avantis Finance (AVNT) - 深度投资评估报告</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            --secondary-color: #8b5cf6;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --bg-primary: #ffffff;
+            --bg-secondary: #f9fafb;
+            --bg-tertiary: #f3f4f6;
+            --text-primary: #111827;
+            --text-secondary: #6b7280;
+            --text-tertiary: #9ca3af;
+            --border-color: #e5e7eb;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #111827;
+            --bg-secondary: #1f2937;
+            --bg-tertiary: #374151;
+            --text-primary: #f9fafb;
+            --text-secondary: #d1d5db;
+            --text-tertiary: #9ca3af;
+            --border-color: #374151;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Header Styles */
+        .header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 1.5rem 2rem;
+            box-shadow: var(--shadow-md);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo {
+            width: 48px;
+            height: 48px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .search-box {
+            position: relative;
+        }
+
+        .search-input {
+            padding: 0.5rem 1rem;
+            padding-right: 2.5rem;
+            border: none;
+            border-radius: 9999px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            width: 250px;
+            transition: all 0.3s;
+        }
+
+        .search-input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .search-input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.3);
+            width: 300px;
+        }
+
+        .theme-toggle {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            transition: all 0.3s;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+
+        /* Layout */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 2rem;
+            padding: 2rem;
+        }
+
+        /* Sidebar Navigation */
+        .sidebar {
+            background: var(--bg-primary);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: var(--shadow-md);
+            height: fit-content;
+            position: sticky;
+            top: 120px;
+        }
+
+        .nav-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .nav-list {
+            list-style: none;
+        }
+
+        .nav-item {
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-link {
+            display: block;
+            padding: 0.75rem 1rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s;
+            font-size: 0.875rem;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background: var(--bg-tertiary);
+            color: var(--primary-color);
+            transform: translateX(4px);
+        }
+
+        /* Main Content */
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        /* Card Styles */
+        .card {
+            background: var(--bg-primary);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: var(--shadow-md);
+            transition: all 0.3s;
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        /* Rating Badge */
+        .rating-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1.5rem;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border-radius: 9999px;
+            font-size: 1.25rem;
+            font-weight: 700;
+            box-shadow: var(--shadow-md);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .stat-change {
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
+
+        .stat-change.positive {
+            color: var(--success-color);
+        }
+
+        .stat-change.negative {
+            color: var(--danger-color);
+        }
+
+        /* Highlight Boxes */
+        .highlight-box {
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+        }
+
+        .highlight-box.success {
+            background: rgba(16, 185, 129, 0.1);
+            border-left: 4px solid var(--success-color);
+        }
+
+        .highlight-box.warning {
+            background: rgba(245, 158, 11, 0.1);
+            border-left: 4px solid var(--warning-color);
+        }
+
+        .highlight-box.danger {
+            background: rgba(239, 68, 68, 0.1);
+            border-left: 4px solid var(--danger-color);
+        }
+
+        .highlight-title {
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .highlight-list {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .highlight-list li {
+            padding: 0.5rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+
+        .highlight-list li:before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            font-weight: bold;
+        }
+
+        /* Table Styles */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .data-table thead {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .data-table tbody tr:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .data-table th {
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .data-table th:hover {
+            background: var(--secondary-color);
+        }
+
+        /* Chart Container */
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin: 2rem 0;
+        }
+
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 1.5rem;
+        }
+
+        .tab-button {
+            padding: 0.75rem 1.5rem;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.3s;
+        }
+
+        .tab-button:hover {
+            color: var(--primary-color);
+        }
+
+        .tab-button.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        /* Collapsible */
+        .collapsible {
+            margin-bottom: 1rem;
+        }
+
+        .collapsible-header {
+            background: var(--bg-secondary);
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+        }
+
+        .collapsible-header:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .collapsible-header.active {
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+
+        .collapsible-icon {
+            transition: transform 0.3s;
+        }
+
+        .collapsible-header.active .collapsible-icon {
+            transform: rotate(180deg);
+        }
+
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            background: var(--bg-secondary);
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+        }
+
+        .collapsible-content.active {
+            max-height: 2000px;
+            padding: 1.5rem;
+        }
+
+        /* Tags */
+        .tag {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .tag.success {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success-color);
+        }
+
+        .tag.warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning-color);
+        }
+
+        .tag.danger {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger-color);
+        }
+
+        .tag.primary {
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary-color);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .btn-outline:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        /* Scroll to Top Button */
+        .scroll-top {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 50px;
+            height: 50px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            box-shadow: var(--shadow-lg);
+            transition: all 0.3s;
+            z-index: 999;
+        }
+
+        .scroll-top.visible {
+            display: flex;
+        }
+
+        .scroll-top:hover {
+            background: var(--secondary-color);
+            transform: translateY(-4px);
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: static;
+            }
+
+            .chart-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+            }
+
+            .search-input {
+                width: 100%;
+            }
+
+            .search-input:focus {
+                width: 100%;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 1.25rem;
+            }
+
+            .container {
+                padding: 1rem;
+            }
+
+            .card {
+                padding: 1rem;
+            }
+        }
+
+        /* Print Styles */
+        @media print {
+            .header-actions,
+            .sidebar,
+            .scroll-top {
+                display: none;
+            }
+
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            .card {
+                break-inside: avoid;
+            }
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            border: 3px solid var(--border-color);
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            border-bottom: 1px dotted var(--text-secondary);
+            cursor: help;
+        }
+
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            width: 200px;
+            background-color: var(--text-primary);
+            color: var(--bg-primary);
+            text-align: center;
+            border-radius: 6px;
+            padding: 0.5rem;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.875rem;
+        }
+
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="header-title">
+                <div class="logo">A</div>
+                <div>
+                    <h1>Avantis Finance (AVNT)</h1>
+                    <p style="font-size: 0.875rem; opacity: 0.9;">深度投资评估报告 | 2025-09-30</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <div class="search-box">
+                    <input type="text" class="search-input" placeholder="搜索报告内容..." id="searchInput">
+                </div>
+                <button class="theme-toggle" id="themeToggle" aria-label="切换主题">
+                    <span id="themeIcon">🌙</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <h2 class="nav-title">报告目录</h2>
+            <nav>
+                <ul class="nav-list">
+                    <li class="nav-item"><a href="#overview" class="nav-link active">📊 执行摘要</a></li>
+                    <li class="nav-item"><a href="#fundamentals" class="nav-link">🏗️ 基本面分析</a></li>
+                    <li class="nav-item"><a href="#market-data" class="nav-link">💹 市场数据</a></li>
+                    <li class="nav-item"><a href="#tokenomics" class="nav-link">💰 代币经济学</a></li>
+                    <li class="nav-item"><a href="#team" class="nav-link">👥 团队与融资</a></li>
+                    <li class="nav-item"><a href="#security" class="nav-link">🔒 安全审计</a></li>
+                    <li class="nav-item"><a href="#community" class="nav-link">🌐 社区分析</a></li>
+                    <li class="nav-item"><a href="#opportunities" class="nav-link">💎 投资机会</a></li>
+                    <li class="nav-item"><a href="#competition" class="nav-link">⚔️ 竞品对比</a></li>
+                    <li class="nav-item"><a href="#risks" class="nav-link">⚠️ 风险评估</a></li>
+                    <li class="nav-item"><a href="#recommendation" class="nav-link">✅ 投资建议</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Executive Summary -->
+            <section id="overview" class="card fade-in">
+                <div class="card-header">
+                    <h2 class="card-title">📊 执行摘要</h2>
+                    <div class="rating-badge">
+                        ⭐⭐⭐⭐ 建议
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">TVL (总锁定价值)</div>
+                        <div class="stat-value">$22.58M</div>
+                        <div class="stat-change positive">+27% (30d)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">24h 交易量</div>
+                        <div class="stat-value">$146.47M</div>
+                        <div class="stat-change positive">+5.2%</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">AVNT 价格</div>
+                        <div class="stat-value">$0.81-2.27</div>
+                        <div class="stat-change positive">+252% (ATH)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">市值 (FDV)</div>
+                        <div class="stat-value">$810M-2.27B</div>
+                        <div class="stat-change">流通率 20.5%</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">累计交易量</div>
+                        <div class="stat-value">$20.33B</div>
+                        <div class="stat-change positive">41,789 交易者</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">综合评分</div>
+                        <div class="stat-value">7.5/10</div>
+                        <div class="stat-change success">⭐⭐⭐⭐</div>
+                    </div>
+                </div>
+
+                <div class="highlight-box success">
+                    <h3 class="highlight-title">✅ 关键亮点</h3>
+                    <ul class="highlight-list">
+                        <li>Base生态首个获Coinbase投资的Perp DEX</li>
+                        <li>顶级VC支持：Pantera、Founders Fund ($12M融资)</li>
+                        <li>5家安全机构审计通过 (Zellic、Zokyo、Sherlock等)</li>
+                        <li>创新Loss Protection机制 (最高20%亏损返还)</li>
+                        <li>支持RWA交易 (外汇、黄金、原油等)</li>
+                        <li>Coinbase史上最快上线 (5天)</li>
+                    </ul>
+                </div>
+
+                <div class="highlight-box danger">
+                    <h3 class="highlight-title">⚠️ 主要风险</h3>
+                    <ul class="highlight-list">
+                        <li>代币上线仅21天，价格高波动 (+1050%振幅)</li>
+                        <li>TVL规模较小 ($22.58M，仅GMX的4%)</li>
+                        <li>2026年4月投资者/团队解锁压力</li>
+                        <li>竞争激烈 (Hyperliquid、GMX、dYdX)</li>
+                        <li>首年通胀率30-40%</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Fundamentals -->
+            <section id="fundamentals" class="card fade-in">
+                <div class="card-header">
+                    <h2 class="card-title">🏗️ 基本面分析</h2>
+                </div>
+
+                <div class="tabs">
+                    <button class="tab-button active" data-tab="project">项目概览</button>
+                    <button class="tab-button" data-tab="tech">技术架构</button>
+                    <button class="tab-button" data-tab="products">产品矩阵</button>
+                </div>
+
+                <div id="project" class="tab-content active">
+                    <h3>核心功能</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>功能</th>
+                                <th>描述</th>
+                                <th>优势</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>永续合约交易</strong></td>
+                                <td>加密货币、外汇、大宗商品、指数</td>
+                                <td>最高500x杠杆</td>
+                            </tr>
+                            <tr>
+                                <td><strong>零手续费模式</strong></td>
+                                <td>特定条件下零交易费</td>
+                                <td>降低交易成本</td>
+                            </tr>
+                            <tr>
+                                <td><strong>流动性挖矿</strong></td>
+                                <td>USDC单币池，动态APR</td>
+                                <td>LP赚取手续费分成</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Loss Protection</strong></td>
+                                <td>逆势交易亏损返还</td>
+                                <td>最高20%亏损补偿</td>
+                            </tr>
+                            <tr>
+                                <td><strong>RWA集成</strong></td>
+                                <td>真实世界资产交易</td>
+                                <td>24/7全球市场</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <p style="margin-top: 1.5rem;">
+                        <strong>项目定位：</strong>Avantis是"通用杠杆层"，将传统金融资产带到链上，
+                        为DeFi交易者提供与传统外汇/大宗商品市场类似的交易体验。
+                    </p>
+                </div>
+
+                <div id="tech" class="tab-content">
+                    <h3>技术架构</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>维度</th>
+                                <th>详情</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>区块链</strong></td>
+                                <td>Base L2 (OP Stack)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>预言机</strong></td>
+                                <td>Pyth Network + Chainlink (双预言机)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>抵押资产</strong></td>
+                                <td>USDC</td>
+                            </tr>
+                            <tr>
+                                <td><strong>智能合约</strong></td>
+                                <td>开源可审计 (GitHub: Avantis-Labs)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>文档</strong></td>
+                                <td>docs.avantisfi.com</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="highlight-box primary" style="margin-top: 1.5rem;">
+                        <h4 class="highlight-title">技术特点</h4>
+                        <ul class="highlight-list">
+                            <li>Optimism Superchain架构，低成本高效率</li>
+                            <li>Pyth低延迟价格流，减少滑点</li>
+                            <li>模块化设计，升级灵活</li>
+                            <li>支持Base生态原生集成</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div id="products" class="tab-content">
+                    <h3>产品矩阵</h3>
+                    <div class="collapsible">
+                        <div class="collapsible-header">
+                            <span><strong>1. 交易平台</strong> (avantisfi.com/trade)</span>
+                            <span class="collapsible-icon">▼</span>
+                        </div>
+                        <div class="collapsible-content">
+                            <ul class="highlight-list">
+                                <li>100+交易对 (BTC、ETH、外汇、黄金、原油等)</li>
+                                <li>正滑点奖励机制</li>
+                                <li>隔离仓位管理</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="collapsible">
+                        <div class="collapsible-header">
+                            <span><strong>2. 流动性池</strong> (avantisfi.com/earn)</span>
+                            <span class="collapsible-icon">▼</span>
+                        </div>
+                        <div class="collapsible-content">
+                            <ul class="highlight-list">
+                                <li>Junior Pool (高风险高收益)</li>
+                                <li>Senior Pool (低风险稳定收益)</li>
+                                <li>历史累计 $1M+ USDC 手续费分红</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="collapsible">
+                        <div class="collapsible-header">
+                            <span><strong>3. 质押系统</strong> (foundation.avantisfi.com/staking)</span>
+                            <span class="collapsible-icon">▼</span>
+                        </div>
+                        <div class="collapsible-content">
+                            <ul class="highlight-list">
+                                <li>AVNT质押获得协议收益分成</li>
+                                <li>交易手续费折扣</li>
+                                <li>XP加速器 (Season 2激励)</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="collapsible">
+                        <div class="collapsible-header">
+                            <span><strong>4. SDK开发套件</strong> (sdk.avantisfi.com)</span>
+                            <span class="collapsible-icon">▼</span>
+                        </div>
+                        <div class="collapsible-content">
+                            <ul class="highlight-list">
+                                <li>为开发者提供API接口</li>
+                                <li>支持AI交易机器人、Telegram Bot构建</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Market Data -->
+            <section id="market-data" class="card fade-in">
+                <div class="card-header">
+                    <h2 class="card-title">💹 市场数据分析</h2>
+                </div>
+
+                <div class="chart-grid">
+                    <div>
+                        <h3>价格走势 (2025年9月)</h3>
+                        <div class="chart-container">
+                            <canvas id="priceChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3>交易量趋势</h3>
+                        <div class="chart-container">
+                            <canvas id="volumeChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 2rem;">关键指标汇总</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>指标</th>
+                            <th>数值</th>
+                            <th>数据来源</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>TVL</td>
+                            <td>$22.58M</td>
+                            <td>DefiLlama</td>
+                        </tr>
+                        <tr>
+                            <td>24h交易量</td>
+                            <td>$146.47M</td>
+                            <td>DefiLlama</td>
+                        </tr>
+                        <tr>
+                            <td>7日交易量</td>
+                            <td>$1.05B</td>
+                            <td>DefiLlama</td>
+                        </tr>
+                        <tr>
+                            <td>30日交易量</td>
+                            <td>$4.641B</td>
+                            <td>DefiLlama</td>
+                        </tr>
+                        <tr>
+                            <td>累计交易量</td>
+                            <td>$20.332B</td>
+                            <td>DefiLlama</td>
+                        </tr>
+                        <tr>
+                            <td>累计手续费</td>
+                            <td>$6.8M</td>
+                            <td>DefiLlama</td>
+                        </tr>
+                        <tr>
+                            <td>Open Interest</td>
+                            <td>$9.74M</td>
+                            <td>DefiLlama</td>
+                        </tr>
+                        <tr>
+                            <td>独立交易者</td>
+                            <td>41,789+</td>
+                            <td>官网数据</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="highlight-box warning" style="margin-top: 1.5rem;">
+                    <h4 class="highlight-title">💡 趋势分析</h4>
+                    <ul class="highlight-list">
+                        <li>TVL近30日增长27% ($17.7M → $22.6M)</li>
+                        <li>日均交易量稳定在$150M左右</li>
+                        <li>交易量/TVL比率 = 6.5x (高流动性利用率)</li>
+                        <li>交易周转率4.33倍，表明活跃交易</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Tokenomics -->
+            <section id="tokenomics" class="card fade-in">
+                <div class="card-header">
+                    <h2 class="card-title">💰 代币经济学</h2>
+                </div>
+
+                <div class="chart-container">
+                    <canvas id="tokenomicsChart"></canvas>
+                </div>
+
+                <h3 style="margin-top: 2rem;">供应模型详情</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>类别</th>
+                            <th>占比</th>
+                            <th>数量</th>
+                            <th>解锁机制</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>总供应量</strong></td>
+                            <td>100%</td>
+                            <td>10亿 AVNT</td>
+                            <td>固定上限</td>
+                        </tr>
+                        <tr style="background: rgba(16, 185, 129, 0.1);">
+                            <td><strong>流通量</strong></td>
+                            <td>20.5%</td>
+                            <td>2.05亿 AVNT</td>
+                            <td>已流通</td>
+                        </tr>
+                        <tr>
+                            <td>社区奖励</td>
+                            <td>50.1%</td>
+                            <td>5.01亿 AVNT</td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td>- 空投1</td>
+                            <td>12.5%</td>
+                            <td>1.25亿 AVNT</td>
+                            <td>已发放 (9月9日)</td>
+                        </tr>
+                        <tr>
+                            <td>- XP激励</td>
+                            <td>28.6%</td>
+                            <td>2.86亿 AVNT</td>
+                            <td>42个月线性释放</td>
+                        </tr>
+                        <tr>
+                            <td>- 生态/开发者</td>
+                            <td>9%</td>
+                            <td>9千万 AVNT</td>
+                            <td>按需释放</td>
+                        </tr>
+                        <tr style="background: rgba(245, 158, 11, 0.1);">
+                            <td>投资者</td>
+                            <td>26.61%</td>
+                            <td>2.661亿 AVNT</td>
+                            <td>12月锁仓+30月线性</td>
+                        </tr>
+                        <tr style="background: rgba(245, 158, 11, 0.1);">
+                            <td>团队/顾问</td>
+                            <td>13.3%</td>
+                            <td>1.33亿 AVNT</td>
+                            <td>同投资者机制</td>
+                        </tr>
+                        <tr>
+                            <td>流动性引导</td>
+                            <td>6%</td>
+                            <td>6千万 AVNT</td>
+                            <td>上线时部分释放</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="highlight-box danger" style="margin-top: 1.5rem;">
+                    <h4 class="highlight-title">⚠️ 解锁时间表警示</h4>
+                    <p><strong>短期压力 (2025年9月-2026年3月):</strong></p>
+                    <ul class="highlight-list">
+                        <li>空投领取: 1.25亿已解锁，存在抛压</li>
+                        <li>XP Season激励: 每周持续释放约170万枚</li>
+                    </ul>
+                    <p style="margin-top: 1rem;"><strong>中期压力 (2026年4月-9月):</strong></p>
+                    <ul class="highlight-list">
+                        <li>投资者解锁开始 (12月锁仓期后)</li>
+                        <li>团队解锁开始</li>
+                        <li>预计每月新增供应约1000-1500万枚</li>
+                    </ul>
+                    <p style="margin-top: 1rem;"><strong>⚠️ 关键风险节点: 2026年4月</strong></p>
+                </div>
+
+                <h3 style="margin-top: 2rem;">代币效用</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+                    <div class="highlight-box success">
+                        <strong>治理权</strong>
+                        <ul class="highlight-list" style="margin-top: 0.5rem;">
+                            <li>协议参数调整投票</li>
+                            <li>新资产上线决策</li>
+                        </ul>
+                    </div>
+                    <div class="highlight-box success">
+                        <strong>质押收益</strong>
+                        <ul class="highlight-list" style="margin-top: 0.5rem;">
+                            <li>协议收入分成</li>
+                            <li>交易手续费折扣</li>
+                        </ul>
+                    </div>
+                    <div class="highlight-box success">
+                        <strong>交易激励</strong>
+                        <ul class="highlight-list" style="margin-top: 0.5rem;">
+                            <li>Loss Protection额度提升</li>
+                            <li>推荐奖励加成</li>
+                        </ul>
+                    </div>
+                    <div class="highlight-box success">
+                        <strong>安全保障</strong>
+                        <ul class="highlight-list" style="margin-top: 0.5rem;">
+                            <li>质押提供保险层</li>
+                            <li>为LP提供保护</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Team & Funding -->
+            <section id="team" class="card fade-in">
+                <div class="card-header">
+                    <h2 class="card-title">👥 团队与融资背景</h2>
+                </div>
+
+                <h3>融资历史</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>轮次</th>
+                            <th>时间</th>
+                            <th>金额</th>
+                            <th>领投</th>
+                            <th>参投</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>种子轮</strong></td>
+                            <td>2023年9月</td>
+                            <td>$4M</td>
+                            <td>Pantera Capital</td>
+                            <td>Founders Fund、Galaxy、Base Ecosystem Fund、Modular Capital</td>
+                        </tr>
+                        <tr>
+                            <td><strong>A轮</strong></td>
+                            <td>2025年6月</td>
+                            <td>$8M</td>
+                            <td>Pantera Capital、Founders Fund</td>
+                            <td>Salt Fund、Symbolic Capital、Flowdesk</td>
+                        </tr>
+                        <tr style="background: rgba(16, 185, 129, 0.1);">
+                            <td><strong>总计</strong></td>
+                            <td>-</td>
+                            <td><strong>$12M</strong></td>
+                            <td colspan="2">-</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="highlight-box success" style="margin-top: 1.5rem;">
+                    <h4 class="highlight-title">💎 投资者质量评估</h4>
+                    <ul class="highlight-list">
+                        <li><strong>Pantera Capital</strong>: 顶级加密基金，AUM超$50亿</li>
+                        <li><strong>Founders Fund</strong>: Peter Thiel创立，投资SpaceX、Coinbase</li>
+                        <li><strong>Galaxy</strong>: Mike Novogratz旗下，专注加密市场</li>
+                        <li><strong>Base Ecosystem Fund</strong>: Coinbase官方基金 (罕见直投)</li>
+                        <li><strong>Flowdesk</strong>: 专业做市商，提供流动性支持</li>
+                    </ul>
+                </div>
+
+                <h3 style="margin-top: 2rem;">核心团队</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 1rem;">
+                    <div class="highlight-box primary">
+                        <h4 style="margin-bottom: 0.5rem;">Harsehaj Singh (Sehaj)</h4>
+                        <p style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 1rem;">联合创始人兼CEO</p>
+                        <ul class="highlight-list" style="font-size: 0.875rem;">
+                            <li>加州大学伯克利分校 Haas商学院 MBA</li>
+                            <li>Pantera Capital投资团队 (14+笔投资)</li>
+                            <li>Lazard投资银行 (M&A部门)</li>
+                            <li>Illuvium游戏经济学家 ($50M土地销售)</li>
+                        </ul>
+                    </div>
+                    <div class="highlight-box primary">
+                        <h4 style="margin-bottom: 0.5rem;">Brank D.</h4>
+                        <p style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 1rem;">联合创始人</p>
+                        <ul class="highlight-list" style="font-size: 0.875rem;">
+                            <li>技术背景</li>
+                            <li>负责协议架构设计</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="highlight-box warning" style="margin-top: 1.5rem;">
+                    <h4 class="highlight-title">团队评估</h4>
+                    <p><strong>✅ 优势:</strong></p>
+                    <ul class="highlight-list">
+                        <li>CEO具备投融资+产品双重经验</li>
+                        <li>传统金融(投行)+加密原生结合</li>
+                        <li>成功游戏经济设计案例($50M销售)</li>
+                    </ul>
+                    <p style="margin-top: 1rem;"><strong>⚠️ 注意:</strong></p>
+                    <ul class="highlight-list">
+                        <li>团队规模较小(公开信息仅4-5人)</li>
+                        <li>技术团队背景信息较少</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Security -->
+            <section id="security" class="card fade-in">
+                <div class="card-header">
+                    <h2 class="card-title">🔒 安全审计与风险</h2>
+                </div>
+
+                <div class="highlight-box success">
+                    <h3 class="highlight-title">✅ 已完成审计</h3>
+                    <table class="data-table" style="margin-top: 1rem;">
+                        <thead>
+                            <tr>
+                                <th>审计机构</th>
+                                <th>审计范围</th>
+                                <th>结果</th>
+                                <th>时间</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Zellic</strong></td>
+                                <td>智能合约核心逻辑</td>
+                                <td><span class="tag success">通过</span></td>
+                                <td>2024 Q1 + 2025 Q1</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Zokyo</strong></td>
+                                <td>交易引擎、流动性池</td>
+                                <td><span class="tag success">通过</span></td>
+                                <td>2024年初</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Sherlock</strong></td>
+                                <td>协议升级版本 (v1.5)</td>
+                                <td><span class="tag success">通过</span></td>
+                                <td>2025 Q1</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Chaos Labs</strong></td>
+                                <td>经济安全、风险管理</td>
+                                <td><span class="tag success">通过</span></td>
+                                <td>2024</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Halborn</strong></td>
+                                <td>$AVNT代币合约</td>
+                                <td><span class="tag success">通过</span></td>
+                                <td>2025年9月前</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="stats-grid" style="margin-top: 2rem;">
+                    <div class="stat-card" style="border-left-color: var(--success-color);">
+                        <div class="stat-label">审计覆盖率</div>
+                        <div class="stat-value">⭐⭐⭐⭐⭐</div>
+                        <div class="stat-change success">5家独立机构</div>
+                    </div>
+                    <div class="stat-card" style="border-left-color: var(--success-color);">
+                        <div class="stat-label">历史攻击事件</div>
+                        <div class="stat-value">0</div>
+                        <div class="stat-change success">✅ 无重大事故</div>
+                    </div>
+                    <div class="stat-card" style="border-left-color: var(--success-color);">
+                        <div class="stat-label">削减事件</div>
+                        <div class="stat-value">0</div>
+                        <div class="stat-change success">✅ 未触发</div>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 2rem;">潜在风险因素</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">
+                    <div class="highlight-box success">
+                        <h4>智能合约风险 (低)</h4>
+                        <ul class="highlight-list" style="font-size: 0.875rem;">
+                            <li>多轮审计降低风险</li>
+                            <li>开源代码可审计</li>
+                        </ul>
+                    </div>
+                    <div class="highlight-box warning">
+                        <h4>预言机风险 (低-中)</h4>
+                        <ul class="highlight-list" style="font-size: 0.875rem;">
+                            <li>双预言机冗余</li>
+                            <li>极端行情可能偏差</li>
+                        </ul>
+                    </div>
+                    <div class="highlight-box warning">
+                        <h4>流动性风险 (中)</h4>
+                        <ul class="highlight-list" style="font-size: 0.875rem;">
+                            <li>TVL较小($22.58M)</li>
+                            <li>分层池降低系统性风险</li>
+                        </ul>
+                    </div>
+                    <div class="highlight-box danger">
+                        <h4>监管风险 (中-高)</h4>
+                        <ul class="highlight-list" style="font-size: 0.875rem;">
+                            <li>高杠杆衍生品</li>
+                            <li>RWA可能触及监管</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Community -->
+            <section id="community" class="card fade-in">
+                <div class="card-header">
+                    <h2 class="card-title">🌐 社区与社交分析</h2>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Twitter 粉丝</div>
+                        <div class="stat-value">87.5K+</div>
+                        <div class="stat-change positive">快速增长</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">空投覆盖</div>
+                        <div class="stat-value">65,000+</div>
+                        <div class="stat-change">钱包地址</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">社区情绪</div>
+                        <div class="stat-value">79%</div>
+                        <div class="stat-change positive">正面评价</div>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 2rem;">社交情绪分析</h3>
+                <div class="chart-container">
+                    <canvas id="sentimentChart"></canvas>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 2rem;">
+                    <div class="highlight-box success">
+                        <h4 class="highlight-title">✅ 积极因素</h4>
+                        <ul class="highlight-list">
+                            <li>Base生态旗舰项目认可度高</li>
+                            <li>Coinbase快速上市提升信心</li>
+                            <li>创新机制受欢迎</li>
+                            <li>"零手续费"营销有吸引力</li>
+                        </ul>
+                    </div>
+                    <div class="highlight-box warning">
+                        <h4 class="highlight-title">⚠️ 消极因素</h4>
+                        <ul class="highlight-list">
+                            <li>代币高波动引发担忧</li>
+                            <li>部分空投用户抛压</li>
+                            <li>TVL规模相对较小</li>
+                            <li>短期炒作vs长期价值争议</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 2rem;">重要里程碑 (2025年9月)</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>日期</th>
+                            <th>事件</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>9月9日</td>
+                            <td>$AVNT代币TGE，Binance Alpha首发</td>
+                        </tr>
+                        <tr>
+                            <td>9月9日</td>
+                            <td>空投1发放，覆盖65,000+钱包</td>
+                        </tr>
+                        <tr style="background: rgba(16, 185, 129, 0.1);">
+                            <td>9月14日</td>
+                            <td><strong>Coinbase上市 (史上最快5天)</strong></td>
+                        </tr>
+                        <tr>
+                            <td>9月16日</td>
+                            <td>Coinbase Futures上线AVNT永续合约</td>
+                        </tr>
+                        <tr>
+                            <td>9月21日</td>
+                            <td>价格触及历史最高 $2.64</td>
+                        </tr>
+                        <tr>
+                            <td>9月22日</td>
+                            <td>TVL突破 $22M</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- Investment Opportunities -->
+            <section id="opportunities" class="card fade-in">
+                <div class="card-header">
+                    <h2 class="card-title">💎 投资机会分析</h2>
+                </div>
+
+                <h3>投资方式对比</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>投资方式</th>
+                            <th>预期收益(APR/APY)</th>
+                            <th>风险等级</th>
+                            <th>锁定期</th>
+                            <th>适合人群</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>直接买入AVNT</strong></td>
+                            <td>不定(价格涨跌)</td>
+                            <td><span class="tag danger">高</span></td>
+                            <td>无</td>
+                            <td>激进投资者</td>
+                        </tr>
+                        <tr>
+                            <td><strong>AVNT质押</strong></td>
+                            <td>10-20% (估)</td>
+                            <td><span class="tag warning">中-高</span></td>
+                            <td>灵活</td>
+                            <td>长期持有者</td>
+                        </tr>
+                        <tr>
+                            <td><strong>LP Junior Pool</strong></td>
+                            <td>8-15%</td>
+                            <td><span class="tag danger">高</span></td>
+                            <td>无</td>
+                            <td>风险承受力强</td>
+                        </tr>
+                        <tr style="background: rgba(16, 185, 129, 0.1);">
+                            <td><strong>LP Senior Pool</strong></td>
+                            <td>3-6%</td>
+                            <td><span class="tag success">低-中</span></td>
+                            <td>无</td>
+                            <td>稳健型</td>
+                        </tr>
+                        <tr>
+                            <td><strong>交易赚XP</strong></td>
+                            <td>不定</td>
+                            <td><span class="tag warning">中</span></td>
+                            <td>无</td>
+                            <td>活跃交易者</td>
+                        </tr>
+                        <tr>
+                            <td><strong>开发生态工具</strong></td>
+                            <td>不定(奖励+分成)</td>
+                            <td><span class="tag warning">中</span></td>
+                            <td>长期</td>
+                            <td>开发者</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 style="margin-top: 2rem;">推荐投资组合</h3>
+                <div class="chart-container">
+                    <canvas id="portfolioChart"></canvas>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 2rem;">
+                    <div class="highlight-box success">
+                        <h4>保守组合 (低风险)</h4>
+                        <ul class="highlight-list">
+                            <li>50% USDC Senior Pool</li>
+                            <li>30% AVNT质押</li>
+                            <li>20% 现金观望</li>
+                        </ul>
+                        <p style="margin-top: 1rem; font-size: 0.875rem;">
+                            <strong>预期年化:</strong> 6-10%<br>
+                            <strong>风险:</strong> 低-中
+                        </p>
+                    </div>
+
+                    <div class="highlight-box warning">
+                        <h4>平衡组合 (中风险) ⭐推荐</h4>
+                        <ul class="highlight-list">
+                            <li>40% AVNT持有</li>
+                            <li>30% USDC Junior Pool</li>
+                            <li>30% 交易赚XP</li>
+                        </ul>
+                        <p style="margin-top: 1rem; font-size: 0.875rem;">
+                            <strong>预期年化:</strong> 15-30%+<br>
+                            <strong>风险:</strong> 中
+                        </p>
+                    </div>
+
+                    <div class="highlight-box danger">
+                        <h4>激进组合 (高风险)</h4>
+                        <ul class="highlight-list">
+                            <li>60% AVNT持有+杠杆</li>
+                            <li>30% 高杠杆交易</li>
+                            <li>10% LP Junior Pool</li>
+                        </ul>
+                        <p style="margin-top: 1rem; font-size: 0.875rem;">
+                            <strong>预期年化:</strong> 50-200%+ (或-50%)<br>
+                            <strong>风险:</strong> 极高
+                        </p>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 2rem;">交易策略</h3>
+                <div class="collapsible">
+                    <div class="collapsible-header">
+                        <span><strong>1. Loss Protection套利</strong></span>
+                        <span class="collapsible-icon">▼</span>
+                    </div>
+                    <div class="collapsible-content">
+                        <p><strong>机制:</strong> 逆势交易最高20%亏损返还</p>
+                        <p><strong>策略:</strong> 识别Open Interest倾向，反向开仓</p>
+                        <p><strong>收益:</strong> 降低交易成本，提高胜率</p>
+                        <p><strong>适合:</strong> 活跃交易者</p>
+                    </div>
+                </div>
+
+                <div class="collapsible">
+                    <div class="collapsible-header">
+                        <span><strong>2. 正滑点捕获</strong></span>
+                        <span class="collapsible-icon">▼</span>
+                    </div>
+                    <div class="collapsible-content">
+                        <p><strong>机制:</strong> 平衡OI的交易享受正滑点</p>
+                        <p><strong>策略:</strong> 监控OI倾斜，开仓平衡方向</p>
+                        <p><strong>收益:</strong> 入场价优于市价</p>
+                        <p><strong>适合:</strong> 高频/算法交易者</p>
+                    </div>
+                </div>
+
+                <div class="collapsible">
+                    <div class="collapsible-header">
+                        <span><strong>3. RWA套保组合</strong></span>
+                        <span class="collapsible-icon">▼</span>
+                    </div>
+                    <div class="collapsible-content">
+                        <p><strong>策略:</strong></p>
+                        <ul class="highlight-list">
+                            <li>加密资产多头 + 黄金(XAU)多头 (避险对冲)</li>
+                            <li>BTC多头 + 外汇(USD/JPY)对冲 (货币风险)</li>
+                        </ul>
+                        <p><strong>收益:</strong> 降低组合波动，保持收益</p>
+                        <p><strong>适合:</strong> 风险厌恶型投资者</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Competition -->
+            <section id="competition" class="card fade-in">
+                <div class="card-header">
+                    <h2 class="card-title">⚔️ 竞品对比分析</h2>
+                </div>
+
+                <div class="chart-container">
+                    <canvas id="competitorChart"></canvas>
+                </div>
+
+                <h3 style="margin-top: 2rem;">主要竞争对手对比</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>项目</th>
+                            <th>TVL</th>
+                            <th>24h交易量</th>
+                            <th>杠杆</th>
+                            <th>代币市值</th>
+                            <th>主要优势</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="background: rgba(99, 102, 241, 0.1);">
+                            <td><strong>Avantis</strong></td>
+                            <td>$22.58M</td>
+                            <td>$146.47M</td>
+                            <td>500x</td>
+                            <td>$165-465M</td>
+                            <td>Base生态,RWA,Loss Protection</td>
+                        </tr>
+                        <tr>
+                            <td><strong>GMX</strong></td>
+                            <td>$500M+</td>
+                            <td>$400M+</td>
+                            <td>50x</td>
+                            <td>$300M+</td>
+                            <td>成熟协议,GLP流动性模型</td>
+                        </tr>
+                        <tr>
+                            <td><strong>dYdX</strong></td>
+                            <td>$350M+</td>
+                            <td>$1B+</td>
+                            <td>20x</td>
+                            <td>$1B+</td>
+                            <td>自有链,订单簿,高性能</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Hyperliquid</strong></td>
+                            <td>$2B+</td>
+                            <td>$4B+</td>
+                            <td>50x</td>
+                            <td>$15B+</td>
+                            <td>自有L1,高流动性</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Synthetix</strong></td>
+                            <td>$430M</td>
+                            <td>$500M+</td>
+                            <td>10x</td>
+                            <td>$1.1B</td>
+                            <td>合成资产先驱</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 style="margin-top: 2rem;">Avantis竞争优势</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                    <div class="highlight-box success">
+                        <h4 class="highlight-title">✅ 优势</h4>
+                        <ul class="highlight-list">
+                            <li>Base生态锁定 (Coinbase官方投资)</li>
+                            <li>RWA差异化 (外汇、大宗商品)</li>
+                            <li>创新机制 (Loss Protection独有)</li>
+                            <li>超高杠杆 (500x vs 50x)</li>
+                            <li>后发优势 (学习前辈经验)</li>
+                        </ul>
+                    </div>
+
+                    <div class="highlight-box danger">
+                        <h4 class="highlight-title">⚠️ 劣势</h4>
+                        <ul class="highlight-list">
+                            <li>规模差距 (TVL仅GMX的4%)</li>
+                            <li>时间考验 (上线仅1.5年)</li>
+                            <li>链局限 (仅Base单链)</li>
+                            <li>品牌认知 (相对较低)</li>
+                            <li>流动性深度不足</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="highlight-box primary" style="margin-top: 1.5rem;">
+                    <h4 class="highlight-title">🎯 市场定位</h4>
+                    <p><strong>"Base链的GMX + RWA专家"</strong></p>
+                    <p style="margin-top: 1rem;"><strong>目标用户:</strong></p>
+                    <ul class="highlight-list">
+                        <li>Base生态原生用户</li>
+                        <li>外汇/大宗商品交易者(Crypto Native)</li>
+                        <li>寻求Loss Protection的风险厌恶交易者</li>
+                        <li>偏好超高杠杆的激进交易者</li>
+                    </ul>
+                    <p style="margin-top: 1rem;"><strong>市场机会:</strong> Perp DEX总市场$6B+ TVL，Avantis市场份额0.37%，有增长空间</p>
+                </div>
+            </section>
+
+            <!-- Risks -->
+            <section id="risks" class="card fade-in">
+                <div class="card-header">
+                    <h2 class="card-title">⚠️ 风险评估与警示</h2>
+                </div>
+
+                <div class="highlight-box danger">
+                    <h3 class="highlight-title">🚨 高优先级风险</h3>
+                    <div style="margin-top: 1rem;">
+                        <div class="collapsible">
+                            <div class="collapsible-header">
+                                <span><strong>1. 代币价格波动风险</strong></span>
+                                <span class="collapsible-icon">▼</span>
+                            </div>
+                            <div class="collapsible-content">
+                                <ul class="highlight-list">
+                                    <li>上线21天波动率36%+</li>
+                                    <li>历史最高$2.64，最低$0.23，振幅1050%</li>
+                                    <li>流通量仅20.5%，易被操纵</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="collapsible">
+                            <div class="collapsible-header">
+                                <span><strong>2. 解锁抛压风险</strong></span>
+                                <span class="collapsible-icon">▼</span>
+                            </div>
+                            <div class="collapsible-content">
+                                <ul class="highlight-list">
+                                    <li>2026年4月投资者/团队解锁开始</li>
+                                    <li>未来12个月流通量将翻倍</li>
+                                    <li>空投用户抛售尚未完全消化</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="collapsible">
+                            <div class="collapsible-header">
+                                <span><strong>3. TVL增长不确定性</strong></span>
+                                <span class="collapsible-icon">▼</span>
+                            </div>
+                            <div class="collapsible-content">
+                                <ul class="highlight-list">
+                                    <li>当前$22.58M远低于竞品</li>
+                                    <li>TVL决定LP收益和协议安全</li>
+                                    <li>增长依赖Base生态整体发展</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="collapsible">
+                            <div class="collapsible-header">
+                                <span><strong>4. 竞争加剧风险</strong></span>
+                                <span class="collapsible-icon">▼</span>
+                            </div>
+                            <div class="collapsible-content">
+                                <ul class="highlight-list">
+                                    <li>Hyperliquid强势崛起</li>
+                                    <li>GMX v2、dYdX v4持续迭代</li>
+                                    <li>新兴Perp DEX不断涌现</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="highlight-box warning" style="margin-top: 1.5rem;">
+                    <h3 class="highlight-title">⚠️ 中等风险</h3>
+                    <ul class="highlight-list">
+                        <li><strong>监管不确定性:</strong> 高杠杆衍生品监管趋严，RWA可能触及证券法</li>
+                        <li><strong>技术风险:</strong> Base链依赖OP Stack，预言机故障可能导致错误清算</li>
+                        <li><strong>流动性风险:</strong> 极端行情LP可能不足，大额交易滑点高</li>
+                    </ul>
+                </div>
+
+                <h3 style="margin-top: 2rem;">投资纪律建议</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">
+                    <div class="highlight-box primary">
+                        <h4>仓位管理</h4>
+                        <ul class="highlight-list" style="font-size: 0.875rem;">
+                            <li>单项目≤加密组合10-20%</li>
+                            <li>DeFi总仓位≤加密组合50%</li>
+                            <li>分批建仓，避免追高</li>
+                        </ul>
+                    </div>
+                    <div class="highlight-box primary">
+                        <h4>止损策略</h4>
+                        <ul class="highlight-list" style="font-size: 0.875rem;">
+                            <li>AVNT代币建议止损-30%</li>
+                            <li>LP本金亏损立即评估退出</li>
+                            <li>质押出现风险立即撤出</li>
+                        </ul>
+                    </div>
+                    <div class="highlight-box primary">
+                        <h4>定期复核</h4>
+                        <ul class="highlight-list" style="font-size: 0.875rem;">
+                            <li>每月检查TVL、交易量、APR</li>
+                            <li>每季度评估竞争格局</li>
+                            <li>2026年4月解锁节点重点关注</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Recommendation -->
+            <section id="recommendation" class="card fade-in">
+                <div class="card-header">
+                    <h2 class="card-title">✅ 投资建议与行动步骤</h2>
+                    <div class="rating-badge">
+                        综合评分 7.5/10
+                    </div>
+                </div>
+
+                <div class="highlight-box success">
+                    <h3 class="highlight-title">🎯 投资等级：⭐⭐⭐⭐ 建议 (4/5星)</h3>
+                    <p style="margin-top: 1rem;"><strong>理由：</strong></p>
+                    <ul class="highlight-list">
+                        <li>✅ 基本面扎实 (技术、团队、融资)</li>
+                        <li>✅ 创新机制差异化</li>
+                        <li>✅ Base生态战略价值高</li>
+                        <li>✅ 安全记录良好</li>
+                        <li>⚠️ 代币短期波动大</li>
+                        <li>⚠️ TVL规模需增长</li>
+                        <li>⚠️ 竞争压力大</li>
+                    </ul>
+                </div>
+
+                <h3 style="margin-top: 2rem;">适合投资人群</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">
+                    <div class="highlight-box success">
+                        <h4>✅ 适合</h4>
+                        <ul class="highlight-list" style="font-size: 0.875rem;">
+                            <li>看好Base生态长期价值</li>
+                            <li>认同RWA on-chain叙事</li>
+                            <li>能承受30-50%短期波动</li>
+                            <li>投资期限6-18个月</li>
+                            <li>活跃DeFi用户</li>
+                        </ul>
+                    </div>
+                    <div class="highlight-box warning">
+                        <h4>⚠️ 需谨慎</h4>
+                        <ul class="highlight-list" style="font-size: 0.875rem;">
+                            <li>追求稳定收益</li>
+                            <li>无法承受50%+回撤</li>
+                            <li>投资期限<3个月</li>
+                            <li>不熟悉DeFi操作</li>
+                        </ul>
+                    </div>
+                    <div class="highlight-box danger">
+                        <h4>❌ 不建议</h4>
+                        <ul class="highlight-list" style="font-size: 0.875rem;">
+                            <li>使用全部资金</li>
+                            <li>加杠杆投资</li>
+                            <li>期望一夜暴富</li>
+                            <li>不了解Perp DEX</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 2rem;">具体行动步骤 (假设$10,000投资)</h3>
+                <div class="stats-grid">
+                    <div class="stat-card" style="border-left-color: var(--primary-color);">
+                        <div class="stat-label">第一步: 仓位分配</div>
+                        <ul class="highlight-list" style="font-size: 0.875rem; margin-top: 0.5rem;">
+                            <li>$3,000: AVNT代币</li>
+                            <li>$4,000: USDC Senior Pool</li>
+                            <li>$2,000: AVNT质押</li>
+                            <li>$1,000: 保留现金</li>
+                        </ul>
+                    </div>
+
+                    <div class="stat-card" style="border-left-color: var(--success-color);">
+                        <div class="stat-label">第二步: 时机选择</div>
+                        <ul class="highlight-list" style="font-size: 0.875rem; margin-top: 0.5rem;">
+                            <li>避开历史高点($2.64)</li>
+                            <li>优选$0.80-1.20区间</li>
+                            <li>分3-4周分批建仓</li>
+                        </ul>
+                    </div>
+
+                    <div class="stat-card" style="border-left-color: var(--warning-color);">
+                        <div class="stat-label">第三步: 监控指标</div>
+                        <ul class="highlight-list" style="font-size: 0.875rem; margin-top: 0.5rem;">
+                            <li>每周: TVL、交易量、价格</li>
+                            <li>每月: APR、新交易对</li>
+                            <li>关键: 2026年4月解锁期</li>
+                        </ul>
+                    </div>
+
+                    <div class="stat-card" style="border-left-color: var(--danger-color);">
+                        <div class="stat-label">第四步: 退出计划</div>
+                        <ul class="highlight-list" style="font-size: 0.875rem; margin-top: 0.5rem;">
+                            <li>获利: AVNT涨50-100%部分获利</li>
+                            <li>止损: 总仓位亏损-30%</li>
+                            <li>时间: 6-18个月持有期</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="highlight-box primary" style="margin-top: 2rem;">
+                    <h3 class="highlight-title">🔑 关键成功因素</h3>
+                    <ul class="highlight-list">
+                        <li>Base链生态持续繁荣</li>
+                        <li>TVL增长至$100M+级别</li>
+                        <li>RWA交易需求被验证</li>
+                        <li>代币解锁平稳度过(2026年4月)</li>
+                    </ul>
+                </div>
+
+                <div class="highlight-box warning" style="margin-top: 1.5rem;">
+                    <h3 class="highlight-title">⚠️ 最终提醒</h3>
+                    <ul class="highlight-list">
+                        <li>只投资您能承受损失的金额</li>
+                        <li>不要使用杠杆或借款投资</li>
+                        <li>分散投资，不要All in单一项目</li>
+                        <li>保持理性，避免FOMO情绪</li>
+                        <li><strong>本报告仅供参考，不构成财务建议 (DYOR)</strong></li>
+                    </ul>
+                </div>
+
+                <div style="text-align: center; margin-top: 2rem; padding: 2rem; background: var(--bg-secondary); border-radius: 12px;">
+                    <p style="font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem;">
+                        报告完成日期: 2025年9月30日
+                    </p>
+                    <p style="color: var(--text-secondary);">
+                        下次建议更新: 2025年10月30日或重大事件发生时
+                    </p>
+                    <p style="margin-top: 1rem; font-size: 0.875rem; color: var(--text-tertiary);">
+                        本报告由AI辅助生成，基于公开信息深度研究。投资有风险，入市需谨慎。
+                    </p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Scroll to Top Button -->
+    <button class="scroll-top" id="scrollTop" aria-label="返回顶部">
+        ↑
+    </button>
+
+    <script>
+        // Theme Toggle
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        const html = document.documentElement;
+
+        const currentTheme = localStorage.getItem('theme') || 'light';
+        html.setAttribute('data-theme', currentTheme);
+        themeIcon.textContent = currentTheme === 'dark' ? '☀️' : '🌙';
+
+        themeToggle.addEventListener('click', () => {
+            const newTheme = html.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            themeIcon.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+        });
+
+        // Smooth Scrolling Navigation
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = link.getAttribute('href');
+                const targetSection = document.querySelector(targetId);
+
+                // Remove active class from all links
+                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                // Add active class to clicked link
+                link.classList.add('active');
+
+                // Smooth scroll to section
+                targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+        });
+
+        // Scroll to Top Button
+        const scrollTopBtn = document.getElementById('scrollTop');
+
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 500) {
+                scrollTopBtn.classList.add('visible');
+            } else {
+                scrollTopBtn.classList.remove('visible');
+            }
+        });
+
+        scrollTopBtn.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        // Tabs Functionality
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', () => {
+                const tabName = button.dataset.tab;
+                const tabsContainer = button.closest('.card');
+
+                // Remove active class from all buttons and contents
+                tabsContainer.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+                tabsContainer.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+                // Add active class to clicked button and corresponding content
+                button.classList.add('active');
+                tabsContainer.querySelector(`#${tabName}`).classList.add('active');
+            });
+        });
+
+        // Collapsible Functionality
+        document.querySelectorAll('.collapsible-header').forEach(header => {
+            header.addEventListener('click', () => {
+                header.classList.toggle('active');
+                const content = header.nextElementSibling;
+                content.classList.toggle('active');
+            });
+        });
+
+        // Search Functionality
+        const searchInput = document.getElementById('searchInput');
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const allSections = document.querySelectorAll('.main-content .card');
+
+            allSections.forEach(section => {
+                const text = section.textContent.toLowerCase();
+                if (text.includes(searchTerm) || searchTerm === '') {
+                    section.style.display = 'block';
+                } else {
+                    section.style.display = 'none';
+                }
+            });
+        });
+
+        // Table Sorting
+        document.querySelectorAll('.data-table th').forEach((header, index) => {
+            header.addEventListener('click', () => {
+                const table = header.closest('table');
+                const tbody = table.querySelector('tbody');
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+
+                const isAscending = header.classList.contains('asc');
+
+                // Remove sorting classes from all headers
+                table.querySelectorAll('th').forEach(th => th.classList.remove('asc', 'desc'));
+
+                // Add appropriate class
+                header.classList.add(isAscending ? 'desc' : 'asc');
+
+                // Sort rows
+                rows.sort((a, b) => {
+                    const aVal = a.cells[index].textContent;
+                    const bVal = b.cells[index].textContent;
+
+                    if (isAscending) {
+                        return bVal.localeCompare(aVal, 'zh-CN', { numeric: true });
+                    } else {
+                        return aVal.localeCompare(bVal, 'zh-CN', { numeric: true });
+                    }
+                });
+
+                // Re-append sorted rows
+                rows.forEach(row => tbody.appendChild(row));
+            });
+        });
+
+        // Initialize Charts
+        function initCharts() {
+            // Price Chart
+            const priceCtx = document.getElementById('priceChart');
+            if (priceCtx) {
+                new Chart(priceCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['9/9', '9/10', '9/11', '9/12', '9/13', '9/14', '9/15', '9/16', '9/17', '9/18', '9/21', '9/22', '9/28', '9/30'],
+                        datasets: [{
+                            label: 'AVNT 价格 ($)',
+                            data: [0.23, 0.23, 0.36, 0.31, 0.44, 0.83, 0.71, 1.08, 0.87, 1.01, 2.64, 2.33, 1.37, 2.27],
+                            borderColor: '#6366f1',
+                            backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                ticks: {
+                                    callback: function(value) {
+                                        return '$' + value.toFixed(2);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Volume Chart
+            const volumeCtx = document.getElementById('volumeChart');
+            if (volumeCtx) {
+                new Chart(volumeCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['24h', '7d', '30d', '累计'],
+                        datasets: [{
+                            label: '交易量 (M)',
+                            data: [146.47, 1050, 4641, 20332],
+                            backgroundColor: [
+                                'rgba(99, 102, 241, 0.8)',
+                                'rgba(139, 92, 246, 0.8)',
+                                'rgba(16, 185, 129, 0.8)',
+                                'rgba(245, 158, 11, 0.8)'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return '$' + value + 'M';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Tokenomics Chart
+            const tokenomicsCtx = document.getElementById('tokenomicsChart');
+            if (tokenomicsCtx) {
+                new Chart(tokenomicsCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['社区奖励 (50.1%)', '投资者 (26.61%)', '团队/顾问 (13.3%)', '流动性 (6%)', '其他 (4%)'],
+                        datasets: [{
+                            data: [50.1, 26.61, 13.3, 6, 4],
+                            backgroundColor: [
+                                '#10b981',
+                                '#f59e0b',
+                                '#ef4444',
+                                '#6366f1',
+                                '#8b5cf6'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.label + ': ' + context.parsed + '%';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Sentiment Chart
+            const sentimentCtx = document.getElementById('sentimentChart');
+            if (sentimentCtx) {
+                new Chart(sentimentCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: ['正面情绪 (79%)', '负面情绪 (21%)'],
+                        datasets: [{
+                            data: [79, 21],
+                            backgroundColor: [
+                                '#10b981',
+                                '#ef4444'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Portfolio Chart
+            const portfolioCtx = document.getElementById('portfolioChart');
+            if (portfolioCtx) {
+                new Chart(portfolioCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['AVNT持有 (40%)', 'USDC Junior Pool (30%)', '交易赚XP (30%)'],
+                        datasets: [{
+                            data: [40, 30, 30],
+                            backgroundColor: [
+                                '#6366f1',
+                                '#10b981',
+                                '#f59e0b'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            },
+                            title: {
+                                display: true,
+                                text: '平衡组合 (中风险) - 推荐'
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Competitor Chart
+            const competitorCtx = document.getElementById('competitorChart');
+            if (competitorCtx) {
+                new Chart(competitorCtx, {
+                    type: 'radar',
+                    data: {
+                        labels: ['TVL规模', '交易量', '杠杆倍数', '创新机制', '安全审计', '生态支持'],
+                        datasets: [
+                            {
+                                label: 'Avantis',
+                                data: [3, 4, 10, 9, 9, 9],
+                                borderColor: '#6366f1',
+                                backgroundColor: 'rgba(99, 102, 241, 0.2)'
+                            },
+                            {
+                                label: 'GMX',
+                                data: [9, 7, 5, 7, 8, 7],
+                                borderColor: '#10b981',
+                                backgroundColor: 'rgba(16, 185, 129, 0.2)'
+                            },
+                            {
+                                label: 'Hyperliquid',
+                                data: [10, 10, 5, 8, 7, 6],
+                                borderColor: '#f59e0b',
+                                backgroundColor: 'rgba(245, 158, 11, 0.2)'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            r: {
+                                beginAtZero: true,
+                                max: 10
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Initialize charts when DOM is loaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initCharts);
+        } else {
+            initCharts();
+        }
+
+        // Intersection Observer for Fade-in Animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.fade-in').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(el);
+        });
+
+        // Print functionality
+        window.addEventListener('beforeprint', () => {
+            // Expand all collapsibles before printing
+            document.querySelectorAll('.collapsible-content').forEach(content => {
+                content.classList.add('active');
+                content.style.maxHeight = 'none';
+            });
+        });
+
+        window.addEventListener('afterprint', () => {
+            // Collapse all collapsibles after printing
+            document.querySelectorAll('.collapsible-content').forEach(content => {
+                if (!content.previousElementSibling.classList.contains('active')) {
+                    content.classList.remove('active');
+                    content.style.maxHeight = '0';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

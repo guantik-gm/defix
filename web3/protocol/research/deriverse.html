@@ -1,0 +1,1510 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deriverse 项目投资评估报告</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #8b5cf6;
+            --secondary-color: #6366f1;
+            --accent-color: #ec4899;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --info-color: #3b82f6;
+            --bg-primary: #ffffff;
+            --bg-secondary: #f9fafb;
+            --bg-tertiary: #f3f4f6;
+            --text-primary: #111827;
+            --text-secondary: #6b7280;
+            --text-tertiary: #9ca3af;
+            --border-color: #e5e7eb;
+            --spacing-xs: 4px;
+            --spacing-sm: 8px;
+            --spacing-md: 16px;
+            --spacing-lg: 24px;
+            --spacing-xl: 32px;
+            --spacing-2xl: 48px;
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --radius-xl: 16px;
+            --transition-fast: 150ms ease-in-out;
+            --transition-base: 250ms ease-in-out;
+            --transition-slow: 350ms ease-in-out;
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #111827;
+            --bg-secondary: #1f2937;
+            --bg-tertiary: #374151;
+            --text-primary: #f9fafb;
+            --text-secondary: #d1d5db;
+            --text-tertiary: #9ca3af;
+            --border-color: #374151;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            transition: background var(--transition-base), color var(--transition-base);
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        header {
+            grid-column: 1 / -1;
+            background: var(--bg-primary);
+            border-bottom: 1px solid var(--border-color);
+            padding: var(--spacing-lg);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .project-meta {
+            display: flex;
+            gap: var(--spacing-md);
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .theme-toggle {
+            background: var(--bg-tertiary);
+            border: none;
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-size: 1.25rem;
+            transition: transform var(--transition-fast);
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: var(--bg-primary);
+            border-right: 1px solid var(--border-color);
+            padding: var(--spacing-lg);
+            position: sticky;
+            top: 88px;
+            height: calc(100vh - 88px);
+            overflow-y: auto;
+        }
+
+        .nav-section {
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .nav-section h3 {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-tertiary);
+            margin-bottom: var(--spacing-md);
+            letter-spacing: 0.05em;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-sm) var(--spacing-md);
+            margin-bottom: var(--spacing-xs);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: background var(--transition-fast);
+            text-decoration: none;
+            color: var(--text-primary);
+        }
+
+        .nav-item:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .nav-item.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        /* Main Content */
+        main {
+            padding: var(--spacing-2xl);
+            max-width: 1200px;
+        }
+
+        section {
+            margin-bottom: var(--spacing-2xl);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity var(--transition-slow), transform var(--transition-slow);
+        }
+
+        section.animate-in {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .section-title {
+            font-size: 1.875rem;
+            margin-bottom: var(--spacing-lg);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-primary);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-md);
+            border: 1px solid var(--border-color);
+            transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Stat Grid */
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .stat-item {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: var(--spacing-lg);
+            border-radius: var(--radius-lg);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            opacity: 0.9;
+        }
+
+        /* Highlight Boxes */
+        .highlight {
+            padding: var(--spacing-md);
+            border-radius: var(--radius-md);
+            margin-bottom: var(--spacing-md);
+            border-left: 4px solid;
+        }
+
+        .highlight.info {
+            background: rgba(59, 130, 246, 0.1);
+            border-color: var(--info-color);
+        }
+
+        .highlight.success {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: var(--success-color);
+        }
+
+        .highlight.warning {
+            background: rgba(245, 158, 11, 0.1);
+            border-color: var(--warning-color);
+        }
+
+        .highlight.danger {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: var(--danger-color);
+        }
+
+        /* Tables */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--bg-primary);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: var(--spacing-md);
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .data-table th {
+            background: var(--bg-tertiary);
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .data-table th:hover {
+            background: var(--border-color);
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Chart Container */
+        .chart-container {
+            background: var(--bg-primary);
+            padding: var(--spacing-lg);
+            border-radius: var(--radius-lg);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .chart-container canvas {
+            max-height: 400px;
+        }
+
+        /* Tags */
+        .tag {
+            display: inline-block;
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-right: var(--spacing-xs);
+        }
+
+        .tag.green {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success-color);
+        }
+
+        .tag.yellow {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning-color);
+        }
+
+        .tag.red {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger-color);
+        }
+
+        /* Back to Top Button */
+        .back-to-top {
+            position: fixed;
+            bottom: var(--spacing-xl);
+            right: var(--spacing-xl);
+            background: var(--primary-color);
+            color: white;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            transition: transform var(--transition-fast);
+        }
+
+        .back-to-top:hover {
+            transform: translateY(-4px);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                display: none;
+            }
+
+            main {
+                padding: var(--spacing-lg);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .stat-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .project-meta {
+                flex-direction: column;
+                gap: var(--spacing-xs);
+            }
+        }
+
+        /* Investment Rating Badge */
+        .rating-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-md) var(--spacing-lg);
+            background: linear-gradient(135deg, var(--warning-color), var(--danger-color));
+            color: white;
+            border-radius: var(--radius-lg);
+            font-size: 1.125rem;
+            font-weight: 700;
+            margin: var(--spacing-lg) 0;
+        }
+
+        /* Feature List */
+        .feature-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--spacing-md);
+        }
+
+        .feature-item {
+            background: var(--bg-tertiary);
+            padding: var(--spacing-md);
+            border-radius: var(--radius-md);
+        }
+
+        .feature-item h4 {
+            margin-bottom: var(--spacing-sm);
+            color: var(--primary-color);
+        }
+
+        /* Team Card */
+        .team-card {
+            display: flex;
+            gap: var(--spacing-md);
+            align-items: start;
+        }
+
+        .team-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .team-info h4 {
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .team-info p {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <h1>📊 Deriverse 投资评估报告</h1>
+                <div class="project-meta">
+                    <span>🔗 Solana</span>
+                    <span>🪙 DRV / DRVS</span>
+                    <span>📅 2025-10-02</span>
+                </div>
+            </div>
+            <button class="theme-toggle" id="themeToggle" aria-label="切换主题">🌙</button>
+        </header>
+
+        <aside class="sidebar">
+            <nav>
+                <div class="nav-section">
+                    <h3>快速导航</h3>
+                    <a href="#summary" class="nav-item">📋 执行摘要</a>
+                    <a href="#overview" class="nav-item">🎯 项目概述</a>
+                    <a href="#technology" class="nav-item">🔧 技术架构</a>
+                    <a href="#tokenomics" class="nav-item">💰 代币经济学</a>
+                    <a href="#team" class="nav-item">👥 团队与融资</a>
+                    <a href="#market" class="nav-item">📊 市场数据</a>
+                    <a href="#security" class="nav-item">🛡️ 安全审计</a>
+                    <a href="#community" class="nav-item">📱 社区分析</a>
+                    <a href="#competitors" class="nav-item">🏆 竞品对比</a>
+                    <a href="#opportunities" class="nav-item">💎 投资机会</a>
+                    <a href="#risks" class="nav-item">⚠️ 风险提示</a>
+                    <a href="#swot" class="nav-item">📈 SWOT分析</a>
+                    <a href="#recommendation" class="nav-item">💡 投资建议</a>
+                </div>
+            </nav>
+        </aside>
+
+        <main>
+            <!-- 执行摘要 -->
+            <section id="summary">
+                <h2 class="section-title">📋 执行摘要</h2>
+                <div class="card">
+                    <p>Deriverse 是建立在 Solana 区块链上的首个综合性去中心化衍生品交易平台，提供永续合约、期权、期货、现货交易以及代币化资产启动平台。项目于 2025 年 1 月完成 ICO，筹集 $685 万美元，目前处于测试网阶段，尚未正式上线主网。</p>
+                    <div class="rating-badge">
+                        <span>⚠️</span>
+                        <span>投资建议等级: 中立偏谨慎 (Neutral - Cautious)</span>
+                    </div>
+                </div>
+
+                <div class="stat-grid">
+                    <div class="stat-item">
+                        <div class="stat-value">$6.85M</div>
+                        <div class="stat-label">ICO 筹资金额</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">$0.135</div>
+                        <div class="stat-label">ICO 代币价格</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">5.3/10</div>
+                        <div class="stat-label">综合评分</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">测试网</div>
+                        <div class="stat-label">当前状态</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 项目概述 -->
+            <section id="overview">
+                <h2 class="section-title">🎯 项目概述</h2>
+                <div class="card">
+                    <h3>核心定位</h3>
+                    <p>Deriverse 定位为 Solana 上唯一完全去中心化、无需许可、自托管的衍生品交易平台，旨在为专业交易机构和合格散户提供一站式交易生态系统。</p>
+                </div>
+
+                <div class="card">
+                    <h3>主要功能</h3>
+                    <div class="feature-list">
+                        <div class="feature-item">
+                            <h4>⚡ 永续合约</h4>
+                            <p>支持加密资产永续合约交易</p>
+                        </div>
+                        <div class="feature-item">
+                            <h4>📈 期权交易</h4>
+                            <p>提供链上期权交易功能</p>
+                        </div>
+                        <div class="feature-item">
+                            <h4>📊 期货交易</h4>
+                            <p>多资产期货交易支持</p>
+                        </div>
+                        <div class="feature-item">
+                            <h4>💱 现货交易</h4>
+                            <p>即时现货交易功能</p>
+                        </div>
+                        <div class="feature-item">
+                            <h4>🚀 Launchpad</h4>
+                            <p>代币化资产启动平台</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 技术架构 -->
+            <section id="technology">
+                <h2 class="section-title">🔧 技术架构分析</h2>
+
+                <div class="highlight info">
+                    <h4>💡 核心创新</h4>
+                    <p>完全链上订单簿系统，不依赖链下 keeper 或清算机器人，与 Drift 等竞品的链下订单簿形成差异化。</p>
+                </div>
+
+                <div class="card">
+                    <h3>性能优化指标</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>优化指标</th>
+                                <th>性能提升</th>
+                                <th>说明</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>计算单元消耗</td>
+                                <td><span class="tag green">减少 7 倍</span></td>
+                                <td>最小化成本和最大化交易成功率</td>
+                            </tr>
+                            <tr>
+                                <td>资产上市成本</td>
+                                <td><span class="tag green">降低 90%</span></td>
+                                <td>优化计算单元使用</td>
+                            </tr>
+                            <tr>
+                                <td>交易费用</td>
+                                <td><span class="tag green">降低最多 10 倍</span></td>
+                                <td>通过订阅模式预付 taker 费用</td>
+                            </tr>
+                            <tr>
+                                <td>交易失败率</td>
+                                <td><span class="tag green">显著降低</span></td>
+                                <td>通过版本化交易支持多工具管理</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="chart-container">
+                    <canvas id="performanceChart"></canvas>
+                </div>
+            </section>
+
+            <!-- 代币经济学 -->
+            <section id="tokenomics">
+                <h2 class="section-title">💰 代币经济学</h2>
+
+                <div class="stat-grid">
+                    <div class="stat-item">
+                        <div class="stat-value">2025-01-13</div>
+                        <div class="stat-label">ICO 时间</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">$6.85M</div>
+                        <div class="stat-label">筹集金额</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">$0.135</div>
+                        <div class="stat-label">ICO 价格</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">已上市</div>
+                        <div class="stat-label">交易状态</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>代币效用</h3>
+                    <ul>
+                        <li><strong>治理</strong>: 对协议参数和升级进行投票</li>
+                        <li><strong>费用分享</strong>: 获得平台收入的按比例份额</li>
+                        <li><strong>推荐计划</strong>: 参与链上推荐奖励</li>
+                    </ul>
+                </div>
+
+                <div class="highlight danger">
+                    <h4>⚠️ 代币经济学缺失信息</h4>
+                    <ul>
+                        <li>总供应量未公开</li>
+                        <li>代币分配方案未公开</li>
+                        <li>解锁时间表未公开</li>
+                        <li>通货膨胀率未公开</li>
+                    </ul>
+                    <p><strong>风险提示</strong>: 缺乏透明的代币经济学信息增加了投资不确定性</p>
+                </div>
+            </section>
+
+            <!-- 团队与融资 -->
+            <section id="team">
+                <h2 class="section-title">👥 团队与融资</h2>
+
+                <div class="card">
+                    <h3>创始团队</h3>
+                    <div class="team-card">
+                        <div class="team-avatar">MS</div>
+                        <div class="team-info">
+                            <h4>Matus Steis - 联合创始人</h4>
+                            <p><strong>教育背景</strong>: 牛津大学学士学位 (2012-2016)</p>
+                            <p><strong>行业经验</strong>:</p>
+                            <ul>
+                                <li>曾在 Laser Digital 担任 crypto VC，积累 1.5 年加密投资经验</li>
+                                <li>曾在 Rockaway Capital 担任风险投资家</li>
+                                <li>曾在 BlockEcon Labs 工作</li>
+                            </ul>
+                            <p><strong>专业领域</strong>: 金融与科技交叉领域</p>
+                            <p><strong>所在地</strong>: 布拉格</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="highlight warning">
+                    <h4>⚠️ 团队透明度问题</h4>
+                    <ul>
+                        <li>仅能确认一位联合创始人信息</li>
+                        <li>其他团队成员信息未公开</li>
+                        <li>缺乏详细的投资机构背书</li>
+                        <li>团队规模和技术实力难以评估</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- 市场数据 -->
+            <section id="market">
+                <h2 class="section-title">📊 市场数据分析</h2>
+
+                <div class="highlight warning">
+                    <h4>⚠️ 关键指标缺失</h4>
+                    <ul>
+                        <li>❌ TVL (总锁定价值): DeFi Llama 上未找到数据</li>
+                        <li>❌ 24小时交易量: 未在主流平台查询到</li>
+                        <li>❌ 市值: CoinMarketCap 和 CoinGecko 未收录</li>
+                        <li>❌ 唯一钱包地址数: 未公开</li>
+                        <li>❌ 当前代币价格: 实时价格数据不可得</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h3>测试网数据 (历史表现)</h3>
+                    <div class="stat-grid">
+                        <div class="stat-item">
+                            <div class="stat-value">$140M</div>
+                            <div class="stat-label">交易量 (10天)</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">2,200</div>
+                            <div class="stat-label">独立账户</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">1,100万</div>
+                            <div class="stat-label">交易笔数</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">2024-10-25</div>
+                            <div class="stat-label">测试网时间段</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <canvas id="testnetChart"></canvas>
+                </div>
+            </section>
+
+            <!-- 安全审计 -->
+            <section id="security">
+                <h2 class="section-title">🛡️ 安全审计与风险评估</h2>
+
+                <div class="highlight danger">
+                    <h4>❌ 安全审计状态</h4>
+                    <p>未找到公开的安全审计报告。未发现 CertiK、Hacken、Consensys Diligence、Veridise 等主流审计机构的审计记录。项目仍处于 Devnet 开发阶段，可能未进行正式安全审计。</p>
+                </div>
+
+                <div class="highlight success">
+                    <h4>✅ 历史风险事件</h4>
+                    <p>无公开的安全事件记录。未发现黑客攻击、漏洞利用或资金损失事件。未发现团队不良行为或跑路事件。</p>
+                </div>
+
+                <div class="card">
+                    <h3>主要风险因素</h3>
+                    <div class="feature-list">
+                        <div class="feature-item">
+                            <h4 style="color: var(--danger-color);">🔴 技术风险</h4>
+                            <p>主网未上线，智能合约未经实战检验，缺乏权威安全审计</p>
+                        </div>
+                        <div class="feature-item">
+                            <h4 style="color: var(--danger-color);">🔴 市场风险</h4>
+                            <p>面对 Jupiter (80%) 和 Drift (30%) 的强势竞争</p>
+                        </div>
+                        <div class="feature-item">
+                            <h4 style="color: var(--warning-color);">🟡 团队风险</h4>
+                            <p>团队信息透明度不足，缺乏知名投资机构背书</p>
+                        </div>
+                        <div class="feature-item">
+                            <h4 style="color: var(--danger-color);">🔴 代币风险</h4>
+                            <p>代币经济学细节未公开，抛压风险未知</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 社区分析 -->
+            <section id="community">
+                <h2 class="section-title">📱 社区与社交媒体分析</h2>
+
+                <div class="stat-grid">
+                    <div class="stat-item">
+                        <div class="stat-value">@deriverse_io</div>
+                        <div class="stat-label">Twitter 账号</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">3,951</div>
+                        <div class="stat-label">Twitter 粉丝数</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">2022-02</div>
+                        <div class="stat-label">账号创建时间</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">中等偏低</div>
+                        <div class="stat-label">社区评级</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>社区活动</h3>
+                    <ul>
+                        <li><strong>测试网竞赛</strong>: 举办 Apex Trader Competition，提供 USDC 奖金和 500,000 Deriverse 积分</li>
+                        <li><strong>测试网 Season 2</strong>: 发布更新 UI、移动版本、永续合约和现货交易</li>
+                        <li><strong>内容发布</strong>: 定期发布平台开发更新、交易功能和社区活动</li>
+                    </ul>
+                </div>
+
+                <div class="chart-container">
+                    <canvas id="communityChart"></canvas>
+                </div>
+            </section>
+
+            <!-- 竞品对比 -->
+            <section id="competitors">
+                <h2 class="section-title">🏆 竞品对比分析</h2>
+
+                <div class="card">
+                    <h3>Solana 衍生品市场格局</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>平台</th>
+                                <th>市场份额</th>
+                                <th>TVL/交易量</th>
+                                <th>特点</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Jupiter</strong></td>
+                                <td><span class="tag green">~80%</span></td>
+                                <td>$700M+ TVL</td>
+                                <td>市场主导地位，深度流动性</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Drift</strong></td>
+                                <td><span class="tag yellow">~30%</span></td>
+                                <td>第二大</td>
+                                <td>50+ 永续合约，全服务 DEX</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Deriverse</strong></td>
+                                <td><span class="tag red">测试网</span></td>
+                                <td>未上线</td>
+                                <td>完全链上订单簿，新进入者</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Mango Markets</strong></td>
+                                <td><span class="tag red">小众</span></td>
+                                <td>较小</td>
+                                <td>多资产抵押</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Zeta Markets</strong></td>
+                                <td><span class="tag red">小众</span></td>
+                                <td>较小</td>
+                                <td>专注期权交易</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="chart-container">
+                    <canvas id="marketShareChart"></canvas>
+                </div>
+
+                <div class="card">
+                    <h3>竞争力评估</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-lg);">
+                        <div>
+                            <h4 style="color: var(--success-color);">Deriverse 优势</h4>
+                            <ul>
+                                <li>✅ 技术创新 (完全链上订单簿)</li>
+                                <li>✅ 性能优化 (低成本、低失败率)</li>
+                                <li>✅ 全面的产品线</li>
+                                <li>✅ Solana 生态系统优势</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 style="color: var(--danger-color);">Deriverse 劣势</h4>
+                            <ul>
+                                <li>❌ 市场后发劣势</li>
+                                <li>❌ 流动性冷启动挑战</li>
+                                <li>❌ 品牌认知度不足</li>
+                                <li>❌ 用户获取成本高</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 投资机会 -->
+            <section id="opportunities">
+                <h2 class="section-title">💎 投资机会分析</h2>
+
+                <div class="card">
+                    <h3>投资机会对比表</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>投资类型</th>
+                                <th>预期收益</th>
+                                <th>风险等级</th>
+                                <th>推荐指数</th>
+                                <th>建议</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>代币购买 (DRV)</td>
+                                <td>未知</td>
+                                <td><span class="tag red">高</span></td>
+                                <td>⭐⭐</td>
+                                <td>谨慎观望</td>
+                            </tr>
+                            <tr>
+                                <td>测试网空投</td>
+                                <td>积分奖励</td>
+                                <td><span class="tag green">低</span></td>
+                                <td>⭐⭐⭐⭐</td>
+                                <td>值得参与</td>
+                            </tr>
+                            <tr>
+                                <td>流动性挖矿</td>
+                                <td>N/A</td>
+                                <td>N/A</td>
+                                <td>⚠️</td>
+                                <td>未推出</td>
+                            </tr>
+                            <tr>
+                                <td>质押收益</td>
+                                <td>N/A</td>
+                                <td>N/A</td>
+                                <td>⚠️</td>
+                                <td>未推出</td>
+                            </tr>
+                            <tr>
+                                <td>API/SDK 开发</td>
+                                <td>潜在可观</td>
+                                <td><span class="tag yellow">中</span></td>
+                                <td>⭐⭐⭐</td>
+                                <td>有开发背景可关注</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card">
+                    <h3>测试网空投奖励分配</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>奖励类型</th>
+                                <th>积分数量</th>
+                                <th>获取条件</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>交易量前 10</td>
+                                <td>300,000</td>
+                                <td>总交易量最高</td>
+                            </tr>
+                            <tr>
+                                <td>交易次数前 10</td>
+                                <td>300,000</td>
+                                <td>交易笔数最多</td>
+                            </tr>
+                            <tr>
+                                <td>PnL 前 3 (期权)</td>
+                                <td>200,000</td>
+                                <td>期权盈利最高</td>
+                            </tr>
+                            <tr>
+                                <td>PnL 前 3 (期货)</td>
+                                <td>200,000</td>
+                                <td>期货盈利最高</td>
+                            </tr>
+                            <tr>
+                                <td>活跃参与者</td>
+                                <td>1,000/人</td>
+                                <td>积极交易</td>
+                            </tr>
+                            <tr>
+                                <td>有效反馈</td>
+                                <td>500,000 (共享)</td>
+                                <td>提交有意义反馈</td>
+                            </tr>
+                            <tr>
+                                <td>推荐前 100</td>
+                                <td>330,000 (共享)</td>
+                                <td>推荐用户最多</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- 风险提示 -->
+            <section id="risks">
+                <h2 class="section-title">⚠️ 关键风险提示</h2>
+
+                <div class="highlight danger">
+                    <h4>🔴 1. 主网未上线风险</h4>
+                    <p>项目仍在测试网阶段，主网上线时间未定。实际产品可用性和性能未经验证，可能存在技术延期或失败风险。</p>
+                </div>
+
+                <div class="highlight danger">
+                    <h4>🔴 2. 安全审计缺失</h4>
+                    <p>未找到任何公开的安全审计报告。智能合约安全性未经权威机构验证，完全链上订单簿的复杂性增加漏洞风险。</p>
+                </div>
+
+                <div class="highlight danger">
+                    <h4>🔴 3. 市场竞争风险</h4>
+                    <p>Jupiter 占据 80% 市场份额，Drift 占据 30%。新项目获取流动性和用户面临巨大挑战，可能无法实现预期的市场份额。</p>
+                </div>
+
+                <div class="highlight danger">
+                    <h4>🔴 4. 代币经济学透明度不足</h4>
+                    <p>总供应量、分配方案、解锁时间表均未公开。潜在抛压风险未知，代币价值捕获机制不明确。</p>
+                </div>
+
+                <div class="highlight warning">
+                    <h4>🟡 5. 团队信息有限</h4>
+                    <p>仅能确认一位联合创始人，其他团队成员和技术实力难以评估，缺乏知名投资机构背书。</p>
+                </div>
+            </section>
+
+            <!-- SWOT分析 -->
+            <section id="swot">
+                <h2 class="section-title">📈 SWOT 分析</h2>
+
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--spacing-md);">
+                    <div class="card" style="border-left: 4px solid var(--success-color);">
+                        <h3 style="color: var(--success-color);">Strengths (优势)</h3>
+                        <ul>
+                            <li>✅ 技术创新: 完全链上订单簿</li>
+                            <li>✅ 性能优化: 成本降低 90%</li>
+                            <li>✅ 产品全面: Perps + Options + Futures + Spot</li>
+                            <li>✅ Solana 生态优势</li>
+                            <li>✅ 交易费用: 降低 10 倍</li>
+                            <li>✅ 测试网表现: $140M 交易量</li>
+                        </ul>
+                    </div>
+
+                    <div class="card" style="border-left: 4px solid var(--danger-color);">
+                        <h3 style="color: var(--danger-color);">Weaknesses (劣势)</h3>
+                        <ul>
+                            <li>❌ 主网未上线</li>
+                            <li>❌ 流动性不足</li>
+                            <li>❌ 团队透明度低</li>
+                            <li>❌ 代币经济学缺失</li>
+                            <li>❌ 无安全审计</li>
+                            <li>❌ 市场认知度低</li>
+                        </ul>
+                    </div>
+
+                    <div class="card" style="border-left: 4px solid var(--info-color);">
+                        <h3 style="color: var(--info-color);">Opportunities (机会)</h3>
+                        <ul>
+                            <li>🌟 市场增长: Solana 衍生品市场扩张</li>
+                            <li>🌟 技术差异化: 完全链上方案</li>
+                            <li>🌟 生态协同: Solana 生态发展</li>
+                            <li>🌟 多元产品: 期权和期货需求增长</li>
+                            <li>🌟 Launchpad: 代币化资产平台</li>
+                            <li>🌟 空投预期: 测试网奖励</li>
+                        </ul>
+                    </div>
+
+                    <div class="card" style="border-left: 4px solid var(--warning-color);">
+                        <h3 style="color: var(--warning-color);">Threats (威胁)</h3>
+                        <ul>
+                            <li>⚠️ 激烈竞争: Jupiter 和 Drift 主导</li>
+                            <li>⚠️ 流动性竞争: 难以吸引流动性</li>
+                            <li>⚠️ 技术风险: 链上订单簿复杂性</li>
+                            <li>⚠️ 市场周期: 熊市影响</li>
+                            <li>⚠️ 监管压力: 衍生品监管趋严</li>
+                            <li>⚠️ Solana 风险: 底层链稳定性</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <canvas id="scoreChart"></canvas>
+                </div>
+
+                <div class="card">
+                    <h3>项目评分 (满分 10 分)</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>评估维度</th>
+                                <th>评分</th>
+                                <th>权重</th>
+                                <th>加权分</th>
+                                <th>说明</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>技术创新</td>
+                                <td>8/10</td>
+                                <td>20%</td>
+                                <td>1.6</td>
+                                <td>完全链上订单簿有创新性</td>
+                            </tr>
+                            <tr>
+                                <td>团队实力</td>
+                                <td>5/10</td>
+                                <td>20%</td>
+                                <td>1.0</td>
+                                <td>信息有限，难以全面评估</td>
+                            </tr>
+                            <tr>
+                                <td>市场潜力</td>
+                                <td>6/10</td>
+                                <td>15%</td>
+                                <td>0.9</td>
+                                <td>Solana 衍生品市场有增长空间</td>
+                            </tr>
+                            <tr>
+                                <td>产品完成度</td>
+                                <td>4/10</td>
+                                <td>15%</td>
+                                <td>0.6</td>
+                                <td>测试网阶段，主网未上线</td>
+                            </tr>
+                            <tr>
+                                <td>代币经济学</td>
+                                <td>3/10</td>
+                                <td>10%</td>
+                                <td>0.3</td>
+                                <td>信息严重缺失</td>
+                            </tr>
+                            <tr>
+                                <td>安全性</td>
+                                <td>4/10</td>
+                                <td>10%</td>
+                                <td>0.4</td>
+                                <td>无审计报告，风险较高</td>
+                            </tr>
+                            <tr>
+                                <td>社区活跃度</td>
+                                <td>5/10</td>
+                                <td>5%</td>
+                                <td>0.25</td>
+                                <td>社区规模中等偏小</td>
+                            </tr>
+                            <tr>
+                                <td>竞争力</td>
+                                <td>5/10</td>
+                                <td>5%</td>
+                                <td>0.25</td>
+                                <td>有差异化但竞争激烈</td>
+                            </tr>
+                            <tr style="font-weight: 700; background: var(--bg-tertiary);">
+                                <td colspan="3">总分</td>
+                                <td colspan="2">5.3/10 (中等偏下)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- 投资建议 -->
+            <section id="recommendation">
+                <h2 class="section-title">💡 投资建议</h2>
+
+                <div class="rating-badge" style="justify-content: center; font-size: 1.5rem;">
+                    <span>⚠️</span>
+                    <span>投资等级: 中立偏谨慎 (Neutral - Cautious)</span>
+                </div>
+
+                <div class="card">
+                    <h3>1. 短期策略 (1-3 个月) - ⚠️ 观望为主</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-lg);">
+                        <div>
+                            <h4 style="color: var(--success-color);">✅ 推荐行动</h4>
+                            <ul>
+                                <li>参与测试网空投</li>
+                                <li>关注项目进展</li>
+                                <li>订阅官方渠道</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 style="color: var(--danger-color);">⚠️ 谨慎观望</h4>
+                            <ul>
+                                <li>暂不购买代币</li>
+                                <li>避免大额投入</li>
+                                <li>等待更多信息</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>2. 中期策略 (3-12 个月) - 🟡 条件性参与</h3>
+                    <h4>关键观察指标:</h4>
+                    <ul>
+                        <li>✅ 主网上线 (必要条件)</li>
+                        <li>✅ 安全审计完成</li>
+                        <li>✅ TVL 增长达到 $10M+</li>
+                        <li>✅ 日交易量稳定 $1M+</li>
+                        <li>✅ 代币经济学公开</li>
+                    </ul>
+                    <p><strong>如果满足以上条件</strong>: 可考虑小仓位参与 (≤5% 投资组合)</p>
+                </div>
+
+                <div class="card">
+                    <h3>3. 长期策略 (1 年以上) - 🟡 长期观察</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-lg);">
+                        <div>
+                            <h4 style="color: var(--success-color);">看多条件</h4>
+                            <ul>
+                                <li>✅ 获取 $50M+ TVL</li>
+                                <li>✅ 市场份额 5-10%</li>
+                                <li>✅ 完善安全审计</li>
+                                <li>✅ 活跃开发者生态</li>
+                                <li>✅ 清晰盈利模式</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 style="color: var(--danger-color);">看空条件</h4>
+                            <ul>
+                                <li>❌ 主网延期/失败</li>
+                                <li>❌ 重大安全事故</li>
+                                <li>❌ 无法获取流动性</li>
+                                <li>❌ 团队解散/跑路</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>适合投资者类型</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-lg);">
+                        <div>
+                            <h4 style="color: var(--success-color);">✅ 适合</h4>
+                            <ul>
+                                <li>空投猎人</li>
+                                <li>技术爱好者</li>
+                                <li>风险偏好者</li>
+                                <li>开发者</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 style="color: var(--danger-color);">❌ 不适合</h4>
+                            <ul>
+                                <li>保守投资者</li>
+                                <li>短期投机者</li>
+                                <li>大额投资者</li>
+                                <li>被动投资者</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="highlight info">
+                    <h4>📋 即刻行动清单</h4>
+                    <ul>
+                        <li>参与 Deriverse 测试网空投计划</li>
+                        <li>下载 Phantom 或 Solflare 钱包</li>
+                        <li>访问 deriverse.io 注册</li>
+                        <li>关注 Twitter: @deriverse_io</li>
+                        <li>关注 Mirror 博客更新</li>
+                    </ul>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <button class="back-to-top" id="backToTop" aria-label="返回顶部">↑</button>
+
+    <script>
+        // Theme Toggle
+        const themeToggle = document.getElementById('themeToggle');
+        const html = document.documentElement;
+
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        html.setAttribute('data-theme', savedTheme);
+        themeToggle.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            themeToggle.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+        });
+
+        // Smooth Scroll Navigation
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = item.getAttribute('href').substring(1);
+                const targetSection = document.getElementById(targetId);
+
+                targetSection.scrollIntoView({ behavior: 'smooth' });
+
+                document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+                item.classList.add('active');
+            });
+        });
+
+        // Scroll Animation
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animate-in');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('section').forEach(section => {
+            observer.observe(section);
+        });
+
+        // Back to Top Button
+        const backToTop = document.getElementById('backToTop');
+
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 500) {
+                backToTop.style.display = 'flex';
+            } else {
+                backToTop.style.display = 'none';
+            }
+        });
+
+        backToTop.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        // Chart.js Configuration
+        const chartOptions = {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                }
+            }
+        };
+
+        // Performance Chart
+        const performanceCtx = document.getElementById('performanceChart').getContext('2d');
+        new Chart(performanceCtx, {
+            type: 'bar',
+            data: {
+                labels: ['计算单元消耗', '资产上市成本', '交易费用'],
+                datasets: [{
+                    label: '性能优化 (减少倍数)',
+                    data: [7, 10, 10],
+                    backgroundColor: [
+                        'rgba(139, 92, 246, 0.8)',
+                        'rgba(99, 102, 241, 0.8)',
+                        'rgba(236, 72, 153, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgba(139, 92, 246, 1)',
+                        'rgba(99, 102, 241, 1)',
+                        'rgba(236, 72, 153, 1)'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                ...chartOptions,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: '减少/降低倍数'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Testnet Chart
+        const testnetCtx = document.getElementById('testnetChart').getContext('2d');
+        new Chart(testnetCtx, {
+            type: 'bar',
+            data: {
+                labels: ['交易量 ($M)', '独立账户 (千)', '交易笔数 (百万)'],
+                datasets: [{
+                    label: '测试网表现',
+                    data: [140, 2.2, 11],
+                    backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                    borderColor: 'rgba(16, 185, 129, 1)',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                ...chartOptions,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Community Chart
+        const communityCtx = document.getElementById('communityChart').getContext('2d');
+        new Chart(communityCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['积极因素', '消极因素', '中性因素'],
+                datasets: [{
+                    data: [30, 40, 30],
+                    backgroundColor: [
+                        'rgba(16, 185, 129, 0.8)',
+                        'rgba(239, 68, 68, 0.8)',
+                        'rgba(156, 163, 175, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgba(16, 185, 129, 1)',
+                        'rgba(239, 68, 68, 1)',
+                        'rgba(156, 163, 175, 1)'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: chartOptions
+        });
+
+        // Market Share Chart
+        const marketShareCtx = document.getElementById('marketShareChart').getContext('2d');
+        new Chart(marketShareCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Jupiter', 'Drift', 'Others', 'Deriverse (待上线)'],
+                datasets: [{
+                    data: [80, 30, 20, 0],
+                    backgroundColor: [
+                        'rgba(139, 92, 246, 0.8)',
+                        'rgba(99, 102, 241, 0.8)',
+                        'rgba(156, 163, 175, 0.8)',
+                        'rgba(239, 68, 68, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgba(139, 92, 246, 1)',
+                        'rgba(99, 102, 241, 1)',
+                        'rgba(156, 163, 175, 1)',
+                        'rgba(239, 68, 68, 1)'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: chartOptions
+        });
+
+        // Score Radar Chart
+        const scoreCtx = document.getElementById('scoreChart').getContext('2d');
+        new Chart(scoreCtx, {
+            type: 'radar',
+            data: {
+                labels: ['技术创新', '团队实力', '市场潜力', '产品完成度', '代币经济学', '安全性', '社区活跃度', '竞争力'],
+                datasets: [{
+                    label: 'Deriverse 评分',
+                    data: [8, 5, 6, 4, 3, 4, 5, 5],
+                    backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                    borderColor: 'rgba(139, 92, 246, 1)',
+                    borderWidth: 2,
+                    pointBackgroundColor: 'rgba(139, 92, 246, 1)',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: 'rgba(139, 92, 246, 1)'
+                }]
+            },
+            options: {
+                ...chartOptions,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 10,
+                        ticks: {
+                            stepSize: 2
+                        }
+                    }
+                }
+            }
+        });
+
+        // Table Sorting
+        document.querySelectorAll('.data-table th').forEach((header, index) => {
+            header.addEventListener('click', () => {
+                const table = header.closest('table');
+                const tbody = table.querySelector('tbody');
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+
+                const sortedRows = rows.sort((a, b) => {
+                    const aValue = a.children[index].textContent.trim();
+                    const bValue = b.children[index].textContent.trim();
+
+                    if (!isNaN(aValue) && !isNaN(bValue)) {
+                        return parseFloat(aValue) - parseFloat(bValue);
+                    }
+
+                    return aValue.localeCompare(bValue);
+                });
+
+                tbody.innerHTML = '';
+                sortedRows.forEach(row => tbody.appendChild(row));
+            });
+        });
+
+        // Active Nav Indicator on Scroll
+        window.addEventListener('scroll', () => {
+            const sections = document.querySelectorAll('section');
+            const navItems = document.querySelectorAll('.nav-item');
+
+            let currentSection = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.clientHeight;
+                if (window.scrollY >= sectionTop - 200) {
+                    currentSection = section.getAttribute('id');
+                }
+            });
+
+            navItems.forEach(item => {
+                item.classList.remove('active');
+                if (item.getAttribute('href') === `#${currentSection}`) {
+                    item.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

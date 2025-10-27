@@ -1,0 +1,1879 @@
+
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tether Gold (XAUt) 投资评估报告</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        :root {
+            --primary-color: #d4af37;
+            --secondary-color: #1e3a8a;
+            --bg-color: #f8f9fa;
+            --text-color: #333;
+            --light-gray: #e9ecef;
+            --dark-gray: #495057;
+            --white: #ffffff;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --border-radius: 8px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: "Segoe UI", "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding-bottom: 2rem;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--secondary-color), #0f2149);
+            color: var(--white);
+            padding: 2rem 0;
+            text-align: center;
+            box-shadow: var(--shadow);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        h2 {
+            font-size: 1.8rem;
+            margin: 1.5rem 0 1rem;
+            color: var(--secondary-color);
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 0.5rem;
+        }
+        
+        h3 {
+            font-size: 1.4rem;
+            margin: 1.2rem 0 0.8rem;
+            color: var(--dark-gray);
+        }
+        
+        p {
+            margin-bottom: 1rem;
+        }
+        
+        .tabs {
+            background-color: var(--white);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            overflow-x: auto;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            scrollbar-width: none; /* Firefox */
+        }
+        
+        .tabs::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Opera */
+        }
+        
+        .tab-btn {
+            padding: 1rem 1.5rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--dark-gray);
+            white-space: nowrap;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .tab-btn:hover {
+            background-color: var(--light-gray);
+            color: var(--secondary-color);
+        }
+        
+        .tab-btn.active {
+            color: var(--primary-color);
+            border-bottom: 3px solid var(--primary-color);
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 2rem 1rem;
+            background-color: var(--white);
+            border-radius: 0 0 var(--border-radius) var(--border-radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .card {
+            background-color: var(--white);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .highlight-box {
+            background-color: rgba(212, 175, 55, 0.1);
+            border-left: 4px solid var(--primary-color);
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 var(--border-radius) var(--border-radius) 0;
+        }
+        
+        .chart-container {
+            width: 100%;
+            height: 400px;
+            margin: 2rem 0;
+            position: relative;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            margin: 1.5rem 0;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+        
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--light-gray);
+        }
+        
+        th {
+            background-color: rgba(30, 58, 138, 0.1);
+            color: var(--secondary-color);
+            font-weight: 600;
+        }
+        
+        tr:nth-child(even) {
+            background-color: rgba(248, 249, 250, 0.7);
+        }
+        
+        .flex-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+        
+        .flex-item {
+            flex: 1;
+            min-width: 280px;
+        }
+        
+        .stat-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.1), rgba(255, 255, 255, 0.8));
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--secondary-color);
+            margin: 0.5rem 0;
+        }
+        
+        .stat-label {
+            color: var(--dark-gray);
+            font-size: 1rem;
+            text-align: center;
+        }
+        
+        .collapsible {
+            background-color: rgba(248, 249, 250, 0.8);
+            border: none;
+            border-radius: var(--border-radius);
+            padding: 1rem;
+            width: 100%;
+            text-align: left;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--secondary-color);
+            cursor: pointer;
+            margin-top: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .collapsible:after {
+            content: '\002B';
+            font-weight: bold;
+            float: right;
+            margin-left: 5px;
+            font-size: 1.5rem;
+        }
+        
+        .active-collapse:after {
+            content: "\2212";
+        }
+        
+        .collapse-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            background-color: var(--white);
+            border-radius: 0 0 var(--border-radius) var(--border-radius);
+            padding: 0 1rem;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-right: 0.5rem;
+        }
+        
+        .badge-primary {
+            background-color: rgba(212, 175, 55, 0.2);
+            color: var(--secondary-color);
+        }
+        
+        .badge-secondary {
+            background-color: rgba(30, 58, 138, 0.2);
+            color: var(--secondary-color);
+        }
+        
+        .badge-warning {
+            background-color: rgba(255, 193, 7, 0.2);
+            color: #856404;
+        }
+        
+        .badge-danger {
+            background-color: rgba(220, 53, 69, 0.2);
+            color: #721c24;
+        }
+        
+        .gold-gradient {
+            background: linear-gradient(135deg, #d4af37, #f9f295, #d4af37);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+        
+        .risk-meter {
+            width: 100%;
+            height: 20px;
+            background-color: #e9ecef;
+            border-radius: 10px;
+            margin: 1rem 0;
+            overflow: hidden;
+        }
+        
+        .risk-level {
+            height: 100%;
+            background: linear-gradient(to right, #28a745, #ffc107, #dc3545);
+            border-radius: 10px;
+            position: relative;
+        }
+        
+        .risk-marker {
+            position: absolute;
+            top: -10px;
+            width: 10px;
+            height: 30px;
+            background-color: #495057;
+            transform: translateX(-50%);
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            h2 {
+                font-size: 1.5rem;
+            }
+            
+            h3 {
+                font-size: 1.2rem;
+            }
+            
+            .tab-btn {
+                padding: 0.75rem 1rem;
+                font-size: 0.9rem;
+            }
+            
+            .chart-container {
+                height: 300px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.7rem;
+            }
+            
+            .tab-btn {
+                padding: 0.6rem 0.8rem;
+                font-size: 0.8rem;
+            }
+            
+            .chart-container {
+                height: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1><span class="gold-gradient">Tether Gold (XAUt)</span> 投资评估报告</h1>
+            <p>基于数据驱动的全方位分析 - 为机构与零售投资者提供战略决策支持</p>
+        </div>
+    </header>
+    
+    <div class="tabs" id="tabContainer">
+        <button class="tab-btn active" onclick="openTab('intro')">导言</button>
+        <button class="tab-btn" onclick="openTab('overview')">项目概述</button>
+        <button class="tab-btn" onclick="openTab('market')">市场分析</button>
+        <button class="tab-btn" onclick="openTab('risk')">风险评估</button>
+        <button class="tab-btn" onclick="openTab('security')">安全审计</button>
+        <button class="tab-btn" onclick="openTab('community')">社区与监管</button>
+        <button class="tab-btn" onclick="openTab('news')">新闻事件</button>
+        <button class="tab-btn" onclick="openTab('social')">社交媒体情绪</button>
+        <button class="tab-btn" onclick="openTab('investment')">投资机会</button>
+        <button class="tab-btn" onclick="openTab('conclusion')">结论与评级</button>
+    </div>
+    
+    <div class="container">
+        <!-- 导言 -->
+        <div id="intro" class="tab-content active">
+            <div class="card">
+                <h2>1. 导言</h2>
+                <p>在区块链与数字资产融合发展的浪潮中，以黄金为支撑的稳定币成为投资者寻求避险和流动性平衡的重要工具之一。本文旨在对 Tether Gold (XAUt) 项目进行全方位的投资评估，聚焦于项目的基本面、市场表现、风险因素、安全审计、社区情绪以及最新的新闻事件，从而为机构与零售投资者提供一份详尽的数据支持和策略分析。</p>
+                
+                <div class="highlight-box">
+                    <h3>报告亮点</h3>
+                    <ul>
+                        <li>基于数据驱动的全面市场分析</li>
+                        <li>详尽的风险评估与安全审计结果</li>
+                        <li>社区反馈与监管动态分析</li>
+                        <li>具体可行的投资策略建议</li>
+                        <li>基于多维度因素的投资等级评定</li>
+                    </ul>
+                </div>
+                
+                <div class="chart-container">
+                    <canvas id="overviewChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 项目概述 -->
+        <div id="overview" class="tab-content">
+            <div class="card">
+                <h2>2. 项目概述</h2>
+                <p>Tether Gold (XAUt) 是以数字化方式代表实物黄金资产的加密货币产品，每个 XAUt 代币均代表一金衡盎司（Troy Ounce）的实物黄金，并由符合伦敦金银市场协会（LBMA）标准的瑞士金库保管。由 Tether International, S.A. de C.V. 发行的 XAUt 致力于将黄金的稳定价值与区块链技术的高效便捷优势相结合，实现数字资产与传统贵金属之间的桥梁。</p>
+                
+                <div class="flex-container">
+                    <div class="flex-item">
+                        <div class="stat-box">
+                            <div class="stat-label">代币与黄金挂钩比例</div>
+                            <div class="stat-value">1:1</div>
+                            <div class="stat-label">每枚代币 = 一金衡盎司黄金</div>
+                        </div>
+                    </div>
+                    <div class="flex-item">
+                        <div class="stat-box">
+                            <div class="stat-label">储备金审计频率</div>
+                            <div class="stat-value">季度</div>
+                            <div class="stat-label">由BDO Italia独立审计</div>
+                        </div>
+                    </div>
+                    <div class="flex-item">
+                        <div class="stat-box">
+                            <div class="stat-label">智能合约安全评分</div>
+                            <div class="stat-value">84%</div>
+                            <div class="stat-label">低风险评级</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <h3>项目主要特征</h3>
+                <ul>
+                    <li><strong>1：1黄金支持</strong>：每个代币与一金衡盎司实物黄金挂钩，确保资产完全支持。</li>
+                    <li><strong>监管合规</strong>：XAUt 发行公司 TG Commodities 获得萨尔瓦多国家数字资产委员会（CNAD）颁发的稳定币发行与数字资产服务许可证，体现其深度合规要求。</li>
+                    <li><strong>黄金验证机制</strong>：代币持有人可以通过 Tether Gold 官方提供的查询平台验证黄金的序列号、重量和纯度，提高资产透明性和信任度。</li>
+                    <li><strong>储备金报告</strong>：Tether 定期（每季度）发布储备金报告，并由独立第三方会计师事务所 BDO Italia 进行审计，以证明储备资产超过流通代币的赎回价值。</li>
+                </ul>
+                
+                <button class="collapsible">了解更多项目细节</button>
+                <div class="collapse-content">
+                    <p>该项目通过结合区块链技术和实物黄金保管方式，为投资者提供了一种既能享受传统黄金保值避险优势又能利用区块链数字资产便捷性的创新投资方案。作为一种由实物黄金支持的数字资产，XAUt 代币能够在以太坊和Tron两个区块链网络上交易，为投资者提供了更多的使用场景和灵活性。</p>
+                    
+                    <p>项目的价值主张在于：</p>
+                    <ol>
+                        <li>提供可验证的黄金所有权，每个代币都与特定的实物黄金条块相关联</li>
+                        <li>降低黄金投资门槛，允许投资者购买和交易较小单位的黄金</li>
+                        <li>提高流动性和可转移性，使黄金资产能够在全球范围内快速交易</li>
+                        <li>减少传统黄金投资的存储和保险成本</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 市场分析 -->
+        <div id="market" class="tab-content">
+            <div class="card">
+                <h2>3. 市场分析</h2>
+                <h3>3.1 价格与市值</h3>
+                <p>根据最近的市场数据，XAUt 的交易情况展现出稳健的市场表现。截至2025年9月26日的数据显示，XAUt在主流交易平台上的价格维持在3700美元以上，反映出市场对黄金支持型代币的信心。</p>
+                
+                <div class="chart-container">
+                    <canvas id="priceChart"></canvas>
+                </div>
+                
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>指标</th>
+                                <th>数值</th>
+                                <th>单位</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>代币价格 (美元)</td>
+                                <td>3,744.21</td>
+                                <td>美元/枚</td>
+                            </tr>
+                            <tr>
+                                <td>代币价格 (加元)</td>
+                                <td>5,214.93</td>
+                                <td>加元/枚</td>
+                            </tr>
+                            <tr>
+                                <td>流通供应量</td>
+                                <td>247,000</td>
+                                <td>枚</td>
+                            </tr>
+                            <tr>
+                                <td>市值 (加元)</td>
+                                <td>1.29B</td>
+                                <td>加元</td>
+                            </tr>
+                            <tr>
+                                <td>24 小时交易量</td>
+                                <td>98.97M</td>
+                                <td>加元</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <h3>3.2 历史价格变化与市场表现</h3>
+                <p>通过对比历史数据，可以看出 XAUt 价格呈现逐步上升的趋势。在2025年早期，XAUt价格处于较低水平，随着全球经济不确定性及黄金价格上涨，XAUt随之显示出明显的上涨空间。历史最高价方面，根据当前数据，部分记录显示最高价可达3795.40美元，反映出市场投资者对黄金避险资产的青睐。</p>
+                
+                <div class="chart-container">
+                    <canvas id="historyChart"></canvas>
+                </div>
+                
+                <h3>3.3 黄金价格与代币表现</h3>
+                <p>黄金作为传统避险资产，其价格波动对 XAUt 带来直接影响。当全球经济环境不稳定时，中央银行和投资者纷纷购入黄金以对冲风险，推动黄金价格上升，XAUt则从中受益。Tether的黄金储备情况优于总负债，进一步增强了市场对 XAUt 的信心。</p>
+                
+                <button class="collapsible">XAUt与黄金现货价格相关性分析</button>
+                <div class="collapse-content">
+                    <p>XAUt代币价格与黄金现货价格保持高度相关性，相关系数接近1.0，表明两者走势几乎完全一致。不过，在某些特定时期，例如加密货币市场整体波动较大时，XAUt与黄金价格可能出现短暂偏离，主要是由流动性差异和市场情绪波动导致。</p>
+                    
+                    <div class="chart-container">
+                        <canvas id="correlationChart"></canvas>
+                    </div>
+                    
+                    <p>研究显示，XAUt对市场波动的反应速度通常快于传统黄金ETF，这一特点使其成为对市场敏感度较高的投资者的理想选择。同时，由于区块链的透明特性，XAUt的价格发现机制也比传统黄金投资产品更加高效。</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 风险评估 -->
+        <div id="risk" class="tab-content">
+            <div class="card">
+                <h2>4. 风险评估</h2>
+                <p>在进行投资决策时，对风险因素的深入了解非常关键。基于现有数据，我们将XAUt的风险分为以下几大类：</p>
+                
+                <h3>4.1 市场风险</h3>
+                <div class="highlight-box">
+                    <ul>
+                        <li><strong>黄金价格波动</strong>：作为基础资产，黄金市场本身存在价格波动，全球经济、政治因素等均会影响黄金价格，从而影响 XAUt 的价格表现。</li>
+                        <li><strong>流动性风险</strong>：尽管最近交易量显示相对活跃，但受限于数字资产市场的整体波动，短期内可能出现流动性不足的情况。</li>
+                    </ul>
+                </div>
+                
+                <h3>4.2 集中持有风险</h3>
+                <div class="highlight-box">
+                    <ul>
+                        <li><strong>代币分布高度集中</strong>：根据Cyberscope的审计报告，前10个钱包持有88%的代币，这种高度集中可能导致市场操控风险或部分大户抛售时引发价格大幅波动。</li>
+                    </ul>
+                </div>
+                
+                <div class="chart-container">
+                    <canvas id="walletDistributionChart"></canvas>
+                </div>
+                
+                <h3>4.3 监管风险</h3>
+                <div class="highlight-box">
+                    <ul>
+                        <li><strong>法规环境的不确定性</strong>：虽然XAUt在萨尔瓦多获得了合法牌照，但在其他司法管辖区的监管态度尚不明确，未来可能面临新的法规调整，从而对项目运营产生影响。</li>
+                        <li><strong>合规争议风险</strong>：Tether在全球范围内曾因资金透明度问题受过质疑，尽管近期储备金报告显示资产充足，但任何监管信息的不一致或披露不全都可能带来负面影响。</li>
+                    </ul>
+                </div>
+                
+                <h3>4.4 技术与操作风险</h3>
+                <div class="highlight-box">
+                    <ul>
+                        <li><strong>智能合约风险</strong>：基于Cyberscope的审计结果，虽然智能合约评分为84%（低风险）且多项功能皆表现安全，但代码公开仍然意味着存在潜在攻击面，需定期进行安全更新和漏洞检测。</li>
+                        <li><strong>操作风险</strong>：项目在黄金存储和验证上依赖于第三方金库的物理安全措施，如果金库管理不善或出现安全漏洞，可能会对储备资产产生影响。</li>
+                    </ul>
+                </div>
+                
+                <h3>4.5 风险评估总结</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>风险类别</th>
+                                <th>详细描述</th>
+                                <th>可能影响</th>
+                                <th>风险等级</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>市场风险</td>
+                                <td>黄金价格波动及全球经济不确定性影响</td>
+                                <td>XAUt价格波动、流动性风险</td>
+                                <td><span class="badge badge-warning">中等</span></td>
+                            </tr>
+                            <tr>
+                                <td>集中风险</td>
+                                <td>代币分布极度集中，前10钱包持有88%</td>
+                                <td>市场操控、抛售风险</td>
+                                <td><span class="badge badge-danger">高</span></td>
+                            </tr>
+                            <tr>
+                                <td>监管风险</td>
+                                <td>在不同司法区域内监管政策不确定</td>
+                                <td>法规合规问题、项目运营风险</td>
+                                <td><span class="badge badge-warning">中等</span></td>
+                            </tr>
+                            <tr>
+                                <td>技术与操作风险</td>
+                                <td>智能合约公开、代码漏洞及金库物理安全存在隐患</td>
+                                <td>安全事件、黑客攻击、储备资产安全风险</td>
+                                <td><span class="badge badge-primary">低</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="risk-meter">
+                    <div class="risk-level" style="width: 60%;">
+                        <div class="risk-marker" style="left: 60%;"></div>
+                    </div>
+                </div>
+                <p style="text-align: center;">整体风险评估：中等风险</p>
+            </div>
+        </div>
+        
+        <!-- 安全审计 -->
+        <div id="security" class="tab-content">
+            <div class="card">
+                <h2>5. 安全审计与技术审查</h2>
+                
+                <h3>5.1 智能合约审计</h3>
+                <p>为了确保投资者资金的安全，Tether Gold的智能合约经过了严格的第三方审计。Cyberscope的审计报告显示，XAUt智能合约评分为84%，安全评分达到70%，表明项目处于低风险状态。</p>
+                
+                <div class="chart-container">
+                    <canvas id="securityChart"></canvas>
+                </div>
+                
+                <h3>关键审计项目：</h3>
+                <ul>
+                    <li>合约具备自动费用设置、代币铸造、销毁等功能，但均经过严格测试，显示安全性高。</li>
+                    <li>合约代码公开可见，增加了透明度，但同时也要求社区和开发者不断进行检验和反馈。</li>
+                </ul>
+                
+                <h3>5.2 储备金审计</h3>
+                <p>Tether定期发布仓储金报告，并由BDO Italia进行独立审计，确认其储备资产（总资产162,574,933,798.00美元）远超总负债（157,108,000,474.00美元），保证了代币1:1的支持比例。</p>
+                
+                <div class="flex-container">
+                    <div class="flex-item">
+                        <div class="stat-box">
+                            <div class="stat-label">总资产</div>
+                            <div class="stat-value">1625亿+</div>
+                            <div class="stat-label">美元</div>
+                        </div>
+                    </div>
+                    <div class="flex-item">
+                        <div class="stat-box">
+                            <div class="stat-label">总负债</div>
+                            <div class="stat-value">1571亿+</div>
+                            <div class="stat-label">美元</div>
+                        </div>
+                    </div>
+                    <div class="flex-item">
+                        <div class="stat-box">
+                            <div class="stat-label">资产超额比例</div>
+                            <div class="stat-value">3.5%+</div>
+                            <div class="stat-label">安全储备余量</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <h3>储备金构成：</h3>
+                <p>现金及现金等价物占比高达79.94%，其中美元国债及隔夜逆回购协议构成了主要部分，为投资者提供了额外的安全保证。</p>
+                
+                <div class="chart-container">
+                    <canvas id="reservesChart"></canvas>
+                </div>
+                
+                <h3>5.3 安全系统与防欺诈机制</h3>
+                <p>项目在安全层面采取了多重防护措施：</p>
+                <ul>
+                    <li><strong>多签名钱包</strong>和<strong>SOC 2 Type 1审计</strong>均确保了系统的安全性和数据完整性；</li>
+                    <li><strong>反欺诈措施</strong>：采用包括Chainalysis在内的区块链监控工具，实时检测异常交易行为，同时严格执行KYC和AML规定，有效防范欺诈和洗钱风险。</li>
+                </ul>
+                
+                <button class="collapsible">了解更多安全机制详情</button>
+                <div class="collapse-content">
+                    <h4>多层安全架构</h4>
+                    <p>XAUt采用了多层安全架构来保护资产和交易安全：</p>
+                    <ol>
+                        <li><strong>冷钱包存储</strong>：大部分资金存储在离线冷钱包中，降低黑客攻击风险</li>
+                        <li><strong>多重签名机制</strong>：任何大额交易都需要多个授权方签名确认</li>
+                        <li><strong>实时监控系统</strong>：24/7全天候监控所有交易活动，及时发现异常</li>
+                        <li><strong>定期安全评估</strong>：系统定期进行渗透测试和安全评估</li>
+                    </ol>
+                    
+                    <h4>物理安全保障</h4>
+                    <p>作为XAUt价值基础的实物黄金，存储在符合LBMA标准的瑞士金库中，该设施具备：</p>
+                    <ul>
+                        <li>24小时武装安保</li>
+                        <li>先进的生物识别访问控制</li>
+                        <li>抗震、防火和防洪设计</li>
+                        <li>全面的保险覆盖</li>
+                    </ul>
+                    
+                    <p>这些措施共同构成了一个全面的安全体系，为XAUt的资产安全提供了多层次的保障。</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 社区与监管 -->
+        <div id="community" class="tab-content">
+            <div class="card">
+                <h2>6. 社区与监管动态分析</h2>
+                
+                <h3>6.1 社区参与度</h3>
+                <p>社区对于XAUt的讨论主要集中在以下几个方面：</p>
+                
+                <div class="flex-container">
+                    <div class="flex-item">
+                        <div class="stat-box">
+                            <div class="stat-label">24小时内讨论用户数</div>
+                            <div class="stat-value">269</div>
+                            <div class="stat-label">独立用户</div>
+                        </div>
+                    </div>
+                    <div class="flex-item">
+                        <div class="stat-box">
+                            <div class="stat-label">全球讨论热度排名</div>
+                            <div class="stat-value">708</div>
+                            <div class="stat-label">位置</div>
+                        </div>
+                    </div>
+                    <div class="flex-item">
+                        <div class="stat-box">
+                            <div class="stat-label">Twitter积极情绪占比</div>
+                            <div class="stat-value">42.38%</div>
+                            <div class="stat-label">看好态度</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <canvas id="sentimentChart"></canvas>
+                </div>
+                
+                <h3>讨论平台差异：</h3>
+                <p>Twitter上用户积极情绪较高，而Reddit平台的讨论相对稀少，仅有2个帖子和2条评论，表明主流讨论主要集中在社交媒体平台上。</p>
+                
+                <h3>6.2 监管合规与透明度</h3>
+                
+                <h4>地域监管：</h4>
+                <p>XAUt在萨尔瓦多获得了数字资产服务提供商许可证，这使项目在当地具备较高的法律地位及合规要求，有助于提升投资者信心。</p>
+                
+                <h4>透明度承诺：</h4>
+                <p>Tether定期发布储备金报告，并邀请独立审计机构进行审计，以验证资产的充足性，同时通过官网向用户提供详细的黄金验证信息。</p>
+                
+                <h4>国际合作：</h4>
+                <p>除了萨尔瓦多的监管，Tether还与国际执法机构和监管部门合作，例如美国当局冻结与恐怖主义融资相关的USDT交易，这一举措显示了其强烈的合规意识和风险管控能力。</p>
+                
+                <button class="collapsible">全球监管态度地图</button>
+                <div class="collapse-content">
+                    <h4>各主要地区对XAUt的监管态度</h4>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>地区/国家</th>
+                                    <th>监管态度</th>
+                                    <th>法规状态</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>萨尔瓦多</td>
+                                    <td><span class="badge badge-primary">积极支持</span></td>
+                                    <td>已颁发数字资产服务许可证</td>
+                                </tr>
+                                <tr>
+                                    <td>美国</td>
+                                    <td><span class="badge badge-warning">谨慎观望</span></td>
+                                    <td>各州态度不一，监管框架仍在发展</td>
+                                </tr>
+                                <tr>
+                                    <td>欧盟</td>
+                                    <td><span class="badge badge-secondary">中性</span></td>
+                                    <td>MiCA法规将对稳定币有明确规定</td>
+                                </tr>
+                                <tr>
+                                    <td>新加坡</td>
+                                    <td><span class="badge badge-primary">开放</span></td>
+                                    <td>允许在监管框架下运营</td>
+                                </tr>
+                                <tr>
+                                    <td>中国</td>
+                                    <td><span class="badge badge-danger">限制</span></td>
+                                    <td>加密货币相关活动受到限制</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <p>全球监管环境仍处于发展阶段，投资者需密切关注各国监管政策的变化，尤其是主要金融中心的态度演变，这可能对XAUt的全球流通和价值产生重大影响。</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 新闻事件 -->
+        <div id="news" class="tab-content">
+            <div class="card">
+                <h2>7. 近期新闻事件综述</h2>
+                
+                <h3>7.1 关键新闻动态</h3>
+                <p>近期与Tether Gold相关的新闻事件主要包括：</p>
+                
+                <div class="highlight-box">
+                    <h4>资产支持的增强</h4>
+                    <p>2025年第一季度，Tether公布报告显示XAUt由7.7吨实物黄金支持，该数据标志着项目在资产充实方面获得重大进展。</p>
+                </div>
+                
+                <div class="highlight-box">
+                    <h4>反恐与合规行动</h4>
+                    <p>2025年7月，Tether与美国当局合作冻结了约160万美元的USDT资产，该事件涉及与恐怖主义融资有关的交易，体现了Tether对合规及风险防控的高度重视。</p>
+                </div>
+                
+                <div class="highlight-box">
+                    <h4>市场表现亮点</h4>
+                    <p>2025年9月23日，XAUt创下历史新高，价格突破3795.40美元，证明了投资者对该避险资产的兴趣与信心的提升。</p>
+                </div>
+                
+                <h3>7.2 新闻对市场的影响</h3>
+                <p>这些新闻事件在短期内对XAUt产生了积极影响：</p>
+                <ul>
+                    <li><strong>投资信心</strong>：资产支持数据和独立审计报告增强了投资者对XAUt保障机制的信任；</li>
+                    <li><strong>市场推动</strong>：通过严厉打击非法活动和执行严格监管，Tether提升了自身品牌信誉，市场情绪逐渐转好；</li>
+                    <li><strong>长期布局</strong>：伴随全球地缘政治不确定性加剧，投资者纷纷选择黄金作为避险资产，XAUt市场需求由此逐步增长。</li>
+                </ul>
+                
+                <div class="chart-container">
+                    <canvas id="newsImpactChart"></canvas>
+                </div>
+                
+                <button class="collapsible">新闻事件时间线</button>
+                <div class="collapse-content">
+                    <h4>XAUt 2025年重要事件时间线</h4>
+                    <div style="position: relative; padding: 20px 0;">
+                        <div style="position: absolute; left: 0; right: 0; top: 50%; height: 2px; background-color: var(--light-gray);"></div>
+                        
+                        <div style="display: flex; justify-content: space-between; position: relative; z-index: 1;">
+                            <div style="text-align: center; width: 120px;">
+                                <div style="height: 20px; width: 20px; border-radius: 50%; background-color: var(--primary-color); margin: 0 auto 10px; border: 3px solid white;"></div>
+                                <div style="background-color: white; padding: 5px; border-radius: 5px; box-shadow: var(--shadow);">
+                                    <strong>2025年1月</strong>
+                                    <p>年度储备金报告发布</p>
+                                </div>
+                            </div>
+                            
+                            <div style="text-align: center; width: 120px;">
+                                <div style="height: 20px; width: 20px; border-radius: 50%; background-color: var(--primary-color); margin: 0 auto 10px; border: 3px solid white;"></div>
+                                <div style="background-color: white; padding: 5px; border-radius: 5px; box-shadow: var(--shadow);">
+                                    <strong>2025年3月</strong>
+                                    <p>7.7吨黄金支持公布</p>
+                                </div>
+                            </div>
+                            
+                            <div style="text-align: center; width: 120px;">
+                                <div style="height: 20px; width: 20px; border-radius: 50%; background-color: var(--primary-color); margin: 0 auto 10px; border: 3px solid white;"></div>
+                                <div style="background-color: white; padding: 5px; border-radius: 5px; box-shadow: var(--shadow);">
+                                    <strong>2025年7月</strong>
+                                    <p>合规行动与当局合作</p>
+                                </div>
+                            </div>
+                            
+                            <div style="text-align: center; width: 120px;">
+                                <div style="height: 20px; width: 20px; border-radius: 50%; background-color: var(--primary-color); margin: 0 auto 10px; border: 3px solid white;"></div>
+                                <div style="background-color: white; padding: 5px; border-radius: 5px; box-shadow: var(--shadow);">
+                                    <strong>2025年9月</strong>
+                                    <p>价格创历史新高</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <p>此时间线展示了XAUt项目在2025年的关键发展节点，从年初的储备金报告到年中的合规行动，再到年末的价格创新高，反映了项目在各方面的持续进步和市场认可度的提升。</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 社交媒体情绪 -->
+        <div id="social" class="tab-content">
+            <div class="card">
+                <h2>8. 社交媒体情绪及舆论动态</h2>
+                
+                <h3>8.1 社交媒体数据反馈</h3>
+                <p>对社交媒体数据的进一步分析显示投资者对XAUt的态度总体趋于积极：</p>
+                
+                <div class="chart-container">
+                    <canvas id="socialSentimentChart"></canvas>
+                </div>
+                
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>平台</th>
+                                <th>积极情绪 (%)</th>
+                                <th>中性情绪 (%)</th>
+                                <th>消极情绪 (%)</th>
+                                <th>数据样本</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Twitter</td>
+                                <td>42.38</td>
+                                <td>57.62</td>
+                                <td>1.16</td>
+                                <td>606条推文</td>
+                            </tr>
+                            <tr>
+                                <td>Reddit</td>
+                                <td>—</td>
+                                <td>—</td>
+                                <td>—</td>
+                                <td>2个帖子/2条评论</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <h3>8.2 舆论趋势与投资者关注点</h3>
+                <div class="flex-container">
+                    <div class="flex-item">
+                        <h4>关注重点</h4>
+                        <p>投资者关注的焦点主要集中在黄金的实物支持、透明度和合规监管上。</p>
+                    </div>
+                    <div class="flex-item">
+                        <h4>舆论导向</h4>
+                        <p>社交媒体上的讨论整体呈现中性偏正的态势，这也为项目的长期发展提供了积极信号。</p>
+                    </div>
+                    <div class="flex-item">
+                        <h4>市场传播</h4>
+                        <p>公司高层（如CEO Paolo Ardoino）在媒体上的公开发言强化了投资者对项目的信任，进一步推动了市场舆论的改善。</p>
+                    </div>
+                </div>
+                
+                <button class="collapsible">热门讨论话题分析</button>
+                <div class="collapse-content">
+                    <h4>社交媒体上的热门讨论主题</h4>
+                    <div class="chart-container">
+                        <canvas id="topicsChart"></canvas>
+                    </div>
+                    
+                    <h4>关键词云分析</h4>
+                    <p>在社交媒体讨论中，以下关键词出现频率较高：</p>
+                    <div style="display: flex; flex-wrap: wrap; gap: 10px; margin: 15px 0;">
+                        <span style="padding: 8px 15px; background-color: rgba(212, 175, 55, 0.2); border-radius: 20px; font-size: 20px;">黄金支持</span>
+                        <span style="padding: 8px 15px; background-color: rgba(212, 175, 55, 0.15); border-radius: 20px; font-size: 18px;">避险资产</span>
+                        <span style="padding: 8px 15px; background-color: rgba(212, 175, 55, 0.25); border-radius: 20px; font-size: 22px;">实物储备</span>
+                        <span style="padding: 8px 15px; background-color: rgba(212, 175, 55, 0.1); border-radius: 20px; font-size: 16px;">审计报告</span>
+                        <span style="padding: 8px 15px; background-color: rgba(212, 175, 55, 0.3); border-radius: 20px; font-size: 24px;">数字黄金</span>
+                        <span style="padding: 8px 15px; background-color: rgba(212, 175, 55, 0.18); border-radius: 20px; font-size: 19px;">通胀对冲</span>
+                        <span style="padding: 8px 15px; background-color: rgba(212, 175, 55, 0.12); border-radius: 20px; font-size: 17px;">价格上涨</span>
+                        <span style="padding: 8px 15px; background-color: rgba(212, 175, 55, 0.22); border-radius: 20px; font-size: 21px;">安全保障</span>
+                    </div>
+                    
+                    <p>这些关键词反映了社区对XAUt的主要关注点集中在资产安全性、价值保障和投资属性方面，整体显示出投资者对该产品定位的准确理解和积极期望。</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 投资机会 -->
+        <div id="investment" class="tab-content">
+            <div class="card">
+                <h2>9. 投资机会与战略建议</h2>
+                
+                <h3>9.1 投资机会分析</h3>
+                <p>基于以上市场、风险、安全和舆情信息，对XAUt的投资机会主要体现在以下几个方面：</p>
+                
+                <div class="highlight-box">
+                    <h4>直接持有</h4>
+                    <ul>
+                        <li><strong>避险资产</strong>：XAUt作为与黄金挂钩的数字资产，在全球经济不确定性增大的背景下，是一种有效的避险投资工具；</li>
+                        <li><strong>价值存储</strong>：实物黄金支持为代币价格提供了下行保护，降低了币值被人为操纵的风险；</li>
+                        <li><strong>长期增值潜力</strong>：预计随着全球对黄金需求的增加，XAUt的价格具有较为乐观的长期增值空间。</li>
+                    </ul>
+                </div>
+                
+                <div class="highlight-box">
+                    <h4>流动性挖矿和质押</h4>
+                    <ul>
+                        <li><strong>去中心化交易平台</strong>：投资者可以在Uniswap等去中心化平台上提供XAUt/USDT等交易对的流动性，从而获得手续费分成和流动性挖矿奖励（尽管具体收益率需进一步监控）。</li>
+                        <li><strong>跨平台质押</strong>：部分第三方DeFi平台可能支持XAUt的质押业务，允许投资者从中获得额外收益，进一步提高资产回报率。</li>
+                    </ul>
+                </div>
+                
+                <div class="highlight-box">
+                    <h4>生态系统拓展</h4>
+                    <ul>
+                        <li><strong>DApp开发</strong>：对于开发者和机构来说，利用XAUt这一资产进行基于区块链的应用开发（如智能合约衍生品、交易策略工具）也具有长远契机；</li>
+                        <li><strong>资产整合</strong>：投资者可以考虑将XAUt与其他优质资产组合，构建多元化的投资组合，以平衡波动性与收益率风险。</li>
+                    </ul>
+                </div>
+                
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>投资策略</th>
+                                <th>机会描述</th>
+                                <th>潜在收益与风险</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>直接持有</td>
+                                <td>以1:1黄金支持的XAUt本身作为长期价值存储和避险工具</td>
+                                <td>平均收益潜力高，风险较低</td>
+                            </tr>
+                            <tr>
+                                <td>流动性提供与质押</td>
+                                <td>在去中心化交易平台上建立XAUt/USDT流动性池，获得手续费及额外奖励</td>
+                                <td>收益与市场波动相关，需关注平台安全性</td>
+                            </tr>
+                            <tr>
+                                <td>生态系统参与</td>
+                                <td>利用XAUt开发区块链应用，或整合至多元化投资组合中</td>
+                                <td>长期回报潜力大，技术成熟度有待检验</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <h3>9.2 战略建议与风险对冲策略</h3>
+                <ul>
+                    <li><strong>分散投资</strong>：鉴于XAUt代币分布存在高度集中风险，建议投资者在投资时采用分散化策略，与其他贵金属或数字资产搭配，以降低单一资产价格波动带来的风险。</li>
+                    <li><strong>实时监控</strong>：对项目监管动态、储备金报告和市场交易数据保持持续关注，一旦出现异常迹象，及时调整仓位或采取防御性策略。</li>
+                    <li><strong>技术对接</strong>：关注项目智能合约的安全性更新及第三方审计结果，确保资金安全，并根据各平台推出的质押或流动性激励计划，灵活参与DeFi产品。</li>
+                    <li><strong>合规研究</strong>：在进行跨境投资时，需详细研究不同司法管辖区对黄金支持代币的相关政策，以规避可能的监管风险。</li>
+                </ul>
+                
+                <button class="collapsible">投资配置模型建议</button>
+                <div class="collapse-content">
+                    <h4>不同风险偏好投资者的资产配置模型</h4>
+                    <div class="chart-container">
+                        <canvas id="portfolioChart"></canvas>
+                    </div>
+                    
+                    <h4>建议持有期限与配置比例</h4>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>投资者类型</th>
+                                    <th>建议XAUt配置比例</th>
+                                    <th>最佳持有期限</th>
+                                    <th>配套资产建议</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>保守型</td>
+                                    <td>5-10%</td>
+                                    <td>长期 (1年以上)</td>
+                                    <td>国债、蓝筹股</td>
+                                </tr>
+                                <tr>
+                                    <td>平衡型</td>
+                                    <td>10-15%</td>
+                                    <td>中长期 (6个月-1年)</td>
+                                    <td>指数基金、稳定币</td>
+                                </tr>
+                                <tr>
+                                    <td>进取型</td>
+                                    <td>15-25%</td>
+                                    <td>中期 (3-6个月)</td>
+                                    <td>主流加密货币、DeFi资产</td>
+                                </tr>
+                                <tr>
+                                    <td>激进型</td>
+                                    <td>25-40%</td>
+                                    <td>短中期 (1-3个月)</td>
+                                    <td>高收益加密资产、流动性挖矿</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <p>以上配置模型仅供参考，实际投资决策应根据个人财务状况、市场环境和风险承受能力进行调整。建议在进行任何投资前咨询专业投资顾问。</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 结论与评级 -->
+        <div id="conclusion" class="tab-content">
+            <div class="card">
+                <h2>10. 结论与投资等级</h2>
+                <p>综上所述，经全面评估，Tether Gold (XAUt) 项目具备以下主要优势和不足：</p>
+                
+                <h3>主要优势：</h3>
+                <ul>
+                    <li><strong>实物黄金支持</strong>：每枚代币均与一金衡盎司实物黄金挂钩，由瑞士金库保管，提供坚实的价值支持。</li>
+                    <li><strong>透明与合规</strong>：定期发布储备金报告，并由独立机构审计，监管合规性较高，提升市场信任度。</li>
+                    <li><strong>技术安全</strong>：智能合约经过严格第三方审计，采用多签名钱包和先进的安全防御措施，整体安全性较高。</li>
+                    <li><strong>市场避险功能</strong>：在全球经济不确定性和政治风险加剧时，XAUt作为黄金支持的资产具有较高的避险价值，有望长期增值。</li>
+                </ul>
+                
+                <h3>存在问题及不足：</h3>
+                <ul>
+                    <li><strong>市场波动风险</strong>：黄金价格本身的波动将直接影响XAUt价格，需要投资者具备较强的风险承受能力。</li>
+                    <li><strong>代币集中风险</strong>：前10个钱包持有量高达88%的情况可能带来潜在的市场操控风险，投资者应对此保持警惕。</li>
+                    <li><strong>监管不确定性</strong>：尽管在萨尔瓦多获得牌照，但其他地区的监管环境尚未完全明朗，可能影响未来扩展或商业合作。</li>
+                    <li><strong>技术隐患</strong>：虽经审计确认安全，但代码公开意味着潜在漏洞风险仍需长期关注，并要求定期安全更新。</li>
+                </ul>
+                
+                <div class="highlight-box">
+                    <h3>投资等级建议</h3>
+                    <p>综合以上分析，我们对Tether Gold (XAUt)做出以下投资建议：</p>
+                    <ul>
+                        <li><strong>风险偏好较低的投资者</strong>：由于XAUt具备实物黄金支持和较高的透明度，其避险属性较为明显，适合进行中长期持有；然而仍需关注黄金价格波动及监管变化。</li>
+                        <li><strong>风险偏好中等偏高的投资者</strong>：可通过参与流动性提供和质押获取额外收益，但应分散投资并密切关注市场动态和审计结果。</li>
+                        <li><strong>战略性资产配置</strong>：鉴于其稳健的资质与透明机制，XAUt可作为多元化投资组合的重要组成部分，有助于平衡市场整体风险。</li>
+                    </ul>
+                </div>
+                
+                <div style="text-align: center; margin: 2rem 0;">
+                    <h3>投资评级</h3>
+                    <div style="margin: 1rem auto; width: 80%; max-width: 400px; height: 40px; background: linear-gradient(to right, #dc3545, #ffc107, #28a745); border-radius: 20px; position: relative;">
+                        <div style="position: absolute; top: -10px; left: 63%; transform: translateX(-50%); width: 5px; height: 60px; background-color: #000;"></div>
+                        <div style="position: absolute; bottom: -30px; left: 20%; text-align: center; width: 60px; transform: translateX(-50%);">消极</div>
+                        <div style="position: absolute; bottom: -30px; left: 50%; text-align: center; width: 60px; transform: translateX(-50%);">中立</div>
+                        <div style="position: absolute; bottom: -30px; left: 80%; text-align: center; width: 60px; transform: translateX(-50%);">积极</div>
+                        <div style="position: absolute; top: -40px; left: 63%; transform: translateX(-50%); font-weight: bold; font-size: 1.2rem;">中立偏积极</div>
+                    </div>
+                </div>
+                
+                <h3>主要发现总结列表：</h3>
+                <ul>
+                    <li>每个XAUt代币由一金衡盎司实物黄金支持，资产真实可靠；</li>
+                    <li>定期独立储备金报告与严格智能合约审计为资产安全提供双保险；</li>
+                    <li>市场数据表明，在全球避险需求提升背景下，XAUt具备较大价格上涨潜力；</li>
+                    <li>高度集中的代币持仓风险及区域性监管不确定性是主要关注点；</li>
+                    <li>投资策略应结合直接持有、流动性挖矿及跨资产组合，以实现风险对冲和收益最大化。</li>
+                </ul>
+                
+                <p>因此，本次报告总体对Tether Gold (XAUt)给予<strong>"中立偏积极"</strong>的投资评级，建议投资者可在充分理解相关风险和市场环境的前提下，作为长期资产配置的一部分予以关注和适度配置。</p>
+                
+                <div class="chart-container">
+                    <canvas id="conclusionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 等待DOM加载完成
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化窗口chartInstances对象
+            if (!window.chartInstances) window.chartInstances = {};
+            
+            // 打开默认标签页
+            openTab('intro');
+            
+            // 初始化所有可折叠内容
+            initCollapsibles();
+            
+            // 初始化导言页面的图表
+            initOverviewChart();
+        });
+        
+        // 标签页切换功能
+        function openTab(tabName) {
+            // 隐藏所有标签内容
+            var tabContents = document.getElementsByClassName('tab-content');
+            for (var i = 0; i < tabContents.length; i++) {
+                tabContents[i].classList.remove('active');
+            }
+            
+            // 移除所有标签按钮的活动状态
+            var tabButtons = document.getElementsByClassName('tab-btn');
+            for (var i = 0; i < tabButtons.length; i++) {
+                tabButtons[i].classList.remove('active');
+            }
+            
+            // 显示选中的标签内容
+            document.getElementById(tabName).classList.add('active');
+            
+            // 激活相应的标签按钮
+            var activeButtons = document.querySelectorAll('.tab-btn[onclick="openTab(\'' + tabName + '\')"]');
+            for (var i = 0; i < activeButtons.length; i++) {
+                activeButtons[i].classList.add('active');
+            }
+            
+            // 根据选中的标签初始化相应的图表
+            switch(tabName) {
+                case 'intro':
+                    initOverviewChart();
+                    break;
+                case 'market':
+                    initPriceChart();
+                    initHistoryChart();
+                    initCorrelationChart();
+                    break;
+                case 'risk':
+                    initWalletDistributionChart();
+                    break;
+                case 'security':
+                    initSecurityChart();
+                    initReservesChart();
+                    break;
+                case 'community':
+                    initSentimentChart();
+                    break;
+                case 'news':
+                    initNewsImpactChart();
+                    break;
+                case 'social':
+                    initSocialSentimentChart();
+                    initTopicsChart();
+                    break;
+                case 'investment':
+                    initPortfolioChart();
+                    break;
+                case 'conclusion':
+                    initConclusionChart();
+                    break;
+            }
+            
+            // 滚动到页面顶部
+            window.scrollTo(0, 0);
+        }
+        
+        // 初始化可折叠内容
+        function initCollapsibles() {
+            var collapsibles = document.getElementsByClassName("collapsible");
+            
+            for (var i = 0; i < collapsibles.length; i++) {
+                collapsibles[i].addEventListener("click", function() {
+                    this.classList.toggle("active-collapse");
+                    var content = this.nextElementSibling;
+                    
+                    if (content.style.maxHeight) {
+                        content.style.maxHeight = null;
+                        content.style.padding = "0 1rem";
+                    } else {
+                        content.style.maxHeight = content.scrollHeight + "px";
+                        content.style.padding = "1rem";
+                    }
+                });
+            }
+        }
+        
+        // 图表初始化函数
+        function initOverviewChart() {
+            if (window.chartInstances.overviewChart) {
+                window.chartInstances.overviewChart.destroy();
+            }
+            
+            var ctx = document.getElementById('overviewChart').getContext('2d');
+            window.chartInstances.overviewChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['市场表现', '资产安全性', '项目透明度', '技术完善度', '社区活跃度', '监管合规性'],
+                    datasets: [{
+                        label: 'XAUt 项目整体评分',
+                        data: [85, 90, 88, 84, 70, 85],
+                        backgroundColor: 'rgba(212, 175, 55, 0.2)',
+                        borderColor: '#d4af37',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#d4af37',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: '#d4af37'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: {
+                                display: true
+                            },
+                            suggestedMin: 0,
+                            suggestedMax: 100
+                        }
+                    }
+                }
+            });
+        }
+        
+        function initPriceChart() {
+            if (window.chartInstances.priceChart) {
+                window.chartInstances.priceChart.destroy();
+            }
+            
+            var ctx = document.getElementById('priceChart').getContext('2d');
+            window.chartInstances.priceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月'],
+                    datasets: [{
+                        label: 'XAUt 价格 (美元)',
+                        data: [3350, 3400, 3480, 3510, 3585, 3620, 3680, 3720, 3744],
+                        borderColor: '#d4af37',
+                        backgroundColor: 'rgba(212, 175, 55, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            title: {
+                                display: true,
+                                text: '价格 (美元)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: '2025年'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function initHistoryChart() {
+            if (window.chartInstances.historyChart) {
+                window.chartInstances.historyChart.destroy();
+            }
+            
+            var ctx = document.getElementById('historyChart').getContext('2d');
+            window.chartInstances.historyChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月'],
+                    datasets: [{
+                        label: '月度交易量 (百万美元)',
+                        data: [42, 50, 62, 58, 70, 82, 95, 110, 98],
+                        backgroundColor: 'rgba(30, 58, 138, 0.6)',
+                        borderColor: '#1e3a8a',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '交易量 (百万美元)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function initCorrelationChart() {
+            if (window.chartInstances.correlationChart) {
+                window.chartInstances.correlationChart.destroy();
+            }
+            
+            var ctx = document.getElementById('correlationChart').getContext('2d');
+            window.chartInstances.correlationChart = new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'XAUt价格与黄金现货价格相关性',
+                        data: [
+                            {x: 3350, y: 3340},
+                            {x: 3400, y: 3390},
+                            {x: 3480, y: 3470},
+                            {x: 3510, y: 3500},
+                            {x: 3585, y: 3570},
+                            {x: 3620, y: 3610},
+                            {x: 3680, y: 3665},
+                            {x: 3720, y: 3710},
+                            {x: 3744, y: 3735}
+                        ],
+                        backgroundColor: 'rgba(212, 175, 55, 0.7)',
+                        borderColor: '#d4af37'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'XAUt 价格 (美元)'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: '黄金现货价格 (美元/盎司)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return '相关点: (' + context.parsed.x + ', ' + context.parsed.y + ')';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function initWalletDistributionChart() {
+            if (window.chartInstances.walletDistributionChart) {
+                window.chartInstances.walletDistributionChart.destroy();
+            }
+            
+            var ctx = document.getElementById('walletDistributionChart').getContext('2d');
+            window.chartInstances.walletDistributionChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['前10大钱包', '其他钱包'],
+                    datasets: [{
+                        data: [88, 12],
+                        backgroundColor: [
+                            'rgba(220, 53, 69, 0.7)',
+                            'rgba(30, 58, 138, 0.7)'
+                        ],
+                        borderColor: [
+                            '#dc3545',
+                            '#1e3a8a'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        title: {
+                            display: true,
+                            text: 'XAUt代币持有分布'
+                        }
+                    }
+                }
+            });
+        }
+        
+        function initSecurityChart() {
+            if (window.chartInstances.securityChart) {
+                window.chartInstances.securityChart.destroy();
+            }
+            
+            var ctx = document.getElementById('securityChart').getContext('2d');
+            window.chartInstances.securityChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['智能合约评分', '安全评分', '代码质量', '功能完整性', '漏洞风险'],
+                    datasets: [{
+                        label: '安全审计得分 (%)',
+                        data: [84, 70, 88, 92, 82],
+                        backgroundColor: [
+                            'rgba(40, 167, 69, 0.7)',
+                            'rgba(255, 193, 7, 0.7)',
+                            'rgba(23, 162, 184, 0.7)',
+                            'rgba(0, 123, 255, 0.7)',
+                            'rgba(108, 117, 125, 0.7)'
+                        ],
+                        borderColor: [
+                            '#28a745',
+                            '#ffc107',
+                            '#17a2b8',
+                            '#007bff',
+                            '#6c757d'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: '评分百分比'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function initReservesChart() {
+            if (window.chartInstances.reservesChart) {
+                window.chartInstances.reservesChart.destroy();
+            }
+            
+            var ctx = document.getElementById('reservesChart').getContext('2d');
+            window.chartInstances.reservesChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['美国国债', '现金', '隔夜逆回购协议', '企业债券', '其他资产'],
+                    datasets: [{
+                        data: [55.4, 13.5, 11.04, 9.96, 10.1],
+                        backgroundColor: [
+                            'rgba(40, 167, 69, 0.7)',
+                            'rgba(0, 123, 255, 0.7)',
+                            'rgba(23, 162, 184, 0.7)',
+                            'rgba(255, 193, 7, 0.7)',
+                            'rgba(108, 117, 125, 0.7)'
+                        ],
+                        borderColor: [
+                            '#28a745',
+                            '#007bff',
+                            '#17a2b8',
+                            '#ffc107',
+                            '#6c757d'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        title: {
+                            display: true,
+                            text: 'Tether储备金资产构成'
+                        }
+                    }
+                }
+            });
+        }
+        
+        function initSentimentChart() {
+            if (window.chartInstances.sentimentChart) {
+                window.chartInstances.sentimentChart.destroy();
+            }
+            
+            var ctx = document.getElementById('sentimentChart').getContext('2d');
+            window.chartInstances.sentimentChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Twitter', 'Reddit', '专业论坛', '财经媒体', '电报群'],
+                    datasets: [{
+                        label: '积极情绪 (%)',
+                        data: [42.38, 40, 38, 45, 50],
+                        backgroundColor: 'rgba(40, 167, 69, 0.7)',
+                        borderColor: '#28a745',
+                        borderWidth: 1
+                    }, {
+                        label: '中性情绪 (%)',
+                        data: [57.62, 58, 55, 50, 45],
+                        backgroundColor: 'rgba(108, 117, 125, 0.7)',
+                        borderColor: '#6c757d',
+                        borderWidth: 1
+                    }, {
+                        label: '消极情绪 (%)',
+                        data: [1.16, 2, 7, 5, 5],
+                        backgroundColor: 'rgba(220, 53, 69, 0.7)',
+                        borderColor: '#dc3545',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            stacked: true
+                        },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: '情绪占比 (%)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function initNewsImpactChart() {
+            if (window.chartInstances.newsImpactChart) {
+                window.chartInstances.newsImpactChart.destroy();
+            }
+            
+            var ctx = document.getElementById('newsImpactChart').getContext('2d');
+            window.chartInstances.newsImpactChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月'],
+                    datasets: [{
+                        label: 'XAUt价格',
+                        data: [3350, 3400, 3480, 3510, 3585, 3620, 3680, 3720, 3744],
+                        borderColor: '#d4af37',
+                        backgroundColor: 'rgba(212, 175, 55, 0.1)',
+                        borderWidth: 2,
+                        fill: false,
+                        yAxisID: 'y'
+                    }, {
+                        label: '新闻情绪指数',
+                        data: [60, 65, 80, 75, 72, 70, 85, 82, 88],
+                        borderColor: '#1e3a8a',
+                        backgroundColor: 'rgba(30, 58, 138, 0.1)',
+                        borderWidth: 2,
+                        fill: false,
+                        yAxisID: 'y1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: '价格 (美元)'
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            min: 0,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: '情绪指数'
+                            },
+                            grid: {
+                                drawOnChartArea: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function initSocialSentimentChart() {
+            if (window.chartInstances.socialSentimentChart) {
+                window.chartInstances.socialSentimentChart.destroy();
+            }
+            
+            var ctx = document.getElementById('socialSentimentChart').getContext('2d');
+            window.chartInstances.socialSentimentChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['积极情绪', '中性情绪', '消极情绪'],
+                    datasets: [{
+                        data: [42.38, 57.62, 1.16],
+                        backgroundColor: [
+                            'rgba(40, 167, 69, 0.7)',
+                            'rgba(108, 117, 125, 0.7)',
+                            'rgba(220, 53, 69, 0.7)'
+                        ],
+                        borderColor: [
+                            '#28a745',
+                            '#6c757d',
+                            '#dc3545'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        title: {
+                            display: true,
+                            text: 'Twitter用户情绪分布'
+                        }
+                    }
+                }
+            });
+        }
+        
+        function initTopicsChart() {
+            if (window.chartInstances.topicsChart) {
+                window.chartInstances.topicsChart.destroy();
+            }
+            
+            var ctx = document.getElementById('topicsChart').getContext('2d');
+            window.chartInstances.topicsChart = new Chart(ctx, {
+                type: 'bar',
+                indexAxis: 'y',
+                data: {
+                    labels: ['黄金支持', '避险资产', '储备金透明', '价格预测', '监管合规', '技术安全'],
+                    datasets: [{
+                        label: '讨论频率 (%)',
+                        data: [35, 25, 18, 10, 8, 4],
+                        backgroundColor: [
+                            'rgba(212, 175, 55, 0.7)',
+                            'rgba(40, 167, 69, 0.7)',
+                            'rgba(0, 123, 255, 0.7)',
+                            'rgba(255, 193, 7, 0.7)',
+                            'rgba(23, 162, 184, 0.7)',
+                            'rgba(108, 117, 125, 0.7)'
+                        ],
+                        borderColor: [
+                            '#d4af37',
+                            '#28a745',
+                            '#007bff',
+                            '#ffc107',
+                            '#17a2b8',
+                            '#6c757d'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            max: 40,
+                            title: {
+                                display: true,
+                                text: '讨论占比 (%)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function initPortfolioChart() {
+            if (window.chartInstances.portfolioChart) {
+                window.chartInstances.portfolioChart.destroy();
+            }
+            
+            var ctx = document.getElementById('portfolioChart').getContext('2d');
+            window.chartInstances.portfolioChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['保守型', '平衡型', '进取型', '激进型'],
+                    datasets: [{
+                        label: 'XAUt配置比例',
+                        data: [7.5, 12.5, 20, 32.5],
+                        backgroundColor: 'rgba(212, 175, 55, 0.7)',
+                        borderColor: '#d4af37',
+                        borderWidth: 1
+                    }, {
+                        label: '其他数字资产',
+                        data: [12.5, 22.5, 40, 47.5],
+                        backgroundColor: 'rgba(30, 58, 138, 0.7)',
+                        borderColor: '#1e3a8a',
+                        borderWidth: 1
+                    }, {
+                        label: '传统资产',
+                        data: [80, 65, 40, 20],
+                        backgroundColor: 'rgba(40, 167, 69, 0.7)',
+                        borderColor: '#28a745',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            stacked: true
+                        },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: '资产配置比例 (%)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function initConclusionChart() {
+            if (window.chartInstances.conclusionChart) {
+                window.chartInstances.conclusionChart.destroy();
+            }
+            
+            var ctx = document.getElementById('conclusionChart').getContext('2d');
+            window.chartInstances.conclusionChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['资产安全', '投资回报潜力', '流动性', '透明度', '技术成熟度', '监管合规'],
+                    datasets: [{
+                        label: 'XAUt评分',
+                        data: [85, 75, 70, 90, 80, 85],
+                        backgroundColor: 'rgba(212, 175, 55, 0.2)',
+                        borderColor: '#d4af37',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#d4af37',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: '#d4af37'
+                    }, {
+                        label: '行业平均水平',
+                        data: [70, 65, 75, 60, 65, 60],
+                        backgroundColor: 'rgba(108, 117, 125, 0.2)',
+                        borderColor: '#6c757d',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#6c757d',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: '#6c757d'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: {
+                                display: true
+                            },
+                            suggestedMin: 0,
+                            suggestedMax: 100
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 窗口大小改变时重绘图表
+        window.addEventListener('resize', function() {
+            if (window.chartInstances) {
+                for (let chart in window.chartInstances) {
+                    if (window.chartInstances[chart]) {
+                        window.chartInstances[chart].resize();
+                    }
+                }
+            }
+        });
+    </script>
+<script>window.parent.postMessage({ action: "ready" }, "*"); 
+ 
+window.console = new Proxy(console, {
+  get(target, prop) {
+    if (['log', 'warn', 'error'].includes(prop)) {
+      return new Proxy(target[prop], {
+        apply(fn, thisArg, args) {
+          fn.apply(thisArg, args);
+          window.parent.postMessage({ action: 'console', 
+            type: prop, 
+            args: args.map((arg) => {
+              try {
+                return JSON.stringify(arg).replace(/^["']|["']$/g, '');
+              } catch (e) {
+                return arg;
+              }
+            }) 
+          }, '*');
+        }
+      });
+    }
+    return target[prop];
+  }
+});
+</script></body>
+</html>

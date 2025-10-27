@@ -1,0 +1,1974 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PAX Gold (PAXG) 投资研究报告</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* CSS Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', 'PingFang SC', 'Heiti SC', 'SimHei', sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        /* Main Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 0 30px 0;
+            background: white;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        
+        /* Header Styles */
+        .report-header {
+            text-align: center;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 8px 8px 0 0;
+            margin-bottom: 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .report-header::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="rgba(255, 215, 0, 0.1)"/></svg>');
+            background-size: 150px;
+            opacity: 0.5;
+        }
+        
+        .report-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            position: relative;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        .report-header p {
+            font-size: 1.2rem;
+            color: #5d6778;
+            position: relative;
+        }
+        
+        /* Navigation Tabs */
+        .tabs-container {
+            position: sticky;
+            top: 0;
+            background: white;
+            padding: 5px 15px;
+            border-bottom: 1px solid #eaeaea;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .tabs {
+            display: flex;
+            overflow-x: auto;
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE and Edge */
+        }
+        
+        .tabs::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Opera */
+        }
+        
+        .tab {
+            padding: 12px 18px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            white-space: nowrap;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #5d6778;
+            transition: all 0.3s;
+        }
+        
+        .tab:hover {
+            color: #2c3e50;
+            background-color: #f8f9fa;
+        }
+        
+        .tab.active {
+            color: #e6b422;
+            border-bottom: 3px solid #e6b422;
+            font-weight: bold;
+        }
+        
+        /* Content Sections */
+        .content-section {
+            display: none;
+            padding: 30px 20px;
+            animation: fadeIn 0.5s;
+        }
+        
+        .content-section.active {
+            display: block;
+        }
+        
+        /* Section Headers */
+        .section-header {
+            margin-bottom: 25px;
+            border-bottom: 2px solid #eaeaea;
+            padding-bottom: 10px;
+        }
+        
+        .section-header h2 {
+            font-size: 1.8rem;
+            color: #2c3e50;
+            position: relative;
+            padding-left: 15px;
+        }
+        
+        .section-header h2::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 8px;
+            height: 70%;
+            width: 5px;
+            background-color: #e6b422;
+            border-radius: 2px;
+        }
+        
+        /* General Content Styles */
+        p {
+            margin-bottom: 15px;
+            line-height: 1.7;
+        }
+        
+        h3 {
+            margin: 25px 0 15px;
+            font-size: 1.4rem;
+            color: #34495e;
+        }
+        
+        h4 {
+            margin: 20px 0 10px;
+            font-size: 1.2rem;
+            color: #34495e;
+        }
+        
+        ul, ol {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+        
+        li {
+            margin-bottom: 8px;
+        }
+        
+        /* Charts and Visualizations */
+        .chart-container {
+            margin: 30px 0;
+            height: 400px;
+            position: relative;
+        }
+        
+        /* Data Cards */
+        .data-cards {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin: 25px 0;
+            justify-content: center;
+        }
+        
+        .data-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            flex: 1 0 200px;
+            max-width: 300px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            text-align: center;
+        }
+        
+        .data-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+        }
+        
+        .data-card h4 {
+            font-size: 1rem;
+            color: #5d6778;
+            margin-bottom: 10px;
+        }
+        
+        .data-card .value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .data-card .change {
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+        
+        .positive {
+            color: #27ae60;
+        }
+        
+        .negative {
+            color: #e74c3c;
+        }
+        
+        /* Data Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+        }
+        
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+            color: #2c3e50;
+            position: relative;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        
+        /* Expandable Sections */
+        .expandable {
+            border: 1px solid #eaeaea;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .expandable-header {
+            padding: 15px;
+            background-color: #f8f9fa;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .expandable-header h3 {
+            margin: 0;
+            font-size: 1.2rem;
+        }
+        
+        .expandable-content {
+            padding: 15px;
+            display: block;
+        }
+        
+        .expand-icon {
+            transition: transform 0.3s;
+        }
+        
+        .collapsed .expand-icon {
+            transform: rotate(-90deg);
+        }
+        
+        .collapsed .expandable-content {
+            display: none;
+        }
+        
+        /* Feature Cards */
+        .features {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin: 25px 0;
+        }
+        
+        .feature-card {
+            flex: 1 0 300px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .feature-card h3 {
+            color: #2c3e50;
+            margin-top: 0;
+            font-size: 1.3rem;
+            border-bottom: 2px solid #e6b422;
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+        }
+        
+        /* Process Flow */
+        .process-flow {
+            margin: 30px 0;
+        }
+        
+        .process-step {
+            display: flex;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .process-step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            width: 2px;
+            background-color: #e6b422;
+            top: 40px;
+            bottom: -10px;
+            left: 19px;
+        }
+        
+        .step-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #e6b422;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+        
+        .step-content {
+            flex-grow: 1;
+        }
+        
+        .step-content h4 {
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .report-header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .report-header p {
+                font-size: 1rem;
+            }
+            
+            .tab {
+                padding: 10px 12px;
+                font-size: 0.9rem;
+            }
+            
+            .chart-container {
+                height: 350px;
+            }
+            
+            .section-header h2 {
+                font-size: 1.5rem;
+            }
+            
+            h3 {
+                font-size: 1.3rem;
+            }
+            
+            .data-cards {
+                justify-content: center;
+            }
+            
+            .data-card {
+                flex: 0 0 100%;
+                max-width: 100%;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .chart-container {
+                height: 300px;
+            }
+            
+            .report-header {
+                padding: 30px 15px;
+            }
+            
+            .content-section {
+                padding: 20px 15px;
+            }
+        }
+        
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        /* Highlights */
+        .highlight {
+            background-color: #fff8e1;
+            border-left: 4px solid #e6b422;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 0 4px 4px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="report-header">
+            <h1>PAX Gold (PAXG) 投资研究报告</h1>
+            <p>数字黄金市场全面分析与投资策略</p>
+        </div>
+        
+        <div class="tabs-container">
+            <div class="tabs">
+                <button class="tab active" data-tab="summary">执行摘要</button>
+                <button class="tab" data-tab="overview">项目概述</button>
+                <button class="tab" data-tab="market">市场分析</button>
+                <button class="tab" data-tab="technical">技术分析</button>
+                <button class="tab" data-tab="risk">风险分析</button>
+                <button class="tab" data-tab="community">社区分析</button>
+                <button class="tab" data-tab="news">近期动态</button>
+                <button class="tab" data-tab="strategy">投资策略</button>
+                <button class="tab" data-tab="conclusion">结论</button>
+            </div>
+        </div>
+        
+        <!-- 执行摘要 Section -->
+        <div id="summary" class="content-section active">
+            <div class="section-header">
+                <h2>执行摘要</h2>
+            </div>
+            
+            <div class="data-cards">
+                <div class="data-card">
+                    <h4>当前价格</h4>
+                    <div class="value">$3,749.72</div>
+                </div>
+                <div class="data-card">
+                    <h4>24小时交易量</h4>
+                    <div class="value">$1.975亿</div>
+                </div>
+                <div class="data-card">
+                    <h4>市值</h4>
+                    <div class="value">$10.97亿</div>
+                </div>
+                <div class="data-card">
+                    <h4>30天涨跌</h4>
+                    <div class="value positive">+11.61%</div>
+                </div>
+            </div>
+            
+            <div class="highlight">
+                <p>PAX Gold (PAXG) 作为一种由实物黄金支持的数字资产，结合了传统黄金的避险特性和区块链技术的高效流动性，为投资者提供了多元化的投资机会。</p>
+            </div>
+            
+            <h3>项目核心特点</h3>
+            <ul>
+                <li><strong>1:1实物黄金支持</strong>：每个PAXG代币由伦敦金库中符合LBMA标准的一金衡盎司实物黄金支持</li>
+                <li><strong>监管合规</strong>：由Paxos Trust Company发行，受纽约州金融服务部(NYDFS)监管</li>
+                <li><strong>高流动性与分割性</strong>：作为ERC-20代币，可在全球交易所进行24/7交易</li>
+                <li><strong>技术安全</strong>：智能合约经过CertiK、Cyberscope等机构审计，安全评分位于行业前10%</li>
+            </ul>
+            
+            <h3>市场表现与投资机会</h3>
+            <p>截至2025年9月26日，PAXG市场表现稳健，近30天上涨11.61%，作为避险资产在当前不确定的宏观经济环境中显示出较强的价值。投资者可通过多种方式参与PAXG投资：</p>
+            
+            <div class="chart-container">
+                <canvas id="performanceChart"></canvas>
+            </div>
+            
+            <div class="features">
+                <div class="feature-card">
+                    <h3>直接持有</h3>
+                    <p>作为避险配置资产，建议配置比例在投资组合的5%-20%之间，以对冲通胀风险。</p>
+                </div>
+                <div class="feature-card">
+                    <h3>中心化金融(CeFi)借贷</h3>
+                    <p>通过Nexo、YouHodler等平台质押PAXG，获取3%-7%的年化收益。</p>
+                </div>
+                <div class="feature-card">
+                    <h3>去中心化金融(DeFi)策略</h3>
+                    <p>通过Aave、Compound等平台借贷或在Curve、Balancer上提供流动性，获取3%-8%的收益。</p>
+                </div>
+            </div>
+            
+            <h3>风险评估</h3>
+            <p>投资PAXG需注意以下主要风险因素：</p>
+            <ul>
+                <li><strong>监管风险</strong>：政策环境变化可能影响交易支持</li>
+                <li><strong>市场风险</strong>：金价波动直接影响PAXG价值</li>
+                <li><strong>技术风险</strong>：区块链网络风险及智能合约漏洞</li>
+                <li><strong>托管风险</strong>：依赖Paxos对实物黄金的管理</li>
+                <li><strong>竞争风险</strong>：其他数字黄金资产可能分流市场</li>
+            </ul>
+            
+            <h3>总体建议</h3>
+            <p>综合分析表明，PAXG是一种具有稳健避险特性和创新金融属性的数字资产，适合作为长期投资组合中的一部分。建议投资者在直接持有的基础上，同时考虑通过CeFi与DeFi平台进行收益增强，并密切关注监管环境变化与市场动态。</p>
+        </div>
+        
+        <!-- 项目概述 Section -->
+        <div id="overview" class="content-section">
+            <div class="section-header">
+                <h2>项目概述</h2>
+            </div>
+            
+            <p>PAX Gold (PAXG) 是由 Paxos Trust Company 发行的一种数字黄金代币，基于以太坊 ERC-20 标准运行。作为一种创新的数字资产，PAXG将传统黄金投资与区块链技术优势相结合，为投资者提供了一种便捷、安全的黄金配置方案。</p>
+            
+            <div class="features">
+                <div class="feature-card">
+                    <h3>1:1对应的实物黄金支持</h3>
+                    <p>每个PAXG代币代表一金衡盎司(约31.1克)的伦敦优质黄金，该黄金储存在经过LBMA认证的金库中，由著名的Brink's金库负责管理。每个代币均附有唯一序列号，投资者可以通过Paxos网站查询实物黄金的具体信息。</p>
+                </div>
+                <div class="feature-card">
+                    <h3>透明度与监管合规</h3>
+                    <p>Paxos Trust Company受纽约州金融服务部(NYDFS)严格监管，定期发布第三方审计报告和详细的储备报告，确保每个PAXG代币都拥有足额的黄金支持。这种监管背景为投资者提供了强有力的信心，并降低了托管风险。</p>
+                </div>
+                <div class="feature-card">
+                    <h3>高流动性与分割性</h3>
+                    <p>作为ERC-20代币，PAXG可在全球各大主流加密货币交易所进行24/7交易，且其分割性高，可最小至0.01代币，使得无论是大额机构还是小额散户均可轻松投资。</p>
+                </div>
+                <div class="feature-card">
+                    <h3>多样化使用场景</h3>
+                    <p>除了作为避险持仓，在DeFi生态中，PAXG还可作为质押、借贷、流动性提供和其他收益策略的底层资产。例如，用户可以在Aave、Compound等平台借出PAXG以赚取利息，或在Curve、Balancer上提供流动性获得交易费收益。</p>
+                </div>
+            </div>
+            
+            <h3>PAXG发展里程碑</h3>
+            <div class="process-flow">
+                <div class="process-step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h4>2019年9月</h4>
+                        <p>Paxos Trust Company正式推出PAX Gold (PAXG)，成为全球首个由实物黄金1:1支持的ERC-20代币。</p>
+                    </div>
+                </div>
+                <div class="process-step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h4>2020年</h4>
+                        <p>主流交易所陆续上线PAXG交易对，市场接受度不断提升，交易量与持有人数稳步增长。</p>
+                    </div>
+                </div>
+                <div class="process-step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h4>2021年-2022年</h4>
+                        <p>在全球通胀加剧的背景下，PAXG作为数字避险资产受到广泛关注，市值突破10亿美元。</p>
+                    </div>
+                </div>
+                <div class="process-step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h4>2023年-2025年</h4>
+                        <p>DeFi生态对PAXG的整合日益深入，越来越多的借贷和收益平台支持PAXG，为用户提供多样化的投资策略。</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="highlight">
+                <p>总体而言，PAXG融合了传统黄金的保值属性与数字资产的高效流动性，使其在当前不确定的宏观经济环境下成为一种具有极大吸引力的投资工具。</p>
+            </div>
+        </div>
+        
+        <!-- 市场分析 Section -->
+        <div id="market" class="content-section">
+            <div class="section-header">
+                <h2>市场分析</h2>
+            </div>
+            
+            <h3>当前价格与交易数据</h3>
+            <div class="data-cards">
+                <div class="data-card">
+                    <h4>当前价格</h4>
+                    <div class="value">$3,749.72</div>
+                    <div class="change negative">-0.88% (24h)</div>
+                </div>
+                <div class="data-card">
+                    <h4>7日涨跌</h4>
+                    <div class="value positive">+1.57%</div>
+                </div>
+                <div class="data-card">
+                    <h4>30日涨跌</h4>
+                    <div class="value positive">+11.61%</div>
+                </div>
+                <div class="data-card">
+                    <h4>交易量 (24h)</h4>
+                    <div class="value">$1.975亿</div>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <canvas id="priceChart"></canvas>
+            </div>
+            
+            <h3>市场动因与宏观影响因素</h3>
+            <div class="expandable">
+                <div class="expandable-header">
+                    <h3>避险需求</h3>
+                    <span class="expand-icon">▼</span>
+                </div>
+                <div class="expandable-content">
+                    <p>在通胀上行、货币贬值以及地缘政治紧张局势下，投资者将目光转向黄金这一传统避险资产，而PAXG便提供了一种数字化、可即时转让的黄金替代品。</p>
+                </div>
+            </div>
+            
+            <div class="expandable">
+                <div class="expandable-header">
+                    <h3>机构投资者的青睐</h3>
+                    <span class="expand-icon">▼</span>
+                </div>
+                <div class="expandable-content">
+                    <p>由于其监管合规与高度透明性，越来越多的机构、家族办公室和对冲基金将PAXG纳入其资产配置，进一步推高其需求。</p>
+                </div>
+            </div>
+            
+            <div class="expandable">
+                <div class="expandable-header">
+                    <h3>DeFi融合带来的额外效用</h3>
+                    <span class="expand-icon">▼</span>
+                </div>
+                <div class="expandable-content">
+                    <p>PAXG在DeFi平台上的应用，如借贷、质押与流动性挖矿，为传统黄金投资带来收益增值的新模式，吸引了部分风险偏好较低的机构资产管理者。</p>
+                </div>
+            </div>
+            
+            <h3>市场竞争格局</h3>
+            <p>在数字化黄金资产市场上，PAXG与Tether Gold (XAUT)是主要的竞争对手。两者均以实物黄金为支持，但在多个方面存在显著差异：</p>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>比较项目</th>
+                        <th>PAXG</th>
+                        <th>XAUT</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>发行机构</td>
+                        <td>Paxos Trust Company（受NYDFS监管）</td>
+                        <td>TG Commodities Limited（获得萨尔瓦多许可）</td>
+                    </tr>
+                    <tr>
+                        <td>支持程度</td>
+                        <td>1:1实物黄金支持（流通透明、可查验）</td>
+                        <td>同样实现1:1黄金支持，但监管透明度略逊于PAXG</td>
+                    </tr>
+                    <tr>
+                        <td>最小购买单位</td>
+                        <td>可分割至0.01代币</td>
+                        <td>最低购买50 XAUt代币（约等于50金衡盎司）</td>
+                    </tr>
+                    <tr>
+                        <td>交易费用</td>
+                        <td>0.02%的链上转账手续费 + ETH Gas费</td>
+                        <td>仅收取标准的链上转账费用，发行与赎回时收取约0.25%费用</td>
+                    </tr>
+                    <tr>
+                        <td>市场占有率</td>
+                        <td>占据数字黄金市值领先地位</td>
+                        <td>市值接近但增长幅度相对较高，竞争压力增加</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="chart-container">
+                <canvas id="marketShareChart"></canvas>
+            </div>
+            
+            <h3>投资者情绪与资金流向</h3>
+            <p>社交媒体平台（如Reddit、Telegram等）显示，PAXG的讨论量和互动量显著增加，仅24小时内就生成约984条相关帖子，整体情绪呈现明显看涨，正面情绪贴数远多于看跌贴数（看涨13,559条，对看跌799条）。同时，机构对PAXG的认购和定向投资趋势也呈现上行态势，这在一定程度上巩固了其市场信心和长期价值。</p>
+            
+            <div class="chart-container">
+                <canvas id="sentimentChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- 技术分析 Section -->
+        <div id="technical" class="content-section">
+            <div class="section-header">
+                <h2>技术分析与安全审计</h2>
+            </div>
+            
+            <h3>智能合约和技术架构</h3>
+            <p>PAXG基于以太坊ERC-20标准，具备以下重要特点：</p>
+            <ul>
+                <li><strong>透明度与可验证性</strong>：每个PAXG代币均与实物黄金严格一一对应，并通过区块链公开记录，所有交易均可在Etherscan上查询到明确的链上数据。</li>
+                <li><strong>灵活的操作性</strong>：凭借智能合约技术，PAXG允许用户实现实时交易、跨境支付以及在DeFi平台上进行借贷及流动性挖矿操作。</li>
+                <li><strong>分割性高</strong>：由于PAXG可精确分割至18个小数点，它大大降低了传统黄金投资的门槛，使得小额投资者也可以轻松配置黄金资产。</li>
+            </ul>
+            
+            <h3>安全审计与风险防护</h3>
+            <div class="data-cards">
+                <div class="data-card">
+                    <h4>CertiK审计评分</h4>
+                    <div class="value">通过</div>
+                    <div>形式化验证完成</div>
+                </div>
+                <div class="data-card">
+                    <h4>Cyberscope评分</h4>
+                    <div class="value">71%</div>
+                    <div>行业前10%</div>
+                </div>
+                <div class="data-card">
+                    <h4>安全事件</h4>
+                    <div class="value positive">0</div>
+                    <div>自上线以来无重大漏洞</div>
+                </div>
+            </div>
+            
+            <p>安全性是投资者最为关心的问题之一，PAXG在此方面经过多家知名机构审计验证：</p>
+            <ul>
+                <li><strong>CertiK与Cyberscope审计</strong>：PAXG的智能合约已经经过CertiK的形式验证，并由Cyberscope进行安全评分，整体评分为71%，处于行业前10%的水平，显示了其技术架构的稳健性。</li>
+                <li><strong>历史漏洞与响应</strong>：虽然有竞争对手XAUT在2023年曾曝出合约漏洞，但PAXG自上市以来无重大安全事故记录，表明其智能合约设计与实施均经过严格测试与审计。</li>
+            </ul>
+            
+            <h3>流动性与跨链部署</h3>
+            <p>作为一种流动性极高的数字资产，PAXG在主要加密平台上活跃交易，不仅在中心化交易所（如Coinbase、Binance、Kraken等）上交易活跃，同时也在多个DeFi平台中得以应用。此外，Paxos正在探索将PAXG部署到其他区块链（如Binance Smart Chain、Solana、Polygon）以降低交易费用并提高交易速度。</p>
+            
+            <h3>PAXG交易与验证流程</h3>
+            <div class="chart-container">
+                <div style="width:100%; height:100%; display:flex; justify-content:center; align-items:center; background-color:#f9f9f9; border-radius:8px; padding:20px;">
+                    <img src="data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='400' viewBox='0 0 800 400'%3E%3Cstyle%3E text %7B font-family: 'Microsoft YaHei', sans-serif; font-size: 16px; %7D .title %7B font-size: 18px; font-weight: bold; %7D .box %7B fill: %23fff; stroke: %23e6b422; stroke-width: 2; rx: 10; ry: 10; %7D .arrow %7B stroke: %23666; stroke-width: 2; marker-end: url(%23arrowhead); %7D %3C/style%3E%3Cdefs%3E%3Cmarker id='arrowhead' markerWidth='10' markerHeight='7' refX='9' refY='3.5' orient='auto'%3E%3Cpolygon points='0 0, 10 3.5, 0 7' fill='%23666' /%3E%3C/marker%3E%3C/defs%3E%3Crect class='box' x='50' y='50' width='200' height='60' /%3E%3Ctext x='150' y='85' text-anchor='middle'%3E用户选择购买PAXG%3C/text%3E%3Crect class='box' x='50' y='150' width='200' height='60' /%3E%3Ctext x='150' y='185' text-anchor='middle'%3E通过交易平台下订单%3C/text%3E%3Crect class='box' x='50' y='250' width='200' height='60' /%3E%3Ctext x='150' y='285' text-anchor='middle'%3EPAXG智能合约生成并执行%3C/text%3E%3Crect class='box' x='300' y='150' width='200' height='60' /%3E%3Ctext x='400' y='185' text-anchor='middle'%3E黄金等值验证及记录到区块链%3C/text%3E%3Crect class='box' x='550' y='150' width='200' height='60' /%3E%3Ctext x='650' y='185' text-anchor='middle'%3E用户可通过PAXG查验实物黄金信息%3C/text%3E%3Crect class='box' x='550' y='250' width='200' height='60' /%3E%3Ctext x='650' y='285' text-anchor='middle'%3E交易完成，持仓显示%3C/text%3E%3Cpath class='arrow' d='M150 110 L150 150' /%3E%3Cpath class='arrow' d='M150 210 L150 250' /%3E%3Cpath class='arrow' d='M250 180 L300 180' /%3E%3Cpath class='arrow' d='M500 180 L550 180' /%3E%3Cpath class='arrow' d='M650 210 L650 250' /%3E%3C/svg%3E" alt="PAXG交易与验证流程" style="max-width:100%; max-height:100%;">
+                </div>
+            </div>
+            <p class="text-center"><small>图1：PAXG交易及验证流程图，展示了用户购买、智能合约执行以及链上黄金验证的全过程</small></p>
+        </div>
+        
+        <!-- 风险分析 Section -->
+        <div id="risk" class="content-section">
+            <div class="section-header">
+                <h2>风险分析</h2>
+            </div>
+            
+            <div class="highlight">
+                <p>尽管PAXG具备多重优势，但和所有投资工具一样，其亦存在一定风险。投资者应全面了解这些风险因素，以便做出更加理性的投资决策。</p>
+            </div>
+            
+            <div class="chart-container">
+                <canvas id="riskChart"></canvas>
+            </div>
+            
+            <div class="expandable">
+                <div class="expandable-header">
+                    <h3>监管风险</h3>
+                    <span class="expand-icon">▼</span>
+                </div>
+                <div class="expandable-content">
+                    <p>监管环境近年来不断变化。近期，加拿大等国家的证券机构对加密资产提出更为严格的要求，导致平台（如Wealthsimple）暂停支持PAXG相关交易。未来各国政府可能出台新的政策，对数字黄金的使用、交易和合规性要求提出更高门槛，从而影响市场流动性及投资者可获得性。</p>
+                </div>
+            </div>
+            
+            <div class="expandable">
+                <div class="expandable-header">
+                    <h3>托管与赎回风险</h3>
+                    <span class="expand-icon">▼</span>
+                </div>
+                <div class="expandable-content">
+                    <p>尽管Paxos在监管上表现优秀，但PAXG完全依赖于Paxos对实物黄金的储存与管理。若Paxos遭遇财务危机或管理失误，可能会出现赎回延迟或操作风险。虽然法律上黄金处于独立托管状态，但赎回流程仍可能受到市场及操作层面的制约。</p>
+                </div>
+            </div>
+            
+            <div class="expandable">
+                <div class="expandable-header">
+                    <h3>市场风险</h3>
+                    <span class="expand-icon">▼</span>
+                </div>
+                <div class="expandable-content">
+                    <p>PAXG的价值直接挂钩国际金价。金价受全球经济、货币政策、地缘政治等多重因素的影响，在宏观经济不确定性较高时期，金价会出现波动。这种波动虽然在一定程度上对资产有避险效果，但短期内仍可能给投资者带来价格回调风险。</p>
+                </div>
+            </div>
+            
+            <div class="expandable">
+                <div class="expandable-header">
+                    <h3>技术与网络风险</h3>
+                    <span class="expand-icon">▼</span>
+                </div>
+                <div class="expandable-content">
+                    <p>作为基于以太坊的ERC-20代币，PAXG也不可避免地面临以太坊网络本身存在的技术与拥堵问题，如高昂的GAS费率、网络延迟等。此外，尽管智能合约经过审计，技术漏洞及黑客攻击风险仍是一项客观存在的潜在威胁。</p>
+                </div>
+            </div>
+            
+            <div class="expandable">
+                <div class="expandable-header">
+                    <h3>竞争风险</h3>
+                    <span class="expand-icon">▼</span>
+                </div>
+                <div class="expandable-content">
+                    <p>目前，数字黄金市场中存在多个竞争对手，如Tether Gold (XAUT)等。XAUT在部分市场中已取得较高增速，并存在不同的费用结构和政策风险，因此可能造成一定程度的市场份额竞争，迫使PAXG不断通过降低费用、提高透明度来保持竞争力。</p>
+                </div>
+            </div>
+            
+            <h3>风险总结</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>风险类型</th>
+                        <th>风险级别</th>
+                        <th>主要影响</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>监管风险</td>
+                        <td>高</td>
+                        <td>政策不确定性可能影响交易平台支持与市场流动性</td>
+                    </tr>
+                    <tr>
+                        <td>托管风险</td>
+                        <td>中</td>
+                        <td>依赖单一机构管理实物黄金可能引起赎回风险</td>
+                    </tr>
+                    <tr>
+                        <td>市场风险</td>
+                        <td>中-低</td>
+                        <td>金价波动直接传导至PAXG价值，需关注宏观经济动态</td>
+                    </tr>
+                    <tr>
+                        <td>技术风险</td>
+                        <td>低</td>
+                        <td>以太坊拥堵和智能合约漏洞均可能带来潜在安全隐患</td>
+                    </tr>
+                    <tr>
+                        <td>竞争风险</td>
+                        <td>中</td>
+                        <td>其它数字黄金资产的崛起可能瓜分投资者关注度</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- 社区分析 Section -->
+        <div id="community" class="content-section">
+            <div class="section-header">
+                <h2>社区与社交媒体情绪分析</h2>
+            </div>
+            
+            <h3>讨论量与互动</h3>
+            <div class="data-cards">
+                <div class="data-card">
+                    <h4>讨论帖数量 (24h)</h4>
+                    <div class="value">984</div>
+                </div>
+                <div class="data-card">
+                    <h4>总互动量 (24h)</h4>
+                    <div class="value">25,979</div>
+                </div>
+                <div class="data-card">
+                    <h4>看涨帖数量</h4>
+                    <div class="value">13,559</div>
+                </div>
+                <div class="data-card">
+                    <h4>看跌帖数量</h4>
+                    <div class="value">799</div>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <canvas id="communityChart"></canvas>
+            </div>
+            
+            <h3>情绪分析</h3>
+            <p>社交媒体情绪明显偏向正面，其中看涨帖子数量高达13,559条，而看跌讨论仅有799条。这种正面情绪主要来自于投资者对PAXG透明度、监管合规性以及黄金作为避险资产的信心。</p>
+            
+            <div class="chart-container">
+                <canvas id="sentimentPieChart"></canvas>
+            </div>
+            
+            <h3>机构参与与媒体报道</h3>
+            <p>除了个人投资者之外，机构投资者和著名财经媒体也开始频繁报道PAXG的相关消息，进一步巩固了其市场地位和投资者信心。</p>
+            
+            <h3>社区活动实例</h3>
+            <div class="features">
+                <div class="feature-card">
+                    <h3>Reddit讨论热点</h3>
+                    <p>在Reddit平台上，投资者热议PAXG作为数字黄金的避险属性及其在当前通胀环境下的投资价值。主要讨论集中于其与实物黄金ETF的区别以及在投资组合中的配置比例。</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Telegram群组动态</h3>
+                    <p>Telegram群组中，用户对PAXG的DeFi应用场景展开了深入讨论，尤其关注如何通过PAXG质押获取额外收益，以及不同平台的收益率比较。</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Twitter热点话题</h3>
+                    <p>在Twitter上，#PAXGold标签下的讨论主要关注全球宏观经济形势对金价的影响，以及数字黄金对抗通胀的效果，总体情绪积极乐观。</p>
+                </div>
+            </div>
+            
+            <div class="highlight">
+                <p>综上，社区情绪整体积极，投资者对PAXG的未来充满信心，这在一定程度上也推动了其市场价格的上行趋势。</p>
+            </div>
+        </div>
+        
+        <!-- 近期动态 Section -->
+        <div id="news" class="content-section">
+            <div class="section-header">
+                <h2>近期新闻与事件动态</h2>
+            </div>
+            
+            <h3>监管与市场准入</h3>
+            <div class="expandable">
+                <div class="expandable-header">
+                    <h3>加拿大监管政策调整</h3>
+                    <span class="expand-icon">▼</span>
+                </div>
+                <div class="expandable-content">
+                    <p>加拿大证券管理机构（CSA）近期指引下，部分平台如Wealthsimple已停止对PAXG的支持，提示了监管态势的紧缩和机制的调整。</p>
+                </div>
+            </div>
+            
+            <div class="expandable">
+                <div class="expandable-header">
+                    <h3>Paxos积极沟通监管要求</h3>
+                    <span class="expand-icon">▼</span>
+                </div>
+                <div class="expandable-content">
+                    <p>Paxos积极与监管机构沟通，确保所有操作符合最新法规要求，这也为PAXG提供了更高的市场透明度和合规保障。</p>
+                </div>
+            </div>
+            
+            <h3>竞争加剧与市场份额变化</h3>
+            <div class="expandable">
+                <div class="expandable-header">
+                    <h3>XAUT市场份额增长</h3>
+                    <span class="expand-icon">▼</span>
+                </div>
+                <div class="expandable-content">
+                    <p>与PAXG同类产品Tether Gold (XAUT)的竞争日益激烈，近期XAUT在市场占有率上有所超越，部分短期资金流向XAUT，这对PAXG的短期价格造成一定压力，但长期来看仍具较大潜力。</p>
+                </div>
+            </div>
+            
+            <div class="expandable">
+                <div class="expandable-header">
+                    <h3>机构投资策略调整</h3>
+                    <span class="expand-icon">▼</span>
+                </div>
+                <div class="expandable-content">
+                    <p>业内机构报道，部分机构正在重新评估数字黄金资产组合，力图透过分散投资的方式降低单一产品集中风险。</p>
+                </div>
+            </div>
+            
+            <h3>DeFi生态与投资策略创新</h3>
+            <div class="expandable">
+                <div class="expandable-header">
+                    <h3>DeFi平台整合PAXG</h3>
+                    <span class="expand-icon">▼</span>
+                </div>
+                <div class="expandable-content">
+                    <p>越来越多的DeFi平台正在考虑将PAXG纳入借贷、质押及流动性挖矿产品中。Aave、Compound、Curve以及Balancer等平台已开始测试将PAXG作为抵押品，这一举措使得PAXG不仅仅是避险工具，更成为收益创造工具之一。</p>
+                </div>
+            </div>
+            
+            <div class="expandable">
+                <div class="expandable-header">
+                    <h3>跨链交易支持增加</h3>
+                    <span class="expand-icon">▼</span>
+                </div>
+                <div class="expandable-content">
+                    <p>Flashift等跨链交易平台的出现，为PAXG在不同生态之间的快速转换提供了技术支持，提高了流动性和市场敏捷性。</p>
+                </div>
+            </div>
+            
+            <h3>新闻事件总结</h3>
+            <div class="chart-container">
+                <div style="width:100%; height:100%; display:flex; justify-content:center; align-items:center; background-color:#f9f9f9; border-radius:8px; padding:20px;">
+                    <img src="data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='400' viewBox='0 0 800 400'%3E%3Cstyle%3E text %7B font-family: 'Microsoft YaHei', sans-serif; font-size: 16px; %7D .node %7B fill: %23fff; stroke: %23e6b422; stroke-width: 2; rx: 10; ry: 10; %7D .center-node %7B fill: %23fff8e1; stroke: %23e6b422; stroke-width: 3; %7D .line %7B stroke: %23666; stroke-width: 1.5; %7D %3C/style%3E%3Crect class='center-node' x='350' y='175' width='100' height='50' /%3E%3Ctext x='400' y='205' text-anchor='middle'%3EPAXG发展前景%3C/text%3E%3Crect class='node' x='100' y='75' width='120' height='50' /%3E%3Ctext x='160' y='105' text-anchor='middle'%3E监管环境变化%3C/text%3E%3Cline class='line' x1='220' y1='100' x2='350' y2='175' /%3E%3Crect class='node' x='100' y='175' width='120' height='50' /%3E%3Ctext x='160' y='205' text-anchor='middle'%3E竞争格局变化%3C/text%3E%3Cline class='line' x1='220' y1='200' x2='350' y2='200' /%3E%3Crect class='node' x='100' y='275' width='120' height='50' /%3E%3Ctext x='160' y='305' text-anchor='middle'%3EDeFi生态整合%3C/text%3E%3Cline class='line' x1='220' y1='300' x2='350' y2='225' /%3E%3Crect class='node' x='580' y='75' width='120' height='50' /%3E%3Ctext x='640' y='105' text-anchor='middle'%3E市场不确定性%3C/text%3E%3Cline class='line' x1='580' y1='100' x2='450' y2='175' /%3E%3Crect class='node' x='580' y='175' width='120' height='50' /%3E%3Ctext x='640' y='205' text-anchor='middle'%3E创新投资机会%3C/text%3E%3Cline class='line' x1='580' y1='200' x2='450' y2='200' /%3E%3Crect class='node' x='580' y='275' width='120' height='50' /%3E%3Ctext x='640' y='305' text-anchor='middle'%3E多元化配置需求%3C/text%3E%3Cline class='line' x1='580' y1='300' x2='450' y2='225' /%3E%3C/svg%3E" alt="PAXG发展影响因素" style="max-width:100%; max-height:100%;">
+                </div>
+            </div>
+            <p class="text-center"><small>图2：PAXG发展影响因素分析图</small></p>
+            
+            <div class="highlight">
+                <p>近期动态可以看出：监管环境的变化、竞争对手的崛起以及DeFi生态的不断成熟均对PAXG产生了影响。总体来看，这些变化既带来了市场的不确定性，也催生了更多的创新和投资机会，为投资者提供了多维度配置的可能性。</p>
+            </div>
+        </div>
+        
+        <!-- 投资策略 Section -->
+        <div id="strategy" class="content-section">
+            <div class="section-header">
+                <h2>投资机会与策略</h2>
+            </div>
+            
+            <p>针对PAXG这一数字黄金资产，结合其基本面和市场表现，投资者可以选择多种投资方式和策略。以下对主要投资方式进行详细解析：</p>
+            
+            <div class="features">
+                <div class="feature-card">
+                    <h3>直接持有与长期存储</h3>
+                    <p><strong>优势</strong>：直接持有PAXG使得投资者可以获得与实物黄金等值的保值效果，同时享受全天候交易和高流动性的优势。黄金作为避险资产，在经济不确定性时期具有天然抗风险能力。</p>
+                    <p><strong>风险</strong>：价格主要受国际金价波动影响，可能短期内出现震荡。同时，行业监管变化可能导致交易平台调整政策。</p>
+                    <p><strong>预期收益</strong>：长期来看，黄金具有较低波动性和稳健的保值特性，适合投资组合中配置5%至20%的比例。</p>
+                </div>
+                <div class="feature-card">
+                    <h3>中心化金融(CeFi)平台借贷与质押</h3>
+                    <p><strong>投资方式</strong>：通过Nexo、YouHodler、Crypto.com等中心化平台，将PAXG用于借贷和质押，赚取固定利率收益。部分平台可提供高达7%的年化收益率，但需要注意锁仓期限及平台风险。</p>
+                    <p><strong>优势</strong>：收益稳定、操作便捷，并有相对完善的保险和监管措施。</p>
+                    <p><strong>风险</strong>：中心化平台存在管理及信誉风险，若平台遭遇流动性问题，可能导致资金安全风险；同时需关注锁仓期间的市场波动风险。</p>
+                </div>
+                <div class="feature-card">
+                    <h3>去中心化金融(DeFi)策略</h3>
+                    <p><strong>质押借贷</strong>：在Aave、Compound等平台上出借PAXG获得利息。利率大致在3%至8%之间，根据市场需求灵活调整。</p>
+                    <p><strong>提供流动性</strong>：在Curve Finance、Balancer等AMM平台中，通过提供PAXG与稳定币的流动性赚取交易手续费及平台激励。</p>
+                    <p><strong>金库策略与自动复利</strong>：某些DeFi平台（如Yearn Finance）推出针对PAXG的金库策略，通过智能合约自动将手续费进行再投资，实现复利收益。</p>
+                </div>
+            </div>
+            
+            <h3>投资策略比较</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>策略类型</th>
+                        <th>预期年化收益</th>
+                        <th>优点</th>
+                        <th>主要风险</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>直接持有</td>
+                        <td>保值性资产</td>
+                        <td>简单、安全、无锁定</td>
+                        <td>受金价波动影响、中长期回撤风险</td>
+                    </tr>
+                    <tr>
+                        <td>CeFi借贷</td>
+                        <td>约3%-7%</td>
+                        <td>收益固定、平台保险、操作便捷</td>
+                        <td>中心化管理风险、锁仓流动性风险</td>
+                    </tr>
+                    <tr>
+                        <td>DeFi借贷</td>
+                        <td>约3%-8%</td>
+                        <td>灵活性高、复利机制、多层次收益</td>
+                        <td>智能合约漏洞、无常损失、市场流动性风险</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="chart-container">
+                <canvas id="strategyComparisonChart"></canvas>
+            </div>
+            
+            <h3>套利与快速交易策略</h3>
+            <p>部分活跃交易者可以利用Flashift等跨链交换平台，在不同交易所之间快速套利。通过利用差价，快速买入卖出PAXG，不仅能够捕捉短期交易机会，亦可作为资金再配置的工具。此策略更适用于有较高风险承受能力且具备较强市场敏锐度的专业投资者。</p>
+            
+            <h3>投资组合分散策略</h3>
+            <p>投资者可以根据自身风险偏好，将PAXG作为投资组合的一部分，与其他加密货币（如BTC、ETH）、稳定币和传统金融资产（如黄金ETF、股票）搭配，通过资产多元化降低整体投资组合风险。分散化配置既能利用PAXG的保值功能，又能在其他高风险资产上涨时受益，从而达到风险与收益的平衡。</p>
+            
+            <div class="chart-container">
+                <canvas id="portfolioAllocationChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- 结论 Section -->
+        <div id="conclusion" class="content-section">
+            <div class="section-header">
+                <h2>投资建议与结论</h2>
+            </div>
+            
+            <h3>综合投资建议</h3>
+            <div class="process-flow">
+                <div class="process-step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h4>长期持有配置</h4>
+                        <p>对于寻求稳健保值的投资者，建议将PAXG作为避险配置资产，比例建议在5%-20%之间。长期持有能在宏观经济不确定性下对冲通胀风险，同时受益于黄金价值的相对稳定性。</p>
+                    </div>
+                </div>
+                <div class="process-step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h4>中心化平台借贷</h4>
+                        <p>对于希望获得固定收益的投资者，可考虑将部分PAXG通过中心化借贷平台进行质押，年化收益可达到3%-7%，此策略较为稳定，但需关注平台的流动性和监管风险。</p>
+                    </div>
+                </div>
+                <div class="process-step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h4>DeFi策略布局</h4>
+                        <p>对于风险承受能力较高、追求额外收益的投资者，建议参与DeFi借贷、流动性提供和金库自动复利策略。需注重智能合约安全性，并持续监控市场状况，以防止无常损失和大幅波动风险。</p>
+                    </div>
+                </div>
+                <div class="process-step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h4>套利交易与灵活配置</h4>
+                        <p>专业交易者可利用跨链和多平台套利策略，通过Flashift等工具实现快速交易和资金重新配置，捕捉市场短期机会。但须具备较高交易技能和风险管理能力，对市场极端波动保持警惕。</p>
+                    </div>
+                </div>
+                <div class="process-step">
+                    <div class="step-number">5</div>
+                    <div class="step-content">
+                        <h4>投资组合分散化</h4>
+                        <p>建议投资者将PAXG与其他加密资产、稳定币以及传统避险资产（如实物黄金、黄金ETF）搭配配置，从而在收益与风险之间实现平衡，降低单一资产波动带来的冲击。</p>
+                    </div>
+                </div>
+            </div>
+            
+            <h3>投资结论</h3>
+            <div class="highlight">
+                <p>综合来看，PAX Gold (PAXG) 具有显著优势：严格监管与透明性、高流动性与分割性、DeFi应用前景广阔以及市场接受度高。然而，也必须注意到监管环境变化、托管风险及市场竞争等不确定性因素。</p>
+            </div>
+            
+            <div class="features">
+                <div class="feature-card">
+                    <h3>透明与监管</h3>
+                    <p>PAXG受NYDFS严格监管，具备完整的实物黄金支持和透明验证机制。</p>
+                </div>
+                <div class="feature-card">
+                    <h3>流动性与兼容性</h3>
+                    <p>作为ERC-20代币，可在全球主流交易平台及DeFi生态中使用，拥有高流动性和灵活性。</p>
+                </div>
+                <div class="feature-card">
+                    <h3>多元化收益策略</h3>
+                    <p>直接持有、中心化与去中心化借贷、流动性挖矿等均构成有效投资途径。</p>
+                </div>
+                <div class="feature-card">
+                    <h3>风险管理</h3>
+                    <p>重点关注监管、托管、市场波动和技术风险，建议采取分散投资和定期组合调整策略。</p>
+                </div>
+            </div>
+            
+            <h3>主要研究发现</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>分析角度</th>
+                        <th>主要结论</th>
+                        <th>关键风险</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>监管与透明性</td>
+                        <td>严格监管、定期审计、实物黄金支持</td>
+                        <td>政策变化、平台合规风险</td>
+                    </tr>
+                    <tr>
+                        <td>市场表现</td>
+                        <td>高度挂钩国际金价，长期避险效果显著</td>
+                        <td>短期波动、获利回吐、竞争对手影响</td>
+                    </tr>
+                    <tr>
+                        <td>投资策略</td>
+                        <td>多样化策略（直接持有、CeFi、DeFi、套利）</td>
+                        <td>平台风险、技术漏洞、无常损失</td>
+                    </tr>
+                    <tr>
+                        <td>社区与舆情</td>
+                        <td>社区积极、媒体正面、机构参与度上升</td>
+                        <td>市场情绪变化、短期资金流动性问题</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <h3>投资决策流程图</h3>
+            <div class="chart-container">
+                <div style="width:100%; height:100%; display:flex; justify-content:center; align-items:center; background-color:#f9f9f9; border-radius:8px; padding:20px;">
+                    <img src="data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='400' viewBox='0 0 800 400'%3E%3Cstyle%3E text %7B font-family: 'Microsoft YaHei', sans-serif; font-size: 16px; %7D .box %7B fill: %23fff; stroke: %23e6b422; stroke-width: 2; rx: 10; ry: 10; %7D .arrow %7B stroke: %23666; stroke-width: 2; marker-end: url(%23arrowhead); %7D %3C/style%3E%3Cdefs%3E%3Cmarker id='arrowhead' markerWidth='10' markerHeight='7' refX='9' refY='3.5' orient='auto'%3E%3Cpolygon points='0 0, 10 3.5, 0 7' fill='%23666' /%3E%3C/marker%3E%3C/defs%3E%3Crect class='box' x='50' y='50' width='200' height='60' /%3E%3Ctext x='150' y='85' text-anchor='middle'%3E1. 分析宏观经济与金价走势%3C/text%3E%3Crect class='box' x='50' y='150' width='200' height='60' /%3E%3Ctext x='150' y='185' text-anchor='middle'%3E2. 评估政策环境与监管动态%3C/text%3E%3Crect class='box' x='50' y='250' width='200' height='60' /%3E%3Ctext x='150' y='285' text-anchor='middle'%3E3. 确定PAXG的持仓比例%3C/text%3E%3Crect class='box' x='300' y='150' width='200' height='60' /%3E%3Ctext x='400' y='175' text-anchor='middle'%3E4. 选择投资策略：%3C/text%3E%3Ctext x='400' y='195' text-anchor='middle'%3E直接持有/借贷/流动性提供%3C/text%3E%3Crect class='box' x='550' y='150' width='200' height='60' /%3E%3Ctext x='650' y='185' text-anchor='middle'%3E5. 实施交易与风险控制%3C/text%3E%3Crect class='box' x='550' y='250' width='200' height='60' /%3E%3Ctext x='650' y='285' text-anchor='middle'%3E6. 定期监控市场情绪和组合调整%3C/text%3E%3Crect class='box' x='550' y='350' width='200' height='60' /%3E%3Ctext x='650' y='385' text-anchor='middle'%3E投资目标达成%3C/text%3E%3Cpath class='arrow' d='M150 110 L150 150' /%3E%3Cpath class='arrow' d='M150 210 L150 250' /%3E%3Cpath class='arrow' d='M250 180 L300 180' /%3E%3Cpath class='arrow' d='M500 180 L550 180' /%3E%3Cpath class='arrow' d='M650 210 L650 250' /%3E%3Cpath class='arrow' d='M650 310 L650 350' /%3E%3C/svg%3E" alt="投资决策流程图" style="max-width:100%; max-height:100%;">
+                </div>
+            </div>
+            <p class="text-center"><small>图3：投资决策流程图，展示了从宏观经济分析到定期调整投资组合的整个决策过程</small></p>
+            
+            <h3>总结</h3>
+            <p>通过本报告的详细评估和多角度分析，我们可以明确地看到PAX Gold (PAXG)在当前数字资产市场中的战略意义。其结合实物黄金支持与区块链技术的创新模式，为投资者提供了一个高度透明、流动性强且收益多样化的投资渠道。虽然市场和监管风险不可忽视，但合理的风险管理和分散配置策略可有效降低潜在危机。</p>
+            
+            <p>主要结论与建议包括：</p>
+            <ul>
+                <li>将PAXG作为资产配置中的避险工具和收益创造工具有效组合；</li>
+                <li>在直接持有、CeFi借贷与DeFi策略中灵活选择，根据自身风险偏好动态调整比例；</li>
+                <li>定期关注监管变化和市场情绪，确保投资组合与时俱进；</li>
+                <li>利用跨链交易平台实现套利和流动性再配置，进一步提高资本效率。</li>
+            </ul>
+            
+            <div class="highlight">
+                <p>综上所述，PAXG既适合保守型投资者实现资产保值，也适合风险偏好较高的投资者通过创新DeFi模式捕捉额外收益。投资者应结合自身实际情况，全面考虑风险与收益，理性构建投资组合。</p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 等待DOM加载完成
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化图表实例存储对象
+            if (!window.chartInstances) window.chartInstances = {};
+            
+            // 标签页切换功能
+            const tabs = document.querySelectorAll('.tab');
+            const contentSections = document.querySelectorAll('.content-section');
+            
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // 移除所有激活状态
+                    tabs.forEach(t => t.classList.remove('active'));
+                    contentSections.forEach(c => c.classList.remove('active'));
+                    
+                    // 添加当前标签页的激活状态
+                    tab.classList.add('active');
+                    const tabId = tab.getAttribute('data-tab');
+                    document.getElementById(tabId).classList.add('active');
+                    
+                    // 初始化当前标签页的图表
+                    initChartsForTab(tabId);
+                });
+            });
+            
+            // 可折叠部分功能
+            const expandableHeaders = document.querySelectorAll('.expandable-header');
+            expandableHeaders.forEach(header => {
+                header.addEventListener('click', () => {
+                    const expandable = header.parentElement;
+                    expandable.classList.toggle('collapsed');
+                });
+            });
+            
+            // 初始化执行摘要页面的图表
+            initChartsForTab('summary');
+            
+            // 页面调整大小时重新渲染图表
+            window.addEventListener('resize', function() {
+                for (let chartId in window.chartInstances) {
+                    if (window.chartInstances[chartId]) {
+                        window.chartInstances[chartId].resize();
+                    }
+                }
+            });
+        });
+        
+        // 根据当前标签页初始化相应的图表
+        function initChartsForTab(tabId) {
+            switch(tabId) {
+                case 'summary':
+                    initPerformanceChart();
+                    break;
+                case 'market':
+                    initPriceChart();
+                    initMarketShareChart();
+                    initSentimentChart();
+                    break;
+                case 'risk':
+                    initRiskChart();
+                    break;
+                case 'community':
+                    initCommunityChart();
+                    initSentimentPieChart();
+                    break;
+                case 'strategy':
+                    initStrategyComparisonChart();
+                    initPortfolioAllocationChart();
+                    break;
+            }
+        }
+        
+        // 初始化执行摘要页面的性能图表
+        function initPerformanceChart() {
+            if (!window.chartInstances) window.chartInstances = {};
+            
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+            
+            // 如果图表已存在则销毁
+            if (window.chartInstances.performanceChart) {
+                window.chartInstances.performanceChart.destroy();
+            }
+            
+            // 创建新图表
+            window.chartInstances.performanceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月'],
+                    datasets: [{
+                        label: 'PAXG价格 (美元)',
+                        data: [3350, 3410, 3380, 3450, 3520, 3610, 3680, 3720, 3750],
+                        borderColor: '#e6b422',
+                        backgroundColor: 'rgba(230, 180, 34, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    },
+                    {
+                        label: '黄金现货价格 (美元/盎司)',
+                        data: [3355, 3405, 3375, 3455, 3525, 3615, 3675, 3715, 3745],
+                        borderColor: '#666',
+                        borderDashed: [5, 5],
+                        borderWidth: 1.5,
+                        fill: false,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'PAXG与实物黄金价格对比 (2025年)',
+                            font: {
+                                size: 16
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            title: {
+                                display: true,
+                                text: '美元价格'
+                            },
+                            min: 3300,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 初始化价格图表
+        function initPriceChart() {
+            if (!window.chartInstances) window.chartInstances = {};
+            
+            const ctx = document.getElementById('priceChart').getContext('2d');
+            
+            // 如果图表已存在则销毁
+            if (window.chartInstances.priceChart) {
+                window.chartInstances.priceChart.destroy();
+            }
+            
+            // 创建新图表
+            window.chartInstances.priceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['8月1日', '8月8日', '8月15日', '8月22日', '8月29日', '9月5日', '9月12日', '9月19日', '9月26日'],
+                    datasets: [{
+                        label: 'PAXG价格 (美元)',
+                        data: [3360, 3390, 3420, 3450, 3510, 3590, 3650, 3720, 3750],
+                        borderColor: '#e6b422',
+                        backgroundColor: 'rgba(230, 180, 34, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    },
+                    {
+                        label: '交易量 (百万美元)',
+                        data: [150, 160, 140, 180, 210, 190, 220, 170, 197],
+                        borderColor: '#3498db',
+                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                        borderWidth: 1.5,
+                        fill: true,
+                        tension: 0.4,
+                        yAxisID: 'y1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'PAXG价格与交易量趋势 (2025年8-9月)',
+                            font: {
+                                size: 16
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'PAXG价格 (美元)'
+                            },
+                            min: 3300,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value;
+                                }
+                            }
+                        },
+                        y1: {
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: '交易量 (百万美元)'
+                            },
+                            min: 0,
+                            grid: {
+                                drawOnChartArea: false
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value + 'M';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 初始化市场份额图表
+        function initMarketShareChart() {
+            if (!window.chartInstances) window.chartInstances = {};
+            
+            const ctx = document.getElementById('marketShareChart').getContext('2d');
+            
+            // 如果图表已存在则销毁
+            if (window.chartInstances.marketShareChart) {
+                window.chartInstances.marketShareChart.destroy();
+            }
+            
+            // 创建新图表
+            window.chartInstances.marketShareChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['PAXG', 'XAUT', '其他数字黄金'],
+                    datasets: [{
+                        label: '市场份额 (%)',
+                        data: [42, 38, 20],
+                        backgroundColor: [
+                            '#e6b422',
+                            '#3498db',
+                            '#95a5a6'
+                        ],
+                        borderColor: [
+                            '#e6b422',
+                            '#3498db',
+                            '#95a5a6'
+                        ],
+                        borderWidth: 1
+                    },
+                    {
+                        label: '市值 (百万美元)',
+                        data: [1097, 990, 520],
+                        type: 'line',
+                        borderColor: '#e74c3c',
+                        backgroundColor: 'rgba(0, 0, 0, 0)',
+                        borderWidth: 2,
+                        yAxisID: 'y1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '数字黄金市场份额与市值分布',
+                            font: {
+                                size: 16
+                            }
+                        },
+                        legend: {
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '市场份额 (%)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        },
+                        y1: {
+                            position: 'right',
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '市值 (百万美元)'
+                            },
+                            grid: {
+                                drawOnChartArea: false
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value + 'M';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 初始化情绪图表
+        function initSentimentChart() {
+            if (!window.chartInstances) window.chartInstances = {};
+            
+            const ctx = document.getElementById('sentimentChart').getContext('2d');
+            
+            // 如果图表已存在则销毁
+            if (window.chartInstances.sentimentChart) {
+                window.chartInstances.sentimentChart.destroy();
+            }
+            
+            // 创建新图表
+            window.chartInstances.sentimentChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['8月1日', '8月8日', '8月15日', '8月22日', '8月29日', '9月5日', '9月12日', '9月19日', '9月26日'],
+                    datasets: [{
+                        label: '讨论帖数量',
+                        data: [720, 830, 750, 890, 910, 950, 980, 965, 984],
+                        backgroundColor: 'rgba(52, 152, 219, 0.7)',
+                        borderColor: 'rgba(52, 152, 219, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: '看涨情绪比例',
+                        data: [65, 70, 68, 72, 78, 85, 92, 89, 94],
+                        type: 'line',
+                        yAxisID: 'y1',
+                        backgroundColor: 'rgba(0, 0, 0, 0)',
+                        borderColor: '#27ae60',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#27ae60'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '社交媒体讨论热度与情绪分析',
+                            font: {
+                                size: 16
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '讨论帖数量'
+                            }
+                        },
+                        y1: {
+                            position: 'right',
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: '看涨情绪比例 (%)'
+                            },
+                            grid: {
+                                drawOnChartArea: false
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 初始化风险图表
+        function initRiskChart() {
+            if (!window.chartInstances) window.chartInstances = {};
+            
+            const ctx = document.getElementById('riskChart').getContext('2d');
+            
+            // 如果图表已存在则销毁
+            if (window.chartInstances.riskChart) {
+                window.chartInstances.riskChart.destroy();
+            }
+            
+            // 创建新图表
+            window.chartInstances.riskChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: [
+                        '监管风险',
+                        '托管风险',
+                        '市场风险',
+                        '技术风险',
+                        '竞争风险'
+                    ],
+                    datasets: [{
+                        label: 'PAXG风险评估',
+                        data: [4.2, 3.0, 2.5, 1.8, 3.1],
+                        backgroundColor: 'rgba(230, 180, 34, 0.2)',
+                        borderColor: '#e6b422',
+                        pointBackgroundColor: '#e6b422',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: '#e6b422'
+                    },
+                    {
+                        label: '行业平均风险',
+                        data: [3.8, 3.5, 3.2, 2.5, 2.8],
+                        backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                        borderColor: '#3498db',
+                        pointBackgroundColor: '#3498db',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: '#3498db'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'PAXG风险因素评估 (1-5分，5分为最高风险)',
+                            font: {
+                                size: 16
+                            }
+                        }
+                    },
+                    scales: {
+                        r: {
+                            angleLines: {
+                                display: true
+                            },
+                            suggestedMin: 0,
+                            suggestedMax: 5
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 初始化社区图表
+        function initCommunityChart() {
+            if (!window.chartInstances) window.chartInstances = {};
+            
+            const ctx = document.getElementById('communityChart').getContext('2d');
+            
+            // 如果图表已存在则销毁
+            if (window.chartInstances.communityChart) {
+                window.chartInstances.communityChart.destroy();
+            }
+            
+            // 创建新图表
+            window.chartInstances.communityChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Reddit', 'Telegram', 'Twitter', 'Discord', '其他平台'],
+                    datasets: [{
+                        label: '讨论帖数量',
+                        data: [320, 280, 240, 95, 49],
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.7)',
+                            'rgba(54, 162, 235, 0.7)',
+                            'rgba(255, 206, 86, 0.7)',
+                            'rgba(75, 192, 192, 0.7)',
+                            'rgba(153, 102, 255, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(255, 99, 132, 1)',
+                            'rgba(54, 162, 235, 1)',
+                            'rgba(255, 206, 86, 1)',
+                            'rgba(75, 192, 192, 1)',
+                            'rgba(153, 102, 255, 1)'
+                        ],
+                        borderWidth: 1
+                    },
+                    {
+                        label: '互动量',
+                        data: [8500, 7400, 6800, 2300, 979],
+                        type: 'line',
+                        backgroundColor: 'rgba(0, 0, 0, 0)',
+                        borderColor: '#e67e22',
+                        borderWidth: 2,
+                        yAxisID: 'y1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '各平台PAXG社区活跃度分析',
+                            font: {
+                                size: 16
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '讨论帖数量'
+                            }
+                        },
+                        y1: {
+                            position: 'right',
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '互动量'
+                            },
+                            grid: {
+                                drawOnChartArea: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 初始化情绪饼图
+        function initSentimentPieChart() {
+            if (!window.chartInstances) window.chartInstances = {};
+            
+            const ctx = document.getElementById('sentimentPieChart').getContext('2d');
+            
+            // 如果图表已存在则销毁
+            if (window.chartInstances.sentimentPieChart) {
+                window.chartInstances.sentimentPieChart.destroy();
+            }
+            
+            // 创建新图表
+            window.chartInstances.sentimentPieChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['看涨', '中性', '看跌'],
+                    datasets: [{
+                        data: [13559, 11621, 799],
+                        backgroundColor: [
+                            'rgba(39, 174, 96, 0.7)',
+                            'rgba(241, 196, 15, 0.7)',
+                            'rgba(231, 76, 60, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(39, 174, 96, 1)',
+                            'rgba(241, 196, 15, 1)',
+                            'rgba(231, 76, 60, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'PAXG社交媒体情绪分布',
+                            font: {
+                                size: 16
+                            }
+                        },
+                        legend: {
+                            position: 'top'
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 初始化策略比较图表
+        function initStrategyComparisonChart() {
+            if (!window.chartInstances) window.chartInstances = {};
+            
+            const ctx = document.getElementById('strategyComparisonChart').getContext('2d');
+            
+            // 如果图表已存在则销毁
+            if (window.chartInstances.strategyComparisonChart) {
+                window.chartInstances.strategyComparisonChart.destroy();
+            }
+            
+            // 创建新图表
+            window.chartInstances.strategyComparisonChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['直接持有', 'CeFi借贷', 'DeFi借贷', 'DeFi流动性挖矿', '套利交易'],
+                    datasets: [{
+                        label: '预期年化收益率 (%)',
+                        data: [2, 5, 6, 8, 10],
+                        backgroundColor: 'rgba(52, 152, 219, 0.7)',
+                        borderColor: 'rgba(52, 152, 219, 1)',
+                        borderWidth: 1,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: '风险评分 (1-10)',
+                        data: [2, 4, 6, 7, 8],
+                        type: 'line',
+                        backgroundColor: 'rgba(0, 0, 0, 0)',
+                        borderColor: '#e74c3c',
+                        borderWidth: 2,
+                        yAxisID: 'y1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'PAXG不同投资策略收益与风险比较',
+                            font: {
+                                size: 16
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            title: {
+                                display: true,
+                                text: '投资策略'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: '预期年化收益率 (%)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        },
+                        y1: {
+                            position: 'right',
+                            beginAtZero: true,
+                            max: 10,
+                            title: {
+                                display: true,
+                                text: '风险评分 (1-10)'
+                            },
+                            grid: {
+                                drawOnChartArea: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 初始化组合配置图表
+        function initPortfolioAllocationChart() {
+            if (!window.chartInstances) window.chartInstances = {};
+            
+            const ctx = document.getElementById('portfolioAllocationChart').getContext('2d');
+            
+            // 如果图表已存在则销毁
+            if (window.chartInstances.portfolioAllocationChart) {
+                window.chartInstances.portfolioAllocationChart.destroy();
+            }
+            
+            // 创建新图表
+            window.chartInstances.portfolioAllocationChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['PAXG', '比特币(BTC)', '以太坊(ETH)', '稳定币', '其他加密资产', '传统资产'],
+                    datasets: [{
+                        data: [15, 25, 20, 15, 5, 20],
+                        backgroundColor: [
+                            '#e6b422',
+                            '#f39c12',
+                            '#3498db',
+                            '#2ecc71',
+                            '#9b59b6',
+                            '#95a5a6'
+                        ],
+                        borderColor: '#fff',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '建议投资组合配置比例 (%)',
+                            font: {
+                                size: 16
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + context.raw + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+<script>window.parent.postMessage({ action: "ready" }, "*"); 
+ 
+window.console = new Proxy(console, {
+  get(target, prop) {
+    if (['log', 'warn', 'error'].includes(prop)) {
+      return new Proxy(target[prop], {
+        apply(fn, thisArg, args) {
+          fn.apply(thisArg, args);
+          window.parent.postMessage({ action: 'console', 
+            type: prop, 
+            args: args.map((arg) => {
+              try {
+                return JSON.stringify(arg).replace(/^["']|["']$/g, '');
+              } catch (e) {
+                return arg;
+              }
+            }) 
+          }, '*');
+        }
+      });
+    }
+    return target[prop];
+  }
+});
+</script></body>
+</html>
