@@ -3,422 +3,1850 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ApeX Protocol - 交互式投资分析</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <!-- Chosen Palette: Warm Neutrals & Subtle Teal -->
-    <!-- Application Structure Plan: A tab-based SPA with four main sections: a 'Dashboard' for a high-level overview (rating, key metrics, bull/bear case), a 'Deep Dive' for technology and competitive analysis, a 'Risk Assessment' to prominently feature critical issues like the audit and anonymous team, and an 'Investment Strategies' section for actionable insights. This structure guides the user from a broad summary to specific details, allowing them to explore based on their interests rather than following a linear report format. The dashboard-first approach immediately delivers the most critical conclusions for quick decision-making. -->
-    <!-- Visualization & Content Choices: 
-        - Report Info: Key Metrics (TVL, Volume, etc.) -> Goal: Inform -> Viz/Method: Dynamic-looking stat cards (HTML/Tailwind) -> Interaction: None -> Justification: Quick, scannable overview.
-        - Report Info: Competitive Landscape -> Goal: Compare -> Viz/Method: Bar Chart (Chart.js Canvas) -> Interaction: Hover tooltips -> Justification: Visually compares ApeX against key competitors on primary metrics.
-        - Report Info: Technology Stack & Tokenomics -> Goal: Organize/Inform -> Viz/Method: Interactive cards and diagrams (HTML/Tailwind) -> Interaction: Click/hover to reveal info -> Justification: Breaks down complex concepts into digestible, non-overwhelming chunks.
-        - Report Info: Risk Analysis -> Goal: Emphasize Caution -> Viz/Method: Themed section with stark visual cards (HTML/Tailwind) -> Interaction: None -> Justification: Uses color and iconography to draw immediate attention to the most critical investment risks.
-        - Report Info: Investment Strategies -> Goal: Guide Action -> Viz/Method: Tabbed content and an interactive table (HTML/Tailwind/JS) -> Interaction: Tab switching -> Justification: Organizes actionable advice by investor profile for easy navigation.
-    -->
-    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <title>ApeX Protocol 投资分析仪表板</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     <style>
-        body { font-family: 'Noto Sans SC', sans-serif; }
-        .tab-active { border-color: #0d9488; color: #0d9488; background-color: #f0fdfa; }
-        .tab-inactive { border-color: transparent; color: #52525b; }
-        .section-active { display: block; }
-        .section-inactive { display: none; }
-        .chart-container { position: relative; width: 100%; max-width: 800px; margin-left: auto; margin-right: auto; height: 400px; max-height: 50vh; }
-        @media (min-width: 768px) { .chart-container { height: 450px; } }
-    </style>
-</head>
-<body class="bg-slate-50 text-slate-800">
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #1e40af;
+            --accent-color: #3b82f6;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-tertiary: #e2e8f0;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            --border-color: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
 
-    <div class="container mx-auto p-4 md:p-8">
+        [data-theme="dark"] {
+            --primary-color: #3b82f6;
+            --secondary-color: #2563eb;
+            --accent-color: #60a5fa;
+            --success-color: #34d399;
+            --warning-color: #fbbf24;
+            --danger-color: #f87171;
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+        }
 
-        <header class="text-center mb-8">
-            <h1 class="text-3xl md:text-4xl font-bold text-slate-900">ApeX Protocol ($APEX)</h1>
-            <p class="text-lg text-slate-600 mt-2">一份面向专业投资者的交互式深度评估报告</p>
-        </header>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-        <main>
-            <div id="executive-summary" class="bg-white p-6 rounded-2xl shadow-lg mb-8 border-l-4 border-amber-400">
-                <div class="flex flex-col md:flex-row items-center md:items-start">
-                    <div class="flex-grow">
-                        <h2 class="text-2xl font-bold text-slate-900 mb-2">最终投资评级: 中立 (Neutral)</h2>
-                        <p class="text-slate-600 leading-relaxed">
-                            ApeX Protocol 是一个在技术、资本和经济模型上都表现出色的项目，但其在安全透明度方面的严重缺陷（无法验证的审计报告）构成了不可忽视的障碍。对于寻求高风险、高回报的激进投资者，可考虑作为小部分投机性配置。然而，在完整的安全审计报告被公开并可供审查之前，该项目不适合作为核心投资标的。
-                        </p>
-                    </div>
-                     <div class="mt-4 md:mt-0 md:ml-6 flex-shrink-0 flex flex-col items-center justify-center bg-amber-100/50 text-amber-700 rounded-full w-32 h-32 md:w-40 md:h-40 border-4 border-amber-200">
-                        <span class="text-5xl md:text-6xl font-bold">🚦</span>
-                        <span class="font-semibold mt-2">中立评级</span>
-                    </div>
-                </div>
-            </div>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            transition: all 0.3s ease;
+        }
 
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 text-center">
-                <div class="bg-white p-4 rounded-xl shadow">
-                    <p class="text-sm text-slate-500">总锁仓价值 (TVL)</p>
-                    <p class="text-2xl font-bold text-teal-600">~$18.1M</p>
-                </div>
-                <div class="bg-white p-4 rounded-xl shadow">
-                    <p class="text-sm text-slate-500">24小时交易量</p>
-                    <p class="text-2xl font-bold text-teal-600">~$366M</p>
-                </div>
-                <div class="bg-white p-4 rounded-xl shadow">
-                    <p class="text-sm text-slate-500">年化费用</p>
-                    <p class="text-2xl font-bold text-teal-600">~$6.2M</p>
-                </div>
-                <div class="bg-white p-4 rounded-xl shadow">
-                    <p class="text-sm text-slate-500">流通市值</p>
-                    <p class="text-2xl font-bold text-teal-600">~$16.9M</p>
-                </div>
-            </div>
+        .container {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            min-height: 100vh;
+            gap: 0;
+        }
 
-            <div class="bg-white rounded-2xl shadow-lg p-2 sm:p-4">
-                <nav class="flex flex-wrap justify-center border-b border-slate-200">
-                    <button data-tab="dashboard" class="nav-tab py-3 px-4 sm:px-6 text-sm md:text-base font-medium border-b-2 transition-colors duration-200">📊 仪表盘</button>
-                    <button data-tab="deep-dive" class="nav-tab py-3 px-4 sm:px-6 text-sm md:text-base font-medium border-b-2 transition-colors duration-200">🔬 深度分析</button>
-                    <button data-tab="risk" class="nav-tab py-3 px-4 sm:px-6 text-sm md:text-base font-medium border-b-2 transition-colors duration-200">⚠️ 风险评估</button>
-                    <button data-tab="strategy" class="nav-tab py-3 px-4 sm:px-6 text-sm md:text-base font-medium border-b-2 transition-colors duration-200">🧭 投资策略</button>
-                </nav>
+        .sidebar {
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            padding: 2rem 0;
+        }
 
-                <div class="p-4 md:p-6">
-                    <section id="dashboard" class="tab-content">
-                        <p class="text-center text-slate-600 mb-6">此仪表盘旨在提供对 ApeX Protocol 投资价值的最高级别概览，整合了核心的看涨与看跌理由、关键的竞争格局数据以及其代币经济学模型。这是您快速形成初步判断的起点。</p>
-                        <div class="grid md:grid-cols-2 gap-6 mb-8">
-                            <div class="bg-green-50 border border-green-200 p-6 rounded-lg">
-                                <h3 class="text-xl font-bold text-green-800 mb-3 flex items-center">
-                                    <span class="mr-2">👍</span> 看涨理由 (Bull Case)
-                                </h3>
-                                <ul class="space-y-2 text-green-700 list-disc list-inside">
-                                    <li><strong class="font-semibold">技术护城河:</strong> 依托StarkWare提供行业领先的交易体验。</li>
-                                    <li><strong class="font-semibold">顶级资本背书:</strong> Dragonfly、Jump等顶级VC的投资是对项目质量的强力信号。</li>
-                                    <li><strong class="font-semibold">强大的财务表现:</strong> 协议已证明其高资本效率和持续的费用生成能力。</li>
-                                    <li><strong class="font-semibold">持有者友好的代币经济学:</strong> 50%的代币销毁和回购计划，明确将价值回馈给长期持有者。</li>
-                                </ul>
-                            </div>
-                            <div class="bg-red-50 border border-red-200 p-6 rounded-lg">
-                                <h3 class="text-xl font-bold text-red-800 mb-3 flex items-center">
-                                    <span class="mr-2">👎</span> 看跌理由 (Bear Case)
-                                </h3>
-                                <ul class="space-y-2 text-red-700 list-disc list-inside">
-                                    <li><strong class="font-semibold">无法验证的安全审计:</strong> 最致命的风险，使智能合约风险无法被量化。</li>
-                                    <li><strong class="font-semibold">匿名团队:</strong> 缺乏公开的问责机制，增加了极端情况下的不确定性。</li>
-                                    <li><strong class="font-semibold">激烈的市场竞争:</strong> 衍生品DEX赛道巨头林立，ApeX面临持续的竞争压力。</li>
-                                </ul>
-                            </div>
-                        </div>
+        .sidebar-header {
+            padding: 0 1.5rem 2rem;
+            border-bottom: 1px solid var(--border-color);
+        }
 
-                        <h3 class="text-xl font-bold text-center text-slate-800 mb-4">竞争格局：关键指标对比</h3>
-                        <div class="chart-container">
-                            <canvas id="competitorChart"></canvas>
-                        </div>
+        .project-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
 
-                         <h3 class="text-xl font-bold text-center text-slate-800 mt-12 mb-4">代币经济学闭环: APEX / esAPEX / veAPEX</h3>
-                        <div class="w-full max-w-4xl mx-auto p-4">
-                            <div class="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0 md:space-x-4">
-                                <div class="text-center p-4 bg-sky-100 rounded-lg shadow w-full md:w-1/3">
-                                    <h4 class="font-bold text-sky-800 text-lg">$APEX</h4>
-                                    <p class="text-sm text-sky-700">原生治理代币<br>质押、支付费用</p>
-                                </div>
-                                <div class="text-2xl font-mono text-slate-400 transform md:-rotate-90">➔</div>
-                                <div class="text-center p-4 bg-indigo-100 rounded-lg shadow w-full md:w-1/3">
-                                    <h4 class="font-bold text-indigo-800 text-lg">$esAPEX</h4>
-                                    <p class="text-sm text-indigo-700">托管代币<br>作为质押奖励发放</p>
-                                </div>
-                                 <div class="text-2xl font-mono text-slate-400 transform md:-rotate-90">➔</div>
-                                <div class="text-center p-4 bg-purple-100 rounded-lg shadow w-full md:w-1/3">
-                                    <h4 class="font-bold text-purple-800 text-lg">$veAPEX</h4>
-                                    <p class="text-sm text-purple-700">投票凭证<br>分享协议收入</p>
-                                </div>
-                            </div>
-                            <div class="text-center mt-6 text-slate-600">
-                                <p>该模型借鉴Curve和GMX，通过时间锁定激励长期持有，减少“挖卖提”抛压。这是一个旨在构建可持续经济体系的深思熟虑的设计。</p>
-                            </div>
-                        </div>
-                    </section>
+        .project-subtitle {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
 
-                    <section id="deep-dive" class="tab-content">
-                        <p class="text-center text-slate-600 mb-6">本节深入剖析 ApeX Protocol 的核心竞争力，包括其底层的技术架构和在激烈市场中的相对位置。通过理解这些细节，您可以评估其长期发展的潜力和护城河。</p>
-                        <h3 class="text-xl font-bold text-center text-slate-800 mb-6">核心技术架构</h3>
-                        <div class="grid md:grid-cols-2 gap-6">
-                            <div class="bg-white p-6 rounded-lg border">
-                                <h4 class="font-bold text-lg mb-2 text-teal-700">StarkEx L2 + Validium</h4>
-                                <p class="text-slate-600">ApeX Pro构建于StarkWare的Layer 2扩容引擎StarkEx之上，采用Validium方案。该方案仅将有效性证明（ZK-Proofs）发布在链上，而交易数据保存在链下。这带来了极致的性能（高TPS，低费用）和类似CEX的用户体验，但引入了对数据可用性委员会（DAC）的信任假设。不过，用户的资金安全仍由以太坊主网上的强制退出机制保障。</p>
-                            </div>
-                            <div class="bg-white p-6 rounded-lg border">
-                                <h4 class="font-bold text-lg mb-2 text-teal-700">eAMM + PCV 流动性模型</h4>
-                                <p class="text-slate-600">协议采用弹性自动做市商（eAMM）和协议控制价值（PCV）模型。eAMM允许单边资产提供流动性，提升资本效率。PCV则意味着协议通过债券等方式获取并永久拥有流动性，从而解决了“雇佣资本”问题，为交易者提供了稳定、深厚的流动性池。这是一个在去中心化和稳定性之间取得平衡的创新设计。</p>
-                            </div>
-                        </div>
+        .nav-menu {
+            padding: 1.5rem 0;
+        }
 
-                        <h3 class="text-xl font-bold text-center text-slate-800 mt-12 mb-6">竞争格局分析表</h3>
-                        <div class="overflow-x-auto">
-                           <table class="w-full min-w-[600px] text-sm text-left text-slate-500">
-                                <thead class="text-xs text-slate-700 uppercase bg-slate-100">
-                                    <tr>
-                                        <th scope="col" class="px-6 py-3">特征</th>
-                                        <th scope="col" class="px-6 py-3 bg-teal-50">ApeX Protocol</th>
-                                        <th scope="col" class="px-6 py-3">dYdX</th>
-                                        <th scope="col" class="px-6 py-3">GMX</th>
-                                        <th scope="col" class="px-6 py-3">Hyperliquid</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr class="bg-white border-b">
-                                        <th scope="row" class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">底层技术</th>
-                                        <td class="px-6 py-4 bg-teal-50/50">StarkEx (Validium L2)</td>
-                                        <td class="px-6 py-4">Cosmos SDK (App-Chain)</td>
-                                        <td class="px-6 py-4">Arbitrum/Avalanche (L2)</td>
-                                        <td class="px-6 py-4">Custom L1 Blockchain</td>
-                                    </tr>
-                                    <tr class="bg-white border-b">
-                                        <th scope="row" class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">核心差异点</th>
-                                        <td class="px-6 py-4 bg-teal-50/50">PCV模型提供稳定流动性</td>
-                                        <td class="px-6 py-4">主权应用链，高度可定制</td>
-                                        <td class="px-6 py-4">GLP池，为LP创造真实收益</td>
-                                        <td class="px-6 py-4">专为交易优化的L1，开发者生态开放</td>
-                                    </tr>
-                                    <tr class="bg-white">
-                                        <th scope="row" class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">主要弱点</th>
-                                        <td class="px-6 py-4 bg-teal-50/50 text-red-600 font-semibold">安全审计不透明；团队匿名</td>
-                                        <td class="px-6 py-4">用户门槛高；生态可组合性受限</td>
-                                        <td class="px-6 py-4">交易费用相对较高</td>
-                                        <td class="px-6 py-4">相对较新，长期稳健性待检验</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </section>
+        .nav-item {
+            display: block;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
 
-                    <section id="risk" class="tab-content">
-                         <p class="text-center text-slate-600 mb-6">风险评估是任何投资决策的核心。本节将毫无保留地揭示投资 ApeX Protocol 所面临的最重大风险。请务必仔细阅读并理解这些风险点，因为它们是我们将投资评级定为“中立”的关键原因。</p>
-                        <div class="grid md:grid-cols-2 gap-6">
-                            <div class="bg-red-100/50 border-2 border-dashed border-red-300 p-6 rounded-lg">
-                                 <h3 class="text-xl font-bold text-red-800 mb-3 flex items-center">
-                                    <span class="text-2xl mr-3">🚨</span> 安全审计：致命的信息鸿沟
-                                </h3>
-                                <p class="text-red-700 mb-4">尽管项目方声称已通过 Secure3 的审计，但在所有公开渠道均**无法获取完整的审计报告**进行独立验证。在 DeFi 领域，<strong class="font-semibold">“无法验证”等同于“未经审计”</strong>。</p>
-                                <p class="text-red-700">这是一个极其严重的风险点，也是最大的危险信号。它使得任何投资者都无法评估协议的智能合约是否存在致命漏洞，构成了无法量化的投资风险。</p>
-                            </div>
-                             <div class="bg-amber-100/50 border-2 border-dashed border-amber-300 p-6 rounded-lg">
-                                <h3 class="text-xl font-bold text-amber-800 mb-3 flex items-center">
-                                    <span class="text-2xl mr-3">👤</span> 团队匿名：问责制的双重影响
-                                </h3>
-                                <p class="text-amber-700 mb-4">创始团队的匿名带来了显著的问责制风险。在发生极端负面事件时，投资者将缺乏明确的追责对象。</p>
-                                <p class="text-amber-700">然而，顶级VC的投资可被视为一个强有力的“私人信号”，表明匿名团队已通过专业尽职调查。这并未消除风险，但显著改变了风险的性质——从对能力的担忧，转变为对极端情况下追责渠道缺失的担忧。</p>
-                            </div>
-                        </div>
-                         <div class="bg-blue-100/60 border border-blue-200 p-6 rounded-lg mt-6">
-                                <h3 class="text-xl font-bold text-blue-800 mb-3 flex items-center">
-                                    <span class="text-2xl mr-3">🛡️</span> 社区骗局与操作安全警示
-                                </h3>
-                                <p class="text-blue-700">已发现有诈骗者利用高额回报为诱饵，在非官方渠道发布钓鱼网站链接。这警示所有用户：</p>
-                                <ul class="mt-2 space-y-1 text-blue-700 list-disc list-inside">
-                                    <li><strong>坚持使用官方渠道 (apex.exchange)</strong> 进行任何操作。</li>
-                                    <li>警惕任何承诺无风险、超高回报的“机会”。</li>
-                                    <li>永远不要在不信任的网站上输入私钥或助记词。</li>
-                                </ul>
-                            </div>
-                    </section>
+        .nav-item:hover, .nav-item.active {
+            background: var(--bg-tertiary);
+            color: var(--primary-color);
+            border-left-color: var(--primary-color);
+        }
 
-                    <section id="strategy" class="tab-content">
-                        <p class="text-center text-slate-600 mb-6">本节将前述所有分析转化为具体、可操作的策略，为不同类型的投资者提供全面的参与路径图。请根据您的风险偏好和专业技能，评估最适合您的机会。</p>
-                        <div class="overflow-x-auto">
-                            <table class="w-full min-w-[800px] text-sm text-left text-slate-500">
-                                <thead class="text-xs text-slate-700 uppercase bg-slate-100">
-                                    <tr>
-                                        <th scope="col" class="px-4 py-3">策略</th>
-                                        <th scope="col" class="px-4 py-3">核心机制</th>
-                                        <th scope="col" class="px-4 py-3">潜在回报 (APR/APY)</th>
-                                        <th scope="col" class="px-4 py-3">主要风险</th>
-                                        <th scope="col" class="px-4 py-3">所需技能</th>
-                                        <th scope="col" class="px-4 py-3">分析师建议</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr class="bg-white border-b">
-                                        <th class="px-4 py-4 font-medium text-slate-900">直接代币购买</th>
-                                        <td class="px-4 py-4">购买并持有$APEX$，期待其价格上涨。</td>
-                                        <td class="px-4 py-4">价格增值 (不确定)</td>
-                                        <td class="px-4 py-4 text-red-600">市场波动、安全审计不透明</td>
-                                        <td class="px-4 py-4">初级</td>
-                                        <td class="px-4 py-4 font-semibold">中立。小额投机。</td>
-                                    </tr>
-                                    <tr class="bg-white border-b">
-                                        <th class="px-4 py-4 font-medium text-slate-900">协议质押</th>
-                                        <td class="px-4 py-4">质押代币分享交易费收入，奖励为$esAPEX$。</td>
-                                        <td class="px-4 py-4">中等 (动态，需自行计算)</td>
-                                        <td class="px-4 py-4 text-red-600">智能合约风险、代币价格风险</td>
-                                        <td class="px-4 py-4">中级</td>
-                                        <td class="px-4 py-4 font-semibold">中立。审计问题解决前风险高。</td>
-                                    </tr>
-                                    <tr class="bg-white border-b">
-                                        <th class="px-4 py-4 font-medium text-slate-900">Delta中性套利</th>
-                                        <td class="px-4 py-4">质押$APEX$获利的同时，做空永续合约对冲。</td>
-                                        <td class="px-4 py-4">中低 (稳定，取决于 `APR - 资金费率`)</td>
-                                        <td class="px-4 py-4">爆仓风险、资金费率成本、管理复杂</td>
-                                        <td class="px-4 py-4">高级</td>
-                                        <td class="px-4 py-4 font-semibold text-amber-600">建议小仓位测试。</td>
-                                    </tr>
-                                    <tr class="bg-white">
-                                        <th class="px-4 py-4 font-medium text-slate-900">开发者生态参与</th>
-                                        <td class="px-4 py-4">利用官方SDK/API开发交易机器人、策略或工具。</td>
-                                        <td class="px-4 py-4">高 (不确定，取决于项目成功与否)</td>
-                                        <td class="px-4 py-4">开发成本、技术实现难度</td>
-                                        <td class="px-4 py-4">专家级 (编程)</td>
-                                        <td class="px-4 py-4 font-semibold text-green-600">建议探索。</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="mt-8 bg-slate-100 p-6 rounded-lg">
-                           <h3 class="text-xl font-bold text-slate-800 mb-3">评级提升的关键路标</h3>
-                           <p class="text-slate-600">对ApeX Protocol的投资决策是动态的。如果以下关键事件发生，本报告的投资评级将具备上调的基础：</p>
-                           <ul class="mt-3 space-y-2">
-                               <li class="flex items-start"><span class="text-green-500 mr-2">🔑</span> <div><strong class="font-semibold text-green-700">[强烈积极]</strong> 发布完整的、可验证的Secure3审计报告。</div></li>
-                               <li class="flex items-start"><span class="text-green-500 mr-2">✅</span> <div><strong class="font-semibold text-green-700">[强烈积极]</strong> 团队部分或全部成员走向公开化 (Doxxing)。</div></li>
-                               <li class="flex items-start"><span class="text-sky-500 mr-2">📈</span> <div><strong class="font-semibold text-sky-700">[积极]</strong> TVL的持续、显著增长，表明捕获长期资本。</div></li>
-                               <li class="flex items-start"><span class="text-red-500 mr-2">💥</span> <div><strong class="font-semibold text-red-700">[强烈消极]</strong> 任何形式的安全事件或资金被盗。</div></li>
-                           </ul>
-                        </div>
-                    </section>
-                </div>
-            </div>
-        </main>
+        .theme-toggle {
+            position: absolute;
+            bottom: 2rem;
+            left: 1.5rem;
+            right: 1.5rem;
+            padding: 0.75rem;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
 
-        <footer class="text-center mt-12 text-sm text-slate-500">
-            <p>本报告仅供参考，不构成任何投资建议。市场有风险，投资需谨慎。</p>
-            <p>数据来源于公开渠道，截止至2024年分析期间。</p>
-        </footer>
+        .theme-toggle:hover {
+            background: var(--secondary-color);
+            transform: translateY(-1px);
+        }
 
-    </div>
+        .main-content {
+            padding: 2rem;
+            overflow-y: auto;
+            max-height: 100vh;
+        }
 
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const tabs = document.querySelectorAll('.nav-tab');
-        const contents = document.querySelectorAll('.tab-content');
+        .header {
+            margin-bottom: 2rem;
+        }
 
-        function setActiveTab(tabId) {
-            tabs.forEach(tab => {
-                if (tab.dataset.tab === tabId) {
-                    tab.classList.remove('tab-inactive');
-                    tab.classList.add('tab-active');
-                } else {
-                    tab.classList.remove('tab-active');
-                    tab.classList.add('tab-inactive');
-                }
-            });
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
 
-            contents.forEach(content => {
-                if (content.id === tabId) {
-                    content.classList.remove('section-inactive');
-                    content.classList.add('section-active');
-                } else {
-                    content.classList.remove('section-active');
-                    content.classList.add('section-inactive');
-                }
-            });
+        .page-subtitle {
+            color: var(--text-secondary);
+            font-size: 1.125rem;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .metric-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .metric-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .metric-value {
+            font-size: 1.875rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .metric-change {
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .positive { color: var(--success-color); }
+        .negative { color: var(--danger-color); }
+        .neutral { color: var(--warning-color); }
+
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-container {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+        }
+
+        .chart-title {
+            font-size: 1.125rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 300px;
+        }
+
+        .large-chart {
+            height: 400px;
+        }
+
+        .section {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow);
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 0.5rem;
+        }
+
+        .investment-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        .investment-table th,
+        .investment-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .investment-table th {
+            background: var(--bg-tertiary);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .risk-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .risk-low { background: rgba(16, 185, 129, 0.1); color: var(--success-color); }
+        .risk-medium { background: rgba(245, 158, 11, 0.1); color: var(--warning-color); }
+        .risk-high { background: rgba(239, 68, 68, 0.1); color: var(--danger-color); }
+
+        .score-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .score-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            background: var(--bg-tertiary);
+            border-radius: 0.5rem;
+        }
+
+        .score-bar {
+            width: 60px;
+            height: 6px;
+            background: var(--border-color);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .score-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--danger-color), var(--warning-color), var(--success-color));
+            transition: width 0.3s ease;
+        }
+
+        .recommendation {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: 0.75rem;
+            padding: 2rem;
+            margin: 2rem 0;
+        }
+
+        .recommendation-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .recommendation-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+
+        .recommendation-item {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 0.5rem;
+            padding: 1rem;
+        }
+
+        .recommendation-item h4 {
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .info-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow);
+        }
+
+        .info-card h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: var(--text-primary);
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .feature-card {
+            background: var(--bg-tertiary);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            text-align: center;
+        }
+
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .feature-desc {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
             
-            if (tabId === 'dashboard' && !window.competitorChartInstance) {
-                 renderCompetitorChart();
+            .sidebar {
+                position: static;
+                height: auto;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+            
+            .metrics-grid,
+            .chart-grid {
+                grid-template-columns: 1fr;
             }
         }
 
-        tabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                setActiveTab(tab.dataset.tab);
-            });
-        });
+        .hidden {
+            display: none !important;
+        }
 
-        // Initial state
-        setActiveTab('dashboard');
-        
-        function renderCompetitorChart() {
-            const ctx = document.getElementById('competitorChart').getContext('2d');
-            const competitorData = {
-                labels: ['Hyperliquid', 'GMX', 'dYdX', 'ApeX Protocol'],
-                datasets: [
-                    {
-                        label: '24小时交易量 (百万美元)',
-                        data: [2400, 233, 0, 366], 
-                        backgroundColor: 'rgba(13, 148, 136, 0.6)', // teal-600
-                        borderColor: 'rgba(13, 148, 136, 1)',
-                        borderWidth: 1,
-                        yAxisID: 'y',
-                    },
-                    {
-                        label: 'TVL (百万美元)',
-                        data: [1700, 518, 309, 88],
-                        backgroundColor: 'rgba(245, 158, 11, 0.6)', // amber-500
-                        borderColor: 'rgba(245, 158, 11, 1)',
-                        borderWidth: 1,
-                        yAxisID: 'y',
-                    }
-                ]
-            };
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+            color: var(--text-secondary);
+        }
+
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid var(--border-color);
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 0.5rem 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .tokenomics-flow {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        @media (min-width: 768px) {
+            .tokenomics-flow {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
+        }
+
+        .token-card {
+            background: var(--bg-tertiary);
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            text-align: center;
+            flex: 1;
+            border: 2px solid var(--border-color);
+        }
+
+        .token-symbol {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .flow-arrow {
+            font-size: 1.5rem;
+            color: var(--text-muted);
+            align-self: center;
+        }
+
+        .comparison-table {
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+
+        .comparison-table table {
+            width: 100%;
+            min-width: 600px;
+            border-collapse: collapse;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border: 1px solid var(--border-color);
+        }
+
+        .comparison-table th {
+            background: var(--bg-tertiary);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .highlight {
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .warning-box {
+            background: rgba(245, 158, 11, 0.1);
+            border-left: 4px solid var(--warning-color);
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 0.5rem 0.5rem 0;
+        }
+
+        .danger-box {
+            background: rgba(239, 68, 68, 0.1);
+            border-left: 4px solid var(--danger-color);
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 0.5rem 0.5rem 0;
+        }
+
+        .success-box {
+            background: rgba(16, 185, 129, 0.1);
+            border-left: 4px solid var(--success-color);
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 0.5rem 0.5rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h1 class="project-title">ApeX Protocol</h1>
+                <p class="project-subtitle">投资分析仪表板</p>
+            </div>
+            <div class="nav-menu">
+                <a href="#overview" class="nav-item active" onclick="showSection('overview', this)">🎯 项目概览</a>
+                <a href="#market" class="nav-item" onclick="showSection('market', this)">📊 市场分析</a>
+                <a href="#tokenomics" class="nav-item" onclick="showSection('tokenomics', this)">⚖️ 代币经济</a>
+                <a href="#investment" class="nav-item" onclick="showSection('investment', this)">💰 投资机会</a>
+                <a href="#risk" class="nav-item" onclick="showSection('risk', this)">⚠️ 风险评估</a>
+                <a href="#competition" class="nav-item" onclick="showSection('competition', this)">⚔️ 竞争分析</a>
+                <a href="#recommendation" class="nav-item" onclick="showSection('recommendation', this)">🎯 投资建议</a>
+            </div>
+            <button class="theme-toggle" onclick="toggleTheme()">🌓 切换主题</button>
+        </nav>
+
+        <main class="main-content">
+            <!-- 项目概览 -->
+            <div id="overview" class="section-content">
+                <div class="header">
+                    <h1 class="page-title">ApeX Protocol 深度分析</h1>
+                    <p class="page-subtitle">基于 eAMM 技术的去中心化永续合约交易协议</p>
+                </div>
+
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-label">当前价格 (APEX)</div>
+                        <div class="metric-value">$0.89</div>
+                        <div class="metric-change negative">-23.80% (7天)</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">市值</div>
+                        <div class="metric-value">$105M</div>
+                        <div class="metric-change neutral">中等规模</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">24H交易量</div>
+                        <div class="metric-value">$10.69M</div>
+                        <div class="metric-change positive">活跃交易</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">年化费用</div>
+                        <div class="metric-value">$76.7M</div>
+                        <div class="metric-change positive">强劲收入</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">流通率</div>
+                        <div class="metric-value">26.3%</div>
+                        <div class="metric-change neutral">131.58M APEX</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">开放利息</div>
+                        <div class="metric-value">$40.4M</div>
+                        <div class="metric-change neutral">适中规模</div>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <h3>🚀 核心产品功能</h3>
+                    <div class="feature-grid">
+                        <div class="feature-card">
+                            <div class="feature-icon">🌐</div>
+                            <div class="feature-title">ApeX Omni</div>
+                            <div class="feature-desc">多链流动性交易平台</div>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon">📈</div>
+                            <div class="feature-title">永续合约</div>
+                            <div class="feature-desc">支持最高100倍杠杆</div>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon">💸</div>
+                            <div class="feature-title">现货交换</div>
+                            <div class="feature-desc">零Gas费交易</div>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon">🏛️</div>
+                            <div class="feature-title">社区金库</div>
+                            <div class="feature-desc">Community Vaults</div>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon">🔄</div>
+                            <div class="feature-title">跟单交易</div>
+                            <div class="feature-desc">Copy-Trading功能</div>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon">🏆</div>
+                            <div class="feature-title">质押V4</div>
+                            <div class="feature-desc">Staking rewards系统</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chart-grid">
+                    <div class="chart-container">
+                        <h3 class="chart-title">协议核心指标</h3>
+                        <div class="chart-wrapper">
+                            <canvas id="protocolMetricsChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <h3 class="chart-title">技术架构分析</h3>
+                        <div class="chart-wrapper">
+                            <canvas id="techStackChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 市场分析 -->
+            <div id="market" class="section-content hidden">
+                <div class="header">
+                    <h1 class="page-title">市场数据分析</h1>
+                    <p class="page-subtitle">价格走势与市场表现评估</p>
+                </div>
+
+                <div class="chart-grid">
+                    <div class="chart-container">
+                        <h3 class="chart-title">价格走势 (模拟数据)</h3>
+                        <div class="chart-wrapper large-chart">
+                            <canvas id="priceChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <h3 class="chart-title">交易量分布</h3>
+                        <div class="chart-wrapper">
+                            <canvas id="volumeChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <h3>📊 DeFi协议数据 (DeFiLlama)</h3>
+                    <div class="score-grid">
+                        <div class="score-item">
+                            <span>年化费用: $76.7M</span>
+                            <div class="score-bar">
+                                <div class="score-fill" style="width: 85%"></div>
+                            </div>
+                        </div>
+                        <div class="score-item">
+                            <span>30天费用: $6.29M</span>
+                            <div class="score-bar">
+                                <div class="score-fill" style="width: 70%"></div>
+                            </div>
+                        </div>
+                        <div class="score-item">
+                            <span>开放利息: $40.4M</span>
+                            <div class="score-bar">
+                                <div class="score-fill" style="width: 60%"></div>
+                            </div>
+                        </div>
+                        <div class="score-item">
+                            <span>月交易量: ~$1.7B</span>
+                            <div class="score-bar">
+                                <div class="score-fill" style="width: 75%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <h3 class="chart-title">DeFi 协议对比</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="defiComparisonChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 代币经济学 -->
+            <div id="tokenomics" class="section-content hidden">
+                <div class="header">
+                    <h1 class="page-title">代币经济学</h1>
+                    <p class="page-subtitle">APEX 代币供应与分配机制</p>
+                </div>
+
+                <div class="info-card">
+                    <h3>💰 代币供应模式</h3>
+                    <div class="score-grid">
+                        <div class="score-item">
+                            <span>总供应量调整</span>
+                            <div style="text-align: right;">
+                                <div style="font-size: 0.875rem; color: var(--text-muted);">10亿APEX → 5亿APEX</div>
+                            </div>
+                        </div>
+                        <div class="score-item">
+                            <span>流通比例</span>
+                            <div style="text-align: right;">
+                                <div style="font-size: 0.875rem; color: var(--success-color);">26.3% (相对健康)</div>
+                            </div>
+                        </div>
+                        <div class="score-item">
+                            <span>通胀率</span>
+                            <div style="text-align: right;">
+                                <div style="font-size: 0.875rem; color: var(--warning-color);">适中</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chart-grid">
+                    <div class="chart-container">
+                        <h3 class="chart-title">代币供应分布</h3>
+                        <div class="chart-wrapper">
+                            <canvas id="tokenDistributionChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <h3 class="chart-title">解锁时间表</h3>
+                        <div class="chart-wrapper">
+                            <canvas id="vestingChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <h3>⚙️ 代币功能机制</h3>
+                    <div class="tokenomics-flow">
+                        <div class="token-card">
+                            <div class="token-symbol">APEX</div>
+                            <div>治理权</div>
+                            <div style="font-size: 0.875rem; color: var(--text-secondary);">协议治理投票权</div>
+                        </div>
+                        <div class="flow-arrow">→</div>
+                        <div class="token-card">
+                            <div class="token-symbol">质押奖励</div>
+                            <div>USDC收益</div>
+                            <div style="font-size: 0.875rem; color: var(--text-secondary);">质押获得USDC收益</div>
+                        </div>
+                        <div class="flow-arrow">→</div>
+                        <div class="token-card">
+                            <div class="token-symbol">手续费分成</div>
+                            <div>5% → 30%</div>
+                            <div style="font-size: 0.875rem; color: var(--text-secondary);">手续费分配给质押者</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="success-box">
+                    <h4 style="color: var(--success-color); margin-bottom: 0.5rem;">🔄 代币回购机制</h4>
+                    <ul style="margin-left: 1rem;">
+                        <li><strong>初始承诺</strong>: $1200万美元回购资金</li>
+                        <li><strong>持续回购</strong>: 日协议收入50%用于回购(将增至90%)</li>
+                        <li><strong>价值支撑</strong>: 强化代币价值机制</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 投资机会 -->
+            <div id="investment" class="section-content hidden">
+                <div class="header">
+                    <h1 class="page-title">投资机会分析</h1>
+                    <p class="page-subtitle">DeFi 收益与策略组合</p>
+                </div>
+
+                <div class="section">
+                    <h2 class="section-title">投资收益对比</h2>
+                    <table class="investment-table">
+                        <thead>
+                            <tr>
+                                <th>投资类型</th>
+                                <th>APR/APY</th>
+                                <th>风险等级</th>
+                                <th>预期收益</th>
+                                <th>优点</th>
+                                <th>缺点</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>APEX质押</strong></td>
+                                <td>8-15%*</td>
+                                <td><span class="risk-badge risk-medium">中等</span></td>
+                                <td>稳定</td>
+                                <td>USDC收益，手续费分成</td>
+                                <td>代币价格波动风险</td>
+                            </tr>
+                            <tr>
+                                <td><strong>流动性挖矿</strong></td>
+                                <td>10-25%*</td>
+                                <td><span class="risk-badge risk-high">中高</span></td>
+                                <td>中等</td>
+                                <td>双币奖励</td>
+                                <td>无常损失风险</td>
+                            </tr>
+                            <tr>
+                                <td><strong>永续交易</strong></td>
+                                <td>变动</td>
+                                <td><span class="risk-badge risk-high">高</span></td>
+                                <td>高/低</td>
+                                <td>高杠杆机会</td>
+                                <td>清算风险</td>
+                            </tr>
+                            <tr>
+                                <td><strong>代币投资</strong></td>
+                                <td>变动</td>
+                                <td><span class="risk-badge risk-high">高</span></td>
+                                <td>未知</td>
+                                <td>价格升值潜力</td>
+                                <td>高波动性</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div style="font-size: 0.875rem; color: var(--text-muted); margin-top: 0.5rem;">
+                        *实际APY需以官方最新数据为准
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <h3>🎯 高收益策略组合</h3>
+                    <div class="feature-grid">
+                        <div class="feature-card">
+                            <div class="feature-icon">🛡️</div>
+                            <div class="feature-title">保守型组合</div>
+                            <div class="feature-desc">50% APEX质押 + 50% 稳定币</div>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon">⚖️</div>
+                            <div class="feature-title">平衡型组合</div>
+                            <div class="feature-desc">30% 质押 + 40% 流动性提供 + 30% 代币持有</div>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon">🚀</div>
+                            <div class="feature-title">激进型组合</div>
+                            <div class="feature-desc">70% 代币持有 + 30% 杠杆交易</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <h3 class="chart-title">收益风险分析</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="riskReturnChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <h3>👨‍💻 开发者生态参与</h3>
+                    <div class="score-grid">
+                        <div class="score-item">
+                            <span>技术门槛</span>
+                            <div style="text-align: right;">
+                                <span class="risk-badge risk-medium">中等</span>
+                            </div>
+                        </div>
+                        <div class="score-item">
+                            <span>机会类型</span>
+                            <div style="text-align: right; font-size: 0.875rem;">
+                                API集成、交易机器人开发
+                            </div>
+                        </div>
+                        <div class="score-item">
+                            <span>收益潜力</span>
+                            <div style="text-align: right; font-size: 0.875rem;">
+                                根据技术服务需求而定
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 风险评估 -->
+            <div id="risk" class="section-content hidden">
+                <div class="header">
+                    <h1 class="page-title">风险评估</h1>
+                    <p class="page-subtitle">多维度风险因素分析</p>
+                </div>
+
+                <div class="chart-grid">
+                    <div class="chart-container">
+                        <h3 class="chart-title">风险等级分布</h3>
+                        <div class="chart-wrapper">
+                            <canvas id="riskChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <h3 class="chart-title">安全性评分</h3>
+                        <div class="chart-wrapper">
+                            <canvas id="securityChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="danger-box">
+                    <h4 style="color: var(--danger-color); margin-bottom: 1rem;">🔴 高风险因素</h4>
+                    <ul style="margin-left: 1rem; line-height: 1.8;">
+                        <li><strong>竞争激烈</strong>: 永续DEX赛道竞争白热化</li>
+                        <li><strong>代币价格波动</strong>: 近期7天下跌23.8%</li>
+                        <li><strong>安全审计缺失</strong>: 缺乏公开详细安全审计</li>
+                        <li><strong>市场份额</strong>: 相对头部协议较小</li>
+                    </ul>
+                </div>
+
+                <div class="warning-box">
+                    <h4 style="color: var(--warning-color); margin-bottom: 1rem;">🟡 中等风险因素</h4>
+                    <ul style="margin-left: 1rem; line-height: 1.8;">
+                        <li><strong>技术风险</strong>: 新兴协议的技术成熟度</li>
+                        <li><strong>流动性风险</strong>: 相比CEX流动性不足</li>
+                        <li><strong>监管风险</strong>: DeFi监管环境变化</li>
+                    </ul>
+                </div>
+
+                <div class="success-box">
+                    <h4 style="color: var(--success-color); margin-bottom: 1rem;">🟢 低风险因素</h4>
+                    <ul style="margin-left: 1rem; line-height: 1.8;">
+                        <li><strong>团队背景</strong>: 有知名机构投资</li>
+                        <li><strong>技术架构</strong>: 成熟的DeFi基础设施</li>
+                        <li><strong>代币机制</strong>: 有回购支撑</li>
+                    </ul>
+                </div>
+
+                <div class="info-card">
+                    <h3>🛡️ 安全状况评估</h3>
+                    <div class="score-grid">
+                        <div class="score-item">
+                            <span>审计报告</span>
+                            <div style="text-align: right;">
+                                <span class="risk-badge risk-high">未发现公开详细报告</span>
+                            </div>
+                        </div>
+                        <div class="score-item">
+                            <span>历史事件</span>
+                            <div style="text-align: right;">
+                                <span class="risk-badge risk-low">无重大安全漏洞</span>
+                            </div>
+                        </div>
+                        <div class="score-item">
+                            <span>风险等级</span>
+                            <div style="text-align: right;">
+                                <span class="risk-badge risk-medium">中等</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 竞争分析 -->
+            <div id="competition" class="section-content hidden">
+                <div class="header">
+                    <h1 class="page-title">竞争格局分析</h1>
+                    <p class="page-subtitle">永续DEX市场竞争态势</p>
+                </div>
+
+                <div class="chart-container">
+                    <h3 class="chart-title">主要竞争对手对比</h3>
+                    <div class="chart-wrapper large-chart">
+                        <canvas id="competitorChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="comparison-table">
+                    <h3 style="text-align: center; margin: 2rem 0 1rem;">竞争优势分析</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>协议</th>
+                                <th>优势</th>
+                                <th>劣势</th>
+                                <th>市场地位</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>GMX</strong></td>
+                                <td>成熟生态、有机用户流量</td>
+                                <td>创新放缓、竞争压力</td>
+                                <td><span class="risk-badge risk-low">领先</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>dYdX</strong></td>
+                                <td>强大流动性、品牌认知度</td>
+                                <td>迁移成本、用户流失</td>
+                                <td><span class="risk-badge risk-low">领先</span></td>
+                            </tr>
+                            <tr class="highlight">
+                                <td><strong>ApeX</strong></td>
+                                <td>手续费更低、多链支持</td>
+                                <td>品牌知名度、用户基数</td>
+                                <td><span class="risk-badge risk-medium">追赶</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Hyperliquid</strong></td>
+                                <td>高性能链上订单簿</td>
+                                <td>生态可组合性限制</td>
+                                <td><span class="risk-badge risk-medium">新兴</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="info-card">
+                    <h3>🏆 ApeX竞争优势</h3>
+                    <div class="feature-grid">
+                        <div class="feature-card">
+                            <div class="feature-icon">💰</div>
+                            <div class="feature-title">手续费更低</div>
+                            <div class="feature-desc">相比GMX等竞争对手</div>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon">🪙</div>
+                            <div class="feature-title">多币种支持</div>
+                            <div class="feature-desc">更多交易对选择</div>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon">⚡</div>
+                            <div class="feature-title">一键交易</div>
+                            <div class="feature-desc">无需钱包授权的便捷体验</div>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon">🌐</div>
+                            <div class="feature-title">多链支持</div>
+                            <div class="feature-desc">跨链交易能力</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="warning-box">
+                    <h4 style="color: var(--warning-color);">📊 市场定位</h4>
+                    <p>在永续DEX第三波技术浪潮中的中等参与者，具备技术创新但未形成显著差异化优势</p>
+                </div>
+            </div>
+
+            <!-- 投资建议 -->
+            <div id="recommendation" class="section-content hidden">
+                <div class="header">
+                    <h1 class="page-title">投资建议</h1>
+                    <p class="page-subtitle">基于综合分析的投资策略建议</p>
+                </div>
+
+                <div class="recommendation">
+                    <h2 class="recommendation-title">🎯 综合投资评级: 中立 (6/10分)</h2>
+                    <div class="recommendation-grid">
+                        <div class="recommendation-item">
+                            <h4>✅ 投资优势</h4>
+                            <p>技术架构合理、机构投资背景、代币回购机制</p>
+                        </div>
+                        <div class="recommendation-item">
+                            <h4>⚠️ 投资风险</h4>
+                            <p>竞争激烈、市场份额较小、安全审计透明度不足</p>
+                        </div>
+                        <div class="recommendation-item">
+                            <h4>📊 中性因素</h4>
+                            <p>中等规模市值、适中的收益机会</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chart-grid">
+                    <div class="chart-container">
+                        <h3 class="chart-title">综合评分雷达图</h3>
+                        <div class="chart-wrapper">
+                            <canvas id="radarChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <h3 class="chart-title">投资组合建议</h3>
+                        <div class="chart-wrapper">
+                            <canvas id="portfolioChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2 class="section-title">详细评分</h2>
+                    <div class="score-grid">
+                        <div class="score-item">
+                            <span>技术创新 (6.5/10)</span>
+                            <div class="score-bar">
+                                <div class="score-fill" style="width: 65%"></div>
+                            </div>
+                        </div>
+                        <div class="score-item">
+                            <span>市场地位 (5.5/10)</span>
+                            <div class="score-bar">
+                                <div class="score-fill" style="width: 55%"></div>
+                            </div>
+                        </div>
+                        <div class="score-item">
+                            <span>团队实力 (7/10)</span>
+                            <div class="score-bar">
+                                <div class="score-fill" style="width: 70%"></div>
+                            </div>
+                        </div>
+                        <div class="score-item">
+                            <span>代币经济 (6/10)</span>
+                            <div class="score-bar">
+                                <div class="score-fill" style="width: 60%"></div>
+                            </div>
+                        </div>
+                        <div class="score-item">
+                            <span>安全性 (5/10)</span>
+                            <div class="score-bar">
+                                <div class="score-fill" style="width: 50%"></div>
+                            </div>
+                        </div>
+                        <div class="score-item">
+                            <span>社区活跃 (5.5/10)</span>
+                            <div class="score-bar">
+                                <div class="score-fill" style="width: 55%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <h3>🎯 具体投资建议</h3>
+                    <div class="score-grid">
+                        <div class="score-item">
+                            <span>适合投资者类型</span>
+                            <div style="text-align: right; font-size: 0.875rem;">
+                                中等风险偏好、有DeFi经验
+                            </div>
+                        </div>
+                        <div class="score-item">
+                            <span>建议仓位</span>
+                            <div style="text-align: right; font-size: 0.875rem;">
+                                总投资组合的3-8%
+                            </div>
+                        </div>
+                        <div class="score-item">
+                            <span>投资策略</span>
+                            <div style="text-align: right; font-size: 0.875rem;">
+                                分批建仓，重点关注质押收益
+                            </div>
+                        </div>
+                        <div class="score-item">
+                            <span>退出条件</span>
+                            <div style="text-align: right; font-size: 0.875rem;">
+                                代币价格破关键支撑位或出现重大安全问题
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="warning-box">
+                    <h4 style="color: var(--warning-color);">⚠️ 免责声明</h4>
+                    <p>本报告仅供参考，不构成投资建议。加密货币投资存在极高风险，请根据自身风险承受能力谨慎投资。报告数据基于公开信息整理，实际情况可能发生变化。</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // 主题切换功能
+        function toggleTheme() {
+            const body = document.body;
+            const currentTheme = body.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            body.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
             
-            Chart.defaults.font.family = "'Noto Sans SC', sans-serif";
-            Chart.defaults.color = '#334155'; // slate-700
+            // 重新渲染图表以适应主题
+            setTimeout(() => {
+                Object.values(charts).forEach(chart => {
+                    if (chart) {
+                        chart.destroy();
+                    }
+                });
+                initializeCharts();
+            }, 100);
+        }
 
-            window.competitorChartInstance = new Chart(ctx, {
-                type: 'bar',
-                data: competitorData,
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'ApeX Protocol vs 主要竞争对手',
-                            font: { size: 16 }
+        // 页面切换功能
+        function showSection(sectionId, navItem) {
+            // 隐藏所有内容区域
+            document.querySelectorAll('.section-content').forEach(section => {
+                section.classList.add('hidden');
+            });
+            
+            // 显示选中的区域
+            const targetSection = document.getElementById(sectionId);
+            targetSection.classList.remove('hidden');
+            targetSection.classList.add('fade-in');
+            
+            // 更新导航状态
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            navItem.classList.add('active');
+        }
+
+        // 图表存储
+        const charts = {};
+
+        // 获取当前主题颜色
+        function getThemeColors() {
+            const isDark = document.body.getAttribute('data-theme') === 'dark';
+            return {
+                primary: '#3b82f6',
+                secondary: '#2563eb',
+                success: isDark ? '#34d399' : '#10b981',
+                warning: isDark ? '#fbbf24' : '#f59e0b',
+                danger: isDark ? '#f87171' : '#ef4444',
+                text: isDark ? '#f1f5f9' : '#1e293b',
+                textSecondary: isDark ? '#cbd5e1' : '#64748b',
+                background: isDark ? '#1e293b' : '#f8fafc',
+                grid: isDark ? '#334155' : '#e2e8f0'
+            };
+        }
+
+        // 通用图表配置
+        function getBaseChartConfig() {
+            const colors = getThemeColors();
+            return {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: colors.text,
+                            font: { size: 12 }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: colors.textSecondary },
+                        grid: { color: colors.grid }
+                    },
+                    y: {
+                        ticks: { color: colors.textSecondary },
+                        grid: { color: colors.grid }
+                    }
+                }
+            };
+        }
+
+        // 初始化所有图表
+        function initializeCharts() {
+            const colors = getThemeColors();
+            
+            // 协议核心指标 - 柱状图
+            if (document.getElementById('protocolMetricsChart')) {
+                const ctx = document.getElementById('protocolMetricsChart').getContext('2d');
+                charts.protocolMetrics = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['年化费用', '30天费用', '开放利息', '月交易量'],
+                        datasets: [{
+                            label: '百万美元',
+                            data: [76.7, 6.29, 40.4, 1700],
+                            backgroundColor: [colors.primary, colors.success, colors.warning, colors.danger],
+                            borderWidth: 0,
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        ...getBaseChartConfig(),
+                        plugins: {
+                            legend: { display: false }
                         },
-                        tooltip: {
-                            mode: 'index',
-                            intersect: false,
-                             callbacks: {
-                                label: function(context) {
-                                    let label = context.dataset.label || '';
-                                    if (label) {
-                                        label += ': ';
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { 
+                                    color: colors.textSecondary,
+                                    callback: function(value) { return '$' + value + 'M'; }
+                                },
+                                grid: { color: colors.grid }
+                            },
+                            x: {
+                                ticks: { color: colors.textSecondary },
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 技术架构 - 甜甜圈图
+            if (document.getElementById('techStackChart')) {
+                const ctx = document.getElementById('techStackChart').getContext('2d');
+                charts.techStack = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['eAMM核心', '多链部署', 'Intent设计', '自托管'],
+                        datasets: [{
+                            data: [40, 25, 20, 15],
+                            backgroundColor: [colors.primary, colors.success, colors.warning, colors.secondary],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        ...getBaseChartConfig(),
+                        cutout: '60%',
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                                labels: { color: colors.text }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 价格走势图
+            if (document.getElementById('priceChart')) {
+                const ctx = document.getElementById('priceChart').getContext('2d');
+                const priceData = generatePriceData();
+                charts.price = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: priceData.labels,
+                        datasets: [{
+                            label: 'APEX 价格 ($)',
+                            data: priceData.prices,
+                            borderColor: colors.primary,
+                            backgroundColor: colors.primary + '20',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        ...getBaseChartConfig(),
+                        scales: {
+                            x: {
+                                ticks: { color: colors.textSecondary },
+                                grid: { color: colors.grid }
+                            },
+                            y: {
+                                ticks: { 
+                                    color: colors.textSecondary,
+                                    callback: function(value) { return '$' + value.toFixed(2); }
+                                },
+                                grid: { color: colors.grid }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 交易量分布
+            if (document.getElementById('volumeChart')) {
+                const ctx = document.getElementById('volumeChart').getContext('2d');
+                charts.volume = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['永续合约', '现货交易', '期权', '借贷'],
+                        datasets: [{
+                            label: '交易量 (%)',
+                            data: [65, 25, 8, 2],
+                            backgroundColor: [colors.primary, colors.success, colors.warning, colors.danger],
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        ...getBaseChartConfig(),
+                        plugins: { 
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.label + ': ' + context.parsed.y + '%';
                                     }
-                                    if (context.parsed.y !== null) {
-                                        label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact' }).format(context.parsed.y * 1000000);
-                                    }
-                                    return label;
                                 }
                             }
                         },
-                        legend: {
-                            position: 'top',
-                        },
-                    },
-                    scales: {
-                        x: {
-                            stacked: false,
-                            grid: { display: false }
-                        },
-                        y: {
-                            stacked: false,
-                            beginAtZero: true,
-                            type: 'logarithmic',
-                            title: {
-                                display: true,
-                                text: '百万美元 (对数刻度)'
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                ticks: { 
+                                    color: colors.textSecondary,
+                                    callback: function(value) { return value + '%'; }
+                                },
+                                grid: { color: colors.grid }
                             },
-                             ticks: {
-                                callback: function(value, index, values) {
-                                    if (value === 10000 || value === 1000 || value === 100 || value === 10 || value === 1) {
-                                        return '$' + value + 'M';
+                            x: {
+                                ticks: { color: colors.textSecondary },
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // DeFi协议对比
+            if (document.getElementById('defiComparisonChart')) {
+                const ctx = document.getElementById('defiComparisonChart').getContext('2d');
+                charts.defiComparison = new Chart(ctx, {
+                    type: 'radar',
+                    data: {
+                        labels: ['TVL', '交易量', '用户数', '收入', '创新度'],
+                        datasets: [
+                            {
+                                label: 'ApeX',
+                                data: [6, 7, 5, 7, 8],
+                                borderColor: colors.primary,
+                                backgroundColor: colors.primary + '30',
+                                pointBackgroundColor: colors.primary
+                            },
+                            {
+                                label: 'GMX',
+                                data: [9, 8, 9, 9, 6],
+                                borderColor: colors.success,
+                                backgroundColor: colors.success + '30',
+                                pointBackgroundColor: colors.success
+                            }
+                        ]
+                    },
+                    options: {
+                        ...getBaseChartConfig(),
+                        scales: {
+                            r: {
+                                min: 0,
+                                max: 10,
+                                ticks: { 
+                                    color: colors.textSecondary,
+                                    stepSize: 2
+                                },
+                                grid: { color: colors.grid },
+                                pointLabels: { color: colors.text }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 代币分布
+            if (document.getElementById('tokenDistributionChart')) {
+                const ctx = document.getElementById('tokenDistributionChart').getContext('2d');
+                charts.tokenDistribution = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: ['流通供应', '团队', '投资者', '社区', '生态发展'],
+                        datasets: [{
+                            data: [26.3, 20, 15, 25, 13.7],
+                            backgroundColor: [colors.primary, colors.success, colors.warning, colors.danger, colors.secondary],
+                            borderWidth: 2,
+                            borderColor: colors.background
+                        }]
+                    },
+                    options: {
+                        ...getBaseChartConfig(),
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                                labels: { color: colors.text }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.label + ': ' + context.parsed + '%';
                                     }
                                 }
                             }
                         }
                     }
-                }
-            });
-        }
-    });
-</script>
+                });
+            }
 
+            // 解锁时间表
+            if (document.getElementById('vestingChart')) {
+                const ctx = document.getElementById('vestingChart').getContext('2d');
+                charts.vesting = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ['2024 Q1', '2024 Q2', '2024 Q3', '2024 Q4', '2025 Q1', '2025 Q2'],
+                        datasets: [{
+                            label: '解锁比例 (%)',
+                            data: [26.3, 35, 45, 60, 75, 90],
+                            borderColor: colors.primary,
+                            backgroundColor: colors.primary + '20',
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: colors.primary,
+                            pointBorderColor: colors.background,
+                            pointBorderWidth: 2,
+                            pointRadius: 6
+                        }]
+                    },
+                    options: {
+                        ...getBaseChartConfig(),
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                ticks: { 
+                                    color: colors.textSecondary,
+                                    callback: function(value) { return value + '%'; }
+                                },
+                                grid: { color: colors.grid }
+                            },
+                            x: {
+                                ticks: { color: colors.textSecondary },
+                                grid: { color: colors.grid }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 风险回报散点图
+            if (document.getElementById('riskReturnChart')) {
+                const ctx = document.getElementById('riskReturnChart').getContext('2d');
+                charts.riskReturn = new Chart(ctx, {
+                    type: 'scatter',
+                    data: {
+                        datasets: [
+                            {
+                                label: 'APEX质押',
+                                data: [{x: 5, y: 12}],
+                                backgroundColor: colors.success,
+                                pointRadius: 12
+                            },
+                            {
+                                label: '流动性挖矿',
+                                data: [{x: 7, y: 18}],
+                                backgroundColor: colors.warning,
+                                pointRadius: 12
+                            },
+                            {
+                                label: '永续交易',
+                                data: [{x: 9, y: 35}],
+                                backgroundColor: colors.danger,
+                                pointRadius: 12
+                            },
+                            {
+                                label: '代币投资',
+                                data: [{x: 8, y: 25}],
+                                backgroundColor: colors.primary,
+                                pointRadius: 12
+                            }
+                        ]
+                    },
+                    options: {
+                        ...getBaseChartConfig(),
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: { color: colors.text }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                title: { 
+                                    display: true, 
+                                    text: '风险等级 (1-10)',
+                                    color: colors.text
+                                },
+                                min: 0, 
+                                max: 10,
+                                ticks: { color: colors.textSecondary },
+                                grid: { color: colors.grid }
+                            },
+                            y: {
+                                title: { 
+                                    display: true, 
+                                    text: '预期年化收益 (%)',
+                                    color: colors.text
+                                },
+                                min: 0,
+                                ticks: { 
+                                    color: colors.textSecondary,
+                                    callback: function(value) { return value + '%'; }
+                                },
+                                grid: { color: colors.grid }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 风险等级分布
+            if (document.getElementById('riskChart')) {
+                const ctx = document.getElementById('riskChart').getContext('2d');
+                charts.risk = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['高风险', '中等风险', '低风险'],
+                        datasets: [{
+                            data: [40, 35, 25],
+                            backgroundColor: [colors.danger, colors.warning, colors.success],
+                            borderWidth: 2,
+                            borderColor: colors.background
+                        }]
+                    },
+                    options: {
+                        ...getBaseChartConfig(),
+                        cutout: '50%',
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { color: colors.text }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.label + ': ' + context.parsed + '%';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 安全性评分
+            if (document.getElementById('securityChart')) {
+                const ctx = document.getElementById('securityChart').getContext('2d');
+                charts.security = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['代码审计', '团队背景', '社区治理', '技术风险'],
+                        datasets: [{
+                            label: '评分 (1-10)',
+                            data: [4, 7, 6, 5],
+                            backgroundColor: [colors.danger, colors.success, colors.primary, colors.warning],
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        ...getBaseChartConfig(),
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { 
+                                min: 0, 
+                                max: 10,
+                                ticks: { color: colors.textSecondary },
+                                grid: { color: colors.grid }
+                            },
+                            x: {
+                                ticks: { color: colors.textSecondary },
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 竞争对手对比
+            if (document.getElementById('competitorChart')) {
+                const ctx = document.getElementById('competitorChart').getContext('2d');
+                charts.competitor = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['GMX', 'dYdX', 'ApeX', 'Hyperliquid', 'Vertex'],
+                        datasets: [
+                            {
+                                label: 'TVL (百万美元)',
+                                data: [520, 310, 40.4, 200, 50],
+                                backgroundColor: colors.primary,
+                                borderRadius: 4
+                            },
+                            {
+                                label: '日交易量 (百万美元)',
+                                data: [233, 280, 10.69, 800, 20],
+                                backgroundColor: colors.success,
+                                borderRadius: 4
+                            }
+                        ]
+                    },
+                    options: {
+                        ...getBaseChartConfig(),
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: { color: colors.text }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.dataset.label + ': $' + context.parsed.y + 'M';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                ticks: { color: colors.textSecondary },
+                                grid: { display: false }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                ticks: { 
+                                    color: colors.textSecondary,
+                                    callback: function(value) { return '$' + value + 'M'; }
+                                },
+                                grid: { color: colors.grid }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 综合评分雷达图
+            if (document.getElementById('radarChart')) {
+                const ctx = document.getElementById('radarChart').getContext('2d');
+                charts.radar = new Chart(ctx, {
+                    type: 'radar',
+                    data: {
+                        labels: ['技术创新', '市场地位', '团队实力', '代币经济', '安全性', '社区活跃'],
+                        datasets: [{
+                            label: 'ApeX Protocol',
+                            data: [6.5, 5.5, 7, 6, 5, 5.5],
+                            borderColor: colors.primary,
+                            backgroundColor: colors.primary + '30',
+                            pointBackgroundColor: colors.primary,
+                            pointBorderColor: colors.background,
+                            pointBorderWidth: 2,
+                            pointRadius: 6,
+                            borderWidth: 3
+                        }]
+                    },
+                    options: {
+                        ...getBaseChartConfig(),
+                        scales: {
+                            r: {
+                                min: 0,
+                                max: 10,
+                                ticks: { 
+                                    color: colors.textSecondary,
+                                    stepSize: 2
+                                },
+                                grid: { color: colors.grid },
+                                pointLabels: { 
+                                    color: colors.text,
+                                    font: { size: 12 }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 投资组合建议
+            if (document.getElementById('portfolioChart')) {
+                const ctx = document.getElementById('portfolioChart').getContext('2d');
+                charts.portfolio = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['保守型 (50%)', '平衡型 (30%)', '激进型 (20%)'],
+                        datasets: [{
+                            data: [50, 30, 20],
+                            backgroundColor: [colors.success, colors.warning, colors.danger],
+                            borderWidth: 2,
+                            borderColor: colors.background
+                        }]
+                    },
+                    options: {
+                        ...getBaseChartConfig(),
+                        cutout: '60%',
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { color: colors.text }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.label + ': ' + context.parsed + '%';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // 生成模拟价格数据
+        function generatePriceData() {
+            const labels = [];
+            const prices = [];
+            let currentPrice = 1.16; // 起始价格
+
+            // 生成30天的数据
+            for (let i = 30; i >= 0; i--) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                labels.push(date.toLocaleDateString());
+                
+                // 模拟价格波动，最终到达 0.89
+                const progress = (30 - i) / 30;
+                const volatility = (Math.random() - 0.5) * 0.1;
+                const trendPrice = 1.16 - (1.16 - 0.89) * progress;
+                currentPrice = Math.max(0.5, trendPrice + volatility);
+                prices.push(currentPrice);
+            }
+
+            return { labels, prices };
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 加载保存的主题
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.body.setAttribute('data-theme', savedTheme);
+            
+            // 初始化图表
+            setTimeout(initializeCharts, 100);
+            
+            // 平滑滚动
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href').substring(1);
+                    showSection(targetId, this);
+                });
+            });
+        });
+    </script>
 </body>
 </html>

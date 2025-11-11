@@ -1,0 +1,1903 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Billions Network 投资调研分析</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #3b82f6;
+            --primary-dark: #2563eb;
+            --secondary-color: #8b5cf6;
+            --accent-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --success-color: #22c55e;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --bg-primary: #ffffff;
+            --bg-secondary: #f9fafb;
+            --bg-card: #ffffff;
+            --border-color: #e5e7eb;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        [data-theme="dark"] {
+            --primary-color: #60a5fa;
+            --primary-dark: #3b82f6;
+            --secondary-color: #a78bfa;
+            --accent-color: #34d399;
+            --warning-color: #fbbf24;
+            --danger-color: #f87171;
+            --success-color: #4ade80;
+            --text-primary: #f9fafb;
+            --text-secondary: #d1d5db;
+            --bg-primary: #111827;
+            --bg-secondary: #1f2937;
+            --bg-card: #1f2937;
+            --border-color: #374151;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            transition: all 0.3s ease;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 1.5rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .header-title {
+            font-size: 1.875rem;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .theme-toggle {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .search-container {
+            position: relative;
+        }
+
+        .search-input {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            width: 250px;
+            backdrop-filter: blur(10px);
+        }
+
+        .search-input::placeholder {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* Layout */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 2rem;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: var(--bg-card);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            height: fit-content;
+            position: sticky;
+            top: 7rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+        }
+
+        .sidebar-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .nav-item {
+            display: block;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: var(--primary-color);
+            color: white;
+            transform: translateX(5px);
+        }
+
+        /* Main Content */
+        .main-content {
+            min-height: 100vh;
+        }
+
+        .section {
+            background: var(--bg-card);
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.6s ease;
+        }
+
+        .section.animate-in {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .section-title {
+            font-size: 1.875rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: var(--text-primary);
+            border-bottom: 3px solid var(--primary-color);
+            padding-bottom: 0.5rem;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            padding: 1.5rem;
+            border-radius: 1rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.6s ease;
+        }
+
+        .stat-card:hover::before {
+            transform: translateX(100%);
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        .stat-change {
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            opacity: 0.8;
+        }
+
+        /* Comparison Table */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            background: var(--bg-card);
+            border-radius: 0.5rem;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        .comparison-table th {
+            background: var(--primary-color);
+            color: white;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .comparison-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: top;
+        }
+
+        .comparison-table tr:hover {
+            background: var(--bg-secondary);
+        }
+
+        /* Investment Strategy Cards */
+        .strategy-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .strategy-card {
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .strategy-card:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .strategy-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+
+        .strategy-details {
+            list-style: none;
+            margin: 1rem 0;
+        }
+
+        .strategy-details li {
+            padding: 0.25rem 0;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .strategy-details li:last-child {
+            border-bottom: none;
+        }
+
+        /* Risk Assessment */
+        .risk-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .risk-item {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            text-align: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .risk-low { background: var(--success-color); }
+        .risk-medium { background: var(--warning-color); }
+        .risk-high { background: var(--danger-color); }
+
+        /* SWOT Analysis */
+        .swot-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .swot-item {
+            padding: 1.5rem;
+            border-radius: 1rem;
+            border-left: 4px solid;
+        }
+
+        .swot-strengths {
+            background: rgba(34, 197, 94, 0.1);
+            border-left-color: var(--success-color);
+        }
+
+        .swot-weaknesses {
+            background: rgba(239, 68, 68, 0.1);
+            border-left-color: var(--danger-color);
+        }
+
+        .swot-opportunities {
+            background: rgba(59, 130, 246, 0.1);
+            border-left-color: var(--primary-color);
+        }
+
+        .swot-threats {
+            background: rgba(245, 158, 11, 0.1);
+            border-left-color: var(--warning-color);
+        }
+
+        .swot-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .swot-list {
+            list-style: none;
+        }
+
+        .swot-list li {
+            padding: 0.25rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Chart Container */
+        .chart-container {
+            background: var(--bg-card);
+            border-radius: 1rem;
+            padding: 2rem;
+            margin: 2rem 0;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+        }
+
+        .chart-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            color: var(--text-primary);
+        }
+
+        /* Investment Rating */
+        .investment-rating {
+            text-align: center;
+            padding: 2rem;
+            margin: 2rem 0;
+            background: linear-gradient(135deg, var(--warning-color), #f97316);
+            color: white;
+            border-radius: 1rem;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .rating-emoji {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .rating-text {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .rating-subtitle {
+            margin-top: 0.5rem;
+            opacity: 0.9;
+        }
+
+        /* Highlight Boxes */
+        .highlight {
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 4px solid var(--primary-color);
+            padding: 1rem 1.5rem;
+            margin: 1rem 0;
+            border-radius: 0 0.5rem 0.5rem 0;
+        }
+
+        .warning-box {
+            background: rgba(245, 158, 11, 0.1);
+            border-left: 4px solid var(--warning-color);
+            padding: 1rem 1.5rem;
+            margin: 1rem 0;
+            border-radius: 0 0.5rem 0.5rem 0;
+        }
+
+        .success-box {
+            background: rgba(34, 197, 94, 0.1);
+            border-left: 4px solid var(--success-color);
+            padding: 1rem 1.5rem;
+            margin: 1rem 0;
+            border-radius: 0 0.5rem 0.5rem 0;
+        }
+
+        /* Back to Top Button */
+        .back-to-top {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 3rem;
+            height: 3rem;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            box-shadow: var(--shadow-lg);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .back-to-top:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .back-to-top.show {
+            display: flex;
+        }
+
+        /* Mobile Menu Toggle */
+        .mobile-menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+                padding: 1rem;
+            }
+
+            .sidebar {
+                position: static;
+                order: -1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .header-title {
+                font-size: 1.5rem;
+                text-align: center;
+            }
+
+            .search-input {
+                width: 100%;
+                max-width: 300px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .swot-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .strategy-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                padding: 1rem;
+            }
+
+            .section {
+                padding: 1.5rem;
+            }
+
+            .mobile-menu-toggle {
+                display: block;
+            }
+
+            .sidebar.mobile-hidden {
+                display: none;
+            }
+        }
+
+        /* Animation Classes */
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .slide-in-left {
+            animation: slideInLeft 0.6s ease-out;
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">☰</button>
+                <h1 class="header-title">Billions Network 投资调研分析</h1>
+            </div>
+            <div class="header-controls">
+                <div class="search-container">
+                    <input type="text" class="search-input" placeholder="搜索内容..." id="searchInput">
+                </div>
+                <button class="theme-toggle" onclick="toggleTheme()" id="themeToggle">🌙</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <h3 class="sidebar-title">目录导航</h3>
+            <nav>
+                <a href="#executive-summary" class="nav-item">📊 执行摘要</a>
+                <a href="#project-overview" class="nav-item">🎯 项目概述</a>
+                <a href="#market-analysis" class="nav-item">📈 市场分析</a>
+                <a href="#technical-analysis" class="nav-item">🏗️ 技术分析</a>
+                <a href="#team-analysis" class="nav-item">👥 团队分析</a>
+                <a href="#tokenomics" class="nav-item">💰 代币经济学</a>
+                <a href="#funding-analysis" class="nav-item">💵 融资分析</a>
+                <a href="#security-analysis" class="nav-item">🛡️ 安全分析</a>
+                <a href="#community-analysis" class="nav-item">🌐 社区分析</a>
+                <a href="#competitive-analysis" class="nav-item">⚔️ 竞争分析</a>
+                <a href="#investment-opportunities" class="nav-item">💡 投资机会</a>
+                <a href="#risk-assessment" class="nav-item">⚠️ 风险评估</a>
+                <a href="#investment-recommendation" class="nav-item">📋 投资建议</a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Executive Summary -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">📊 执行摘要</h2>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value">140万+</div>
+                        <div class="stat-label">注册用户</div>
+                        <div class="stat-change">5个月快速增长</div>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, var(--accent-color), #059669);">
+                        <div class="stat-value">$30M</div>
+                        <div class="stat-label">最新融资额</div>
+                        <div class="stat-change">顶级机构支持</div>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, var(--secondary-color), #7c3aed);">
+                        <div class="stat-value">65万</div>
+                        <div class="stat-label">Twitter关注者</div>
+                        <div class="stat-change">高社区活跃度</div>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, var(--warning-color), #f97316);">
+                        <div class="stat-value">6年</div>
+                        <div class="stat-label">ZK技术积累</div>
+                        <div class="stat-change">技术成熟度高</div>
+                    </div>
+                </div>
+
+                <div class="investment-rating">
+                    <div class="rating-emoji">🟡</div>
+                    <div class="rating-text">投资评级：中性（有条件建议）</div>
+                    <div class="rating-subtitle">适合关注AI身份验证领域和零风险空投挖矿的投资者</div>
+                </div>
+
+                <div class="highlight">
+                    <h4>核心亮点</h4>
+                    <ul>
+                        <li>🔐 全球首个人类与AI身份验证网络</li>
+                        <li>🛡️ 基于零知识证明的隐私优先设计</li>
+                        <li>📱 移动优先，无需生物识别硬件</li>
+                        <li>🏆 获得Coinbase Ventures等顶级机构投资</li>
+                        <li>🌍 已支持200国护照验证</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Project Overview -->
+            <section id="project-overview" class="section">
+                <h2 class="section-title">🎯 项目概述</h2>
+                
+                <div class="highlight">
+                    <h4>项目简介</h4>
+                    <p>Billions Network是全球首个专为人类和AI设计的身份验证网络，旨在通过移动优先的隐私保护技术，在AI时代构建信任基础设施。该项目允许用户仅使用护照和智能手机完成身份验证，无需虹膜扫描等生物识别硬件。</p>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin: 2rem 0;">
+                    <div class="strategy-card">
+                        <div class="strategy-title">🔧 核心技术</div>
+                        <ul class="swot-list">
+                            <li>🔒 零知识证明（ZK-Proofs）</li>
+                            <li>📱 移动优先验证</li>
+                            <li>🛡️ 隐私保护设计</li>
+                            <li>⛓️ 跨链兼容</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="strategy-card">
+                        <div class="strategy-title">🎯 应用场景</div>
+                        <ul class="swot-list">
+                            <li>🆔 身份验证与KYC</li>
+                            <li>🤖 AI代理身份管理</li>
+                            <li>🏦 DeFi准入控制</li>
+                            <li>📱 社交媒体反欺诈</li>
+                            <li>🏛️ 政府数字身份系统</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Market Analysis -->
+            <section id="market-analysis" class="section">
+                <h2 class="section-title">📈 市场分析</h2>
+                
+                <div class="stats-grid">
+                    <div class="stat-card" style="background: linear-gradient(135deg, #06b6d4, #0891b2);">
+                        <div class="stat-value">$70B</div>
+                        <div class="stat-label">数字身份市场</div>
+                        <div class="stat-change">预计2030年规模</div>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+                        <div class="stat-value">$3.9B</div>
+                        <div class="stat-label">ZK证明市场</div>
+                        <div class="stat-change">预计2028年规模</div>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-title">市场规模增长趋势</div>
+                    <canvas id="marketGrowthChart" width="400" height="200"></canvas>
+                </div>
+
+                <div class="highlight">
+                    <h4>市场机会</h4>
+                    <ul>
+                        <li>📜 <strong>监管推动：</strong>欧盟eIDAS2法规要求数字身份钱包</li>
+                        <li>🤖 <strong>AI时代需求：</strong>区分人类与AI交互的紧迫性</li>
+                        <li>🛡️ <strong>隐私保护趋势：</strong>用户对数据主权要求提升</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Technical Analysis -->
+            <section id="technical-analysis" class="section">
+                <h2 class="section-title">🏗️ 技术分析</h2>
+                
+                <div class="chart-container">
+                    <div class="chart-title">技术对比分析</div>
+                    <table class="comparison-table">
+                        <thead>
+                            <tr>
+                                <th>特性</th>
+                                <th>Billions</th>
+                                <th>Worldcoin</th>
+                                <th>Civic</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>硬件需求</strong></td>
+                                <td>✅ 仅手机+护照</td>
+                                <td>❌ 虹膜扫描仪</td>
+                                <td>📄 文档扫描</td>
+                            </tr>
+                            <tr>
+                                <td><strong>隐私保护</strong></td>
+                                <td>🔒 高（无全局ID）</td>
+                                <td>⚠️ 中（单一World ID）</td>
+                                <td>🔒 高</td>
+                            </tr>
+                            <tr>
+                                <td><strong>用户体验</strong></td>
+                                <td>😊 简便</td>
+                                <td>😰 复杂</td>
+                                <td>😐 中等</td>
+                            </tr>
+                            <tr>
+                                <td><strong>覆盖范围</strong></td>
+                                <td>🌍 200国护照支持</td>
+                                <td>🌍 160国</td>
+                                <td>🌍 全球</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="success-box">
+                    <h4>技术优势</h4>
+                    <ul>
+                        <li>✅ 成熟的ZK技术栈（6年开发历史）</li>
+                        <li>✅ 大规模验证（已验证220万+用户）</li>
+                        <li>✅ 企业级合规（德意志银行、汇丰银行验证）</li>
+                        <li>✅ 开源生态（44个GitHub仓库）</li>
+                    </ul>
+                </div>
+
+                <div class="warning-box">
+                    <h4>技术挑战</h4>
+                    <ul>
+                        <li>⚠️ 护照依赖性（需要政府文件）</li>
+                        <li>⚠️ NFC兼容性（老旧设备支持有限）</li>
+                        <li>⚠️ 扩展性问题（移动设备计算限制）</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Team Analysis -->
+            <section id="team-analysis" class="section">
+                <h2 class="section-title">👥 团队分析</h2>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+                    <div class="strategy-card">
+                        <div class="strategy-title">👨‍💼 CEO - Evin McMullen</div>
+                        <ul class="swot-list">
+                            <li>🏢 Disco.xyz联合创始人</li>
+                            <li>🎯 数字身份与Web3专家</li>
+                            <li>💼 丰富的行业经验</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="strategy-card">
+                        <div class="strategy-title">👨‍💻 联合创始人 - David Schwartz</div>
+                        <ul class="swot-list">
+                            <li>🔷 Polygon联合创始人</li>
+                            <li>💼 前Polygon CTO</li>
+                            <li>🔧 zkEVM项目负责人</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="strategy-card">
+                        <div class="strategy-title">👨‍🔬 CTO - Oleksandr Brezhniev</div>
+                        <ul class="swot-list">
+                            <li>⛓️ 区块链技术专家</li>
+                            <li>🔐 零知识证明专家</li>
+                            <li>📜 智能合约开发专家</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="strategy-card">
+                        <div class="strategy-title">📢 CMO - AlexDigital.eth</div>
+                        <ul class="swot-list">
+                            <li>🌐 Web3营销专家</li>
+                            <li>👥 社区建设专家</li>
+                            <li>🎯 品牌推广专家</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="success-box" style="margin-top: 2rem;">
+                    <h4>团队优势</h4>
+                    <ul>
+                        <li>✅ Polygon背景提供技术权威性</li>
+                        <li>✅ 6年ZK身份验证经验</li>
+                        <li>✅ 企业合作伙伴关系丰富</li>
+                        <li>✅ 开源社区建设良好</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Tokenomics -->
+            <section id="tokenomics" class="section">
+                <h2 class="section-title">💰 代币经济学分析</h2>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value">10亿</div>
+                        <div class="stat-label">总供应量</div>
+                        <div class="stat-change">BILLIONS代币</div>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, var(--accent-color), #059669);">
+                        <div class="stat-value">75%</div>
+                        <div class="stat-label">TGE解锁</div>
+                        <div class="stat-change">2024年9月30日</div>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, var(--secondary-color), #7c3aed);">
+                        <div class="stat-value">25%</div>
+                        <div class="stat-label">延迟解锁</div>
+                        <div class="stat-change">12个月后</div>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-title">代币分配（推测）</div>
+                    <canvas id="tokenDistributionChart" width="400" height="200"></canvas>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 2rem 0;">
+                    <div class="strategy-card">
+                        <div class="strategy-title">💼 代币用途</div>
+                        <ul class="swot-list">
+                            <li>🗳️ 网络治理投票权</li>
+                            <li>💎 质押奖励</li>
+                            <li>💳 验证服务费用</li>
+                            <li>🎁 生态激励</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="strategy-card">
+                        <div class="strategy-title">📊 经济模型优势</div>
+                        <ul class="swot-list">
+                            <li>✅ 明确的实用性价值</li>
+                            <li>✅ 渐进式解锁避免抛压</li>
+                            <li>✅ 生态发展占比合理</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="warning-box">
+                    <h4>经济模型风险</h4>
+                    <ul>
+                        <li>⚠️ 代币分配细节不够透明</li>
+                        <li>⚠️ 通胀机制未明确</li>
+                        <li>⚠️ 价值捕获机制有限</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Funding Analysis -->
+            <section id="funding-analysis" class="section">
+                <h2 class="section-title">💵 融资分析</h2>
+                
+                <div class="stats-grid">
+                    <div class="stat-card" style="background: linear-gradient(135deg, #10b981, #059669);">
+                        <div class="stat-value">$30M</div>
+                        <div class="stat-label">最新融资额</div>
+                        <div class="stat-change">2024年7月完成</div>
+                    </div>
+                </div>
+
+                <div class="highlight">
+                    <h4>🏆 顶级投资机构</h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem;">
+                        <div class="risk-item" style="background: #f59e0b; color: white;">
+                            <div>🏦 Coinbase Ventures</div>
+                            <small>战略投资者</small>
+                        </div>
+                        <div class="risk-item" style="background: #8b5cf6; color: white;">
+                            <div>💰 Polychain Capital</div>
+                            <small>知名加密基金</small>
+                        </div>
+                        <div class="risk-item" style="background: #10b981; color: white;">
+                            <div>🔷 Polygon Labs</div>
+                            <small>技术合作伙伴</small>
+                        </div>
+                        <div class="risk-item" style="background: #3b82f6; color: white;">
+                            <div>🎮 Bitkraft Ventures</div>
+                            <small>Web3专业基金</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-title">投资机构影响力评估</div>
+                    <canvas id="investorImpactChart" width="400" height="200"></canvas>
+                </div>
+
+                <div class="success-box">
+                    <h4>投资机构优势</h4>
+                    <ul>
+                        <li>✅ 顶级机构认可度高</li>
+                        <li>✅ Coinbase Ventures带来合规优势</li>
+                        <li>✅ Polygon Labs提供技术支持</li>
+                        <li>✅ 多元化投资组合降低风险</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Security Analysis -->
+            <section id="security-analysis" class="section">
+                <h2 class="section-title">🛡️ 安全分析</h2>
+                
+                <div class="success-box">
+                    <h4>已知安全措施</h4>
+                    <ul>
+                        <li>✅ 基于Circom的ZK证明系统</li>
+                        <li>✅ 6年技术栈验证历史</li>
+                        <li>✅ 企业级KYC基础设施</li>
+                        <li>✅ 开源代码审计便利性</li>
+                    </ul>
+                </div>
+
+                <div class="warning-box">
+                    <h4>安全注意事项</h4>
+                    <ul>
+                        <li>❓ 缺少CertiK、ConsenSys等知名审计</li>
+                        <li>❓ 智能合约审计状态待确认</li>
+                        <li>❓ 基础设施安全测试结果未公开</li>
+                    </ul>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-title">安全评估雷达图</div>
+                    <canvas id="securityRadarChart" width="400" height="300"></canvas>
+                </div>
+
+                <div class="highlight">
+                    <h4>历史安全记录</h4>
+                    <ul>
+                        <li>✅ 6年运营无重大安全事件</li>
+                        <li>✅ 基础技术被9000+项目使用</li>
+                        <li>✅ 企业客户验证安全性</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Community Analysis -->
+            <section id="community-analysis" class="section">
+                <h2 class="section-title">🌐 社区分析</h2>
+                
+                <div class="chart-container">
+                    <div class="chart-title">社交媒体表现</div>
+                    <canvas id="communityGrowthChart" width="400" height="200"></canvas>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value">649K</div>
+                        <div class="stat-label">Twitter关注者</div>
+                        <div class="stat-change">@billions_ntwk</div>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, var(--secondary-color), #7c3aed);">
+                        <div class="stat-value">550K+</div>
+                        <div class="stat-label">Discord成员</div>
+                        <div class="stat-change">高活跃度</div>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, var(--accent-color), #059669);">
+                        <div class="stat-value">220万+</div>
+                        <div class="stat-label">验证用户</div>
+                        <div class="stat-change">快速增长</div>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, var(--warning-color), #f97316);">
+                        <div class="stat-value">44</div>
+                        <div class="stat-label">GitHub仓库</div>
+                        <div class="stat-change">开源生态</div>
+                    </div>
+                </div>
+
+                <div class="success-box">
+                    <h4>社区优势</h4>
+                    <ul>
+                        <li>🚀 用户快速增长（140万+用户/5个月）</li>
+                        <li>💬 社区参与度高</li>
+                        <li>🔄 积极的口碑传播</li>
+                        <li>📱 产品体验满意度高</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Competitive Analysis -->
+            <section id="competitive-analysis" class="section">
+                <h2 class="section-title">⚔️ 竞争分析</h2>
+                
+                <div class="chart-container">
+                    <div class="chart-title">竞争对手对比</div>
+                    <canvas id="competitorComparisonChart" width="400" height="300"></canvas>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin: 2rem 0;">
+                    <div class="strategy-card">
+                        <div class="strategy-title">🌍 Worldcoin (WLD)</div>
+                        <ul class="strategy-details">
+                            <li><span>用户数</span><span>1700万</span></li>
+                            <li><span>市值</span><span>约40亿美元</span></li>
+                            <li><span>优势</span><span>Sam Altman支持</span></li>
+                            <li><span>劣势</span><span>隐私争议</span></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="strategy-card">
+                        <div class="strategy-title">🏛️ Civic (CVC)</div>
+                        <ul class="strategy-details">
+                            <li><span>市值</span><span>约1亿美元</span></li>
+                            <li><span>优势</span><span>企业采用</span></li>
+                            <li><span>劣势</span><span>用户增长缓慢</span></li>
+                            <li><span>特色</span><span>合规性强</span></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="strategy-card">
+                        <div class="strategy-title">💡 BrightID</div>
+                        <ul class="strategy-details">
+                            <li><span>市值</span><span>较小</span></li>
+                            <li><span>优势</span><span>社交图谱验证</span></li>
+                            <li><span>劣势</span><span>技术复杂度高</span></li>
+                            <li><span>特色</span><span>去中心化</span></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="highlight">
+                    <h4>Billions独特优势</h4>
+                    <ul>
+                        <li>🛡️ 技术成熟度：6年ZK身份验证经验</li>
+                        <li>📱 用户体验：无需特殊硬件</li>
+                        <li>🔒 隐私保护：无全局标识符设计</li>
+                        <li>🔗 生态整合：Polygon AggLayer官方身份层</li>
+                        <li>🏛️ 监管友好：政府合作案例</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Investment Opportunities -->
+            <section id="investment-opportunities" class="section">
+                <h2 class="section-title">💡 投资机会分析</h2>
+                
+                <div class="chart-container">
+                    <div class="chart-title">投资方式对比</div>
+                    <table class="comparison-table">
+                        <thead>
+                            <tr>
+                                <th>投资方式</th>
+                                <th>预期收益</th>
+                                <th>风险等级</th>
+                                <th>参与难度</th>
+                                <th>时间周期</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>空投积分挖矿</strong></td>
+                                <td>🟢 中等(500+美元)</td>
+                                <td>🟢 低</td>
+                                <td>😊 简单</td>
+                                <td>📅 短期(1-3月)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>POL质押获得空投</strong></td>
+                                <td>🟢 高(5%代币分配)</td>
+                                <td>🟡 中等</td>
+                                <td>😐 中等</td>
+                                <td>📅 中期(6-12月)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>二级市场交易</strong></td>
+                                <td>❓ 不确定</td>
+                                <td>🔴 高</td>
+                                <td>😊 简单</td>
+                                <td>📅 灵活</td>
+                            </tr>
+                            <tr>
+                                <td><strong>生态开发参与</strong></td>
+                                <td>🟢 高</td>
+                                <td>🟡 中等</td>
+                                <td>😰 困难</td>
+                                <td>📅 长期(1-2年)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="strategy-grid">
+                    <div class="strategy-card" style="border-color: var(--success-color);">
+                        <div class="strategy-title">🎯 策略一：Power积分挖矿（推荐）</div>
+                        <div class="success-box" style="margin: 1rem 0;">
+                            <h5>操作步骤：</h5>
+                            <ol>
+                                <li>注册Billions Network应用</li>
+                                <li>完成护照KYC验证（获得200 Power）</li>
+                                <li>连接以太坊钱包（获得额外积分）</li>
+                                <li>完成日常任务和社交活动</li>
+                                <li>邀请朋友参与（推荐奖励）</li>
+                            </ol>
+                        </div>
+                        <ul class="strategy-details">
+                            <li><span>预期收益</span><span>300-800美元</span></li>
+                            <li><span>时间投入</span><span>每日10-15分钟</span></li>
+                            <li><span>风险等级</span><span>极低</span></li>
+                            <li><span>适合人群</span><span>所有投资者</span></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="strategy-card" style="border-color: var(--warning-color);">
+                        <div class="strategy-title">⚡ 策略二：Polygon生态参与</div>
+                        <div class="warning-box" style="margin: 1rem 0;">
+                            <h5>操作方法：</h5>
+                            <ol>
+                                <li>购买并质押POL代币</li>
+                                <li>参与AggLayer生态</li>
+                                <li>等待Billions 5%代币分配</li>
+                            </ol>
+                        </div>
+                        <ul class="strategy-details">
+                            <li><span>风险</span><span>POL价格波动</span></li>
+                            <li><span>收益</span><span>空投分配</span></li>
+                            <li><span>资金需求</span><span>较大</span></li>
+                            <li><span>适合人群</span><span>DeFi熟练者</span></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="strategy-card" style="border-color: var(--primary-color);">
+                        <div class="strategy-title">🛠️ 策略三：开发者生态参与</div>
+                        <div class="highlight" style="margin: 1rem 0;">
+                            <h5>参与方式：</h5>
+                            <ol>
+                                <li>基于Privado ID构建应用</li>
+                                <li>集成Billions身份验证</li>
+                                <li>参与开发者激励计划</li>
+                            </ol>
+                        </div>
+                        <ul class="strategy-details">
+                            <li><span>技术要求</span><span>中高级</span></li>
+                            <li><span>收益前景</span><span>长期合作</span></li>
+                            <li><span>时间投入</span><span>大</span></li>
+                            <li><span>适合人群</span><span>开发者</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Risk Assessment -->
+            <section id="risk-assessment" class="section">
+                <h2 class="section-title">⚠️ 风险评估</h2>
+                
+                <div class="chart-container">
+                    <div class="chart-title">风险评估雷达图</div>
+                    <canvas id="riskAssessmentChart" width="400" height="300"></canvas>
+                </div>
+
+                <div class="risk-grid">
+                    <div class="risk-item risk-high">
+                        <div>技术风险</div>
+                        <small>护照依赖、NFC兼容性</small>
+                    </div>
+                    <div class="risk-item risk-medium">
+                        <div>市场风险</div>
+                        <small>竞争激烈、用户增长</small>
+                    </div>
+                    <div class="risk-item risk-medium">
+                        <div>监管风险</div>
+                        <small>数据保护、金融监管</small>
+                    </div>
+                    <div class="risk-item risk-medium">
+                        <div>执行风险</div>
+                        <small>团队规模、资金管理</small>
+                    </div>
+                    <div class="risk-item risk-high">
+                        <div>代币风险</div>
+                        <small>估值不确定、流动性</small>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin: 2rem 0;">
+                    <div class="warning-box">
+                        <h4>🔴 高风险领域</h4>
+                        <ul>
+                            <li>💻 <strong>技术风险：</strong>护照系统依赖、移动设备限制</li>
+                            <li>💰 <strong>代币风险：</strong>估值不确定、解锁抛压</li>
+                            <li>⚖️ <strong>监管风险：</strong>数据保护法规、金融服务监管</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="highlight">
+                        <h4>🟡 中等风险领域</h4>
+                        <ul>
+                            <li>📊 <strong>市场风险：</strong>Worldcoin竞争、传统服务商威胁</li>
+                            <li>👥 <strong>执行风险：</strong>团队规模、市场推广能力</li>
+                            <li>💼 <strong>资金风险：</strong>3000万美元使用效率</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Investment Recommendation -->
+            <section id="investment-recommendation" class="section">
+                <h2 class="section-title">📋 综合投资建议</h2>
+                
+                <div class="chart-container">
+                    <div class="chart-title">SWOT分析</div>
+                    <div class="swot-grid">
+                        <div class="swot-item swot-strengths">
+                            <div class="swot-title">💪 优势 (Strengths)</div>
+                            <ul class="swot-list">
+                                <li>✅ 技术成熟（6年ZK经验）</li>
+                                <li>✅ 顶级投资者支持</li>
+                                <li>✅ 独特隐私保护方案</li>
+                                <li>✅ 企业客户验证</li>
+                                <li>✅ 快速用户增长</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="swot-item swot-weaknesses">
+                            <div class="swot-title">⚠️ 劣势 (Weaknesses)</div>
+                            <ul class="swot-list">
+                                <li>❌ 用户规模相对较小</li>
+                                <li>❌ 护照依赖限制</li>
+                                <li>❌ 品牌知名度不足</li>
+                                <li>❌ 代币价值捕获有限</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="swot-item swot-opportunities">
+                            <div class="swot-title">🚀 机会 (Opportunities)</div>
+                            <ul class="swot-list">
+                                <li>🚀 AI时代身份验证需求</li>
+                                <li>🚀 监管推动数字身份</li>
+                                <li>🚀 企业合规需求增长</li>
+                                <li>🚀 Polygon生态整合机会</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="swot-item swot-threats">
+                            <div class="swot-title">💥 威胁 (Threats)</div>
+                            <ul class="swot-list">
+                                <li>💥 Worldcoin激烈竞争</li>
+                                <li>💥 监管政策变化</li>
+                                <li>💥 技术标准不统一</li>
+                                <li>💥 用户隐私担忧</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="investment-rating">
+                    <div class="rating-emoji">🟡</div>
+                    <div class="rating-text">最终评级：中性（有条件建议）</div>
+                    <div class="rating-subtitle">技术扎实，机会明确，但风险需要谨慎评估</div>
+                </div>
+
+                <div class="strategy-grid">
+                    <div class="strategy-card" style="border-color: var(--success-color);">
+                        <div class="strategy-title">🎯 短期策略（1-3个月）</div>
+                        <ul class="strategy-details">
+                            <li><span>主要重点</span><span>Power积分挖矿</span></li>
+                            <li><span>资金分配</span><span>零投资（时间）</span></li>
+                            <li><span>预期收益</span><span>300-800美元</span></li>
+                            <li><span>执行难度</span><span>简单</span></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="strategy-card" style="border-color: var(--warning-color);">
+                        <div class="strategy-title">📊 中期策略（3-12个月）</div>
+                        <ul class="strategy-details">
+                            <li><span>主要重点</span><span>关注生态发展</span></li>
+                            <li><span>资金分配</span><span>总组合1-3%</span></li>
+                            <li><span>预期收益</span><span>50%-200%</span></li>
+                            <li><span>执行难度</span><span>中等</span></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="strategy-card" style="border-color: var(--primary-color);">
+                        <div class="strategy-title">🏗️ 长期策略（1-3年）</div>
+                        <ul class="strategy-details">
+                            <li><span>主要重点</span><span>生态参与合作</span></li>
+                            <li><span>资金分配</span><span>总组合3-5%</span></li>
+                            <li><span>预期收益</span><span>200%-500%</span></li>
+                            <li><span>执行难度</span><span>较高</span></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="highlight">
+                    <h4>🎯 建议投资人群</h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem;">
+                        <div class="success-box">
+                            <h5>✅ 积极推荐</h5>
+                            <ul>
+                                <li>Web3身份验证关注者</li>
+                                <li>零风险空投挖矿参与者</li>
+                                <li>技术背景开发者</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="warning-box">
+                            <h5>⚠️ 谨慎推荐</h5>
+                            <ul>
+                                <li>DeFi经验丰富投资者</li>
+                                <li>长期基础设施看好者</li>
+                                <li>风险承受能力较强者</li>
+                            </ul>
+                        </div>
+                        
+                        <div style="background: rgba(239, 68, 68, 0.1); border-left: 4px solid var(--danger-color); padding: 1rem; border-radius: 0 0.5rem 0.5rem 0;">
+                            <h5>❌ 不建议</h5>
+                            <ul>
+                                <li>保守型投资者</li>
+                                <li>短期投机者</li>
+                                <li>Web3新手用户</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="warning-box" style="margin-top: 2rem;">
+                    <h4>⚠️ 免责声明</h4>
+                    <ul>
+                        <li>本报告仅供研究和教育目的，不构成投资建议</li>
+                        <li>加密货币投资存在极高风险，可能导致本金损失</li>
+                        <li>请根据个人风险承受能力做出投资决策</li>
+                        <li>建议在投资前进行进一步的独立研究</li>
+                    </ul>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Back to Top Button -->
+    <button class="back-to-top" id="backToTopBtn" onclick="scrollToTop()">↑</button>
+
+    <script>
+        // Theme Management
+        function toggleTheme() {
+            const body = document.body;
+            const themeToggle = document.getElementById('themeToggle');
+            
+            if (body.hasAttribute('data-theme')) {
+                body.removeAttribute('data-theme');
+                themeToggle.textContent = '🌙';
+                localStorage.setItem('theme', 'light');
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                themeToggle.textContent = '☀️';
+                localStorage.setItem('theme', 'dark');
+            }
+            updateChartsTheme();
+        }
+
+        // Load saved theme
+        function loadTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            const themeToggle = document.getElementById('themeToggle');
+            
+            if (savedTheme === 'dark') {
+                document.body.setAttribute('data-theme', 'dark');
+                themeToggle.textContent = '☀️';
+            }
+        }
+
+        // Search Functionality
+        function initSearch() {
+            const searchInput = document.getElementById('searchInput');
+            let searchTimeout;
+
+            searchInput.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    const query = this.value.toLowerCase();
+                    const sections = document.querySelectorAll('.section');
+                    
+                    sections.forEach(section => {
+                        const text = section.textContent.toLowerCase();
+                        if (query === '' || text.includes(query)) {
+                            section.style.display = 'block';
+                        } else {
+                            section.style.display = 'none';
+                        }
+                    });
+                }, 300);
+            });
+        }
+
+        // Smooth Scrolling Navigation
+        function initNavigation() {
+            const navItems = document.querySelectorAll('.nav-item');
+            
+            navItems.forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href');
+                    const targetElement = document.querySelector(targetId);
+                    
+                    if (targetElement) {
+                        // Remove active class from all nav items
+                        navItems.forEach(nav => nav.classList.remove('active'));
+                        // Add active class to clicked nav item
+                        this.classList.add('active');
+                        
+                        // Smooth scroll to target
+                        targetElement.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+        }
+
+        // Back to Top Button
+        function initBackToTop() {
+            const backToTopBtn = document.getElementById('backToTopBtn');
+            
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 500) {
+                    backToTopBtn.classList.add('show');
+                } else {
+                    backToTopBtn.classList.remove('show');
+                }
+            });
+        }
+
+        function scrollToTop() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+
+        // Mobile Menu Toggle
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('mobile-hidden');
+        }
+
+        // Scroll Animations
+        function initScrollAnimations() {
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('animate-in');
+                    }
+                });
+            }, observerOptions);
+
+            document.querySelectorAll('.section, .stat-card, .strategy-card').forEach(el => {
+                observer.observe(el);
+            });
+        }
+
+        // Navigation Active State
+        function initActiveNavigation() {
+            const sections = document.querySelectorAll('.section');
+            const navItems = document.querySelectorAll('.nav-item');
+
+            const observerOptions = {
+                threshold: 0.3,
+                rootMargin: '-100px 0px -50px 0px'
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const sectionId = entry.target.id;
+                        navItems.forEach(nav => {
+                            nav.classList.remove('active');
+                            if (nav.getAttribute('href') === `#${sectionId}`) {
+                                nav.classList.add('active');
+                            }
+                        });
+                    }
+                });
+            }, observerOptions);
+
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+        }
+
+        // Chart theme colors based on current theme
+        function getThemeColors() {
+            const isDark = document.body.hasAttribute('data-theme');
+            return {
+                textColor: isDark ? '#f9fafb' : '#1f2937',
+                gridColor: isDark ? '#374151' : '#e5e7eb',
+                backgroundColor: isDark ? '#1f2937' : '#ffffff'
+            };
+        }
+
+        // Update chart themes
+        function updateChartsTheme() {
+            const colors = getThemeColors();
+            // Charts will be updated here when chart objects are available
+        }
+
+        // Chart Initialization
+        function initCharts() {
+            const colors = getThemeColors();
+
+            // Market Growth Chart
+            const marketCtx = document.getElementById('marketGrowthChart');
+            if (marketCtx) {
+                new Chart(marketCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['2024', '2026', '2028', '2030'],
+                        datasets: [{
+                            label: '数字身份市场 (十亿美元)',
+                            data: [30, 45, 60, 70],
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        }, {
+                            label: 'ZK证明市场 (十亿美元)',
+                            data: [1, 2, 3.9, 5],
+                            borderColor: '#8b5cf6',
+                            backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                labels: { color: colors.textColor }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                ticks: { color: colors.textColor },
+                                grid: { color: colors.gridColor }
+                            },
+                            y: {
+                                ticks: { color: colors.textColor },
+                                grid: { color: colors.gridColor }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Token Distribution Chart
+            const tokenCtx = document.getElementById('tokenDistributionChart');
+            if (tokenCtx) {
+                new Chart(tokenCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['生态发展', '私募投资', '团队', '公开销售', '社区奖励'],
+                        datasets: [{
+                            data: [27.5, 22.5, 17.5, 17.5, 15],
+                            backgroundColor: [
+                                '#3b82f6',
+                                '#8b5cf6',
+                                '#10b981',
+                                '#f59e0b',
+                                '#ef4444'
+                            ],
+                            borderWidth: 2,
+                            borderColor: colors.backgroundColor
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    color: colors.textColor,
+                                    padding: 20
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Investor Impact Chart
+            const investorCtx = document.getElementById('investorImpactChart');
+            if (investorCtx) {
+                new Chart(investorCtx, {
+                    type: 'radar',
+                    data: {
+                        labels: ['市场信心', '合规支持', '技术资源', '生态整合', '资金实力'],
+                        datasets: [{
+                            label: '投资机构影响力',
+                            data: [9, 8, 8, 9, 8],
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                            pointBackgroundColor: '#10b981',
+                            pointBorderColor: '#fff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                labels: { color: colors.textColor }
+                            }
+                        },
+                        scales: {
+                            r: {
+                                beginAtZero: true,
+                                max: 10,
+                                ticks: { color: colors.textColor },
+                                grid: { color: colors.gridColor },
+                                pointLabels: { color: colors.textColor }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Security Radar Chart
+            const securityCtx = document.getElementById('securityRadarChart');
+            if (securityCtx) {
+                new Chart(securityCtx, {
+                    type: 'radar',
+                    data: {
+                        labels: ['技术安全', '审计完整性', '开源透明度', '企业验证', '历史记录', '合规标准'],
+                        datasets: [{
+                            label: '安全评分',
+                            data: [8, 5, 9, 9, 8, 7],
+                            borderColor: '#ef4444',
+                            backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                            pointBackgroundColor: '#ef4444',
+                            pointBorderColor: '#fff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                labels: { color: colors.textColor }
+                            }
+                        },
+                        scales: {
+                            r: {
+                                beginAtZero: true,
+                                max: 10,
+                                ticks: { color: colors.textColor },
+                                grid: { color: colors.gridColor },
+                                pointLabels: { color: colors.textColor }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Community Growth Chart
+            const communityCtx = document.getElementById('communityGrowthChart');
+            if (communityCtx) {
+                new Chart(communityCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Twitter关注者', 'Discord成员', 'GitHub仓库', '验证用户(万)'],
+                        datasets: [{
+                            label: '数量',
+                            data: [649100, 550000, 44, 220],
+                            backgroundColor: [
+                                '#3b82f6',
+                                '#8b5cf6',
+                                '#10b981',
+                                '#f59e0b'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            x: {
+                                ticks: { color: colors.textColor },
+                                grid: { color: colors.gridColor }
+                            },
+                            y: {
+                                ticks: { color: colors.textColor },
+                                grid: { color: colors.gridColor }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Competitor Comparison Chart
+            const competitorCtx = document.getElementById('competitorComparisonChart');
+            if (competitorCtx) {
+                new Chart(competitorCtx, {
+                    type: 'radar',
+                    data: {
+                        labels: ['用户规模', '技术成熟度', '隐私保护', '用户体验', '市场认知', '生态支持'],
+                        datasets: [{
+                            label: 'Billions',
+                            data: [6, 9, 9, 8, 6, 7],
+                            backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                            borderColor: '#3b82f6',
+                            borderWidth: 2
+                        }, {
+                            label: 'Worldcoin',
+                            data: [9, 7, 5, 6, 9, 8],
+                            backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                            borderColor: '#ef4444',
+                            borderWidth: 2
+                        }, {
+                            label: 'Civic',
+                            data: [4, 8, 8, 7, 7, 6],
+                            backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                            borderColor: '#10b981',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { color: colors.textColor }
+                            }
+                        },
+                        scales: {
+                            r: {
+                                beginAtZero: true,
+                                max: 10,
+                                ticks: { color: colors.textColor },
+                                grid: { color: colors.gridColor },
+                                pointLabels: { color: colors.textColor }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Risk Assessment Chart
+            const riskCtx = document.getElementById('riskAssessmentChart');
+            if (riskCtx) {
+                new Chart(riskCtx, {
+                    type: 'radar',
+                    data: {
+                        labels: ['技术风险', '市场风险', '监管风险', '执行风险', '代币风险', '竞争风险'],
+                        datasets: [{
+                            label: '风险等级 (1-10)',
+                            data: [8, 6, 6, 6, 8, 7],
+                            backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                            borderColor: '#ef4444',
+                            borderWidth: 2,
+                            pointBackgroundColor: '#ef4444',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            r: {
+                                beginAtZero: true,
+                                max: 10,
+                                ticks: { color: colors.textColor },
+                                grid: { color: colors.gridColor },
+                                pointLabels: { color: colors.textColor }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Initialize everything when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTheme();
+            initSearch();
+            initNavigation();
+            initBackToTop();
+            initScrollAnimations();
+            initActiveNavigation();
+            
+            // Initialize charts after a short delay to ensure DOM is ready
+            setTimeout(initCharts, 100);
+        });
+
+        // Handle window resize for mobile menu
+        window.addEventListener('resize', function() {
+            const sidebar = document.getElementById('sidebar');
+            if (window.innerWidth > 1024) {
+                sidebar.classList.remove('mobile-hidden');
+            }
+        });
+    </script>
+</body>
+</html>
